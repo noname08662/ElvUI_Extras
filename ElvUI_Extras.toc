@@ -1,0 +1,15 @@
+## Interface: 30300
+## Author: noname08662
+## Version: Alpha-0.1
+## Title: |cff1784d1E|r|cffe5e3e3lvUI|r |cff1784d1Ex|r|cffe5e3e3tras
+## RequiredDeps: ElvUI
+
+Libs\LibProcessable\LibProcessable.lua
+Libs\oUF_FloatingCombatFeedback\oUF_FloatingCombatFeedback.lua
+Libs\LibCooldownTracker-1.0\lib.xml
+
+Locales\Load_Locales.xml
+
+ElvUI_Extras.lua
+
+Modules\Modules.xml

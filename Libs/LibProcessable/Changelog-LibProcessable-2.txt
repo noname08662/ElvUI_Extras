@@ -1,0 +1,14 @@
+tag 2
+23430ff8c0f3525a68a09cd401752cd81b6f3166
+Adrian L Lange <adrianlund@gmail.com>
+2014-09-01 21:26:00 +0200
+
+Tag minor-2
+
+
+--------------------
+
+Adrian L Lange:
+	- Update version
+	- Unnecessary metadata in wowhead links
+	- Make sure the item is disenchantable before we try to compare it
