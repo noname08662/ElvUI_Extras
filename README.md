@@ -4,63 +4,63 @@ What's inside:
 ```
 [General]:
 	(Bags) - reimagined containers featuring a section-based layout;
-			processing spell clickbutton popup;
-			auto-splitting and auto-stacking;
+		processing spell clickbutton popup;
+		auto-splitting and auto-stacking;
 	(Chat) - flexible search and filter utilities;
-			compact chat condensing tabs functionality into a single button;
-			editbox position and size;
+		compact chat condensing tabs functionality into a single button;
+		editbox position and size;
 	(CustomCommands) - fairly basic event and onupdate script handlers;
 	(MoversPlus) - anchoring options for movers;
 	(QuestBar) - self-explanatory;
 	(SecureExecution) - secureActionButton handler;
 	(Misc) - item icons for the chat;
-			global shadow for all of the skinned frames:
-			combat state alert frame;
-			arbitrary tooltip notes for most of the in-game tooltips;
+		global shadow for all of the skinned frames:
+		combat state alert frame;
+		arbitrary tooltip notes for most of the in-game tooltips;
 [Blizzard]:
 	(Automation) - auto-gossip;
-					auto-fill "DELETE";
-					auto-confirm the rolls;
-					auto-pickup quest items and money;
-					auto-accept quests;
+			auto-fill "DELETE";
+			auto-confirm the rolls;
+			auto-pickup quest items and money;
+			auto-accept quests;
 	(LootStyle) - /lootinfo slash command displaying recent lootings;
-				restyled lootbars;
-				styled player names and rolls;
-				styled loot messages;
+			restyled lootbars;
+			styled player names and rolls;
+			styled loot messages;
 	(Misc) - letterbox;
-			held currency amount next to the prices;
-			no cursor tooltips unless holding a modifier;
-			minimap pings player names;
-			red text errors hiding (no mana, etc.);
+		held currency amount next to the prices;
+		no cursor tooltips unless holding a modifier;
+		minimap pings player names;
+		red text errors hiding (no mana, etc.);
 [Nameplates]:
 	Integrated https://github.com/FrostAtom/awesome_wotlk
 	
 	(Auras) - flexible aura highlighting;
-			fade-out animations;
-			no fill textures;
-			no coloring the aura borders;
-			centered auras (that is, growing side-wise);
+		fade-out animations;
+		no fill textures;
+		no coloring the aura borders;
+		centered auras (that is, growing side-wise);
 	(Classification) - configurable class and classification textures;
 	(Cooldowns) - icicle and alike;
 	(GuildsTitles) - self-explanatory;
-					occupation icons for any titled npc;
+			occupation icons for any titled npc;
 	(NameLevel) - color and positioning for the name and level texts;
 	(QuestIcons) - self-explanatory;
 	(StyleFilter) - style filter linking;
 [Unitframes]:
 	(AuraBars) - texts, icon;
 	(Auras) - flexible aura highlighting;
-			click-cancel;
-			saturated debuffs at arenas;
-			no borders;
-			centered auras;
+		click-cancel;
+		saturated debuffs at arenas;
+		no borders;
+		centered auras;
 	(Classification) - same as above;
 	(ColorFilter) - flexible coloring style filter;
 	(Cooldowns) - same as above;
 	(DRTracker) - self-explanatory;
 	(FCF, floating combat feedback) - frame-bound combat texts;
 	(Misc) - detach power for group units;
-			length-based name auto-shortening;
+		length-based name auto-shortening;
 ```
 
 Feel free to delete any module.lua you don't feel like using to cut some milliseconds off of the loading time.
