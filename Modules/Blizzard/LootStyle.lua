@@ -11,17 +11,19 @@ local initialized = {}
 
 local _G, unpack, tonumber, select, pairs, ipairs, print, type, next = _G, unpack, tonumber, select, pairs, ipairs, print, type, next
 local tinsert, tremove, twipe, tsort, tconcat = table.insert, table.remove, table.wipe, table.sort, table.concat
-local lower, upper, find, match, format, gsub, sub, byte, split = string.lower, string.upper, string.find, string.match, string.format, string.gsub, string.sub, string.byte, string.split
+local lower, find, match, format, gsub, sub, byte, split = string.lower, string.find, string.match, string.format, string.gsub, string.sub, string.byte, string.split
 local ceil, floor = math.ceil, math.floor
 local UnitClass, UnitName, GetTime, AlertFrame_FixAnchors = UnitClass, UnitName, GetTime, AlertFrame_FixAnchors
 local ChatFrame_AddMessageEventFilter, ChatFrame_RemoveMessageEventFilter = ChatFrame_AddMessageEventFilter, ChatFrame_RemoveMessageEventFilter
-local GetNumFriends, GetFriendInfo, IsInGuild, GetNumGuildMembers, GetGuildRosterInfo = GetNumFriends, GetFriendInfo, IsInGuild, GetNumGuildMembers, GetGuildRosterInfo
+local GetNumFriends, GetFriendInfo, IsInGuild = GetNumFriends, GetFriendInfo, IsInGuild
+local GetNumGuildMembers, GetGuildRosterInfo = GetNumGuildMembers, GetGuildRosterInfo
 local NUM_CHAT_WINDOWS, RANDOM_ROLL_RESULT, UNKNOWN = NUM_CHAT_WINDOWS, RANDOM_ROLL_RESULT, UNKNOWN
-local ERR_FRIEND_ADDED_S, ERR_FRIEND_REMOVED_S, ERR_FRIEND_ONLINE_SS, ERR_GUILD_JOIN_S = ERR_FRIEND_ADDED_S, ERR_FRIEND_REMOVED_S, ERR_FRIEND_ONLINE_SS, ERR_GUILD_JOIN_S
+local ERR_FRIEND_ONLINE_SS, ERR_GUILD_JOIN_S = ERR_FRIEND_ONLINE_SS, ERR_GUILD_JOIN_S
 local LOOT_MONEY, YOU_LOOT_MONEY, LOOT_MONEY_SPLIT = LOOT_MONEY, YOU_LOOT_MONEY, LOOT_MONEY_SPLIT
 local GOLD_AMOUNT, SILVER_AMOUNT, COPPER_AMOUNT = GOLD_AMOUNT, SILVER_AMOUNT, COPPER_AMOUNT
 local SPELL_FAILED_TRY_AGAIN, ERR_ITEM_NOT_FOUND, HELPFRAME_ITEM_TITLE = SPELL_FAILED_TRY_AGAIN, ERR_ITEM_NOT_FOUND, HELPFRAME_ITEM_TITLE
-local KBASE_SEARCH_RESULTS, BNET_BROADCAST_SENT_TIME, PLAYER, OPTIONAL, SECONDS, MINUTES = KBASE_SEARCH_RESULTS, BNET_BROADCAST_SENT_TIME, PLAYER, OPTIONAL, SECONDS, MINUTES
+local KBASE_SEARCH_RESULTS, BNET_BROADCAST_SENT_TIME = KBASE_SEARCH_RESULTS, BNET_BROADCAST_SENT_TIME
+local PLAYER, OPTIONAL, SECONDS, MINUTES = PLAYER, OPTIONAL, SECONDS, MINUTES
 
 local function simulateLootRoll()
 	local itemID = 49623
@@ -40,8 +42,8 @@ local function simulateLootRoll()
 	itemButton:Size(db.sizeIcon)
 	itemButton:Point('BOTTOMRIGHT', testlootbar, 'BOTTOMLEFT', -4, 1)
 	itemButton:CreateBackdrop()
-	
-	itemButton:SetScript("OnLeave", function(self)
+
+	itemButton:SetScript("OnLeave", function()
 		GameTooltip:Hide()
 	end)
 	itemButton:SetScript("OnEnter", function(self)
@@ -54,14 +56,14 @@ local function simulateLootRoll()
 	itemButton.icon:SetAllPoints()
 	itemButton.icon:SetTexCoord(unpack(E.TexCoords))
 	itemButton.icon:SetTexture("Interface\\Icons\\INV_Axe_113")
-	
+
 	testlootbar.itemButton = itemButton
 
-	if testlootbar.status then 
+	if testlootbar.status then
 		testlootbar.status:Hide()
 		testlootbar.status = nil
 	end
-	
+
 	local status = CreateFrame("StatusBar", "$parentStatusBar", testlootbar)
 	status:SetInside()
 	status:SetFrameLevel(status:GetFrameLevel() - 1)
@@ -113,7 +115,7 @@ local function simulateLootRoll()
 	local rollTime = 15
 	status:SetMinMaxValues(0, rollTime)
 	status:SetValue(rollTime)
-	
+
 	local p, pa, re, x, y = testlootbar:GetPoint()
 	testlootbar:ClearAllPoints()
 	testlootbar:Point(p, pa, re, x, p == 'TOP' and (y - (db.sizeIcon - FRAME_HEIGHT / 2)) or (y + (db.sizeIcon + FRAME_HEIGHT / 2)))
@@ -181,7 +183,7 @@ local classNameToID = {
     [LOCALIZED_CLASS_NAMES_FEMALE.WARLOCK] = "WARLOCK",
     [LOCALIZED_CLASS_NAMES_FEMALE.DRUID] = "DRUID",
 }
---[[ 
+--[[
 	1 - need
 	2 - greed
 	3 - disenchant
@@ -198,7 +200,7 @@ local rollMsgs = {
 	{ LOOT_ROLL_WON, LOOT_ROLL_WON_NO_SPAM_DE, LOOT_ROLL_WON_NO_SPAM_GREED, LOOT_ROLL_WON_NO_SPAM_NEED },
 	{ LOOT_ITEM, LOOT_ITEM_MULTIPLE },
 }
-	
+
 local rollIcons = {
 	"Interface\\BUTTONS\\UI-GroupLoot-Dice-Up",
 	"Interface\\BUTTONS\\UI-GroupLoot-Coin-Up",
@@ -223,7 +225,7 @@ for type, messages in ipairs(rollMsgs) do
         end
         rollMsgsProcessed[type][i] = processedMessage
     end
-end	
+end
 
 local function parseEventMsg(msg)
     msg = gsub(gsub(gsub(msg, '|cff.+|h|r[%w-]*', ''), '|T.+|t', ''), '[%s%p%d]+', '')
@@ -334,9 +336,9 @@ function mod:LoadConfig()
 				name = L["Styled Messages"],
 				guiInline = true,
 				get = function(info) return unpack(E.db.Extras.blizzard[modName].StyledMsgs[selected()][info[#info]]) end,
-				set = function(info, r, g, b) 
+				set = function(info, r, g, b)
 					E.db.Extras.blizzard[modName].StyledMsgs[selected()][info[#info]] = { r, g, b }
-					self:StyledMsgs(E.db.Extras.blizzard[modName].StyledMsgs.enabled) 
+					self:StyledMsgs(E.db.Extras.blizzard[modName].StyledMsgs.enabled)
 				end,
 				args = {
 					enabled = {
@@ -344,9 +346,9 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Colors online friends' and guildmates' names in some of the messages and styles the rolls.\nAlready handled chat bubbles will not get styled before you /reload."],
-						get = function(info) return E.db.Extras.blizzard[modName].StyledMsgs.enabled end,
-						set = function(info, value) 
-							E.db.Extras.blizzard[modName].StyledMsgs.enabled = value 
+						get = function() return E.db.Extras.blizzard[modName].StyledMsgs.enabled end,
+						set = function(_, value)
+							E.db.Extras.blizzard[modName].StyledMsgs.enabled = value
 							self:StyledMsgs(value)
 						end,
 					},
@@ -362,8 +364,8 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select Status"],
 						desc = "",
-						get = function(info) return E.db.Extras.blizzard[modName].StyledMsgs.selected end,
-						set = function(info, value) E.db.Extras.blizzard[modName].StyledMsgs.selected = value end,
+						get = function() return E.db.Extras.blizzard[modName].StyledMsgs.selected end,
+						set = function(_, value) E.db.Extras.blizzard[modName].StyledMsgs.selected = value end,
 						hidden = function() return not E.db.Extras.blizzard[modName].StyledMsgs.enabled end,
 						values = {
 							["self"] = L["Self"],
@@ -376,10 +378,10 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select Indicator"],
 						desc = "",
-						get = function(info) return E.db.Extras.blizzard[modName].StyledMsgs[selected()].indicator end,
-						set = function(info, value) 
-							E.db.Extras.blizzard[modName].StyledMsgs[selected()].indicator = value 
-							self:StyledMsgs(E.db.Extras.blizzard[modName].StyledMsgs.enabled) 
+						get = function() return E.db.Extras.blizzard[modName].StyledMsgs[selected()].indicator end,
+						set = function(_, value)
+							E.db.Extras.blizzard[modName].StyledMsgs[selected()].indicator = value
+							self:StyledMsgs(E.db.Extras.blizzard[modName].StyledMsgs.enabled)
 						end,
 						hidden = function() return not E.db.Extras.blizzard[modName].StyledMsgs.enabled end,
 						values = {
@@ -460,11 +462,10 @@ function mod:LoadConfig()
 						hidden = function() return not E.db.Extras.blizzard[modName].LootBars.enabled end,
 					},
 				},
-			
 			},
 		},
 	}
-end			
+end
 
 
 function mod:StyledMsgs(enable)
@@ -473,7 +474,7 @@ function mod:StyledMsgs(enable)
         indicators["self"] = {indicator = db.self.indicator, color = format("|cff%02x%02x%02x", db.self.color[1] * 255, db.self.color[2] * 255, db.self.color[3] * 255)}
         indicators["friend"] = {indicator = db.friend.indicator, color = format("|cff%02x%02x%02x", db.friend.color[1] * 255, db.friend.color[2] * 255, db.friend.color[3] * 255)}
         indicators["guild"] = {indicator = db.guild.indicator, color = format("|cff%02x%02x%02x", db.guild.color[1] * 255, db.guild.color[2] * 255, db.guild.color[3] * 255)}
-		
+
 		if not initialized.StyledMsgs then
 			local myname, myclass = E.myname, E.myclass
 			local playerName = lower(myname)
@@ -481,7 +482,7 @@ function mod:StyledMsgs(enable)
 			local rollMsgProcessed = {part1, part2}
 			local friendOnlineMsgProcessed = gsub(tconcat({split(1, format(gsub(ERR_FRIEND_ONLINE_SS, '[%[%]]',''), 1, 1))}), "|H.+|h", "")
 			local _, playerJoinsGuild = split(1, format(ERR_GUILD_JOIN_S, 1))
-			
+
 			function mod:UpdateFriendMap()
 				twipe(friendMap)
 				for i = 1, GetNumFriends() do
@@ -491,7 +492,7 @@ function mod:StyledMsgs(enable)
 					end
 				end
 			end
-			
+
 			function mod:UpdateGuildMap()
 				twipe(guildMap)
 				for i = 1, GetNumGuildMembers() do
@@ -499,7 +500,7 @@ function mod:StyledMsgs(enable)
 					if guildName and isOnline and guildName ~= myname then guildMap[lower(guildName)] = guildClass end
 				end
 			end
-			
+
 			function mod:GetPlayerRelationship(name)
 				if name == playerName then
 					return "self", myclass
@@ -510,27 +511,27 @@ function mod:StyledMsgs(enable)
 				end
 				return nil
 			end
-			
+
 			function mod:GetPlayerInfo(playerName)
 				local relationship, relClass = self:GetPlayerRelationship(playerName)
 				if relationship and indicators[relationship].indicator ~= "NONE" then
 					local info = indicators[relationship]
-					return relationship, relClass, info.indicator, info.color 
+					return relationship, relClass, info.indicator, info.color
 				end
 			end
-			
+
 			local function getString(playerName, indicator, indicatorColor, classColor)
 				local parts = {}
-				
+
 				if indicator then
 					tinsert(parts, indicatorColor)
 					tinsert(parts, indicator)
 					tinsert(parts, '|r')
 				end
-				
+
 				tinsert(parts, classColor or '')
 				tinsert(parts, playerName)
-				
+
 				if indicator then
 					tinsert(parts, indicatorColor)
 					tinsert(parts, indicator)
@@ -538,32 +539,31 @@ function mod:StyledMsgs(enable)
 				else
 					tinsert(parts, '|r')
 				end
-				
+
 				return tconcat(parts)
 			end
-			
+
 			local function formatPlayerName(playerName, isPlayer)
-				local parts = {}
-				local relationship, relClass, indicator, indicatorColor
-				
+				local _, relClass, indicator, indicatorColor
+
 				if isPlayer then
-					relationship, relClass = "self", myclass
+					_, relClass = "self", myclass
 					local db = indicators["self"]
 					if db.indicator ~= "NONE" then
 						indicatorColor = db.color
 						indicator = db.indicator
 					end
 				else
-					relationship, relClass, indicator, indicatorColor = mod:GetPlayerInfo(lower(playerName))
+					_, relClass, indicator, indicatorColor = mod:GetPlayerInfo(lower(playerName))
 				end
-				
+
 				if relClass then
 					return getString(playerName, indicator, indicatorColor, getClassColor(relClass) or '')
 				end
-				
+
 				return playerName
 			end
-			
+
 			local function stripMsg(msg)
 				local strippedMsg, msgMap = "", {}
 				local i, j = 1, 1
@@ -573,18 +573,18 @@ function mod:StyledMsgs(enable)
 				local colorPattern = "^|c%x%x%x%x%x%x%x%x"
 				local linkPattern = "(.-|h)(.-)|h"
 				local codePattern = "^|%d%p%d%((.+)%)"
-				
+
 				-- timestamps
 				local stampStart, stampEnd = find(msg, "^[|%x]*%[[|:%d%s%xaApPmMr]*%][|rR]*[|%x%x%x%x%x%x%x%x%x]*%s*")
-				
+
 				if stampStart then
 					i = stampEnd + 1
 				end
-				
+
 				-- strip junk text and store real positions
 				while i <= len do
 					local b1, b2 = byte(tempMsg, i, i+1)
-					
+
 					if b1 == 124 then -- '|, code start'
 						if b2 == 99 then -- 'c, color code'
 							if find(tempMsg, colorPattern, i) then
@@ -595,7 +595,7 @@ function mod:StyledMsgs(enable)
 						elseif b2 == 114 then -- 'r, color breaker'
 							i = i + 2
 						elseif b2 == 104 then -- 'h, hyperlink code'
-							local _, linkEnd, link, text = find(tempMsg, linkPattern, i+2)
+							local _, linkEnd, link = find(tempMsg, linkPattern, i+2)
 							if link then -- 'afaik, player links are only available in combat log, which i don't want to style'
 								i = linkEnd + 1
 							else
@@ -610,7 +610,7 @@ function mod:StyledMsgs(enable)
 								if i == codeEnd then
 									i = i + 1
 								else
-									local _, linkEnd, link, text = find(tempMsg, linkPattern, i+2)
+									local _, linkEnd, link = find(tempMsg, linkPattern, i+2)
 									if link then
 										i = linkEnd + 1
 									else
@@ -640,15 +640,15 @@ function mod:StyledMsgs(enable)
 					local originalName = sub(strippedMsg, nameStart, nameEnd)
 					local formattedName = formatPlayerName(originalName, isPlayer)
 					tinsert(replacements, {
-						start = msgMap[nameStart], 
-						endPos = msgMap[nameEnd], 
+						start = msgMap[nameStart],
+						endPos = msgMap[nameEnd],
 						replacement = formattedName
 					})
 					nameStart, nameEnd = find(strippedLower, lower(playerName), nameEnd + 1)
 				end
 				return replacements
 			end
-			
+
 			local function handleNormalMessage(msg)
 				local strippedMsg, msgMap = stripMsg(msg)
 				local strippedLower = lower(strippedMsg)
@@ -678,11 +678,11 @@ function mod:StyledMsgs(enable)
 
 				return msg
 			end
-			
+
 			local function handleRollMessage(msg)
 				local playerName, rollResult, rollStart, rollEnd = match(msg, '[%p%d]*([^%p*]+)'..part1..'%D*(%d+)%D*(%d+)-(%d+)')
 				local playerClass = playerName and select(2, UnitClass(playerName))
-				
+
 				if playerClass then
 					rollResult, rollStart, rollEnd = tonumber(rollResult), tonumber(rollStart), tonumber(rollEnd)
 
@@ -694,10 +694,10 @@ function mod:StyledMsgs(enable)
 					else
 						color = core.customColorAlpha
 					end
-					
+
 					local _, _, indicator, indicatorColor = mod:GetPlayerInfo(lower(playerName))
 					local formattedName = getString(playerName, indicator, indicatorColor, getClassColor(playerClass) or '')
-					
+
 					msg = gsub(msg, rollResult, color ..'['.. rollResult ..']'.. "|r", 1)
 					msg = gsub(msg, playerName, formattedName)
 					if rollStart == 1 and rollEnd == 100 then
@@ -707,7 +707,7 @@ function mod:StyledMsgs(enable)
 				end
 				return msg
 			end
-			
+
 			function mod:StyledMsgsFilter(event, msg, ...)
 				if event == "CHAT_MSG_ACHIEVEMENT" then
 					local playerName = ...
@@ -720,7 +720,7 @@ function mod:StyledMsgs(enable)
 					elseif find(msg, playerJoinsGuild) then
 						local playerName = match(msg, '[%p%d]*([^%p*]+)'..playerJoinsGuild)
 						local playerNameLower = lower(playerName)
-						if not guildMap[playerNameLower] then 
+						if not guildMap[playerNameLower] then
 							tinsert(pendingMsgs, {playerName = playerNameLower, msg = msg, args = {...}})
 							return true
 						else
@@ -729,7 +729,7 @@ function mod:StyledMsgs(enable)
 					elseif find(msg, friendOnlineMsgProcessed) then
 						local playerName = match(msg, '%[(.+)%]')
 						local playerNameLower = lower(playerName)
-						if IsInGuild() and not friendMap[playerNameLower] and not guildMap[playerNameLower] then 
+						if IsInGuild() and not friendMap[playerNameLower] and not guildMap[playerNameLower] then
 							tinsert(pendingMsgs, {playerName = playerNameLower, msg = msg, args = {...}})
 							return true
 						else
@@ -740,23 +740,23 @@ function mod:StyledMsgs(enable)
 				end
 				return false, handleNormalMessage(msg), ...
 			end
-			
+
 			function mod:StyleName(playerName)
 				return formatPlayerName(playerName)
 			end
-			
+
 			function mod:StyleMessage(msg)
 				return handleNormalMessage(msg)
 			end
-			
+
 			function mod:UpdateMessages()
 				for i = #pendingMsgs, 1, -1 do
 					local info = pendingMsgs[i]
 					local playerName, msg = info.playerName, info.msg
 					local playerClass = guildMap[playerName]
 					if playerClass then
-						for i = 1, NUM_CHAT_WINDOWS do
-							local chatFrame = _G["ChatFrame"..i]
+						for j = 1, NUM_CHAT_WINDOWS do
+							local chatFrame = _G["ChatFrame"..j]
 							if chatFrame and chatFrame:IsEventRegistered("CHAT_MSG_SYSTEM") then
 								ChatFrame_MessageEventHandler(chatFrame, "CHAT_MSG_SYSTEM", msg, unpack(info.args))
 							end
@@ -765,22 +765,22 @@ function mod:StyledMsgs(enable)
 					end
 				end
 			end
-			
+
 			function mod:AddMessage(frame, msg, ...)
 				local formattedMessage = gsub(msg, "|Hplayer:(.-)|h%[(.-)%]|h", function(link, playerName)
 					local colorlessName = find(playerName, "|[rR]") and match(playerName, "|%x%x%x%x%x%x%x%x%x(.+)|[rR]") or playerName
-					
+
 					if find(colorlessName, "|%x%x%x%x%x%x%x%x%x") then
 						local colorPatterns = {}
-						
+
 						colorlessName = gsub(playerName, "|(%x%x%x%x%x%x%x%x%x)([^|]+)", function(color, text)
 							tinsert(colorPatterns, {color = color, text = text})
 							return text
 						end)
 						colorlessName = gsub(gsub(colorlessName, "|%x%x%x%x%x%x%x%x%x", ""), "|[rR]", "")
-						
+
 						local formattedName = formatPlayerName(colorlessName)
-						
+
 						if formattedName ~= colorlessName then
 							local coloredName = colorlessName
 							for _, pattern in ipairs(colorPatterns) do
@@ -792,7 +792,7 @@ function mod:StyledMsgs(enable)
 						end
 					else
 						local formattedName = formatPlayerName(colorlessName)
-						
+
 						if formattedName ~= colorlessName then
 							return format("|Hplayer:%s|h[%s]|h", link, formattedName)
 						else
@@ -800,18 +800,18 @@ function mod:StyledMsgs(enable)
 						end
 					end
 				end)
-				
+
 				mod.hooks[frame].AddMessage(frame, formattedMessage, ...)
 			end
-			
+
 			self:UpdateFriendMap()
 			self:UpdateGuildMap()
-			
+
 			if styleHistory then
 				for _, d in ipairs(styleHistory) do
 					if type(d) == "table" then
 						if d[52] and self:GetPlayerRelationship(lower(d[2])) then d[52] = self:StyleName(d[2]) end
-						if not d["styled"] then 
+						if not d["styled"] then
 							d[1] = self:StyleMessage(d[1])
 							d["styled"] = true
 						end
@@ -819,20 +819,20 @@ function mod:StyledMsgs(enable)
 				end
 				CH:DisplayChatHistory()
 			end
-			
+
 			initialized.StyledMsgs = true
 		end
 
         for _, type in ipairs(chatMsgs) do
             ChatFrame_AddMessageEventFilter(type, mod.StyledMsgsFilter)
         end
-		
-		if not E.db.Extras.blizzard[modName].StyledLootings.enabled then 
+
+		if not E.db.Extras.blizzard[modName].StyledLootings.enabled then
 			ChatFrame_AddMessageEventFilter("CHAT_MSG_LOOT", mod.StyledMsgsFilter)
 			ChatFrame_AddMessageEventFilter("CHAT_MSG_MONEY", mod.StyledMsgsFilter)
 			filterApplied = true
 		end
-		
+
 		self:RegisterEvent("FRIENDLIST_UPDATE", self.UpdateFriendMap)
 		self:RegisterEvent("GUILD_ROSTER_UPDATE", function()
 			self:UpdateGuildMap()
@@ -840,16 +840,16 @@ function mod:StyledMsgs(enable)
 				self:UpdateMessages()
 			end
 		end)
-		
-		if not self:IsHooked("FCF_OpenNewWindow") then 
+
+		if not self:IsHooked("FCF_OpenNewWindow") then
 			self:SecureHook("FCF_OpenNewWindow", function() updateChatHooks(db.enabled) end)
 		end
-		
-		if M.BubbleFrame and not self:IsHooked(M.BubbleFrame, "OnEvent") then 
+
+		if M.BubbleFrame and not self:IsHooked(M.BubbleFrame, "OnEvent") then
 			self:SecureHookScript(M.BubbleFrame, "OnEvent", function(self, _, msg, sender) messageToSender[msg] = sender end)
 		end
-		
-		if not self:IsHooked(M, "UpdateBubbleBorder") then 
+
+		if not self:IsHooked(M, "UpdateBubbleBorder") then
 			self:SecureHook(M, "UpdateBubbleBorder", function(self)
 				if not self.text then return end
 				if E.private.general.chatBubbles == "backdrop" then
@@ -875,8 +875,8 @@ function mod:StyledMsgs(enable)
 				self.text:SetText(msg)
 			end)
 		end
-		
-		if not self:IsHooked(M, "AddChatBubbleName") then 
+
+		if not self:IsHooked(M, "AddChatBubbleName") then
 			self:RawHook(M, "AddChatBubbleName", function(self, chatBubble, guid, name)
 				if not name then return end
 				chatBubble.Name:SetFormattedText("%s", mod:StyleName(name))
@@ -886,8 +886,8 @@ function mod:StyledMsgs(enable)
         for _, type in ipairs(chatMsgs) do
             ChatFrame_RemoveMessageEventFilter(type, mod.StyledMsgsFilter)
         end
-		
-		if filterApplied then 
+
+		if filterApplied then
 			ChatFrame_RemoveMessageEventFilter("CHAT_MSG_LOOT", mod.StyledMsgsFilter)
 			ChatFrame_RemoveMessageEventFilter("CHAT_MSG_MONEY", mod.StyledMsgsFilter)
 			if E.db.Extras.blizzard[modName].StyledLootings.enabled then
@@ -896,12 +896,12 @@ function mod:StyledMsgs(enable)
 			end
 			filterApplied = false
 		end
-		
+
 		self:UnregisterEvent("GUILD_ROSTER_UPDATE")
 		if self:IsHooked("FCF_OpenNewWindow") then self:Unhook("FCF_OpenNewWindow") end
 		if self:IsHooked(M, "UpdateBubbleBorder") then self:Unhook(M, "UpdateBubbleBorder") end
 		if self:IsHooked(M, "AddChatBubbleName") then self:Unhook(M, "AddChatBubbleName") end
-		
+
 		local data = ElvCharacterDB.ChatHistoryLog
 		if next(data) then
 			for _, d in ipairs(data) do
@@ -932,13 +932,13 @@ function mod:StyledLootings(enable)
 				local lootmsg = split(1, format(message, 1))
 				tinsert(moneyMsgsProcessed, lootmsg)
 			end
-			
+
 			local function processMoney(msg)
-				msg = gsub(msg, "(%d*)"..goldProcessed, 
+				msg = gsub(msg, "(%d*)"..goldProcessed,
 					"|cffffd700%1|r|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:0:0|t", 1)
-				msg = gsub(msg, "(%d*)"..silverProcessed, 
+				msg = gsub(msg, "(%d*)"..silverProcessed,
 					"|cffc0c0c0%1|r|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:0:0|t", 1)
-				msg = gsub(msg, "(%d*)"..copperProcessed, 
+				msg = gsub(msg, "(%d*)"..copperProcessed,
 					"|cffb87333%1|r|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:0:0|t", 1)
 				return '+'..gsub(msg, '%.$', '')
 			end
@@ -946,7 +946,7 @@ function mod:StyledLootings(enable)
 			local function formatPlayerName(playerName, playerClass)
 				if styledb.enabled then
 					local _, relClass, indicator, indicatorColor = mod:GetPlayerInfo(lower(playerName))
-					
+
 					return format("%s%s|r%s%s|r%s%s|r", indicatorColor, indicator, getClassColor(relClass), playerName, indicatorColor, indicator)
 				else
 					return format("%s%s|r", getClassColor(playerClass), playerName)
@@ -983,16 +983,16 @@ function mod:StyledLootings(enable)
 						if not rollResult then
 							return false, format("[\124T%s:%d\124t]|r%s%s, %s", rollIcons[rollType], iconSize, itemLink, quantity, formattedName), ...
 						end
-					
+
 						local valuePercent = (tonumber(rollResult)) / 100
 						local r, g, b = playerName == UnitName('player') and 1 - valuePercent or valuePercent, playerName == UnitName('player') and valuePercent or 1 - valuePercent, 0
 						local rollColor = format("|cff%02x%02x%02x", r * 255, g * 255, b * 255)
-						
+
 						return false, format("%s[%d\124T%s:%d\124t]|r%s%s, %s", rollColor, rollResult, rollIcons[rollType], iconSize, itemLink, quantity, formattedName), ...
 					else
 						return false, format("[\124T%s:%d\124t]|r%s%s", rollIcons[rollType], iconSize, itemLink, quantity), ...
 					end
-				elseif playerClass then    
+				elseif playerClass then
 					local formattedName = formatPlayerName(playerName, playerClass)
 					return false, format("+%s%s, %s%s", itemLink, quantity, formattedName, mod.lootInfoPrints or ''), ...
 				else
@@ -1004,7 +1004,7 @@ function mod:StyledLootings(enable)
 		end
         ChatFrame_AddMessageEventFilter("CHAT_MSG_LOOT", mod.StyledLootingsFilter)
         ChatFrame_AddMessageEventFilter("CHAT_MSG_MONEY", mod.StyledLootingsFilter)
-		if filterApplied then 
+		if filterApplied then
 			ChatFrame_RemoveMessageEventFilter("CHAT_MSG_LOOT", mod.StyledMsgsFilter)
 			ChatFrame_RemoveMessageEventFilter("CHAT_MSG_MONEY", mod.StyledMsgsFilter)
 			filterApplied = false
@@ -1012,12 +1012,12 @@ function mod:StyledLootings(enable)
     elseif initialized.StyledLootings then
         ChatFrame_RemoveMessageEventFilter("CHAT_MSG_LOOT", mod.StyledLootingsFilter)
         ChatFrame_RemoveMessageEventFilter("CHAT_MSG_MONEY", mod.StyledLootingsFilter)
-		if E.db.Extras.blizzard[modName].StyledMsgs.enabled then 
+		if E.db.Extras.blizzard[modName].StyledMsgs.enabled then
 			ChatFrame_AddMessageEventFilter("CHAT_MSG_LOOT", mod.StyledMsgsFilter)
 			ChatFrame_AddMessageEventFilter("CHAT_MSG_MONEY", mod.StyledMsgsFilter)
 			filterApplied = true
 		end
-    end    
+    end
 end
 
 function mod:LootInfo(enable)
@@ -1031,18 +1031,18 @@ function mod:LootInfo(enable)
 					return floor(num)
 				end
 			end
-			
+
 			local lootMessages = {}
 			local index = 1
-			function mod:CHAT_MSG_LOOT(event, msg, ...)
+			function mod:CHAT_MSG_LOOT(_, msg, ...)
 				local rollType, playerName = parseEventMsg(msg)
 				if rollType and rollType < 6 then return end
-			
+
 				lootMessages[index] = { msg = msg, args = {...}, timestamp = GetTime(), isPlayer = not playerName }
 
 				index = index % 256 + 1
 			end
-			
+
 			function mod:GetLootMessages(itemName, timeLimit)
 				local lootMessagesFound = {}
 				tsort(lootMessages, function(a,b)
@@ -1054,7 +1054,7 @@ function mod:LootInfo(enable)
 				end)
 				for _, lootMessage in ipairs(lootMessages) do
 					local msg = lower(gsub(lootMessage.msg, '|H.*%[', ''))
-					if (not tonumber(timeLimit) or (lootMessage.timestamp > GetTime() - tonumber(timeLimit))) and 
+					if (not tonumber(timeLimit) or (lootMessage.timestamp > GetTime() - tonumber(timeLimit))) and
 						(find(msg, itemName, 1, true) or (find(itemName, '@self', 1, true) and lootMessage.isPlayer)) then
 						tinsert(lootMessagesFound, lootMessage)
 					end
@@ -1072,13 +1072,13 @@ function mod:LootInfo(enable)
 					print(core.customColorBeta.."/lootinfo"..core.customColorAlpha..' !wipe')
 					return
 				end
-				
+
 				local looters = self:GetLootMessages(lower(itemName), timeLimit)
 
 				if find(itemName, '@self', 1, true) then
 					itemName = UnitName('player')
 				end
-				
+
 				if #looters == 0 then
 					print(core.customColorBeta..ERR_ITEM_NOT_FOUND)
 				else
@@ -1103,8 +1103,8 @@ function mod:LootInfo(enable)
 							ChatFrame_MessageEventHandler(DEFAULT_CHAT_FRAME, "CHAT_MSG_LOOT", msg, unpack(lootMessage.args))
 							self.lootInfoPrints = false
 						else
-							ChatFrame_MessageEventHandler(DEFAULT_CHAT_FRAME, "CHAT_MSG_LOOT", 
-								msg .. (timeLimit and (lower(format(' '..core.customColorAlpha..'- '..BNET_BROADCAST_SENT_TIME, timeStamp ..' '..timeUnit))) or ''), 
+							ChatFrame_MessageEventHandler(DEFAULT_CHAT_FRAME, "CHAT_MSG_LOOT",
+								msg .. (timeLimit and (lower(format(' '..core.customColorAlpha..'- '..BNET_BROADCAST_SENT_TIME, timeStamp ..' '..timeUnit))) or ''),
 								unpack(lootMessage.args))
 						end
 					end
@@ -1150,15 +1150,15 @@ function mod:LootBars(enable)
 			frame:Point(p, pa, re, x, p == 'TOP' and (y - (db.sizeIcon - db.heightBar/2)) or (y + (db.sizeIcon + db.heightBar/2)))
 		end
 	end
-	
+
 	if enable then
 		if not E.private.general.lootRoll then E.private.general.lootRoll = true E:StaticPopup_Show("PRIVATE_RL") end
 		if not self:IsHooked(M, "START_LOOT_ROLL") then self:SecureHook(M, "START_LOOT_ROLL", mod.updateBars) end
-		
+
 		AlertFrame_FixAnchors()
-	elseif self:IsHooked(M, "START_LOOT_ROLL") then 
+	elseif self:IsHooked(M, "START_LOOT_ROLL") then
 		self:Unhook(M, "START_LOOT_ROLL")
-		
+
 		if M.numFrames > 1 then
 			local db = E.db.Extras.blizzard[modName].LootBars
 			for _, frame in pairs(M.RollBars) do

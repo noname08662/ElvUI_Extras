@@ -2,7 +2,6 @@ local E, L, _, P = unpack(ElvUI)
 local core = E:GetModule("Extras")
 local mod = core:NewModule("Secure Execution Manager", "AceHook-3.0")
 local NP = E:GetModule("NamePlates")
-local AB = E:GetModule("ActionBars")
 local LSM = E.Libs.LSM
 local ElvUFColors = E.oUF.colors
 
@@ -31,28 +30,28 @@ local UnitAffectingCombat, UnitCastingInfo, UnitChannelInfo, UnitHealth, UnitHea
 local UnitName, UnitClass, UnitIsPlayer, UnitReaction = UnitName, UnitClass, UnitIsPlayer, UnitReaction
 local GetSpellCooldown, GetItemCooldown, GetSpellInfo, GetItemInfo, GetItemIcon, GetItemCount, IsSpellKnown = GetSpellCooldown, GetItemCooldown, GetSpellInfo, GetItemInfo, GetItemIcon, GetItemCount, IsSpellKnown
 
-local function restoreUI(button)
+local function restoreUI()
 	for _, child in ipairs(hiddenFrames) do
 		child:Show()
 	end
-	
+
 	for _, child in ipairs(broomedFrames) do
 		child:SetClampedToScreen(clampStates[child] or false)
 		child:SetClampRectInsets(0, 0, 0, 0)
 	end
-	
+
 	for _, frame in ipairs(pendingPlates) do
 		frame:SetClampedToScreen(clampStates[frame] or false)
 		frame:SetClampRectInsets(0, 0, 0, 0)
 	end
-	
+
 	twipe(broomedFrames)
 	twipe(hiddenFrames)
 	twipe(pendingPlates)
 end
 
-local function broomUI(screenWidth, screenWidth, screenHeight, screenHeight)
-	for i, child in ipairs({UIParent:GetChildren()}) do
+local function broomUI(screenWidth, screenHeight)
+	for _, child in ipairs({UIParent:GetChildren()}) do
 		if not child:IsProtected() then
 			if child:IsShown() then
 				child:Hide()
@@ -60,9 +59,9 @@ local function broomUI(screenWidth, screenWidth, screenHeight, screenHeight)
 			end
 		elseif not child.dontBroom then
 			child:SetClampRectInsets(screenWidth, screenWidth, screenHeight, screenHeight)
-			
+
 			local left = child:GetLeft()
-			
+
 			if left and left > 0 then
 				clampStates[child] = true
 			else
@@ -72,8 +71,8 @@ local function broomUI(screenWidth, screenWidth, screenHeight, screenHeight)
 			tinsert(broomedFrames, child)
 		end
 	end
-	
-	for i, child in ipairs({ElvUIParent:GetChildren()}) do
+
+	for _, child in ipairs({ElvUIParent:GetChildren()}) do
 		if not child:IsProtected() then
 			if child:IsShown() then
 				child:Hide()
@@ -81,9 +80,9 @@ local function broomUI(screenWidth, screenWidth, screenHeight, screenHeight)
 			end
 		else
 			child:SetClampRectInsets(screenWidth, screenWidth, screenHeight, screenHeight)
-			
+
 			local left = child:GetLeft()
-			
+
 			if left and left > 0 then
 				clampStates[child] = true
 			else
@@ -102,7 +101,7 @@ local function wipeButtons()
 
 			if E.CreatedMovers[key.."Mover"] then
 				local oldMover = _G[key.."Mover"]
-				
+
 				if oldMover then
 					oldMover:Hide()
 					oldMover:SetScript("OnDragStart", nil)
@@ -117,17 +116,17 @@ local function wipeButtons()
 					oldMover:SetParent(nil)
 					_G[key.."Mover"] = nil
 				end
-				
+
 				E.CreatedMovers[key.."Mover"] = nil
 			end
-			
+
 			if E.DisabledMovers[key.."Mover"] then
 				E.DisabledMovers[key.."Mover"] = nil
 			end
-			
+
 			_G[property:GetName()]:Kill()
 			_G[property:GetName()] = nil
-			
+
 			mod[key] = nil
 		end
 	end
@@ -160,9 +159,9 @@ local function setIconProperties(button, info)
 		button:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
 		button:RegisterEvent("UNIT_HEALTH")
 		button:RegisterEvent("PLAYER_FOCUS_CHANGED")
-		
+
 		button:SetScript("OnEvent", UpdateFadeState)
-		
+
 		button:HookScript("OnEnter", function(self)
 			E:UIFrameFadeIn(self, 0.2, self:GetAlpha(), 1)
 		end)
@@ -171,33 +170,33 @@ local function setIconProperties(button, info)
 			E:UIFrameFadeOut(self, 0.2, self:GetAlpha(), 1 - info.icon.fadeStrength)
 		end)
 	end
-	
+
     button.texture:SetTexCoord(unpack(E.TexCoords))
     button.texture:SetInside(button, E.mult, E.mult)
 
 	button.count:SetPoint("TOPLEFT", 2, -2)
 	button.count:SetFont(LSM:Fetch("font", info.icon.font.font), info.icon.font.size, info.icon.font.flag)
 	button.count:SetTextColor(unpack(info.icon.font.color))
-	
+
 	if info.icon.retrieveName then
         button.name:SetFont(LSM:Fetch("font", info.icon.font.font), info.icon.font.size, info.icon.font.flag)
         button.name:SetTextColor(unpack(info.icon.font.color))
         button.name:SetPoint(info.icon.namePos, 0, E:Scale((info.icon.namePos == "TOP" and 1 or -1) * 16))
 	end
-	
+
     if info.icon.bindKey then
 		button.bindKey = button:CreateFontString(nil, "OVERLAY")
         button.bindKey:SetFont(LSM:Fetch("font", info.icon.font.font), info.icon.font.size, info.icon.font.flag)
         button.bindKey:SetTextColor(unpack(info.icon.font.color))
 		button.bindKey:SetText(info.keybind)
-		
+
 		local hotkeyPosition = E.db.actionbar.hotkeyTextPosition or "TOPRIGHT"
 		local hotkeyXOffset = E.db.actionbar.hotkeyTextXOffset or 0
 		local hotkeyYOffset = E.db.actionbar.hotkeyTextYOffset or -3
 
 		local justify = "RIGHT"
 		local text = info.keybind
-		
+
 		if hotkeyPosition == "TOPLEFT" or hotkeyPosition == "BOTTOMLEFT" then
 			justify = "LEFT"
 		elseif hotkeyPosition == "TOP" or hotkeyPosition == "BOTTOM" then
@@ -229,7 +228,7 @@ local function setIconProperties(button, info)
 		button.bindKey:ClearAllPoints()
 		button.bindKey:Point(hotkeyPosition, hotkeyXOffset, hotkeyYOffset)
     end
-	
+
     if info.icon.macroText then
         button.macroText:ClearAllPoints()
         button.macroText:SetPoint("BOTTOM", 0, 1)
@@ -240,12 +239,12 @@ end
 
 local function updateTip(button, id)
 	button.isHovered = true
-	
+
 	if not id then
 		GameTooltip:Hide()
-		return 
+		return
 	end
-	
+
 	GameTooltip:SetOwner(button, "ANCHOR_TOP")
 
 	if IsSpellKnown(id) then
@@ -261,7 +260,7 @@ end
 
 local function abbrev(name)
 	local letters, lastWord = "", match(name, ".+%s(.+)$")
-	
+
 	if lastWord then
 		for word in gmatch(name, ".-%s") do
 			local firstLetter = utf8sub(gsub(word, "^[%s%p]*", ""), 1, 1)
@@ -271,9 +270,9 @@ local function abbrev(name)
 		end
 		name = format("%s%s", letters, lastWord)
 	end
-	
+
 	return name
-end	
+end
 
 
 P["Extras"]["general"][modName] = {
@@ -368,7 +367,7 @@ function mod:LoadConfig()
 			["attribute"] = {"attribute-frame", "attribute-name", "attribute-value"},
 			["destroytotem"] = {"totem-slot"},
 		}
-		
+
 		return attributes[actionType] or {}
 	end
 
@@ -381,7 +380,7 @@ function mod:LoadConfig()
 		end
 		return buttonName
 	end
-	
+
     core.general.args[modName] = {
         type = "group",
         name = L[modName],
@@ -409,7 +408,7 @@ function mod:LoadConfig()
 						type = "input",
 						name = L["Keybind"],
 						desc = L["ALT-CTRL-F, SHIFT-T, W, BUTTON4, etc."],
-						set = function(info, value)
+						set = function(_, value)
 							if find(value, "%S+") then
 								self:Toggle(true)
 							end
@@ -420,7 +419,7 @@ function mod:LoadConfig()
                         type = "input",
                         name = L["Rename Button"],
                         desc = "",
-                        set = function(info, value) 
+                        set = function(_, value)
 							if find(value, "%S+") then
 								for _, button in ipairs(db.buttons) do
 									if button.name == value then
@@ -436,7 +435,7 @@ function mod:LoadConfig()
                         type = "select",
                         name = L["Select Button"],
                         desc = "",
-                        values = function() 
+                        values = function()
                             local buttons = {}
                             for i, button in ipairs(db.buttons) do
                                 buttons[i] = button.name
@@ -495,19 +494,19 @@ function mod:LoadConfig()
 								},
 								["selectedTab"] = 1
                             }
-							
+
 							for type in pairs(actionTypes) do
 								local attributes = getActionAttributes(type)
 								buttonConfig.tabs[1].attributes[type] = {}
-								
+
 								for _, attr in ipairs(attributes) do
 									buttonConfig.tabs[1].attributes[type][attr] = ""
 								end
 							end
-							
+
                             tinsert(db.buttons, buttonConfig)
                             db.selectedButton = #db.buttons
-                            self:Toggle(true)          
+                            self:Toggle(true)
                         end,
 						disabled = function() return not db.enabled end,
                     },
@@ -530,8 +529,8 @@ function mod:LoadConfig()
 						name = L["Open Editor"],
 						desc = "",
 						func = function()
-							if not db.buttons[selectedButton()] then return end 
-							core:OpenEditor(L["Secure Execution: Block"], db.buttons[selectedButton()].blockCondition, function() db.buttons[selectedButton()].blockCondition = core.EditFrame.editBox:GetText() mod:Toggle(true) end) 
+							if not db.buttons[selectedButton()] then return end
+							core:OpenEditor(L["Secure Execution: Block"], db.buttons[selectedButton()].blockCondition, function() db.buttons[selectedButton()].blockCondition = core.EditFrame.editBox:GetText() mod:Toggle(true) end)
 						end
 					},
 					blockCondition = {
@@ -607,8 +606,8 @@ function mod:LoadConfig()
 						name = L["Shadow Color"],
 						desc = "",
 						hasAlpha = true,
-						get = function(info) return unpack(db.buttons[selectedButton()] and db.buttons[selectedButton()].icon.shadowColor) end,
-						set = function(info, r, g, b, a) db.buttons[selectedButton()].icon.shadowColor = {r, g, b, a} self:Toggle(true) end,
+						get = function() return unpack(db.buttons[selectedButton()] and db.buttons[selectedButton()].icon.shadowColor) end,
+						set = function(_, r, g, b, a) db.buttons[selectedButton()].icon.shadowColor = {r, g, b, a} self:Toggle(true) end,
 						hidden = function() return not db.buttons[selectedButton()] or not db.buttons[selectedButton()].icon.enabled end,
 					},
 					borderColor = {
@@ -616,8 +615,8 @@ function mod:LoadConfig()
 						type = "color",
 						name = L["Border Color"],
 						desc = "",
-						get = function(info) return unpack(db.buttons[selectedButton()] and db.buttons[selectedButton()].icon.borderColor) end,
-						set = function(info, r, g, b) db.buttons[selectedButton()].icon.borderColor = {r, g, b} self:Toggle(true) end,
+						get = function() return unpack(db.buttons[selectedButton()] and db.buttons[selectedButton()].icon.borderColor) end,
+						set = function(_, r, g, b) db.buttons[selectedButton()].icon.borderColor = {r, g, b} self:Toggle(true) end,
 						hidden = function() return not db.buttons[selectedButton()] or not db.buttons[selectedButton()].icon.enabled end,
 					},
 					shadowSize = {
@@ -676,8 +675,8 @@ function mod:LoadConfig()
 						type = "color",
 						name = L["Font Color"],
 						desc = "",
-						get = function(info) return unpack(db.buttons[selectedButton()] and db.buttons[selectedButton()].icon.font.color) end,
-						set = function(info, r, g, b) db.buttons[selectedButton()].icon.font.color = {r, g, b} self:Toggle(true) end,
+						get = function() return unpack(db.buttons[selectedButton()] and db.buttons[selectedButton()].icon.font.color) end,
+						set = function(_, r, g, b) db.buttons[selectedButton()].icon.font.color = {r, g, b} self:Toggle(true) end,
 						hidden = function() return not db.buttons[selectedButton()] or not db.buttons[selectedButton()].icon.enabled or not (db.buttons[selectedButton()].icon.bindKey or db.buttons[selectedButton()].icon.macroText) end,
 					},
 					fontSize = {
@@ -685,8 +684,8 @@ function mod:LoadConfig()
 						type = "range",
 						name = L["Font Size"],
 						desc = "",
-						get = function(info) return db.buttons[selectedButton()] and db.buttons[selectedButton()].icon.font.size end,
-						set = function(info, value) db.buttons[selectedButton()].icon.font.size = value self:Toggle(true) end,
+						get = function() return db.buttons[selectedButton()] and db.buttons[selectedButton()].icon.font.size end,
+						set = function(_, value) db.buttons[selectedButton()].icon.font.size = value self:Toggle(true) end,
 						min = 4, max = 33, step = 1,
 						hidden = function() return not db.buttons[selectedButton()] or not db.buttons[selectedButton()].icon.enabled or not (db.buttons[selectedButton()].icon.bindKey or db.buttons[selectedButton()].icon.macroText) end,
 					},
@@ -840,7 +839,7 @@ function mod:LoadConfig()
 						name = L["Tab Priority"],
 						desc = "",
 						get = function() return db.buttons[selectedButton()] and tostring(selectedTab()) end,
-						set = function(info, value)
+						set = function(_, value)
 							local tabCount = #db.buttons[selectedButton()].tabs
 							local targetTab = tonumber(value)
 
@@ -865,15 +864,15 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select Tab"],
 						desc = "",
-						values = function() 
+						values = function()
 							local tabs = {}
 							for i in ipairs(db.buttons[selectedButton()].tabs) do
 								tabs[i] = i
 							end
 							return tabs
 						end,
-						get = function(info) return db.buttons[selectedButton()].selectedTab or 1 end,
-						set = function(info, value) db.buttons[selectedButton()].selectedTab = value end,
+						get = function() return db.buttons[selectedButton()].selectedTab or 1 end,
+						set = function(_, value) db.buttons[selectedButton()].selectedTab = value end,
 						disabled = function() return not db.enabled or not db.buttons[selectedButton()] end,
 					},
 					addTab = {
@@ -894,16 +893,16 @@ function mod:LoadConfig()
 								["shadowColor"] = {0,0,0,0},
 								["borderColor"] = {0,0,0},
 							}
-							
+
 							for type in pairs(actionTypes) do
 								local attributes = getActionAttributes(type)
 								tabConfig.attributes[type] = {}
-								
+
 								for _, attr in ipairs(attributes) do
 									tabConfig.attributes[type][attr] = ""
 								end
 							end
-							
+
 							tinsert(db.buttons[selectedButton()].tabs, tabConfig)
 						end,
 						disabled = function() return not db.enabled or not db.buttons[selectedButton()] end,
@@ -916,7 +915,7 @@ function mod:LoadConfig()
 						func = function()
 							local tabs = db.buttons[selectedButton()].tabs
 							if #tabs <= 1 then return end
-							
+
 							tremove(tabs, selectedTab())
 							db.buttons[selectedButton()].selectedTab = 1
 							self:Toggle(true)
@@ -928,7 +927,7 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Action Type"],
 						desc = "",
-						set = function(info, value) 
+						set = function(info, value)
 							db.buttons[selectedButton()].tabs[selectedTab()].selectedAttribute = getActionAttributes(value)[1] or ""
 							db.buttons[selectedButton()].tabs[selectedTab()][info[#info]] = value
 							self:Toggle(true)
@@ -970,8 +969,8 @@ function mod:LoadConfig()
 						name = L["Open Editor"],
 						desc = "",
 						func = function()
-							if not db.buttons[selectedButton()] then return end 
-							core:OpenEditor(L["Secure Execution: Condition"], db.buttons[selectedButton()].tabs[selectedTab()].condition, function() db.buttons[selectedButton()].tabs[selectedTab()].condition = core.EditFrame.editBox:GetText() mod:Toggle(true) end) 
+							if not db.buttons[selectedButton()] then return end
+							core:OpenEditor(L["Secure Execution: Condition"], db.buttons[selectedButton()].tabs[selectedTab()].condition, function() db.buttons[selectedButton()].tabs[selectedTab()].condition = core.EditFrame.editBox:GetText() mod:Toggle(true) end)
 						end
 					},
 					value = {
@@ -981,8 +980,8 @@ function mod:LoadConfig()
 						multiline = true,
 						name = L["Action Value Editor"],
 						desc = "",
-						get = function(info) return db.buttons[selectedButton()] and db.buttons[selectedButton()].tabs[selectedTab()].attributes[selectedType()][selectedAttribute()] end,
-						set = function(info, value)
+						get = function() return db.buttons[selectedButton()] and db.buttons[selectedButton()].tabs[selectedTab()].attributes[selectedType()][selectedAttribute()] end,
+						set = function(_, value)
 							db.buttons[selectedButton()].tabs[selectedTab()].attributes[selectedType()][selectedAttribute()] = value
 							self:Toggle(true)
 						end,
@@ -999,14 +998,14 @@ function mod:LoadConfig()
 			},
         },
     }
-	
-	for _, info in ipairs(db.buttons) do 
+
+	for _, info in ipairs(db.buttons) do
 		for _, tab in ipairs(info.tabs) do
 			if not tab.attributes.macro then
 				for type in pairs(actionTypes) do
 					local attributes = getActionAttributes(type)
 					tab.attributes[type] = {}
-					
+
 					for _, attr in ipairs(attributes) do
 						tab.attributes[type][attr] = ""
 					end
@@ -1021,65 +1020,65 @@ function mod:SetButtonIcon(button, info, tabsIconInfo)
 	if not info.icon.enabled then return end
 
 	RegisterStateDriver(button, "visibility", info.icon.stateDriver)
-	
+
 	button.iconHandler = CreateFrame("Frame", nil, button)
 	button:SetFrameLevel(info.icon.level)
 	button:SetFrameStrata(info.icon.strata)
 	button:CreateShadow()
-	
+
 	button.texture = button:CreateTexture(nil, "BORDER")
 	button.texture:SetInside(button, E.mult, E.mult)
 	button.texture:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-	
+
 	button.cooldown = CreateFrame("Cooldown", info.name.."Cooldown", button, "CooldownFrameTemplate")
 	button.cooldown:SetAllPoints()
-	
+
 	button.macroText = button:CreateFontString(nil, "OVERLAY")
 	button.macroText:FontTemplate()
-	
+
 	button.count = button:CreateFontString(nil, "OVERLAY")
 	button.count:FontTemplate()
-	
+
 	button.name = button:CreateFontString(nil, "OVERLAY")
 	button.name:FontTemplate()
-	
+
 	E:RegisterCooldown(button.cooldown)
-	
+
 	button:Size(info.icon.size)
 	button:Point("CENTER")
 	button:SetTemplate("Transparent")
 	button:StyleButton()
-	
+
 	setIconProperties(button, info)
-	
+
 	E:CreateMover(button, info.name.."Mover", info.name, nil, nil, nil, "ALL,SOLO")
-	
+
 	if E.ConfigurationMode then
 		_G[info.name.."Mover"]:Show()
 	end
-	
+
 	local sS = info.icon.shadowSize
 	local sR, sG, sB, sA = unpack(info.icon.shadowColor)
 	local bR, bG, bB = unpack(info.icon.borderColor)
-	
+
 	local timeElapsed, throttle = 0, info.icon.throttle
-	
+
 	button:HookScript("OnEnter", function(self)
 		updateTip(self, self.currentId)
 	end)
 
 	button:HookScript("OnLeave", function(self)
 		self.isHovered = false
-		
+
 		GameTooltip:Hide()
 	end)
-	
-	button.iconHandler:SetScript("OnUpdate", function(self, elapsed)
+
+	button.iconHandler:SetScript("OnUpdate", function(_, elapsed)
 		timeElapsed = timeElapsed + elapsed
-		
+
 		if timeElapsed > throttle then
 			timeElapsed = 0
-				
+
 			if button:blockFunc() then
 				button.texture:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
 				button:SetBackdropBorderColor(bR, bG, bB)
@@ -1091,7 +1090,7 @@ function mod:SetButtonIcon(button, info, tabsIconInfo)
 			end
 
 			local found = false
-			
+
 			for _, tab in ipairs(tabsIconInfo) do
 				local func = tab.func
 				local unitFound = false
@@ -1118,64 +1117,64 @@ function mod:SetButtonIcon(button, info, tabsIconInfo)
 					button:SetBackdropBorderColor(unpack(tab.borderColor))
 					button.shadow:SetBackdropBorderColor(unpack(tab.shadowColor))
 					button.shadow:SetScale(tab.shadowSize)
-					
+
 					if tab.namePos then
 						local name = UnitName(unitFound) or ""
-						
+
 						if name ~= button.currentName then
 							button.name:SetText(tab.abbreviateName and abbrev(name) or name)
-							
+
 							if tab.reactionName or tab.className then
 								local _, class = UnitClass(unitFound)
-								
+
 								if class and tab.className and UnitIsPlayer(unitFound) then
 									local values = ElvUFColors.class[class]
 									local r, g, b
-									
-									if values then 
-										r, g, b = values[1], values[2], values[3] 
-									else
-										r, g, b = unpack(info.icon.font.color)
-									end
-									
-									button.name:SetTextColor(r, g, b)
-								else
-									local reaction = UnitReaction(unitFound, "player")
-									local values = reaction and ElvUFColors.reaction[reaction]
-									local r, g, b
-									
+
 									if values then
 										r, g, b = values[1], values[2], values[3]
 									else
 										r, g, b = unpack(info.icon.font.color)
 									end
-									
+
+									button.name:SetTextColor(r, g, b)
+								else
+									local reaction = UnitReaction(unitFound, "player")
+									local values = reaction and ElvUFColors.reaction[reaction]
+									local r, g, b
+
+									if values then
+										r, g, b = values[1], values[2], values[3]
+									else
+										r, g, b = unpack(info.icon.font.color)
+									end
+
 									button.name:SetTextColor(r, g, b)
 								end
 							end
-								
+
 							button.currentName = name
 						end
 					end
-					
+
 					local id = tab.id
-					
+
 					if button.isHovered and id ~= button.currentId then
 						updateTip(button, id)
 					end
-					
+
 					if id then
 						local cdInfo = tab.cdInfo
 						local start, duration, enable = cdInfo.start, cdInfo.duration, cdInfo.enable
-						
+
 						if not enable then
 							start, duration, enable = tab.cdCheck()
-							
+
 							cdInfo.start = start
 							cdInfo.duration = duration
 							cdInfo.enable = enable
 						end
-						
+
 						if enable then
 							if (start + duration) - GetTime() > 0 then
 								button.cooldown:SetCooldown(start, duration)
@@ -1188,7 +1187,7 @@ function mod:SetButtonIcon(button, info, tabsIconInfo)
 							button.cooldown:Hide()
 							twipe(cdInfo)
 						end
-						
+
 						button.currentId = id
 						button.texture:SetTexture(tab.texture == "" and tab.idTexture or tab.texture)
 					else
@@ -1196,20 +1195,20 @@ function mod:SetButtonIcon(button, info, tabsIconInfo)
 						button.texture:SetTexture(tab.texture)
 						button.cooldown:Hide()
 					end
-					
+
 					if tab.macroText then
 						button.macroText:SetText(tab.macroText or "")
 					else
 						button.macroText:SetText("")
 					end
-					
+
 					if tab.idSpell then
 						button.count:SetText("")
 					else
 						local count = GetItemCount(id)
 						button.count:SetText(count > 1 and count or "")
 					end
-					
+
 					found = true
 					break
 				end
@@ -1223,10 +1222,10 @@ function mod:SetButtonIcon(button, info, tabsIconInfo)
 				button.currentId = nil
 				button.currentName = nil
 				button.cooldown:Hide()
-				button.macroText:SetText("") 
+				button.macroText:SetText("")
 				button.count:SetText("")
 				button.name:SetText("")
-				
+
 				if button.isHovered then
 					GameTooltip:Hide()
 				end
@@ -1266,18 +1265,18 @@ function mod:PrepSecureButtons(button, unit, tabInfo, screenWidth, screenHeight,
 	button.targetSecureFrame = tabInfo.button
 	button.targetSecureFrame:SetClampedToScreen(true)
 	button.targetSecureFrame:SetClampRectInsets(screenWidth, screenWidth, screenHeight, screenHeight)
-	
+
 	if tabInfo.retrieveUnit then
 		if unit == 'nameplate' then
 			local encodedName = self:EncodeName(unitName, screenWidth, screenHeight)
-			
+
 			for i, pair in ipairs(encodedName) do
 				local unitButton = self.units["coder"..i]
-				
+
 				if unitButton then
 					local newX = -1 * pair[1] + scaledWidth
 					local newY = -1 * pair[2] + scaledHeight
-					
+
 					unitButton:SetClampedToScreen(true)
 					unitButton:SetClampRectInsets(
 						-newX,
@@ -1285,7 +1284,7 @@ function mod:PrepSecureButtons(button, unit, tabInfo, screenWidth, screenHeight,
 						screenHeight - newY,
 						-newY
 					)
-					
+
 					tinsert(button.unitSecureFrames, unitButton)
 				end
 			end
@@ -1295,7 +1294,7 @@ function mod:PrepSecureButtons(button, unit, tabInfo, screenWidth, screenHeight,
 			if unitButton then
 				unitButton:SetClampedToScreen(true)
 				unitButton:SetClampRectInsets(screenWidth, screenWidth, screenHeight, screenHeight)
-				
+
 				tinsert(button.unitSecureFrames, unitButton)
 			end
 		end
@@ -1307,7 +1306,7 @@ function mod:SetPosition(frame, scaledWidth, scaledHeight, screenWidth, screenHe
 
     local newX = (cursorX + scaledWidth) - frameWidth / 2
     local newY = (cursorY + scaledHeight) - frameHeight / 2
-    
+
 	frame:SetClampedToScreen(true)
     frame:SetClampRectInsets(
         -newX,
@@ -1329,53 +1328,53 @@ function mod:GetFrame(button, scaledWidth, scaledHeight, screenWidth, screenHeig
 
 			if frame:IsShown() and unit and func(frame, unit) then
 				self:PrepSecureButtons(button, unit, tabInfo, screenWidth, screenHeight)
-				
+
 				return frame, true
 			end
 		end
-		
+
 		if tabInfo.scanPlates then
 			if isAwesome then
 				for _, plate in pairs(GetNamePlates()) do
 					local frame, unit = plate.UnitFrame, plate.unit
-					
+
 					if frame and unit and func(frame, unit, true) then
 						if tabInfo.targetName then
 							self:PrepSecureButtons(button, 'nameplate', tabInfo, screenWidth, screenHeight, scaledWidth, scaledHeight, UnitName(unit))
 						else
 							self:PrepSecureButtons(button, 'mouseover', tabInfo, screenWidth, screenHeight)
 						end
-						
+
 						if tabInfo.putOnCursor then
 							button:SetScript("OnUpdate", function(self)
-								if not plate:IsShown() then 
+								if not plate:IsShown() then
 									self:SetScript("OnUpdate", nil)
-									
+
 									restoreUI(self)
 									return
 								else
 									mod:SetPosition(plate, scaledWidth, scaledHeight, screenWidth, screenHeight, plate:GetSize())
 								end
 							end)
-							
+
 							tinsert(broomedFrames, plate)
-							
+
 							if tabInfo.broomUI then
-								broomUI(screenWidth, screenWidth, screenHeight, screenHeight)
+								broomUI(screenWidth, screenHeight)
 							end
 						end
-						
+
 						return plate, nil
 					end
 				end
 			else
 				twipe(pendingPlates)
-				
+
 				for plate in pairs(NP.VisiblePlates) do
 					local frame = plate:GetParent()
 					frame:SetClampedToScreen(true)
 					frame:SetClampRectInsets(screenWidth, screenWidth, screenHeight, screenHeight)
-						
+
 					if not plate.isTarget then
 						tinsert(pendingPlates, frame)
 					else
@@ -1385,26 +1384,26 @@ function mod:GetFrame(button, scaledWidth, scaledHeight, screenWidth, screenHeig
 
 				local j = 1
 				local frame = pendingPlates[j]
-				
+
 				if frame then
 					if tabInfo.broomUI then
-						broomUI(screenWidth, screenWidth, screenHeight, screenHeight)
+						broomUI(screenWidth, screenHeight)
 					end
-					
+
 					button.isScaning = true
 					button:SetScript("OnUpdate", function(self)
 						if not self.isScaning or not frame then
 							self:SetScript("OnUpdate", nil)
 							restoreUI(self)
-							if not frame then 
+							if not frame then
 								button.frame = mod:GetFrame(button, scaledWidth, scaledHeight, screenWidth, screenHeight, i + 1)
 							end
 						elseif UnitExists('mouseover') then
 							if func(frame, 'mouseover', true) then
 								mod:PrepSecureButtons(self, 'mouseover', tabInfo, screenWidth, screenHeight)
 								self:SetScript("OnUpdate", function(self)
-									if not frame:IsShown() then 
-										self:SetScript("OnUpdate", nil) 
+									if not frame:IsShown() then
+										self:SetScript("OnUpdate", nil)
 										restoreUI(self)
 									else
 										mod:SetPosition(frame, scaledWidth, scaledHeight, screenWidth, screenHeight, frame:GetSize())
@@ -1431,18 +1430,18 @@ end
 
 function mod:PreClick(button, _, down)
 	if not down or button:blockFunc() then return end
-	
-	local screenWidth, screenHeight = GetScreenWidth(), GetScreenHeight()	
+
+	local screenWidth, screenHeight = GetScreenWidth(), GetScreenHeight()
 	local scale = UIParent:GetEffectiveScale()
 	local scaledWidth = (screenWidth * (1 - scale))
 	local scaledHeight = (screenHeight * (1 - scale))
-	
+
 	button.frame = self:GetFrame(button, scaledWidth, scaledHeight, screenWidth, screenHeight)
 end
 
 function mod:PostClick(button, _, down)
 	if down then return end
-	
+
 	local frame = button.frame
 
 	button.isScaning = false
@@ -1454,14 +1453,14 @@ function mod:PostClick(button, _, down)
 				self.targetSecureFrame:SetClampRectInsets(0, 0, 0, 0)
 				self.targetSecureFrame = nil
 			end
-			
+
 			for _, button in ipairs(self.unitSecureFrames) do
 				button:SetClampedToScreen(true)
 				button:SetClampRectInsets(0, 0, 0, 0)
 			end
-			
+
 			twipe(self.unitSecureFrames)
-			
+
 			self:SetScript("OnUpdate", nil)
 			restoreUI(self)
 		end
@@ -1472,50 +1471,49 @@ end
 function mod:Toggle(enable)
 	if enable then
 		existingFrames = core:AggregateUnitFrames()
-		
+
 		if not self.units then
 			self.units = {}
-			
+
 			local unitTypes = {
 				"mouseover", "player", "target", "focus", "pet",
 				"targettarget", "focustarget", "pettarget",
 				"maintank", "mainassist", "vehicle",
 			}
-			
+
 			local function createButton(unit)
 				local frame = CreateFrame("Button", nil, UIParent, "SecureHandlerBaseTemplate")
-				frame = CreateFrame("Button", nil, UIParent, "SecureHandlerBaseTemplate")
 				frame:SetAttribute("unit", unit)
 				frame:Size(1)
 				frame:Point("BOTTOMLEFT")
 				frame:SetClampedToScreen(true)
 				frame:SetClampRectInsets(0, 0, 0, 0)
 				frame.dontBroom = true
-				
+
 				return frame
 			end
-			
+
 			if isAwesome then
 				for i = 1, 40 do
 					self.units["coder"..i] = createButton("coder"..i)
 					self.units["coder"..i]:SetAttribute("coder", true)
 				end
 			end
-			
+
 			for _, type in ipairs(unitTypes) do
 				self.units[type] = createButton(type)
 			end
-			
+
 			for i = 1, 8 do
 				if i < 5 then
 					self.units["party"..i] = createButton("party"..i)
 					self.units["party"..i.."pet"] = createButton("party"..i.."pet")
 				end
-				
+
 				if i < 6 then
 					self.units["arena"..i] = createButton("arena"..i)
 				end
-				
+
 				self.units["boss"..i] = createButton("boss"..i)
 			end
 
@@ -1523,11 +1521,11 @@ function mod:Toggle(enable)
 				self.units["raid"..i] = createButton("raid"..i)
 				self.units["raid"..i.."pet"] = createButton("raid"..i.."pet")
 			end
-			
-			for unit, frame in pairs(self.units) do
+
+			for _, frame in pairs(self.units) do
 				tinsert(sortedUnits, frame)
 			end
-			
+
 			local function getFramePriority(unit)
 				if tcontains(unitTypes, unit) then
 					for i, value in ipairs(unitTypes) do
@@ -1553,32 +1551,32 @@ function mod:Toggle(enable)
 					return 999
 				end
 			end
-			
+
 			tsort(sortedUnits, function(a, b)
 				return getFramePriority(a:GetAttribute("unit")) < getFramePriority(b:GetAttribute("unit"))
 			end)
 		end
-		
+
 		wipeButtons()
 
-		for i, info in ipairs(E.db.Extras.general[modName].buttons) do
+		for _, info in ipairs(E.db.Extras.general[modName].buttons) do
 			self[info.name] = CreateFrame("Button", buttonIndex..info.name, UIParent, "SecureActionButtonTemplate, SecureHandlerBaseTemplate")
-	
+
 			if not self:IsHooked(self[info.name], "PreClick") then self:SecureHookScript(self[info.name], "PreClick") end
 			if not self:IsHooked(self[info.name], "PostClick") then self:SecureHookScript(self[info.name], "PostClick") end
-			
+
 			self[info.name].tabsInfo = {}
 			self[info.name].tabsIconInfo = {}
 			self[info.name].unitSecureFrames = {}
-			
+
 			self[info.name].blockFunc = function() end
 			self[info.name].dontBroom = true
 
 			local luaFunction, errorMsg = loadstring("return function() " .. info.blockCondition .. " end")
-			
+
 			if luaFunction then
 				local success, customFunc = pcall(luaFunction)
-				
+
 				if not success then
 					core:print('FAIL', L[modName], customFunc)
 				else
@@ -1587,17 +1585,17 @@ function mod:Toggle(enable)
 			else
 				core:print('LUA', L[modName], errorMsg)
 			end
-			
+
 			self[info.name]:RegisterForClicks("AnyUp", "AnyDown")
 			self[info.name]:SetAttribute("downbutton", "Button31")
 
 			self[info.name]:WrapScript(self[info.name], "OnClick", [[
 				if down then return end
-				
+
 				local i = 1
 				local buttonName = self:GetName()
 				local ref = self:GetFrameRef(buttonName..i)
-				
+
                 self:SetAttribute("type1", "")
 
 				while ref do
@@ -1606,9 +1604,9 @@ function mod:Toggle(enable)
                         local attr = ref:GetAttribute("attr"..j)
                         local value = ref:GetAttribute("value"..j)
 						local retrieve = ref:GetAttribute("retrieve")
-			
+
                         self:SetAttribute("type1", ref:GetAttribute("type"))
-						
+
 						while attr do
 							if retrieve then
 								local k = 1
@@ -1616,7 +1614,7 @@ function mod:Toggle(enable)
 								local unitFound = false
 
 								while unit do
-									if unit:GetRect() < 0 then    
+									if unit:GetRect() < 0 then
 										if unit:GetAttribute("coder") then
 											local floor, ceil = math.floor, math.ceil
 											local char = string.char
@@ -1627,52 +1625,52 @@ function mod:Toggle(enable)
 												local x, y = unit:GetRect()
 												local bytesX = ""
 												local bytesY = ""
-										
-												x, y = -1 * ceil(x), -1 * ceil(y)	
-												
+
+												x, y = -1 * ceil(x), -1 * ceil(y)
+
 												while x > 0 do
 													bytesX = char(x % 256) .. bytesX
 													x = floor(x / 256)
 												end
-												
+
 												while y > 0 do
 													bytesY = char(y % 256) .. bytesY
 													y = floor(y / 256)
 												end
-												
+
 												name = name .. bytesX .. bytesY
-												
+
 												n = n + 1
 												unit = self:GetFrameRef("unit"..n)
 											end
-											
+
 											self:SetAttribute(attr, string.gsub(value, "@unit", "@"..name))
 										else
 											self:SetAttribute(attr, string.gsub(value, "@unit", "@"..unit:GetAttribute("unit")))
 										end
-										
+
 										unitFound = true
 										break
 									end
-									
+
 									k = k + 1
 									unit = self:GetFrameRef("unit"..k)
 								end
-								
+
 								if not unitFound then
 									self:SetAttribute(attr, value)
 								end
 							else
 								self:SetAttribute(attr, value)
 							end
-								
+
 							j = j + 1
 							value = ref:GetAttribute("value"..j)
 							attr = ref:GetAttribute("attr"..j)
 						end
 						break
 					end
-					
+
 					i = i + 1
 					ref = self:GetFrameRef(buttonName..i)
 				end
@@ -1680,11 +1678,11 @@ function mod:Toggle(enable)
 
 			SetOverrideBindingClick(self[info.name], true, info.keybind, self[info.name]:GetName())
 			RegisterStateDriver(self[info.name], "visibility", info.visibilityState or "show")
-		
+
 			for i, frame in ipairs(sortedUnits) do
 				self[info.name]:SetFrameRef("unit"..i, frame)
 			end
-			
+
 			for j, values in ipairs(info.tabs) do
 				self[info.name..j] = self[info.name..j] or CreateFrame("Button", buttonIndex..info.name..j, UIParent, "SecureHandlerBaseTemplate")
 				self[info.name..j]:Size(1)
@@ -1692,14 +1690,14 @@ function mod:Toggle(enable)
 				self[info.name..j]:SetClampedToScreen(true)
 				self[info.name..j]:SetClampRectInsets(0, 0, 0, 0)
 				self[info.name..j].dontBroom = true
-				
+
 				self[info.name]:SetFrameRef(buttonIndex..info.name..j, self[info.name..j])
-				
+
 				if values.enabled then
 					if values.attributes[values.selectedType] then
 						local p = 1
 						local unitFound = false
-						
+
 						for attr, value in pairs(values.attributes[values.selectedType]) do
 							if trim(value) ~= "" then
 								self[info.name..j]:SetAttribute("attr"..p, attr)
@@ -1708,32 +1706,32 @@ function mod:Toggle(enable)
 								unitFound = unitFound or find(value, "@unit")
 								p = p + 1
 							end
-						end	
+						end
 
 						self[info.name..j]:SetAttribute("type", values.selectedType)
 						self[info.name..j]:SetAttribute("retrieve", values.retrieveUnit and unitFound)
 					else
 						core:print('FAIL', L[modName], L["Something went wrong while retrieving the action attributes."])
 					end
-					
+
 					local luaFunction, errorMsg = loadstring("return function(frame, unit, isPlate) " .. values.condition .. " end")
-					
+
 					if luaFunction then
 						local success, customFunc = pcall(luaFunction)
-						
+
 						if not success then
 							core:print('FAIL', L[modName], customFunc)
 						else
 							tinsert(self[info.name].tabsInfo, {
-								func = customFunc, 
-								button = self[info.name..j], 
-								scanPlates = values.scanPlates, 
-								retrieveUnit = values.retrieveUnit, 
-								broomUI = values.scanPlates and values.broomUI, 
+								func = customFunc,
+								button = self[info.name..j],
+								scanPlates = values.scanPlates,
+								retrieveUnit = values.retrieveUnit,
+								broomUI = values.scanPlates and values.broomUI,
 								putOnCursor = isAwesome and values.scanPlates and values.putOnCursor,
 								targetName = isAwesome and values.scanPlates and values.retrieveUnit and values.targetName
 							})
-							
+
 							if info.icon.enabled then
 								local id = values.id
 								local isSpell = id and IsSpellKnown(id)
@@ -1752,9 +1750,9 @@ function mod:Toggle(enable)
 									abbreviateName = info.icon.abbreviateName,
 									reactionName = info.icon.reactionName,
 									className = info.icon.className,
-									
-									func = customFunc, 
-									scanPlates = isAwesome and values.scanPlates, 
+
+									func = customFunc,
+									scanPlates = isAwesome and values.scanPlates,
 								})
 							end
 						end
@@ -1763,22 +1761,22 @@ function mod:Toggle(enable)
 					end
 				end
 			end
-			
+
 			self:SetButtonIcon(self[info.name], info, self[info.name].tabsIconInfo)
 		end
-		
+
 		-- fucking blizzard caching my shit
 		buttonIndex = buttonIndex + 1
-		
+
 		initialized = true
 	elseif initialized then
-		for i, info in ipairs(E.db.Extras.general[modName].buttons) do
+		for _, info in ipairs(E.db.Extras.general[modName].buttons) do
 			if self:IsHooked(self[info.name], "PreClick") then self:Unhook(self[info.name], "PreClick") end
 			if self:IsHooked(self[info.name], "PostClick") then self:Unhook(self[info.name], "PostClick") end
-			
+
 			ClearOverrideBindings(self[info.name])
 		end
-		
+
 		wipeButtons()
 	end
 end
@@ -1786,7 +1784,7 @@ end
 function mod:InitializeCallback()
 	mod:LoadConfig()
 	mod:Toggle(E.db.Extras.general[modName].enabled)
-	
+
 	tinsert(core.frameUpdates, function()
 		existingFrames = core:AggregateUnitFrames()
 	end)

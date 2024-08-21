@@ -33,7 +33,7 @@ P["Extras"]["nameplates"][modName] = {
 
 function mod:LoadConfig()
 	local db = E.db.Extras.nameplates[modName]
-	
+
 	local function populateModifierValues(othervala, othervalb)
 		local modsList = {}
 		for mod, val in pairs(E.db.Extras.modifiers) do
@@ -46,7 +46,7 @@ function mod:LoadConfig()
 		end
 		return modsList
 	end
-	
+
 	core.nameplates.args[modName] = {
 		type = "group",
 		name = L[modName],
@@ -72,7 +72,7 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Use Backdrop"],
 						desc = "",
-						disabled = function(info) return not E.db.Extras.nameplates[modName].enabled end,
+						disabled = function() return not E.db.Extras.nameplates[modName].enabled end,
 						get = function(info) return db[info[#info]] end,
 						set = function(info, value) db[info[#info]] = value self:UpdateAllPlates() end,
 					},
@@ -82,7 +82,7 @@ function mod:LoadConfig()
 				type = "group",
 				guiInline = true,
 				name = L["Settings"],
-				disabled = function(info) return not db.enabled end,
+				disabled = function() return not db.enabled end,
 				get = function(info) return db[info[#info]] end,
 				set = function(info, value) db[info[#info]] = value self:UpdateAllPlates() end,
 				args = {
@@ -113,7 +113,7 @@ function mod:LoadConfig()
 						min = -60, max = 60, step = 1,
 						name = L["Y Offset"],
 						desc = "",
-					},	
+					},
 					point = {
 						order = 5,
 						type = "select",
@@ -171,27 +171,26 @@ end
 
 local function createIcon(frame)
 	if not frame or frame.questIcon then return end
-	
+
 	local questIcon = CreateFrame("Frame")
 	local texture = questIcon:CreateTexture(nil, "ARTWORK")
-	
-	texture:SetTexCoord(unpack(E.TexCoords)) 
-	
+
+	texture:SetTexCoord(unpack(E.TexCoords))
+
 	local offset = E.PixelMode and E.mult or E.Border
 	texture:SetInside(questIcon, offset, offset)
-	
+
 	questIcon.texture = texture
-	
+
 	questIcon:SetParent(frame)
 	questIcon:Hide()
-	
+
 	frame.questIcon = questIcon
-	
+
 	local db = E.db.Extras.nameplates[modName]
-	local healthEnabled = healthEnabled[frame.UnitType]
 	local frameHealth = frame.Health
 
-	if not healthEnabled then
+	if not healthEnabled[frame.UnitType] then
 		if not mod:IsHooked(frameHealth, "OnShow") then
 			mod:SecureHookScript(frameHealth, "OnShow", function(self)
 				local questIcon = frame.questIcon
@@ -223,7 +222,7 @@ function mod:MarkUnmark(show, unitType, unitName)
 		markedUnits[unitType..unitName] = nil
 	end
 end
-	
+
 function mod:UpdateQuestIcon(frame, questIcon, db)
 	if db.useBackdrop then
 		if not questIcon.backdrop then
@@ -233,7 +232,7 @@ function mod:UpdateQuestIcon(frame, questIcon, db)
 	elseif questIcon.backdrop then
 		questIcon.backdrop:Hide()
 	end
-	
+
 	questIcon:ClearAllPoints()
 	questIcon:SetFrameStrata(db.strata)
 	questIcon:Size(db.iconSize)
@@ -243,12 +242,12 @@ end
 
 function mod:UpdateAllPlates()
 	local db = E.db.Extras.nameplates[modName]
-	
+
 	for frame in pairs(NP.VisiblePlates) do
 		local questIcon = frame.questIcon
 		if questIcon then
 			self:UpdateQuestIcon(frame, questIcon, db)
-			
+
 			if markedUnits[frame.UnitType..frame.UnitName] then
 				questIcon:Show()
 			else
@@ -256,25 +255,25 @@ function mod:UpdateAllPlates()
 			end
 		end
 	end
-end	
-	
+end
+
 function mod:SlashCommandHandler(msg)
 	local modifier = msg
 	if not find(modifier, '%S+') then
 		local db = E.db.Extras.nameplates[modName]
-		
+
 		for _, toggle in ipairs({"mark", "unmark", "unmarkall"}) do
 			if db.modifiers[toggle] == 'NONE' or _G['Is'..db.modifiers[toggle]..'KeyDown']() then
 				modifier = toggle
 			end
 		end
 	end
-	
+
 	if not modifier then return end
-	
-	if modifier == "unmarkall" then 
-		twipe(markedUnits) 
-		self:UpdateAllPlates() 
+
+	if modifier == "unmarkall" then
+		twipe(markedUnits)
+		self:UpdateAllPlates()
 		return
 	else
 		for _, unit in ipairs({'mouseover', 'target'}) do
@@ -295,7 +294,7 @@ function mod:OnCreated(self, plate)
 	createIcon(plate.UnitFrame)
 end
 
-function mod:OnShow(self, isConfig, dontHideHighlight)
+function mod:OnShow(self)
 	local frame = self.UnitFrame
 	local unitType, unitName = frame.UnitType, frame.UnitName
 	if frame.questIcon then
@@ -307,7 +306,7 @@ function mod:OnShow(self, isConfig, dontHideHighlight)
 	end
 end
 
-function mod:OnHide(self, isConfig, dontHideHighlight)
+function mod:OnHide(self)
 	local frame = self.UnitFrame
 	if frame.questIcon then
 		frame.questIcon:Hide()
@@ -315,33 +314,33 @@ function mod:OnHide(self, isConfig, dontHideHighlight)
 end
 
 
-mod:SecureHook(NP, "UpdateAllFrame", function() 
+mod:SecureHook(NP, "UpdateAllFrame", function()
 	healthEnabled["FRIENDLY_NPC"] = NP.db.units["FRIENDLY_NPC"].health.enable
 	healthEnabled["ENEMY_NPC"] = NP.db.units["ENEMY_NPC"].health.enable
-	
+
 	for plate in ipairs(NP.CreatedPlates) do
 		if plate:GetName() ~= "ElvNP_Test" then
 			local frame = plate.UnitFrame
 			local questIcon = frame and frame.questIcon
 			if questIcon then
 				questIcon:Hide()
-				questIcon = nil
-				
+				frame.questIcon = nil
+
 				createIcon(frame)
 			end
 		end
 	end
 end)
 
- 
+
 function mod:Toggle(enable)
     if enable then
 		SLASH_QMARK1 = "/qmark"
 		SlashCmdList["QMARK"] = function(msg) mod:SlashCommandHandler(msg) end
 		if not self:IsHooked(NP, "OnCreated") then self:SecureHook(NP, "OnCreated") end
-		if not self:IsHooked(NP, "OnHide") then self:SecureHook(NP, "OnHide") end	
+		if not self:IsHooked(NP, "OnHide") then self:SecureHook(NP, "OnHide") end
 		if not self:IsHooked(NP, "OnShow") then self:SecureHook(NP, "OnShow") end
-		
+
 		for plate in pairs(NP.CreatedPlates) do
 			if plate:GetName() ~= "ElvNP_Test" then
 				createIcon(plate.UnitFrame)
@@ -352,7 +351,7 @@ function mod:Toggle(enable)
 		SlashCmdList["QMARK"] = nil
 		hash_SlashCmdList["/QMARK"] = nil
 		if self:IsHooked(NP, "OnCreated") then self:Unhook(NP, "OnCreated") end
-		if self:IsHooked(NP, "OnHide") then self:Unhook(NP, "OnHide") end	
+		if self:IsHooked(NP, "OnHide") then self:Unhook(NP, "OnHide") end
 		if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
 		twipe(markedUnits)
     end
@@ -361,7 +360,7 @@ end
 
 function mod:InitializeCallback()
 	if not E.private.nameplates.enable then return end
-	
+
 	mod:LoadConfig()
 	mod:Toggle(E.db.Extras.nameplates[modName].enabled)
 end

@@ -6,11 +6,11 @@
 	<Include file="General\CustomCommands.lua"/>>
 	<Include file="General\Chat.lua"/>>
 	<Include file="General\SecureExecution.lua"/>>
-	
+
 	<Include file="Blizzard\Automation.lua"/>>
 	<Include file="Blizzard\LootStyle.lua"/>>
 	<Include file="Blizzard\Misc.lua"/>>
-	
+
 	<Include file="Nameplates\Auras.lua"/>>
 	<Include file="Nameplates\NameLevel.lua"/>>
 	<Include file="Nameplates\QuestIcons.lua"/>>
@@ -18,7 +18,7 @@
 	<Include file="Nameplates\ClassificationIcons.lua"/>>
 	<Include file="Nameplates\Cooldowns.lua"/>>
 	<Include file="Nameplates\StyleFilter.lua"/>>
-	
+
 	<Include file="Unitframes\Auras.lua"/>>
 	<Include file="Unitframes\Misc.lua"/>>
 	<Include file="Unitframes\AuraBars.lua"/>>

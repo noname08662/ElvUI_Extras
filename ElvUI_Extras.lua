@@ -5,11 +5,10 @@ local NP = E:GetModule("NamePlates")
 local S = E:GetModule("Skins")
 local EP = E.Libs.EP
 local LSM = E.Libs.LSM
-local ACD = E.Libs.AceConfigDialog
 local ElvUF = E.oUF
 
 local AddOnName = ...
-local isAwesome = C_NamePlate and E.private.nameplates.enable 
+local isAwesome = C_NamePlate and E.private.nameplates.enable
 local taggedFrames, tags = {}, {}
 
 core.modules = {}
@@ -18,14 +17,15 @@ core.frameUpdates = {}
 
 local CreateFrame, UIParent, UIDropDownMenu_Refresh = CreateFrame, UIParent, UIDropDownMenu_Refresh
 local _G, unpack, pairs, ipairs, select, tonumber, print = _G, unpack, pairs, ipairs, select, tonumber, print
-local gsub, find, sub, lower, upper, match, format = string.gsub, string.find, string.sub, string.lower, string.upper, string.match, string.format
+local gsub, find, sub, lower, upper, format = string.gsub, string.find, string.sub, string.lower, string.upper, string.format
 local min, max, ceil, floor = math.min, math.max, math.ceil, math.floor
 local tinsert, tremove, twipe, tsort = table.insert, table.remove, table.wipe, table.sort
-local UnitGUID, UnitName, UnitClass, UnitExists, UnitThreatSituation, GetThreatStatusColor = UnitGUID, UnitName, UnitClass, UnitExists, UnitThreatSituation, GetThreatStatusColor
+local UnitGUID, UnitClass, UnitExists = UnitGUID, UnitClass, UnitExists
+local UnitThreatSituation, GetThreatStatusColor = UnitThreatSituation, GetThreatStatusColor
 local UnitReaction, UnitIsPlayer, UnitFactionGroup = UnitReaction, UnitIsPlayer, UnitFactionGroup
 local GetNumMacroIcons, GetMacroIconInfo, GameTooltip = GetNumMacroIcons, GetMacroIconInfo, GameTooltip
-local GetFriendInfo, IsInGuild, GetNumGuildMembers, GetGuildRosterInfo, GetRaidRosterInfo = GetFriendInfo, IsInGuild, GetNumGuildMembers, GetGuildRosterInfo, GetRaidRosterInfo
-local UnitIsSameServer, UnitPopupMenus, UnitPopupShown, IsPartyLeader, IsRaidOfficer = UnitIsSameServer, UnitPopupMenus, UnitPopupShown, IsPartyLeader, IsRaidOfficer
+local UnitPopupMenus, UnitPopupShown = UnitPopupMenus, UnitPopupShown
+local GetRaidRosterInfo, IsPartyLeader, IsRaidOfficer = GetRaidRosterInfo, IsPartyLeader, IsRaidOfficer
 local LUA_ERROR, FORMATTING, ERROR_CAPS = LUA_ERROR, FORMATTING, ERROR_CAPS
 
 local E_Delay = E.Delay
@@ -36,11 +36,11 @@ local function colorConvert(r, g, b)
         return format("|cff%02x%02x%02x", r * 255, g * 255, b * 255)
 	else
 		local hex = gsub(r, "|c%w%w", "")
-		
-		local r = tonumber(sub(hex, 1, 2), 16) / 255
-		local g = tonumber(sub(hex, 3, 4), 16) / 255
-		local b = tonumber(sub(hex, 5, 6), 16) / 255
-		
+
+		r = tonumber(sub(hex, 1, 2), 16) / 255
+		g = tonumber(sub(hex, 3, 4), 16) / 255
+		b = tonumber(sub(hex, 5, 6), 16) / 255
+
 		return r, g, b
 	end
 end
@@ -55,10 +55,10 @@ local function createSecurePromoteButton(name, role)
     button:SetAttribute("type", role)
     button:SetAttribute("unit", "target")
     button:SetAttribute("action", "toggle")
-    
+
 	button:RegisterEvent("PLAYER_REGEN_DISABLED")
 	button:RegisterEvent("PLAYER_REGEN_ENABLED")
-	
+
     return button
 end
 
@@ -71,13 +71,13 @@ local function setButton(unit, button, newButton)
 	newButton:SetScript("OnLeave", function()
 		button:GetScript("OnLeave")(button)
 	end)
-	newButton:SetScript("OnMouseDown", function(self)
+	newButton:SetScript("OnMouseDown", function()
 		button:SetButtonState("PUSHED")
 	end)
-	newButton:SetScript("OnMouseUp", function(self)
+	newButton:SetScript("OnMouseUp", function()
 		button:SetButtonState("NORMAL")
 	end)
-	newButton:SetScript("PostClick", function(self)
+	newButton:SetScript("PostClick", function()
 		button:GetScript("OnClick")(button)
 	end)
 	newButton:SetScript("OnEvent", function(self, event)
@@ -101,7 +101,7 @@ if not core:IsHooked("UnitPopup_OnClick") then
     core:SecureHook("UnitPopup_OnClick", function(self)
         local button = self.value
         local dropdownFrame = UIDROPDOWNMENU_INIT_MENU
-		
+
         if button == "RAID_MAINTANK" or button == "RAID_MAINASSIST" then
            UIDropDownMenu_Refresh(dropdownFrame, nil, 1)
         end
@@ -109,17 +109,12 @@ if not core:IsHooked("UnitPopup_OnClick") then
 end
 
 if not core:IsHooked("UnitPopup_ShowMenu") then
-    core:SecureHook("UnitPopup_ShowMenu", function(dropdownMenu, which, unit, name, userData)
+    core:SecureHook("UnitPopup_ShowMenu", function(_, _, unit)
         if UIDROPDOWNMENU_MENU_LEVEL ~= 1 then return end
-        
-        local fullname = name
-        if dropdownMenu.server and (not unit or not UnitIsSameServer("player", unit)) then
-            fullname = name.."-"..dropdownMenu.server
-        end
-        
+
 		for i = 1, UIDROPDOWNMENU_MAXBUTTONS do
 			local button = _G["DropDownList1Button"..i]
-			if button and button:IsShown() then 
+			if button and button:IsShown() then
 				if button.value == "RAID_MAINTANK" then
 					setButton(unit, button, secureTankButton)
 				elseif button.value == "RAID_MAINASSIST" then
@@ -134,9 +129,9 @@ if not core:IsHooked("UnitPopup_HideButtons") then
     core:SecureHook("UnitPopup_HideButtons", function()
         local dropdownMenu = UIDROPDOWNMENU_INIT_MENU
 		local isAuthority = IsPartyLeader() or IsRaidOfficer()
-		
+
 		if dropdownMenu.which ~= "RAID" or not isAuthority then return end
-		
+
         for index, value in ipairs(UnitPopupMenus[dropdownMenu.which]) do
             if value == "RAID_MAINTANK" then
 				local role = select(10,GetRaidRosterInfo(dropdownMenu.userData))
@@ -150,7 +145,7 @@ if not core:IsHooked("UnitPopup_HideButtons") then
 				end
             end
         end
-    end) 
+    end)
 end
 
 if not core:IsHooked(DropDownList1, "OnHide") then
@@ -188,11 +183,14 @@ end
 
 function core:print(type, ...)
 	if type == 'LUA' then
-		print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..core.customColorBeta.." %s "..core.customColorBad..LUA_ERROR..core.customColorAlpha..":|r %s", ...))
+		print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
+					core.customColorBeta.." %s "..core.customColorBad..LUA_ERROR..core.customColorAlpha..":|r %s", ...))
 	elseif type == 'FORMATTING' then
-		print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..core.customColorBeta.." %s "..core.customColorBad.." "..FORMATTING.." "..ERROR_CAPS, ...))
+		print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
+					core.customColorBeta.." %s "..core.customColorBad.." "..FORMATTING.." "..ERROR_CAPS, ...))
 	elseif type == 'FAIL' then
-		print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..core.customColorBeta.." %s "..core.customColorAlpha..":|r %s", ...))
+		print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
+					core.customColorBeta.." %s "..core.customColorAlpha..":|r %s", ...))
 	elseif type == 'ADDED' then
 		print(format(core.customColorAlpha.."%s"..core.customColorBeta..(select(2,...) and "%s" or L[" added."]), ...))
 	elseif type == 'REMOVED' then
@@ -224,7 +222,6 @@ if isAwesome then
 	local mouseover = CreateFrame("Frame")
 	local GetNamePlates = C_NamePlate.GetNamePlates
 	local GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
-	local visiblePlatesOld = GetNamePlates()
 	local LAI = E.Libs.LAI
 
 
@@ -237,7 +234,7 @@ if isAwesome then
 			end
 		else
 			target.exists = true
-			target:SetScript('OnUpdate', function(self, elapsed)
+			target:SetScript('OnUpdate', function()
 				for _, np in pairs(GetNamePlates()) do
 					local frame = np.UnitFrame
 					if not frame.isTarget then
@@ -251,7 +248,7 @@ if isAwesome then
 						NP:SetTargetFrame(np.UnitFrame)
 					end
 					target.exists = false
-					target:SetScript('OnUpdate', nil) 
+					target:SetScript('OnUpdate', nil)
 				end
 			end)
 			local plate = GetNamePlateForUnit('target')
@@ -263,7 +260,7 @@ if isAwesome then
 			end
 		end
 	end)
-	
+
 	core:RegisterEvent('UPDATE_MOUSEOVER_UNIT', function()
 		local plate = GetNamePlateForUnit('mouseover')
 		if not plate or not plate.UnitFrame then return end
@@ -272,7 +269,10 @@ if isAwesome then
 		mouseover:SetScript("OnUpdate", function()
 			for _, np in pairs(GetNamePlates()) do
 				local unitframe = np.UnitFrame
-				if unitframe and unitframe.isMouseover and np.unit and UnitGUID(plate.unit) ~= UnitGUID(np.unit) then NP:SetMouseoverFrame(unitframe) end
+				local unit = np.unit
+				if unitframe and unitframe.isMouseover and unit and UnitGUID(plate.unit) ~= UnitGUID(unit) then
+					NP:SetMouseoverFrame(unitframe)
+				end
 			end
 			if not UnitExists('mouseover') then
 				NP:SetMouseoverFrame(frame)
@@ -281,7 +281,7 @@ if isAwesome then
 			end
 		end)
 	end)
-	
+
 	core:RegisterEvent('UNIT_THREAT_LIST_UPDATE', function(_, unit)
 		if not unit then return end
 		local plate = GetNamePlateForUnit(unit)
@@ -292,34 +292,34 @@ if isAwesome then
 			NP:Update_HealthColor(plate.UnitFrame)
 		end
 	end)
-	
+
 	core:RegisterEvent('NAME_PLATE_CREATED', function(_, plate)
 		local onShow, onHide = plate:GetScript("OnShow"), plate:GetScript("OnHide")
 		NP:OnCreated(plate)
 		plate:SetScript("OnShow", onShow)
 		plate:SetScript("OnHide", onHide)
 	end)
-	
+
 	core:RegisterEvent('NAME_PLATE_OWNER_CHANGED', function(_, unit)
 		local plate = GetNamePlateForUnit(unit)
 		core:UpdateNameplate(plate.UnitFrame, unit)
 		NP.OnShow(plate, nil, true)
 	end)
-	
+
 	core:RegisterEvent('NAME_PLATE_UNIT_REMOVED', function(_, unit)
 		local plate = GetNamePlateForUnit(unit)
 		if plate then plate.unit = nil end
 		NP.OnHide(plate, nil, true)
 	end)
-	
+
 	core:RegisterEvent('NAME_PLATE_UNIT_ADDED', function(_, unit)
 		local plate = GetNamePlateForUnit(unit)
 		if plate then plate.unit = unit end
 		core:UpdateNameplate(plate.UnitFrame, unit)
 		NP.OnShow(plate, nil, true)
 	end)
-	
-	
+
+
 	function core:UpdateNameplate(frame, unit)
 		local guid = UnitGUID(unit)
 		LAI:RemoveAllAurasFromGUID(guid)
@@ -328,8 +328,8 @@ if isAwesome then
 			frame.ThreatStatus = UnitThreatSituation("player", unit)
 		end
 	end
-	
-	function core:SetTargetFrame(self, frame)
+
+	function core:SetTargetFrame(_, frame)
 		local unit = frame:GetParent().unit
 		if not unit then return end
 		local isTargetUnit = UnitGUID(unit) == UnitGUID("target")
@@ -379,26 +379,26 @@ if isAwesome then
 		NP:Configure_Glow(frame)
 		NP:Update_Glow(frame)
 	end
-	
+
 	function core:GetUnitByName(self, frame, unitType)
 		local plate = frame:GetParent()
 		if plate.unit then return plate.unit end
 		return core.hooks[NP].GetUnitByName(self, frame, unitType)
 	end
-	
+
 	function core:UnitClass(self, frame, unitType)
 		local plate = frame:GetParent()
 		if plate.unit then return select(2,UnitClass(plate.unit)) end
 		return core.hooks[NP].UnitClass(self, frame, unitType)
 	end
-	
+
 	function core:GetUnitInfo(self, frame)
 		local plate = frame:GetParent()
 		if plate.unit then
 			local reaction = UnitReaction("player", plate.unit)
 			local isPlayer = UnitIsPlayer(plate.unit)
 			local unitType
-			
+
 			if isPlayer and reaction and reaction >= 5 then
 				unitType = "FRIENDLY_PLAYER"
 			elseif not isPlayer and (reaction and reaction >= 5) or UnitFactionGroup(plate.unit) == "Neutral" then
@@ -412,14 +412,14 @@ if isAwesome then
 		end
 		return core.hooks[NP].GetUnitInfo(self, frame)
 	end
-	
+
 	function core:UnitDetailedThreatSituation(self, frame)
 		local plate = frame:GetParent()
 		if plate.unit then return UnitThreatSituation("player", plate.unit) end
 		return core.hooks[NP].UnitDetailedThreatSituation(self, frame)
 	end
-	
-	function core:ResetNameplateFrameLevel(self, frame)
+
+	function core:ResetNameplateFrameLevel(_, frame)
 		if frame.FrameLevelChanged then
 			--calculate Style Filter FrameLevelChanged leveling
 			--level method: (10*(40*2)) max 800 + max 80 (40*2) = max 880
@@ -427,17 +427,19 @@ if isAwesome then
 			--local leveledCount = NP.CollectedFrameLevelCount or 1
 			--level = (frame.FrameLevelChanged*(40*NP.levelStep)) + (leveledCount*NP.levelStep)
 			local level = #GetNamePlates() + frame.FrameLevelChanged * 10
-		
+
 			frame:SetFrameLevel(level+1)
 			frame.Shadow:SetFrameLevel(level-1)
 			frame.Buffs:SetFrameLevel(level+1)
 			frame.Debuffs:SetFrameLevel(level+1)
 			frame.LevelHandled = true
-			
+
 			local target = GetNamePlateForUnit('target')
-			if target and target.UnitFrame and target.UnitFrame:IsShown() and frame ~= target.UnitFrame then
-				if level > target.UnitFrame:GetFrameLevel() then
-					target.UnitFrame:SetFrameLevel(frame:GetFrameLevel() + 10)
+			local plate = target and target.UnitFrame
+
+			if plate and plate:IsShown() and frame ~= plate then
+				if level > plate:GetFrameLevel() then
+					plate:SetFrameLevel(frame:GetFrameLevel() + 10)
 				end
 			end
 		elseif frame.LevelHandled then
@@ -449,15 +451,16 @@ if isAwesome then
 			frame.LevelHandled = false
 		end
 	end
-	
 
-	if not core:IsHooked(NP, "OnUpdate") then core:RawHook(NP, "OnUpdate", function(self) self:SetScript('OnUpdate', nil) end) end
+
+	if not core:IsHooked(NP, "OnUpdate") then
+		core:RawHook(NP, "OnUpdate", function(self) self:SetScript('OnUpdate', nil) end)
+	end
 end
 --
 
 
 function core:AggregateUnitFrames()
-	local db = E.db.unitframe.units
     local units = {}
 	for _, frame in ipairs(ElvUF.objects) do
 		tinsert(units, frame)
@@ -503,7 +506,7 @@ function core:OpenEditor(title, text, acceptFunc)
 				E:ToggleOptionsUI()
 			end
 		end)
-		
+
 		self.EditFrame.header = CreateFrame("Button", nil, self.EditFrame)
 		self.EditFrame.header:SetTemplate(nil, true)
 		self.EditFrame.header:Size(100, 25)
@@ -513,11 +516,11 @@ function core:OpenEditor(title, text, acceptFunc)
 		self.EditFrame.header:SetScript("OnShow", E.MoverNudgeOnShow)
 		self.EditFrame.header:EnableMouse(true)
 		self.EditFrame.header:RegisterForClicks("AnyUp", "AnyDown")
-		
+
 		self.EditFrame.header:SetScript("OnMouseDown", function()
 			core.EditFrame:StartMoving()
 		end)
-		
+
 		self.EditFrame.header:SetScript("OnMouseUp", function()
 			core.EditFrame:StopMovingOrSizing()
 		end)
@@ -527,16 +530,16 @@ function core:OpenEditor(title, text, acceptFunc)
 		self.EditFrame.title:Point("CENTER", self.EditFrame.header, "CENTER")
 		self.EditFrame.title:SetText(title)
 		self.EditFrame.title:SetTextColor(1, 0.82, 0)
-		
+
 		self.EditFrame.header:Width(self.EditFrame.title:GetStringWidth() + 16)
 
 		self.EditFrame.scrollFrame = CreateFrame("ScrollFrame", "ElvUI_Extras_EditorScrollFrame", self.EditFrame, "UIPanelScrollFrameTemplate")
 		self.EditFrame.scrollFrame:Point("TOP", self.EditFrame.title, "BOTTOM", 0, -16)
 		self.EditFrame.scrollFrame:Size(540, 330)
-		
+
 		local scrollBar = _G['ElvUI_Extras_EditorScrollFrameScrollBar']
 		scrollBar:SetAlpha(0)
-		
+
 		self.EditFrame.editBox = CreateFrame("EditBox", "ElvUI_Extras_EditorEditBox", self.EditFrame.scrollFrame)
 		self.EditFrame.editBox:SetMultiLine(true)
 		self.EditFrame.editBox:SetFontObject(ChatFontNormal)
@@ -554,7 +557,7 @@ function core:OpenEditor(title, text, acceptFunc)
 		self.EditFrame.acceptButton:Size(80, 22)
 		self.EditFrame.acceptButton:Point("BOTTOMLEFT", self.EditFrame, "BOTTOMLEFT", 20, 20)
 		self.EditFrame.acceptButton:SetText(L["Accept"])
-		self.EditFrame.acceptButton:SetScript("OnClick", function() 
+		self.EditFrame.acceptButton:SetScript("OnClick", function()
 			acceptFunc()
 			E:ToggleOptionsUI()
 			self.EditFrame:Hide()
@@ -564,42 +567,42 @@ function core:OpenEditor(title, text, acceptFunc)
 		self.EditFrame.cancelButton:Size(80, 22)
 		self.EditFrame.cancelButton:Point("BOTTOMRIGHT", self.EditFrame, "BOTTOMRIGHT", -20, 20)
 		self.EditFrame.cancelButton:SetText(L["Cancel"])
-		self.EditFrame.cancelButton:SetScript("OnClick", function() 
-			self.EditFrame:Hide() 
+		self.EditFrame.cancelButton:SetScript("OnClick", function()
+			self.EditFrame:Hide()
 			E:ToggleOptionsUI()
 		end)
-		
+
 		S:HandleScrollBar(scrollBar)
 		S:HandleButton(self.EditFrame.acceptButton)
 		S:HandleButton(self.EditFrame.cancelButton)
-		
+
 		tinsert(UISpecialFrames, 'ElvUI_Extras_Editor')
 	else
 		self.EditFrame:Show()
 		self.EditFrame.title:SetText(title)
 		self.EditFrame.header:Width(self.EditFrame.title:GetStringWidth() + 16)
 		self.EditFrame.editBox:SetText(text)
-		self.EditFrame.acceptButton:SetScript("OnClick", function() 
+		self.EditFrame.acceptButton:SetScript("OnClick", function()
 			acceptFunc()
 			E:ToggleOptionsUI()
 			self.EditFrame:Hide()
 		end)
 	end
-		
+
 	E:ToggleOptionsUI()
 end
 
 
 function core:Tag(name, func)
 	if tags[name] then return end
-	
+
 	tinsert(core.nameUpdates, func)
 	tags[name] = #core.nameUpdates
 end
 
-function core:Untag(name, func)
+function core:Untag(name)
 	if not tags[name] then return end
-	
+
 	tremove(core.nameUpdates, tags[name])
 	tags[name] = nil
 end
@@ -613,9 +616,9 @@ end)
 ElvUF.Tags.Events["updateshandler"] = "UNIT_NAME_UPDATE"
 ElvUF.Tags.Methods["updateshandler"] = function(unit)
 	if not UnitExists(unit) then return end
-	
+
 	local frame = UF[unit]
-	
+
 	if frame then
 		if frame.ThreatIndicator and (frame.db.threatStyle == 'BORDERS' or frame.db.threatStyle == 'HEALTHBORDERS') then
 			local status = UnitThreatSituation(unit)
@@ -645,7 +648,7 @@ do
 			end)
 			local func = "Update_"..type.."Frame"
 			local groupFunc = "Update_"..type.."Frames"
-			if (UF[func] or UF[groupFunc]) and not core:IsHooked(UF, UF[func] and func or groupFunc) then 
+			if (UF[func] or UF[groupFunc]) and not core:IsHooked(UF, UF[func] and func or groupFunc) then
 				core:SecureHook(UF, UF[func] and func or groupFunc, function(self, frame, db)
 					if not taggedFrames[frame] then
 						frame.updatesHandler = frame:CreateFontString(nil, "OVERLAY")
@@ -654,13 +657,13 @@ do
 						frame:Tag(frame.updatesHandler, "[updateshandler]")
 
 						taggedFrames[frame] = true
-						
+
 						for _, func in ipairs(core.frameUpdates) do
 							func(self, frame, db)
 						end
 					elseif not updatePending then
 						updatePending = true
-		
+
 						E_Delay(nil, 0.1, function()
 							for _, func in ipairs(core.frameUpdates) do
 								func(self, frame, db)
@@ -719,7 +722,7 @@ P["Extras"] = {
 		["BOTTOMLEFT"] = 'BOTTOMLEFT',
 		["BOTTOMRIGHT"] = 'BOTTOMRIGHT',
 	},
-	["texClass"] = {  
+	["texClass"] = {
 		["Interface\\Icons\\spell_deathknight_classicon"] = {
 			["icon"] = 'Interface\\Icons\\spell_deathknight_classicon',
 			["label"] = 'Death Knight',
@@ -1102,14 +1105,13 @@ function core:GetOptions()
 			button:SetBackdropBorderColor(unpack(E.media.bordercolor))
 		end
 	end
-	
+
 	local function updateIconDisplay(frame)
 		local iconContainer = frame.iconContainer
 		local pathEditBox = frame.pathEditBox
 
 		local startIndex = (currentPage - 1) * ICONS_PER_PAGE + 1
-		local endIndex = min(startIndex + ICONS_PER_PAGE - 1, #filteredIcons)
-		
+
 		for i = 1, ICONS_PER_PAGE do
 			local button = iconButtons[i]
 			if not button then
@@ -1120,7 +1122,7 @@ function core:GetOptions()
 				S:HandleButton(button)
 				button:SetTemplate("Transparent")
 				button:StyleButton()
-				
+
 				button:SetScript("OnEnter", function(self)
 					GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT")
 					GameTooltip:AddLine(self.iconPath)
@@ -1128,9 +1130,9 @@ function core:GetOptions()
 					GameTooltip:AddLine(L["Click to select."])
 					GameTooltip:Show()
 				end)
-				
+
 				button:SetScript("OnLeave", function() GameTooltip:Hide() end)
-				
+
 				button:SetScript("OnClick", function(self)
 					if selectedButton then
 						highlightButton(selectedButton, false)
@@ -1176,30 +1178,30 @@ function core:GetOptions()
 			end
 			return
 		end
-		
+
 		iconsBrowser = CreateFrame("Frame", "iconsBrowser", UIParent)
 		iconsBrowser:SetFrameStrata("FULLSCREEN_DIALOG")
 		iconsBrowser:SetFrameLevel(999)
 		iconsBrowser:Size(360, 440)
 		iconsBrowser:SetClampedToScreen(true)
 		iconsBrowser:CreateBackdrop("Transparent")
-		
+
 		iconsBrowser:Point("CENTER", UIParent, "CENTER", 0, 0)
-		
+
 		iconsBrowser:SetMovable(true)
 		iconsBrowser:EnableMouse(true)
 		iconsBrowser:EnableMouseWheel(1)
 		iconsBrowser:RegisterForDrag("LeftButton")
 		iconsBrowser:SetScript("OnDragStart", function(self) self:StartMoving() end)
 		iconsBrowser:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
-		iconsBrowser:SetScript("OnMouseWheel", function(self, dir) 
-			if dir == -1 then 
+		iconsBrowser:SetScript("OnMouseWheel", function(self, dir)
+			if dir == -1 then
 				self.nextButton:GetScript("OnClick")()
-			else 
+			else
 				self.prevButton:GetScript("OnClick")()
-			end 
+			end
 		end)
-		iconsBrowser:SetScript("OnMouseDown", function(self) 
+		iconsBrowser:SetScript("OnMouseDown", function(self)
 			self:SetFrameLevel(999)
 			local level = self:GetFrameLevel()
 			for _, child in ipairs({self:GetChildren()}) do
@@ -1215,34 +1217,34 @@ function core:GetOptions()
 		local label = labelHolder:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		label:SetAllPoints()
 		label:SetText(L["Icons Browser"])
-		
+
 		local closeButton = CreateFrame("Button", "iconsBrowserClose", iconsBrowser, "UIPanelCloseButton")
 		closeButton:Point("TOPRIGHT", iconsBrowser, "TOPRIGHT")
 		closeButton:SetScript("OnClick", function() iconsBrowser:Hide() end)
 		S:HandleCloseButton(closeButton)
-		
+
 		local iconContainer = CreateFrame("Frame", "iconsBrowserContainer", iconsBrowser)
 		iconContainer:Size(320, 300)
 		iconContainer:Point("CENTER", iconsBrowser, "CENTER", 0, -8)
 		iconContainer:CreateBackdrop()
-		
+
 		local pathEditBox = CreateFrame("EditBox", "iconsBrowserPath", iconsBrowser, "InputBoxTemplate")
 		pathEditBox:Point("TOPLEFT", iconContainer, "TOPLEFT", 0, 24)
 		pathEditBox:Point("BOTTOMRIGHT", iconContainer, "TOPRIGHT", 0, 8)
 		pathEditBox:SetAutoFocus(false)
 		S:HandleEditBox(pathEditBox)
-		
-		pathEditBox:SetScript("OnChar", function(self)
+
+		pathEditBox:SetScript("OnChar", function()
 			pathEditBox:SetText(lastSelected)
 			pathEditBox:HighlightText()
 		end)
-		
+
 		local searchBox = CreateFrame("EditBox", "iconsBrowserSearch", iconsBrowser, "InputBoxTemplate")
 		searchBox:Point("TOPLEFT", pathEditBox, "TOPLEFT", 42, 20)
 		searchBox:Point("BOTTOMRIGHT", pathEditBox, "TOPRIGHT", 0, 4)
 		searchBox:SetAutoFocus(false)
 		S:HandleEditBox(searchBox)
-		
+
 		local searchLabelHolder = CreateFrame("Frame", "iconsBrowserSearchLabel", iconsBrowser)
 		searchLabelHolder:Point("TOPLEFT", searchBox, "TOPLEFT", -42, 0)
 		searchLabelHolder:Point("BOTTOMRIGHT", searchBox, "BOTTOMLEFT", -4, 0)
@@ -1262,13 +1264,13 @@ function core:GetOptions()
 		prevButton:Point("TOPLEFT", iconContainer, "BOTTOMLEFT", 0, -32)
 		prevButton:SetText("<")
 		S:HandleButton(prevButton)
-		
+
 		local nextButton = CreateFrame("Button", "iconsBrowserNext", iconsBrowser, "UIPanelButtonTemplate")
 		nextButton:Size(24, 16)
 		nextButton:Point("TOPRIGHT", iconContainer, "BOTTOMRIGHT", 0, -32)
 		nextButton:SetText(">")
 		S:HandleButton(nextButton)
-		
+
 		local pageTextHolder = CreateFrame("Frame", "iconsBrowserPageText", iconsBrowser)
 		pageTextHolder:Point("TOPLEFT", prevButton, "TOPRIGHT", 0, 0)
 		pageTextHolder:Point("BOTTOMRIGHT", nextButton, "BOTTOMLEFT", 0, 0)
@@ -1306,10 +1308,10 @@ function core:GetOptions()
 		getAllIcons()
 		filterIcons("")
 		updateIconDisplay(iconsBrowser)
-		
+
 		iconsBrowser:Show()
 		iconsBrowser:GetScript("OnMouseDown")(iconsBrowser)
-		
+
 		tinsert(UISpecialFrames, "iconsBrowser")
 	end
 
@@ -1364,8 +1366,8 @@ function core:GetOptions()
 								width = "double",
 								name = L["Add Texture"],
 								desc = L["Adds textures to General texture list.\nE.g. Interface\\Icons\\INV_Misc_QuestionMark"],
-								get = function(info) return "" end,
-								set = function(info, value)
+								get = function() return "" end,
+								set = function(_, value)
 									if value and value ~= "" then
 										local texInfo = {
 											icon = value,
@@ -1373,7 +1375,7 @@ function core:GetOptions()
 										}
 										E.db.Extras.texGeneral[value] = texInfo
 										local string = '\124T' .. value .. ':16:16\124t'
-										print(customColorAlpha .. string .. customColorBeta .. L[" added."])
+										print(core.customColorAlpha .. string .. core.customColorBeta .. L[" added."])
 									end
 								end,
 							},
@@ -1383,13 +1385,13 @@ function core:GetOptions()
 								width = "double",
 								name = L["Remove Texture"],
 								desc = "",
-								get = function(info) return "" end,
-								set = function(info, value)
+								get = function() return "" end,
+								set = function(_, value)
 									for icon in pairs(E.db.Extras.texGeneral) do
 										if icon == value then
 											E.db.Extras.texGeneral[icon] = nil
 											local string = '\124T' .. value .. ':16:16\124t'
-											print(customColorAlpha .. string .. customColorBeta .. L[" removed."])
+											print(core.customColorAlpha .. string .. core.customColorBeta .. L[" removed."])
 											break
 										end
 									end
@@ -1428,27 +1430,27 @@ function core:Initialize()
 			if not self:IsHooked(NP, func) then self:RawHook(NP, func) end
 		end
 	end
-	
+
 	if E.db.Extras.general["GeneralMisc."] and E.db.Extras.general["GeneralMisc."].GlobalShadow
 	 and E.db.Extras.general["GeneralMisc."].GlobalShadow.enabled and E.CreateGlobalShadow then
 		local M = E:GetModule("Misc")
 		local createShadow = E.CreateGlobalShadow
 		createShadow(nil, _G["Minimap"])
-		
+
 		if not self:IsHooked(NP, "StyleFrame") then
-			self:SecureHook(NP, "StyleFrame", function(self, frame)
+			self:SecureHook(NP, "StyleFrame", function(_, frame)
 				createShadow(nil, frame)
 			end)
 		end
 		if not self:IsHooked(M, "SkinBubble") then
-			self:SecureHook(M, "SkinBubble", function(self, frame)
+			self:SecureHook(M, "SkinBubble", function(_, frame)
 				createShadow(nil, frame)
 			end)
 		end
-		
+
 		local globalShadowSize = E.db.Extras.general["GeneralMisc."].GlobalShadow.size
-		
-		tinsert(core.frameUpdates, function(self, frame, db)
+
+		tinsert(core.frameUpdates, function()
 			local units = core:AggregateUnitFrames()
 			for _, frame in ipairs(units) do
 				if frame.USE_POWERBAR and frame.Power and frame.Health.backdrop.globalShadow and frame.Power.backdrop.globalShadow then
@@ -1462,7 +1464,7 @@ function core:Initialize()
 			end
 		end)
 	end
-	
+
 	EP:RegisterPlugin(AddOnName, self.GetOptions)
 
 	for _, module in pairs(self.modules) do
@@ -1474,7 +1476,7 @@ local function InitializeCallback()
 	core:Initialize()
 end
 
-LSM:Register("font", "Extras_Favourite (Montserrat)", "Interface\\AddOns\\\ElvUI_Extras\\\Media\\Favourite.ttf")
-LSM:Register("font", "Invisible", "Interface\\AddOns\\\ElvUI_Extras\\\Media\\Invisible.ttf")
+LSM:Register("font", "Extras_Favourite (Montserrat)", "Interface\\AddOns\\ElvUI_Extras\\Media\\Favourite.ttf")
+LSM:Register("font", "Invisible", "Interface\\AddOns\\ElvUI_Extras\\Media\\Invisible.ttf")
 
 E:RegisterModule(core:GetName(), InitializeCallback)

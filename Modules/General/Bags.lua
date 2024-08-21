@@ -17,9 +17,9 @@ local millingSpellID = 51005
 local lockpickingSpellID = 1804
 
 local _G, unpack, pairs, ipairs, select, print, tonumber, tostring, loadstring, pcall, type = _G, unpack, pairs, ipairs, select, print, tonumber, tostring, loadstring, pcall, type
-local twipe, tinsert, tremove, tsort = table.wipe, table.insert, table.remove, table.sort
+local tinsert, tremove, tsort = table.insert, table.remove, table.sort
 local min, max, floor, ceil, huge = min, max, floor, ceil, math.huge
-local find, format, lower, match, gmatch, gsub, sub = string.find, string.format, string.lower, string.match, string.gmatch, string.gsub, string.sub
+local find, format, lower, match, gsub = string.find, string.format, string.lower, string.match, string.gsub
 local UIParent, GameTooltip_Hide, InCombatLockdown, UnitFactionGroup = UIParent, GameTooltip_Hide, InCombatLockdown, UnitFactionGroup
 local GetItemInfo, GetInventoryItemTexture, BankButtonIDToInvSlotID, GetBagName = GetItemInfo, GetInventoryItemTexture, BankButtonIDToInvSlotID, GetBagName
 local ContainerIDToInventoryID, GetContainerNumSlots, GetContainerNumFreeSlots = ContainerIDToInventoryID, GetContainerNumSlots, GetContainerNumFreeSlots
@@ -30,7 +30,7 @@ local IsModifierKeyDown, GetContainerItemID, GetSpellInfo, GetKeyRingSize = IsMo
 local ERR_NOT_IN_COMBAT, ERR_INVALID_ITEM_TARGET, ERR_SPLIT_FAILED = ERR_NOT_IN_COMBAT, ERR_INVALID_ITEM_TARGET, ERR_SPLIT_FAILED
 local CURRENCY, NUM_BAG_SLOTS, EMPTY = CURRENCY, NUM_BAG_SLOTS, EMPTY
 
-local B_PickupItem, B_GetNumSlots, B_GetItemID, B_GetItemInfo, B_GetContainerFrame, B_SplitItem = B.PickupItem, B.GetNumSlots, B.GetItemID, B.GetItemInfo, B.GetContainerFrame, B.SplitItem
+local B_PickupItem, B_GetItemID, B_GetItemInfo, B_GetContainerFrame, B_SplitItem = B.PickupItem, B.GetItemID, B.GetItemInfo, B.GetContainerFrame, B.SplitItem
 local E_Delay = E.Delay
 local updatePending = false
 
@@ -139,12 +139,12 @@ local function getItemTooltipText(bagID, slotID)
     else
         scanner:SetBagItem(bagID, slotID)
     end
-    
+
     local tooltipText = ''
     for i = 2, scanner:NumLines() do
         local left = _G["ExtrasBags_ScanningTooltipTextLeft"..i]:GetText()
         local right = _G["ExtrasBags_ScanningTooltipTextRight"..i]:GetText()
-		
+
         tooltipText = tooltipText .. (left or '')
         tooltipText = tooltipText .. (right or '')
     end
@@ -154,7 +154,7 @@ end
 
 local function getItemDetails(bagID, slotID, itemID)
     if not itemID then return nil end
-    
+
     local itemName, _, quality, itemLevel, useLevel, itemType, itemSubType, maxStack, equipSlot, _, sellPrice = GetItemInfo(itemID)
     local stackCount = select(2, B_GetItemInfo(nil, bagID, slotID))
 
@@ -180,17 +180,17 @@ local function defaultSort(a, b)
     if not itemIDA and not itemIDB then return false end
     if not itemIDA then return false end
     if not itemIDB then return true end
-	
+
     local itemA = getItemDetails(bagIDA, slotIDA, itemIDA)
     local itemB = getItemDetails(bagIDB, slotIDB, itemIDB)
-    
+
     local typeA = itemTypePriority[itemA.type] or 99
     local typeB = itemTypePriority[itemB.type] or 99
 
     if typeA ~= typeB then
         return typeA < typeB
     end
-    
+
     if itemA.type == Armor and itemB.type == Armor then
         local slotA = armorSlotPriority[itemA.equipSlot] or 99
         local slotB = armorSlotPriority[itemB.equipSlot] or 99
@@ -198,15 +198,15 @@ local function defaultSort(a, b)
             return slotA < slotB
         end
     end
-    
+
     if itemA.ilvl ~= itemB.ilvl then
         return itemA.ilvl > itemB.ilvl
     end
-    
+
 	if itemA.name ~= itemB.name then
 		return itemA.name < itemB.name
 	end
-	
+
 	return itemA.stackCount > itemB.stackCount
 end
 
@@ -259,18 +259,18 @@ end
 local function updateCollectionMethods(section)
 	if not find(section.db.collectionMethod, '%S+') then section.collectionMethodFunc = nil return end
 	local parsedString = parseCollectionString(section.db.collectionMethod)
-	
+
 	if not parsedString then return end
-	
+
 	local luaFunction, errorMsg = loadstring(parsedString)
-	
+
 	if luaFunction then
 		local success, customFuncGenerator = pcall(luaFunction)
 		if not success then
 			core:print('FAIL', L["Bags"], customFuncGenerator)
 		else
 			local customFunc = customFuncGenerator(filter)
-			
+
 			if type(customFunc) == "function" then
 				section.collectionMethodFunc = function(bagID, slotID, itemID)
 					local item = getItemDetails(bagID, slotID, itemID)
@@ -288,10 +288,10 @@ end
 local function updateSortMethods(section)
 	if find(section.db.sortMethod, '%S+') then
 		local luaFunction, errorMsg = loadstring("return " .. section.db.sortMethod)
-		
+
 		if luaFunction then
 			local success, customFunc = pcall(luaFunction)
-			
+
 			if not success then
 				core:print('FAIL', L["Bags"], customFunc)
 				section.sortMethodFunc = defaultSort
@@ -340,12 +340,11 @@ local function wipeLayout(layout)
 			section.frame = nil
 		end
 	end
-	layout = nil
 end
 
 local function runAllScripts(self, event, ...)
 	for _, info in pairs(mod.localhooks) do
-		for type, script in pairs(info) do 
+		for type, script in pairs(info) do
 			if type == event and script then script(self, ...) end
 		end
 	end
@@ -473,7 +472,7 @@ function mod:LoadConfig()
 						name = L["Modifier"],
 						desc = "",
 						values = E.db.Extras.modifiers,
-						disabled = function(info) return not E.db.Extras.general[modName].EasierProcessing.enabled end,
+						disabled = function() return not E.db.Extras.general[modName].EasierProcessing.enabled end,
 					},
 				},
 			},
@@ -496,7 +495,7 @@ function mod:LoadConfig()
 						name = L["Modifier"],
 						desc = "",
 						values = E.db.Extras.modifiers,
-						disabled = function(info) return not E.db.Extras.general[modName].SplitStack.enabled end,
+						disabled = function() return not E.db.Extras.general[modName].SplitStack.enabled end,
 					},
 				},
 			},
@@ -511,16 +510,16 @@ function mod:LoadConfig()
                         type = "toggle",
                         name = core.pluginColor..L["Enable"],
                         desc = L["Extends the bags functionality."],
-						get = function(info) return E.db.Extras.general[modName].BagsExtended.enabled end,
-						set = function(info, value) E.db.Extras.general[modName].BagsExtended.enabled = value self:Toggle() end,
+						get = function() return E.db.Extras.general[modName].BagsExtended.enabled end,
+						set = function(_, value) E.db.Extras.general[modName].BagsExtended.enabled = value self:Toggle() end,
                     },
 					selectedContainer = {
 						order = 2,
 						type = "select",
 						name = L["Select Container Type"],
 						desc = "",
-						get = function(info) return E.db.Extras.general[modName].BagsExtended.selectedContainer end,
-						set = function(info, value) E.db.Extras.general[modName].BagsExtended.selectedContainer = value end,
+						get = function() return E.db.Extras.general[modName].BagsExtended.selectedContainer end,
+						set = function(_, value) E.db.Extras.general[modName].BagsExtended.selectedContainer = value end,
 						values = {
 							['bags'] = L['Bags'],
 							['bank'] = L['Bank'],
@@ -590,7 +589,7 @@ function mod:LoadConfig()
 						type = "execute",
 						name = L["Delete Section"],
 						desc = "",
-						func = function() 
+						func = function()
 							tremove(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections, selectedSection())
 							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection = 1
 							self:UpdateAll()
@@ -603,8 +602,8 @@ function mod:LoadConfig()
 						name = L["Section Length"],
 						desc = "",
 						min = 1, max = 28, step = 1,
-						set = function(info, value) 
-							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()][info[#info]] = value 
+						set = function(info, value)
+							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()][info[#info]] = value
 							self:UpdateAll()
 						end,
 						disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled or selectedSection() == #E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections or E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].isSpecialBag end,
@@ -614,8 +613,8 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select Section"],
 						desc = "",
-						get = function(info) return tostring(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection) end,
-						set = function(info, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection = tonumber(value) end,
+						get = function() return tostring(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection) end,
+						set = function(_, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection = tonumber(value) end,
 						values = function()
 							local dropdownValues = {}
 							for i, section in ipairs(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections) do
@@ -630,11 +629,11 @@ function mod:LoadConfig()
 						name = L["Section Priority"],
 						desc = "",
 						get = function() return tostring(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection) end,
-						set = function(info, value)
+						set = function(_, value)
 							local sections = E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections
 							local currentIndex = E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection
 							local targetIndex = tonumber(value)
-							local sectionCount = #sections - 1 
+							local sectionCount = #sections - 1
 
 							if targetIndex and targetIndex >= 1 and targetIndex <= sectionCount and targetIndex ~= currentIndex then
 								local tempHolder = sections[targetIndex]
@@ -663,8 +662,8 @@ function mod:LoadConfig()
                         name = L["Section Spacing"],
 						desc = "",
                         min = 0, max = 40, step = 1,
-                        get = function(info) return E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sectionSpacing end,
-                        set = function(info, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sectionSpacing = value self:UpdateAll() end,
+                        get = function() return E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sectionSpacing end,
+                        set = function(_, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sectionSpacing = value self:UpdateAll() end,
 						disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled or selectedSection() == #E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections end,
                     },
 					collectionMethod = {
@@ -674,7 +673,7 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Collection Method"],
 						desc = L["Handles automated repositioning of the newly received items."..
-								"\n\Syntax: filter@value\n\n"..
+								"\nSyntax: filter@value\n\n"..
 								"Available filters:\n"..
 								"id@number - matches itemID,\n"..
 								"name@string - matches name,\n"..
@@ -698,7 +697,7 @@ function mod:LoadConfig()
 								"icon = gsub(icon, '\\124', '\\124\\124')\n"..
 								"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
 								"print('Item received: ' .. string)"],
-						set = function(info, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()][info[#info]] = value 
+						set = function(info, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()][info[#info]] = value
 							self:UpdateAll()
 						end,
 					},
@@ -714,7 +713,7 @@ function mod:LoadConfig()
 								"--your sorting logic here\n"..
 								"end\n\n"..
 								"Leave blank to go default."],
-						set = function(info, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()][info[#info]] = value 
+						set = function(info, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()][info[#info]] = value
 							self:UpdateAll()
 						end,
 					},
@@ -724,8 +723,8 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Ignore Item (by ID)"],
 						desc = L["Listed ItemIDs will not get sorted."],
-						get = function(info) return "" end,
-						set = function(info, value)
+						get = function() return "" end,
+						set = function(_, value)
 							local itemID = match(value, '%D*(%d+)%D*')
 							if itemID and GetItemInfo(itemID) then
 								E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].ignoreList[tonumber(itemID)] = true
@@ -742,8 +741,8 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Remove Ignored"],
 						desc = "",
-						get = function(info) return "" end,
-						set = function(info, value)
+						get = function() return "" end,
+						set = function(_, value)
 							local ignoreList = E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].ignoreList
 							for itemID in pairs(ignoreList) do
 								if itemID == value then
@@ -773,7 +772,7 @@ function mod:LoadConfig()
 			minimize = {
                 type = "group",
                 name = L["Minimize"],
-                guiInline = true,						
+                guiInline = true,
 				disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled end,
 				hidden = function() return not E.db.Extras.general[modName].BagsExtended.enabled or selectedSection() == #E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections end,
 				args = {
@@ -811,15 +810,15 @@ function mod:LoadConfig()
 						type = "color",
 						name = L["Color"],
 						desc = "",
-						get = function(info) return unpack(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].title.color) end,
-						set = function(info, r, g, b) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].title.color = { r, g, b } self:UpdateAll() end,
+						get = function() return unpack(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].title.color) end,
+						set = function(_, r, g, b) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].title.color = { r, g, b } self:UpdateAll() end,
 					},
 					toIcon = {
 						order = 1,
 						type = "toggle",
 						name = L["Attach to Icon"],
-						set = function(info, value) 
-							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].title[info[#info]] = value 
+						set = function(info, value)
+							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].title[info[#info]] = value
 							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].icon.toText = not value
 							self:UpdateAll()
 						end,
@@ -910,8 +909,8 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Attach to Text"],
 						desc = "",
-						set = function(info, value) 
-							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].icon[info[#info]] = value 
+						set = function(info, value)
+							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].icon[info[#info]] = value
 							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].title.toIcon = not value
 							self:UpdateAll()
 						end,
@@ -1007,7 +1006,7 @@ function mod:HandleControls(f, section, buttonSize)
 		sectionFrame.concatenateButton:StyleButton()
 		sectionFrame.concatenateButton:SetText("-")
 		sectionFrame.concatenateButton:Show()
-		sectionFrame.concatenateButton:SetScript("OnHide", function() 
+		sectionFrame.concatenateButton:SetScript("OnHide", function()
 			sectionFrame.concatenateButton:SetScript('OnUpdate', nil)
 			sectionFrame.isBeingSorted = false
 		end)
@@ -1020,20 +1019,20 @@ function mod:HandleControls(f, section, buttonSize)
 			sectionFrame.concatenateButton:SetScript('OnUpdate', function(self, elapsed)
 				timeElapsed = timeElapsed + elapsed
 				if timeElapsed > 0.1 then
-					if InCombatLockdown() then 
+					if InCombatLockdown() then
 						print(core.customColorBad..ERR_NOT_IN_COMBAT)
 						sectionFrame.isBeingSorted = false
 						sectionFrame.concatenateButton:SetScript('OnUpdate', nil)
 						mod:UpdateSection(f, section, buttonSize)
 						if not globalSort[f] then mod:ScanBags(f, true) E:StopSpinnerFrame(f) end
-						return 
+						return
 					end
 					timeElapsed = 0
 					if not stacked then
 						stacked = mod:StackSection(sectionButtons)
 						if stacked then
 							local ignoreList = db.ignoreList
-							for i, button in ipairs(sectionButtons) do 
+							for _, button in ipairs(sectionButtons) do
 								local bagID, slotID = button.bagID, button.slotID
 								local itemID = B_GetItemID(nil, bagID, slotID)
 								if ignoreList[itemID] then
@@ -1065,7 +1064,7 @@ function mod:HandleControls(f, section, buttonSize)
 		sectionFrame.expandButton:Show()
 		sectionFrame.expandButton:SetScript("OnMouseDown", function()
 			for i, button in ipairs(sectionButtons) do
-				if not button:IsShown() and sectionButtons[i-1] then 
+				if not button:IsShown() and sectionButtons[i-1] then
 					sectionButtons[i-1].Count:Hide()
 				end
 				button:Show()
@@ -1087,7 +1086,7 @@ function mod:HandleControls(f, section, buttonSize)
 				mod:ToggleMinimizeSection(f, section, buttonSize)
 			end)
 			sectionFrame.minimizeHandler:SetAlpha(0)
-			
+
 			sectionFrame.minimizedLine = sectionFrame:CreateTexture(nil, "OVERLAY")
 			sectionFrame.minimizedLine:Point("TOPLEFT", sectionButtons[1], "TOPLEFT", 0, 0)
 			sectionFrame.minimizedLine:Point("TOPRIGHT", f.holderFrame, "TOPRIGHT", 0, 0)
@@ -1120,7 +1119,7 @@ function mod:ToggleMinimizeSection(f, section, buttonSize)
 		end
     end
     mod:UpdateSection(f, section, buttonSize)
-    mod:ResizeFrame(f, E.Border * 2, buttonSize)
+    mod:ResizeFrame(f, buttonSize)
 end
 
 function mod:HandleSortButton(f, enable, isBank)
@@ -1131,26 +1130,26 @@ function mod:HandleSortButton(f, enable, isBank)
 			for _, section in ipairs(f.currentLayout.sections) do
 				tinsert(sections, section)
 			end
-			
+
 			tsort(sections, function(a,b) return a.order < b.order end)
-		
+
 			local timeElapsed, index = 0, 1
 			local section = sections[index]
 			globalSort[f] = true
 			E:StartSpinnerFrame(f)
 			section.frame.concatenateButton:GetScript("OnMouseDown")()
-			
+
 			f.sortButton:SetScript("OnUpdate", function(self, elapsed)
 				timeElapsed = timeElapsed + elapsed
 				if timeElapsed > 0.1 then
 					if index == #sections then
 						if not section.frame.isBeingSorted then
-							f.sortButton:SetScript("OnUpdate", nil) 
+							f.sortButton:SetScript("OnUpdate", nil)
 							mod:ScanBags(f, true)
 							E:StopSpinnerFrame(f)
 							globalSort[f] = false
 						end
-					elseif not section.frame.isBeingSorted then 
+					elseif not section.frame.isBeingSorted then
 						index = index + 1
 						section = sections[index]
 						section.frame.concatenateButton:GetScript("OnMouseDown")()
@@ -1183,7 +1182,7 @@ function mod:ConfigureContainer(f, isBank, maxSectionWidth, numContainerColumns,
     local buttons, specialButtons = {}, {}
     local specialBags = {}
 
-    for i, bagID in ipairs(f.BagIDs) do
+    for _, bagID in ipairs(f.BagIDs) do
 		buttonMap[bagID] = {}
 		specialButtons[bagID] = {}
         local _, bagType = GetContainerNumFreeSlots(bagID)
@@ -1210,7 +1209,7 @@ function mod:ConfigureContainer(f, isBank, maxSectionWidth, numContainerColumns,
 
     local processedSections = {}
     if not f.Sections then f.Sections = {} end
-    
+
 	for i, section in ipairs(sections) do
 		if section.isSpecialBag then
 			local bagID = section.bagID
@@ -1267,12 +1266,12 @@ function mod:ConfigureContainer(f, isBank, maxSectionWidth, numContainerColumns,
 
 	for i, section in ipairs(sections) do
 		local sectionFrame = f.Sections[i]
-		
+
 		if not sectionFrame then
 			sectionFrame = CreateFrame("Frame", "$parentSection"..i, f.holderFrame)
 			f.Sections[i] = sectionFrame
 		end
-		
+
 		sectionFrame:ClearAllPoints()
 		sectionFrame:Point("TOPLEFT", f.holderFrame, "TOPLEFT", 0, yOffset)
 		sectionFrame:Width(maxSectionWidth)
@@ -1283,15 +1282,15 @@ function mod:ConfigureContainer(f, isBank, maxSectionWidth, numContainerColumns,
 		if section.isSpecialBag then
 			sectionButtons = specialButtons[section.bagID]
 		else
-			for j = 1, section.length do
+			for _ = 1, section.length do
 				local button = tremove(buttons, 1)
 				if not button then break end
 				tinsert(sectionButtons, button)
 			end
 		end
-		
+
 		if #sectionButtons == 0 then break end
-		
+
 		if section.title.enabled then
 			sectionFrame.title = sectionFrame.title or sectionFrame:CreateFontString(nil, "OVERLAY")
 			sectionFrame.title:SetFont(LSM:Fetch('font', section.title.font), section.title.size, section.title.flags)
@@ -1300,18 +1299,18 @@ function mod:ConfigureContainer(f, isBank, maxSectionWidth, numContainerColumns,
 			sectionFrame.title:Show()
 			sectionFrame.title:ClearAllPoints()
 		end
-		
+
 		if section.icon.enabled then
 			sectionFrame.icon = sectionFrame.icon or sectionFrame:CreateTexture(nil, "OVERLAY")
 			sectionFrame.icon:SetTexture(section.icon.texture)
 			sectionFrame.icon:Size(section.icon.size, section.icon.size)
 			sectionFrame.icon:Show()
 			sectionFrame.icon:ClearAllPoints()
-		elseif sectionFrame.icon then 
-			sectionFrame.icon:Hide() 
+		elseif sectionFrame.icon then
+			sectionFrame.icon:Hide()
 			sectionFrame.icon = nil
 		end
-		
+
 		if section.title.enabled and section.icon.enabled then
 			if section.icon.toText then
 				sectionFrame.icon:Point(section.icon.point, sectionFrame.title, section.icon.relativeTo, section.icon.xOffset, section.icon.yOffset)
@@ -1325,11 +1324,11 @@ function mod:ConfigureContainer(f, isBank, maxSectionWidth, numContainerColumns,
 		elseif section.icon.enabled then
 			sectionFrame.icon:Point(section.icon.point, sectionButtons[1], section.icon.relativeTo, section.icon.xOffset, section.icon.yOffset)
 		end
-		
+
 		for i, button in ipairs(sectionButtons) do
 			sectionFrame.occupied[i] = B_GetItemID(nil, button.bagID, button.slotID)
 		end
-		
+
 		local processedSection = {
 			frame = sectionFrame,
 			buttons = sectionButtons,
@@ -1338,11 +1337,11 @@ function mod:ConfigureContainer(f, isBank, maxSectionWidth, numContainerColumns,
 			db = section,
 			order = i,
 		}
-		
+
 		self:HandleControls(f, processedSection, buttonSize)
 		tinsert(processedSections, processedSection)
 	end
-	
+
     f.currentLayout = {
         sections = processedSections,
         buttonSize = buttonSize
@@ -1353,16 +1352,16 @@ function mod:Layout(self, isBank)
     if not E.private.bags.enable then return end
     local f = B_GetContainerFrame(nil, isBank)
     if not f then return end
-	
+
 	local db = E.db.Extras.general[modName]
 	if db.SplitStack.enabled or db.EasierProcessing.enabled then
-		for i, bagID in ipairs(f.BagIDs) do
+		for _, bagID in ipairs(f.BagIDs) do
 			if f.Bags[bagID] then
 				for slotID = 1, f.Bags[bagID].numSlots do
 					local button = f.Bags[bagID][slotID]
 					if button then
 						for _, info in pairs(mod.localhooks) do
-							for type, script in pairs(info) do 
+							for type in pairs(info) do
 								if not mod:IsHooked(button, type) then
 									mod:SecureHookScript(button, type, function(self, ...) runAllScripts(self, type, ...) end)
 								end
@@ -1375,15 +1374,15 @@ function mod:Layout(self, isBank)
 	end
 
 	if not db.BagsExtended.enabled then return end
-	
+
 	local buttonSpacing = E.Border * 2
 	local buttonSize = isBank and B.db.bankSize or B.db.bagSize
 	local containerWidth = (isBank and B.db.bankWidth) or B.db.bagWidth
 	local numContainerColumns = floor(containerWidth / (buttonSize + buttonSpacing))
 	local maxSectionWidth = (numContainerColumns * (buttonSize + buttonSpacing) - buttonSpacing) + buttonSize
-	
+
 	f:Width(maxSectionWidth)
-	
+
 	if not isBank then
 		if not f.heldCurrencies then
 			f.heldCurrencies = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
@@ -1392,15 +1391,15 @@ function mod:Layout(self, isBank)
 			f.heldCurrencies:SetScript("OnEnter", function(self)
 				GameTooltip:SetOwner(self, "ANCHOR_TOP")
 				GameTooltip:SetText(CURRENCY..":")
-				
+
 				local numCurrencies = GetCurrencyListSize()
 				local hasCurrencies = false
-				
+
 				local lines = {}
 				for i = 1, numCurrencies do
-					local name, isHeader, _, _, _, count, _, icon, itemID = GetCurrencyListInfo(i)
+					local _, isHeader, _, _, _, count, _, icon, itemID = GetCurrencyListInfo(i)
 					if not isHeader and count > 0 then
-						if itemID == 43307 then icon = "Interface\\PVPFrame\\PVP-ArenaPoints-Icon" 
+						if itemID == 43307 then icon = "Interface\\PVPFrame\\PVP-ArenaPoints-Icon"
 						elseif itemID == 43308 then icon = "Interface\\PVPFrame\\PVP-Currency-"..UnitFactionGroup("player")
 						end
 						hasCurrencies = true
@@ -1413,15 +1412,15 @@ function mod:Layout(self, isBank)
 						tinsert(lines, { emblem = emblem, pvpCurrency = pvpCurrency, quality = quality, name = name, lineL = iconString..name, lineR = countText, r = r, g = g, b = b, } )
 					end
 				end
-				if not hasCurrencies then 
-					GameTooltip:SetText(EMPTY) 
+				if not hasCurrencies then
+					GameTooltip:SetText(EMPTY)
 				else
-					tsort(lines, function(a, b) 
+					tsort(lines, function(a, b)
 						if a.emblem ~= b.emblem then return a.emblem
-						elseif a.pvpCurrency and not b.pvpCurrency then return false 
-						elseif a.quality ~= b.quality then return a.quality > b.quality 
-						else return a.name < b.name 
-						end 
+						elseif a.pvpCurrency and not b.pvpCurrency then return false
+						elseif a.quality ~= b.quality then return a.quality > b.quality
+						else return a.name < b.name
+						end
 					end)
 					for i, info in ipairs(lines) do
 						if i > 1 then
@@ -1440,7 +1439,7 @@ function mod:Layout(self, isBank)
 	end
 
 	mod:ConfigureContainer(f, isBank, maxSectionWidth, numContainerColumns, buttonSize)
-		
+
 	local minIconLeft = huge
 	for _, section in ipairs(f.currentLayout.sections) do
 		for _, button in ipairs(section.buttons) do
@@ -1453,10 +1452,10 @@ function mod:Layout(self, isBank)
 		updateSortMethods(section)
 		updateCollectionMethods(section)
 	end
-	
+
 	if minIconLeft < f.holderFrame:GetLeft() then
 		local offset = f.holderFrame:GetLeft() - minIconLeft
-		local point, parent, relativeTo, x, y = f.holderFrame:GetPoint()
+		local point, parent, relativeTo, _, y = f.holderFrame:GetPoint()
 		f.holderFrame:Point(point, parent, relativeTo, offset/2 - buttonSize/4, y)
 		f:Width(maxSectionWidth + offset)
 	else
@@ -1464,21 +1463,21 @@ function mod:Layout(self, isBank)
 		f.holderFrame:Point("TOP", f, "TOP", -buttonSize/4, -f.topOffset)
 		f.holderFrame:Point("BOTTOM", f, "BOTTOM", 0, 8)
 	end
-	
+
     mod:ScanBags(f, true)
 end
 
-function mod:ResizeFrame(f, buttonSpacing, buttonSize)
+function mod:ResizeFrame(f, buttonSize)
     local yOffset = -buttonSize/4
     local totalHeight = f.topOffset + f.bottomOffset
 	local layout = f.currentLayout
-	
+
     for i, section in ipairs(layout.sections) do
         section.frame:ClearAllPoints()
         section.frame:Point("TOPLEFT", f.holderFrame, "TOPLEFT", 0, yOffset)
 
         local sectionHeight = section.frame:GetHeight()
-        
+
         yOffset = yOffset - sectionHeight
 		if i == #layout.sections then
 			totalHeight = totalHeight + buttonSize/2
@@ -1503,7 +1502,7 @@ function mod:ScanBags(f, updateLast)
                 local itemID = B_GetItemID(nil, bagID, slotID)
                 if button and itemID then
                     if not inventory[itemID] then
-						local name, _, _, _, _, _, _, maxStack = GetItemInfo(itemID)
+						local _, _, _, _, _, _, _, maxStack = GetItemInfo(itemID)
                         inventory[itemID] = { positions = {}, count = 0, maxStack = maxStack or 1 }
                     end
                     tinsert(inventory[itemID].positions, {bagID = bagID, slotID = slotID})
@@ -1537,9 +1536,9 @@ function mod:ScanBags(f, updateLast)
 			end
 		end
 	end
-		
+
     lastScan[f] = inventory
-    
+
     return changes
 end
 
@@ -1547,7 +1546,6 @@ function mod:ApplyBagChanges(f, changes)
 	local occupied = {}
 	local layout = f.currentLayout
     for bagID, slots in pairs(changes) do
-		local index = 1
         for slotID, itemID in pairs(slots) do
             local targetBagID, targetSlotID, section = mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
             if targetBagID and targetSlotID then
@@ -1576,16 +1574,16 @@ end
 function mod:UpdateBagSlots(self, f, bagID)
     local layout = f.currentLayout
     if not layout then return end
-	
+
 	if not equippedBags[bagID] then equippedBags[bagID] = GetBagName(bagID) end
-	
+
     for _, section in ipairs(layout.sections) do
 		mod:UpdateSection(f, section, layout.buttonSize)
     end
-	
+
 	if updatePending then return end
 	updatePending = true
-	
+
 	E_Delay(nil, 0.1, function()
 		local changes = mod:ScanBags(f)
 		mod:ApplyBagChanges(f, changes)
@@ -1602,14 +1600,14 @@ end
 
 function mod:UpdateSlot(self, f, bagID, slotID)
 	if not f.currentLayout or (f.Bags[bagID] and f.Bags[bagID].numSlots ~= GetContainerNumSlots(bagID)) or not f.Bags[bagID] or not f.Bags[bagID][slotID] then return end
-	
+
     local button = f.Bags[bagID][slotID]
 	if button.isHidden then button:Hide() end
 end
 
 function mod:UpdateSection(f, section, buttonSize)
     local sectionFrame = section.frame
-	
+
 	--if sectionFrame.isBeingSorted then return end
 	-- ^ less stutter, but the the hidden buttons flicker
 
@@ -1673,12 +1671,12 @@ function mod:UpdateSection(f, section, buttonSize)
         if button:IsShown() then
             local col = (i - 1) % section.numColumns
             local row = floor((i - 1) / section.numColumns)
-            button:Point("TOPLEFT", sectionFrame, "TOPLEFT", 
-                            buttonSpacing + col * (buttonSize + buttonSpacing), 
+            button:Point("TOPLEFT", sectionFrame, "TOPLEFT",
+                            buttonSpacing + col * (buttonSize + buttonSpacing),
                             -sectionHeaderHeight/2 - buttonSpacing*2 - row * (buttonSize + buttonSpacing))
         end
     end
-		
+
     local emptyCount = #section.buttons - lastEmpty + 1
     if lastEmpty and emptyCount > 0 and not sectionFrame.expanded then
         self:UpdateEmptySlotCount(section.buttons[lastEmpty], emptyCount)
@@ -1695,11 +1693,11 @@ function mod:UpdateSection(f, section, buttonSize)
 	local totalSectionHeight = sectionHeaderHeight + numRows * (buttonSize + buttonSpacing) - buttonSpacing
 
     sectionFrame:Height(totalSectionHeight)
-	
+
     if f.currentLayout and numRows ~= oldNumRows then
-        self:ResizeFrame(f, buttonSpacing, buttonSize)
+        self:ResizeFrame(f, buttonSize)
     end
-	
+
 	section.numRows = numRows
 end
 
@@ -1715,7 +1713,7 @@ function mod:SortSection(sortMap, sectionButtons)
                     B_PickupItem(nil, button.bagID, button.slotID)
                     B_PickupItem(nil, targetButton.bagID, targetButton.slotID)
 					ClearCursor()
-                    
+
                     info.bagID = targetButton.bagID
                     info.slotID = targetButton.slotID
                     break
@@ -1725,15 +1723,15 @@ function mod:SortSection(sortMap, sectionButtons)
             info.positioned = true
         end
     end
-    
+
     local allPositioned = true
-    for i, info in ipairs(sortMap) do
+    for _, info in ipairs(sortMap) do
         if not info.positioned then
             allPositioned = false
             break
         end
     end
-    
+
     return allPositioned
 end
 
@@ -1819,13 +1817,13 @@ function mod:BagsExtended(enable)
 		if E.Options.args.bags then
 			E.Options.args.bags.args.general.args.reverseSlots.hidden = true
 		else
-			if not self:IsHooked(E, 'ToggleOptionsUI') then 
-				self:SecureHook(E, 'ToggleOptionsUI', function() 
+			if not self:IsHooked(E, 'ToggleOptionsUI') then
+				self:SecureHook(E, 'ToggleOptionsUI', function()
 					if not E.Options.args.bags then return end
-					
-					E.Options.args.bags.args.general.args.reverseSlots.hidden = true 
+
+					E.Options.args.bags.args.general.args.reverseSlots.hidden = true
 					E:RefreshGUI()
-				end) 
+				end)
 			end
 		end
 		self:UpdateAll()
@@ -1845,12 +1843,12 @@ end
 function mod:CreateProcessingButton()
 	local ProcessButton = CreateFrame("Button", "ElvUI_ProcessButton", UIParent, "SecureActionButtonTemplate")
 	ProcessButton:StyleButton()
-	
+
 	local offset = E.PixelMode and E.mult or E.Border
 	ProcessButton.texture = ProcessButton:CreateTexture(nil, E.db.bags.strata or "DIALOG")
-	ProcessButton.texture:SetInside(ProcessButton, offset, offset)	
+	ProcessButton.texture:SetInside(ProcessButton, offset, offset)
 	ProcessButton.texture:SetTexCoord(unpack(E.TexCoords))
-	
+
 	ProcessButton:SetTemplate(nil, nil, nil, E.PixelMode, true)
 	ProcessButton:EnableMouse(true)
 	ProcessButton:RegisterForClicks("LeftButtonDown")
@@ -1861,7 +1859,7 @@ function mod:CreateProcessingButton()
 	ProcessButton:SetFrameLevel(10000)
 	local size = (B.db.bagSize) * (3/4)
 	ProcessButton:Size(size, size)
-	
+
 	ProcessButton:SetScript("OnEnter", function(self)
 		GameTooltip:SetOwner(ProcessButton)
 		GameTooltip:SetHyperlink(ProcessButton.isKey and ProcessButton.currentSpellID or GetSpellLink(ProcessButton.currentSpellID) or "")
@@ -1871,25 +1869,25 @@ function mod:CreateProcessingButton()
 	ProcessButton:SetScript("OnLeave", function(self)
 		GameTooltip:Hide()
 	end)
-	
+
 	return ProcessButton
 end
 
 function mod:Process(self)
 	local ProcessButton = mod.ProcessButton
 	if not ProcessButton then return end
-	if InCombatLockdown() then 
-		print(core.customColorBad..ERR_NOT_IN_COMBAT) 
-		return 
+	if InCombatLockdown() then
+		print(core.customColorBad..ERR_NOT_IN_COMBAT)
+		return
 	end
 	local modifier = E.db.Extras.general[modName].EasierProcessing.modifier
 	if IsModifierKeyDown() and (modifier == 'ANY' or _G['Is'..modifier..'KeyDown']()) then
 		local itemID = GetContainerItemID(self.bagID, self.slotID)
 		if not itemID then return end
-		
+
 		ProcessButton.isKey = false
 		local spellName, texturePath, spellID
-		
+
 		if LibProcessable:IsProspectable(itemID) then
 			spellName, _, texturePath = GetSpellInfo(prospectingSpellID)
 			spellID = prospectingSpellID
@@ -1903,10 +1901,10 @@ function mod:Process(self)
 			local _, openedItemID = LibProcessable:IsOpenable(itemID)
 			if openedItemID then
 				for i = 1, GetKeyRingSize() do
-					local itemID = GetContainerItemID(-2, i)
+					itemID = GetContainerItemID(-2, i)
 					if itemID == openedItemID then
 						local keyName, link, _, _, _, _, _, _, _, keyTexture = GetItemInfo(itemID)
-						spellName, texturePath = keyName, keyTexture 
+						spellName, texturePath = keyName, keyTexture
 						spellID = link
 						ProcessButton.isKey = true
 						break
@@ -1918,7 +1916,7 @@ function mod:Process(self)
 			end
 		else
 			print(core.customColorBad..ERR_INVALID_ITEM_TARGET)
-			return 
+			return
 		end
 		if spellName then
 			ProcessButton.texture:SetTexture(texturePath)
@@ -1959,16 +1957,16 @@ function mod:SplitHandler(self, button)
     if IsModifierKeyDown() and (modifier == 'ANY' or _G['Is'..modifier..'KeyDown']()) then
         local bagID, slotID = self.bagID, self.slotID
         local bagSpace = isBagsExtended and buttonMap[bagID][slotID] or B_GetContainerFrame(nil, bagID < 0 or bagID > NUM_BAG_SLOTS)
-		
+
 		if not bagSpace then return end
-		
+
         if button == 'LeftButton' then
             local stackCount = select(2, B_GetItemInfo(nil, bagID, slotID))
             if not stackCount or stackCount == 1 then return end
-            
+
             local split = floor(stackCount / 2)
             local freeBagID, freeSlotID = mod:FindEmpty(isBagsExtended, bagSpace)
-			
+
             if freeSlotID then
                 B_SplitItem(nil, bagID, slotID, split)
                 B_PickupItem(nil, freeBagID, freeSlotID)
@@ -1979,7 +1977,7 @@ function mod:SplitHandler(self, button)
             if not self.isStacking then
                 local itemID = B_GetItemID(nil, bagID, slotID)
 				if not itemID then return end
-				
+
                 self.isStacking = true
                 local timeElapsed, partialStacks = 0, {}
                 local _, _, _, _, _, _, _, maxStack = GetItemInfo(itemID)
@@ -2003,22 +2001,22 @@ function mod:SplitHandler(self, button)
 					end
                 end
 				if #partialStacks == 0 then return end
-				
+
 				local stacked, positioned
                 self:SetScript('OnUpdate', function(self, elapsed)
                     timeElapsed = timeElapsed + elapsed
                     if timeElapsed > 0.1 then
-                        if InCombatLockdown() then 
+                        if InCombatLockdown() then
                             print(core.customColorBad..ERR_NOT_IN_COMBAT)
                             self.isStacking = false
                             self:SetScript('OnUpdate', nil)
-                            return 
+                            return
                         end
                         timeElapsed = 0
-                        
+
                         stacked = mod:StackSection(partialStacks)
 						ClearCursor()
-                        
+
                         if stacked then
 							positioned = true
 							for i = #partialStacks, 1, -1 do
@@ -2037,7 +2035,7 @@ function mod:SplitHandler(self, button)
 									tremove(partialStacks, i)
 								end
 							end
-							
+
 							if positioned or #partialStacks == 0 then
 								self.isStacking = false
 								self:SetScript('OnUpdate', nil)
@@ -2078,8 +2076,8 @@ function mod:ModifyStackSplitFrame(enable)
 				return
 			end
 			B_SplitItem(nil, bag, slot, stack)
-		end 
-		
+		end
+
 		if not mod:IsHooked(StackSplitOkayButton, 'PreClick') then
 			mod:SecureHookScript(StackSplitOkayButton, 'PreClick', OnOkay)
 			mod:SecureHookScript(StackSplitOkayButton, 'PostClick', function()
@@ -2087,13 +2085,13 @@ function mod:ModifyStackSplitFrame(enable)
 				StackSplitFrame:SetScript('OnKeyDown', origOnKeyDown)
 			end)
 		end
-		
+
 		if not StackSplitFrame.editBox then
 			local editBox = CreateFrame('EditBox', "StackSplitFrameEditBox", StackSplitFrame, 'InputBoxTemplate')
 			editBox:SetNumeric(true)
 			S:HandleEditBox(editBox)
 			editBox:Show()
-			
+
 			StackSplitFrame.editBox = editBox
 			StackSplitFrame.editBox:SetScript('OnEscapePressed', function(self) StackSplitFrame:Hide() end)
 			StackSplitFrame.editBox:SetScript('OnEnterPressed', function(self) StackSplitOkayButton:Click() end)
@@ -2102,7 +2100,7 @@ function mod:ModifyStackSplitFrame(enable)
 		end
 
 		StackSplitRightButton:Disable()
-		StackSplitLeftButton:Disable()	
+		StackSplitLeftButton:Disable()
 		StackSplitRightButton:Hide()
 		StackSplitLeftButton:Hide()
 		StackSplitFrame:Height(80)
@@ -2114,7 +2112,7 @@ function mod:ModifyStackSplitFrame(enable)
 			self:Unhook(StackSplitOkayButton, 'OnClick')
 		end
 		StackSplitRightButton:Enable()
-		StackSplitLeftButton:Enable()	
+		StackSplitLeftButton:Enable()
 		StackSplitRightButton:Show()
 		StackSplitLeftButton:Show()
 		StackSplitFrame.editBox:Hide()
@@ -2125,8 +2123,8 @@ end
 function mod:EasierProcessing(enable)
 	if enable then
 		if not self:IsHooked(B, 'Layout') then self:SecureHook(B, 'Layout') end
-		self.localhooks.EasierProcessing = { 
-			["OnClick"] = function(self) mod:Process(self) end, 
+		self.localhooks.EasierProcessing = {
+			["OnClick"] = function(self) mod:Process(self) end,
 			["OnHide"] = function() if mod.ProcessButton:IsShown() then mod.ProcessButton:Hide() end end
 		}
 		self.ProcessButton = self.ProcessButton and self.ProcessButton or self:CreateProcessingButton()
@@ -2145,8 +2143,8 @@ end
 function mod:SplitStack(enable)
 	if enable then
 		if not self:IsHooked(B, 'Layout') then self:SecureHook(B, 'Layout') end
-		self.localhooks.SplitStack = { 
-			["OnClick"] = function(self, button) mod:SplitHandler(self, button) end 
+		self.localhooks.SplitStack = {
+			["OnClick"] = function(self, button) mod:SplitHandler(self, button) end
 		}
 		self:ModifyStackSplitFrame(true)
 		initialized.SplitStack = true

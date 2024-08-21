@@ -1,22 +1,20 @@
 local E, L, _, P = unpack(ElvUI)
 local core = E:GetModule("Extras")
 local mod = core:NewModule("ClassificationIndicator", "AceHook-3.0", "AceEvent-3.0")
-local UF = E:GetModule("UnitFrames")
-local ElvUF = E.oUF
 
 local modName = mod:GetName()
 
 local pairs, ipairs = pairs, ipairs
 local rad = math.rad
-local twipe, tinsert = table.wipe, table.insert
+local tinsert = table.insert
 local lower, gsub, upper, find = string.lower, string.gsub, string.upper, string.find
-local UnitClass, UnitIsPlayer, UnitClassification, UnitExists = UnitClass, UnitIsPlayer, UnitClassification, UnitExists
+local UnitClass, UnitIsPlayer, UnitClassification = UnitClass, UnitIsPlayer, UnitClassification
 
 local function tagFunc(frame, unit)
 	mod:UpdateElement(frame, unit)
 end
-	
-	
+
+
 P["Extras"]["unitframes"][modName] = {
 	["selectedUnit"] = "target",
 	["selectedTexList"] = "GENERAL",
@@ -41,11 +39,11 @@ P["Extras"]["unitframes"][modName] = {
 			},
 			["elite"] = {
 				["texture"] = 'Interface\\WorldMap\\Skull_64',
-				["texCoords"] = { 
-					["left"] = 0, 
-					["right"] = 1, 
-					["top"] = 0, 
-					["bottom"] = 1 
+				["texCoords"] = {
+					["left"] = 0,
+					["right"] = 1,
+					["top"] = 0,
+					["bottom"] = 1
 				},
 				["flipIndicator"] = false,
 				["colorByType"] = false,
@@ -79,7 +77,7 @@ function mod:LoadConfig()
 				guiInline = true,
 				get = function(info) return selectedEnemyData()[info[#info]] end,
 				set = function(info, value) selectedEnemyData()[info[#info]] = value updateAllElements() end,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled end,	
+				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled end,
 				args = {
 					enabled = {
 						order = 0,
@@ -87,8 +85,8 @@ function mod:LoadConfig()
 						disabled = false,
 						name = core.pluginColor..L["Enable"],
 						desc = L["Enables classification indicator for the selected unit."],
-						get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()].enabled end,
-						set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()].enabled = value self:Toggle() end,
+						get = function() return E.db.Extras.unitframes[modName].units[selectedUnit()].enabled end,
+						set = function(_, value) E.db.Extras.unitframes[modName].units[selectedUnit()].enabled = value self:Toggle() end,
 					},
 					backdrop = {
 						order = 1,
@@ -104,8 +102,8 @@ function mod:LoadConfig()
 						disabled = false,
 						name = L["Select Unit"],
 						desc = "",
-						get = function(info) return E.db.Extras.unitframes[modName].selectedUnit end,
-						set = function(info, value) E.db.Extras.unitframes[modName].selectedUnit = value end,
+						get = function() return E.db.Extras.unitframes[modName].selectedUnit end,
+						set = function(_, value) E.db.Extras.unitframes[modName].selectedUnit = value end,
 						values = function() return core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].units) end,
 					},
 					copyUnitSettings = {
@@ -160,8 +158,8 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Type"],
 						desc = L["Select unit type."],
-						get = function(info) return selectedEnemyType() end,
-						set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()].selectedEnemyType = value end,
+						get = function() return selectedEnemyType() end,
+						set = function(_, value) E.db.Extras.unitframes[modName].units[selectedUnit()].selectedEnemyType = value end,
 						values = function()
 							local list = {}
 							if find(selectedUnit(), 'target') or find(selectedUnit(), 'focus') then
@@ -204,8 +202,8 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Texture List"],
 						desc = "",
-						get = function(info) return E.db.Extras.unitframes[modName].selectedTexList end,
-						set = function(info, value) E.db.Extras.unitframes[modName].selectedTexList = value end,
+						get = function() return E.db.Extras.unitframes[modName].selectedTexList end,
+						set = function(_, value) E.db.Extras.unitframes[modName].selectedTexList = value end,
 						hidden = function() return selectedEnemyData().NPIcon end,
 						values = {
 							["CLASS"] = L["Class Icons"],
@@ -233,10 +231,10 @@ function mod:LoadConfig()
 				order = 2,
 				type = "group",
 				name = L["Texture Coordinates"],
-				guiInline = true,	
+				guiInline = true,
 				get = function(info) return selectedEnemyData().texCoords[info[#info]] end,
 				set = function(info, value) selectedEnemyData().texCoords[info[#info]] = value updateAllElements() end,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or selectedEnemyData().NPIcon end,	
+				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or selectedEnemyData().NPIcon end,
 				args = {
 					left = {
 						order = 1,
@@ -265,7 +263,7 @@ function mod:LoadConfig()
 						min = 0, max = 1, step = 0.01,
 						name = L["Bottom"],
 						desc = "",
-					},	
+					},
 				},
 			},
 			iconVars = {
@@ -399,9 +397,9 @@ function mod:LoadConfig()
 		end
 		for unitframeType in pairs(units) do
 			E.db.Extras.unitframes[modName].units[unitframeType] = CopyTable(E.db.Extras.unitframes[modName].units.target)
-		end	
+		end
 	end
-end	
+end
 
 
 function mod:UpdateElement(frame, unit)
@@ -409,7 +407,7 @@ function mod:UpdateElement(frame, unit)
 	local unitframeType = frame.unitframeType
 	local db = E.db.Extras.unitframes[modName].units[unitframeType]
 	if not db or not db.enabled then return end
-	
+
 	local classificationIndicator = frame.classificationIndicator
 	local unitClassification = UnitClassification(unit)
 	local enemyType, colorByType, texture, r, g, b
@@ -417,16 +415,16 @@ function mod:UpdateElement(frame, unit)
 	if UnitIsPlayer(unit) then
 		if (find(unitframeType, 'target') or find(unitframeType, 'focus')) and not db.enableClasses then classificationIndicator:Hide() return end
 		local _, class = UnitClass(unit)
-		if class then 
-			enemyType = db[class] 
-			texture = db[class].texture 
+		if class then
+			enemyType = db[class]
+			texture = db[class].texture
 		end
 	else
 		if not (find(unitframeType, 'target') or find(unitframeType, 'focus')) or not db.enableNPCs then classificationIndicator:Hide() return end
 		for type, color in pairs({worldboss = {1, 0.5, 1}, elite = {1, 1, 0}, rare = {1, 1, 1}, rareelite = {0.5, 1, 1}}) do
 			if unitClassification == type then
 				enemyType = db[type]
-				if enemyType and enemyType.NPIcon then 
+				if enemyType and enemyType.NPIcon then
 					texture = E.Media.Textures.Nameplates
 				else
 					texture = enemyType.texture
@@ -445,15 +443,15 @@ function mod:UpdateElement(frame, unit)
 		else
 			unitTexture:SetVertexColor(1, 1, 1)
 		end
-		
+
 		unitTexture:SetTexture(texture)
-		
+
 		if db.backdrop then
 			classificationIndicator.backdrop:Show()
 		else
 			classificationIndicator.backdrop:Hide()
 		end
-		
+
 		if enemyType.NPIcon then
 			local top, bottom = unitClassification == 'worldboss' and 0.62 or 0.35, unitClassification == 'worldboss' and 0.94 or 0.63
 			unitTexture:SetTexCoord(0, 0.15, top, bottom)
@@ -463,12 +461,12 @@ function mod:UpdateElement(frame, unit)
 			local texCoords = enemyType.texCoords
 			unitTexture:SetTexCoord(texCoords.left, texCoords.right, texCoords.top, texCoords.bottom)
 		end
-		
+
 		local rotation = db.frameRotation
 		if not enemyType.flipIndicator and rotation ~= 0 and rotation ~= 360 then
 			unitTexture:SetRotation(rad(rotation))
 		end
-		
+
 		local points = db.points
 		classificationIndicator:ClearAllPoints()
 		classificationIndicator:Size(db.width, db.height)
@@ -484,23 +482,23 @@ end
 local function manageClassificationIndicator(frame, unit)
 	if frame.classificationIndicator then return end
 	local db = E.db.Extras.unitframes[modName].units[unit]
-	
+
 	local classificationIndicator = CreateFrame("Frame", nil,frame)
 	classificationIndicator:Size(db.width, db.height)
 	classificationIndicator:Point(db.points.point, frame, db.points.relativeTo, db.points.xOffset, db.points.yOffset)
 	classificationIndicator:SetFrameStrata(db.frameStrata)
 	classificationIndicator:SetFrameLevel(db.frameLevel)
-	
+
 	classificationIndicator:CreateBackdrop()
-	
+
 	local Texture = classificationIndicator:CreateTexture(nil, "OVERLAY")
 	Texture:Size(db.width, db.height)
 	Texture:SetAllPoints(classificationIndicator)
-	
+
 	classificationIndicator.texture = Texture
-	
+
 	core:Tag("classification", tagFunc)
-	
+
 	frame.classificationIndicator = classificationIndicator
 end
 
@@ -529,10 +527,10 @@ end
 
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
-	
+
 	mod:LoadConfig()
 	mod:Toggle()
-	
+
 	tinsert(core.frameUpdates, manageIndicators)
 end
 

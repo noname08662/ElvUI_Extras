@@ -3,7 +3,6 @@ local E, L, _, P = unpack(ElvUI)
 local core = E:GetModule("Extras")
 local mod = core:NewModule("DRTracker", "AceEvent-3.0")
 local UF = E:GetModule("UnitFrames")
-local S = E:GetModule("Skins")
 local ElvUF = E.oUF
 local LSM = E.Libs.LSM
 local LAI = E.Libs.LAI
@@ -24,24 +23,16 @@ local eventRegistered = {
 	["SPELL_CAST_SUCCESS"] = true,
 }
 
-local _G, pairs, ipairs, unpack, tonumber, type, select, next, print = _G, pairs, ipairs, unpack, tonumber, type, select, next, print
+local _G, pairs, ipairs, unpack, tonumber, select, next, print = _G, pairs, ipairs, unpack, tonumber, select, next, print
 local band = bit.band
 local random = math.random
 local twipe, tinsert, tsort = table.wipe, table.insert, table.sort
 local match, format, gsub, lower = string.match, string.format, string.gsub, string.lower
-local GetSpellName, GetSpellLink, BOOKTYPE_SPELL, BOOKTYPE_PET = GetSpellName, GetSpellLink, BOOKTYPE_SPELL, BOOKTYPE_PET
-local CooldownFrame_SetTimer, isAffectingPlayer, UnitGUID = CooldownFrame_SetTimer, isAffectingPlayer, UnitGUID
-local GetSpellInfo, GetTime, UnitExists, UnitIsDead = GetSpellInfo, GetTime, UnitExists, UnitIsDead
+local GetSpellLink= GetSpellLink
+local CooldownFrame_SetTimer, UnitGUID = CooldownFrame_SetTimer, UnitGUID
+local GetSpellInfo, GetTime, UnitExists = GetSpellInfo, GetTime, UnitExists
 local COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_CONTROL_PLAYER, COMBATLOG_OBJECT_REACTION_NEUTRAL, COMBATLOG_OBJECT_REACTION_HOSTILE = COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_CONTROL_PLAYER, COMBATLOG_OBJECT_REACTION_NEUTRAL, COMBATLOG_OBJECT_REACTION_HOSTILE
 local ERR_NOT_IN_COMBAT, InCombatLockdown = ERR_NOT_IN_COMBAT, InCombatLockdown
-
-local function tableLength(tbl)
-	local count = 0
-	for _ in pairs(tbl) do
-		count = count + 1
-	end
-	return count
-end
 
 
 P["Extras"]["unitframes"][modName] = {
@@ -136,11 +127,11 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select Unit"],
 						desc = "",
-						get = function(info) return E.db.Extras.unitframes[modName].selectedUnit end,
-						set = function(info, value) E.db.Extras.unitframes[modName].selectedUnit = value end,
+						get = function() return E.db.Extras.unitframes[modName].selectedUnit end,
+						set = function(_, value) E.db.Extras.unitframes[modName].selectedUnit = value end,
 						values = function() return core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].units) end,
 					},
-				},	
+				},
 			},
 			settings = {
 				order = 2,
@@ -157,8 +148,8 @@ function mod:LoadConfig()
 						min = 16, max = 20, step = 1,
 						name = L["DR Time"],
 						desc = L["DRtime controls how long it takes for the icons to reset. Several factors can affect how DR resets. If you are experiencing constant problems with DR reset accuracy, you can change this value."],
-						get = function(info) return E.db.Extras.unitframes[modName].DRtime end,
-						set = function(info, value) E.db.Extras.unitframes[modName].DRtime = value self:Toggle() end,
+						get = function() return E.db.Extras.unitframes[modName].DRtime end,
+						set = function(_, value) E.db.Extras.unitframes[modName].DRtime = value self:Toggle() end,
 					},
 					test = {
 						order = 3,
@@ -172,8 +163,8 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Players Only"],
 						desc = L["Ignore NPCs when setting up icons."],
-						get = function(info) return E.db.Extras.unitframes[modName].playersOnly end,
-						set = function(info, value) E.db.Extras.unitframes[modName].playersOnly = value self:Toggle() end,
+						get = function() return E.db.Extras.unitframes[modName].playersOnly end,
+						set = function(_, value) E.db.Extras.unitframes[modName].playersOnly = value self:Toggle() end,
 						hidden = function() return selectedUnit() == 'arena' end,
 					},
 					noCdNumbers = {
@@ -193,7 +184,7 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Growth Direction"],
 						desc = "",
-						values = { 
+						values = {
 							["RIGHT"] = L["Right"],
 							["LEFT"] = L["Left"],
 							["TOP"] = L["Up"],
@@ -325,7 +316,7 @@ function mod:LoadConfig()
 						desc = "",
 					},
 				},
-			},	
+			},
 			strBox = {
 				order = 4,
 				type = "group",
@@ -397,8 +388,8 @@ function mod:LoadConfig()
 						type = "color",
 						name = L["Category Border"],
 						desc = "",
-						get = function(info) return unpack(E.db.Extras.unitframes[modName].catColors[selectedCat()]) end,
-						set = function(info, r, g, b) E.db.Extras.unitframes[modName].catColors[selectedCat()] = { r, g, b } self:Toggle() end,
+						get = function() return unpack(E.db.Extras.unitframes[modName].catColors[selectedCat()]) end,
+						set = function(_, r, g, b) E.db.Extras.unitframes[modName].catColors[selectedCat()] = { r, g, b } self:Toggle() end,
 						disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or not E.db.unitframe.units[selectedUnit()].enable end,
 					},
 					catDropdown = {
@@ -407,8 +398,8 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Select Category"],
 						desc = "",
-						get = function(info) return E.db.Extras.unitframes[modName].selectedCat end,
-						set = function(info, value) E.db.Extras.unitframes[modName].selectedCat = value end,
+						get = function() return E.db.Extras.unitframes[modName].selectedCat end,
+						set = function(_, value) E.db.Extras.unitframes[modName].selectedCat = value end,
 						values = core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].catColors),
 					},
 				},
@@ -426,8 +417,8 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Add Category"],
 						desc = L["Format: 'category spellID', e.g. fear 10890.\nList of all categories is available at the 'colors' section."],
-						get = function(info) return "" end,
-						set = function(info, value)
+						get = function() return "" end,
+						set = function(_, value)
 							local cat, spellID = match(value, '%s*(%S+)%D*(%d+)')
 							if spellID and cat and GetSpellInfo(spellID) then
 								if not E.db.Extras.unitframes[modName].catColors[cat] then print(core.customColorBad..L["Invalid category."]) return end
@@ -461,8 +452,8 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Remove Category"],
 						desc = "",
-						get = function(info) return "" end,
-						set = function(info, value)
+						get = function() return "" end,
+						set = function(_, value)
 							for id, cat in pairs(E.db.Extras.unitframes[modName].catList) do
 								if id == value then
 									E.db.Extras.unitframes[modName].catList[id] = nil
@@ -496,7 +487,7 @@ function mod:LoadConfig()
 		E.db.Extras.unitframes[modName].units.focus = CopyTable(E.db.Extras.unitframes[modName].units.target)
 		E.db.Extras.unitframes[modName].units.arena = CopyTable(E.db.Extras.unitframes[modName].units.target)
 	end
-end			
+end
 
 
 local function calculateNextX(db)
@@ -532,15 +523,15 @@ local function createAura(self, index, db)
 	aura:Width(db.iconSize)
 	aura:Height(db.iconSize)
 	aura:SetTemplate("Transparent")
-	
+
 	aura.icon = aura:CreateTexture("$parenticon", "ARTWORK")
 	aura.icon:SetInside(aura, E.mult, E.mult)
 	aura.icon:SetTexCoord(unpack(E.TexCoords))
-	
+
 	aura.cooldown = CreateFrame("Cooldown", "$parentCD", aura, "CooldownFrameTemplate")
 	aura.cooldown:SetAllPoints(aura.icon)
 	aura.cooldown:SetReverse()
-	
+
 	if db.strengthIndicator.text.enabled then
 		local db = db.strengthIndicator.text
 		aura.count = aura:CreateFontString("OVERLAY")
@@ -548,7 +539,7 @@ local function createAura(self, index, db)
 		aura.count:Point(db.point, aura, db.relativeTo, db.x, db.y)
 		aura.count:Show()
 	end
-	
+
 	if db.strengthIndicator.box.enabled then
 		local db = db.strengthIndicator.box
 		aura.indicator = CreateFrame("Button", nil, aura)
@@ -557,13 +548,13 @@ local function createAura(self, index, db)
 		aura.indicator:Point(db.point, aura, db.point)
 		aura.indicator:SetFrameLevel(aura.cooldown:GetFrameLevel() + 2)
 	end
-	
+
 	if not db.noCdNumbers then
 		E:RegisterCooldown(aura.cooldown)
 	end
-	
+
 	aura.start = 0
-	
+
     return aura
 end
 
@@ -586,7 +577,7 @@ local function combatLogCheck(...)
     if (eventType == "SPELL_AURA_APPLIED") or (eventType == "SPELL_AURA_REFRESH") or (eventType == "SPELL_CAST_SUCCESS") then
         if (auraType == "DEBUFF") or (eventType == "SPELL_CAST_SUCCESS") then
             local drCat = spells[spellID]
-			
+
             if not drCat or not catList[drCat] then return end
             if not isAnotherPlayer and not pveDR[drCat] then return end
 
@@ -596,7 +587,7 @@ local function combatLogCheck(...)
 			local currentTime = GetTime()
 			if currentTime - lastUpdate < 1 then return end
 			lastUpdateTime[sourceGUID][spellID] = currentTime
-		
+
             local color = db.catColors[drCat]
 
             if not activeGUIDs[destGUID] then activeGUIDs[destGUID] = {} end
@@ -610,7 +601,7 @@ local function combatLogCheck(...)
             activeGUIDs[destGUID][drCat].start = GetTime()
             activeGUIDs[destGUID][drCat].icon = icon
             activeGUIDs[destGUID][drCat].color = color
-			
+
             needupdate = true
         end
     elseif event == "PLAYER_TARGET_CHANGED" or event == "PLAYER_FOCUS_CHANGED" then
@@ -631,7 +622,7 @@ local function combatLogCheck(...)
 			end
 		end
     end
-    
+
     if needupdate then
         for frame, target in pairs(framelist) do
 			local targetGUID = UnitExists(target[1]) and UnitGUID(target[1])
@@ -645,21 +636,21 @@ end
 local function setupDRUnits()
 	twipe(framelist)
 	local db = E.db.Extras.unitframes[modName].units
-	
+
 	--[FRAME NAME]	= {UNITID,SIZE,ANCHOR,ANCHORFRAME,X,Y,"ANCHORNEXT","ANCHORPREVIOUS",nextx,nexty},
-		
+
 	if db.player.enabled then
 		framelist["ElvUF_Player"] = {"player", db.player.point, db.player.relativeTo, db.player.xOffset, db.player.yOffset, "LEFT", "RIGHT", 2, 0}
-	end	
-	
+	end
+
 	if db.target.enabled then
 		framelist["ElvUF_Target"] = {"target", db.target.point, db.target.relativeTo, db.target.xOffset, db.target.yOffset, "LEFT", "RIGHT", 2, 0}
 	end
-	
+
 	if db.focus.enabled then
 		framelist["ElvUF_Focus"] = {"focus", db.focus.point, db.focus.relativeTo, db.focus.xOffset, db.focus.yOffset, "LEFT","RIGHT",2,0}
 	end
-	
+
 	if db.arena.enabled then
 		framelist["ElvUF_Arena1"] = {"arena1", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT",-2,0}
 		framelist["ElvUF_Arena2"] = {"arena2", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT",-2,0}
@@ -717,12 +708,12 @@ function mod:DisplayDrActives(self)
     local db = E.db.Extras.unitframes[modName]
     local DRtime = db.DRtime
     db = db.units[gsub(target, '%d', '')]
-	
+
     local index = 1
     local sorted = {}
     for cat, entry in pairs(activeGUIDs[targetGUID]) do
         local aura = self.auras[index]
-		if not aura then 
+		if not aura then
 			self.auras[index] = createAura(self, index, db)
 			aura = self.auras[index]
 		end
@@ -730,13 +721,13 @@ function mod:DisplayDrActives(self)
         tinsert(sorted, { aura = aura, start = entry.start })
         index = index + 1
     end
-    
+
     -- hide and clear unused auras
     for i = index, #self.auras do
         self.auras[i]:Hide()
         self.auras[i]:SetScript("OnUpdate", nil)
     end
-    
+
     -- sort and position auras
     tsort(sorted, function(a, b) return a.start < b.start end)
     for i, data in ipairs(sorted) do
@@ -758,10 +749,10 @@ function mod:UpdateDRTrackerFrames()
         frame = _G[frame]
         local DrTracker = frame.DrTracker or CreateFrame("Frame", nil, frame)
         local unit_db = db.units[gsub(target[1], '%d', '')]
-        
+
         -- update DrTracker properties
         DrTracker.target = target[1]
-        
+
         DrTracker.anchor, DrTracker.anchorframe = target[2], target[3]
         DrTracker.x, DrTracker.y = target[4], target[5]
         DrTracker.nextanchor = unit_db.growthDir
@@ -774,9 +765,9 @@ function mod:UpdateDRTrackerFrames()
         DrTracker:Point(target[2], frame, target[3], target[4], target[5])
 
 		DrTracker.auras = DrTracker.auras or {}
-    
+
         frame.DrTracker = DrTracker
-		
+
 		local targetGUID = UnitExists(DrTracker.target) and UnitGUID(DrTracker.target)
 		if targetGUID and activeGUIDs[targetGUID] then
 			local drTracker = frame.DrTracker
@@ -793,28 +784,28 @@ function mod:UpdateDRTrackerFrames()
 end
 
 function mod:TDR()
-    if InCombatLockdown() then 
-        print(core.customColorBad..ERR_NOT_IN_COMBAT) 
-        return 
+    if InCombatLockdown() then
+        print(core.customColorBad..ERR_NOT_IN_COMBAT)
+        return
     end
-    
+
     local db = E.db.Extras.unitframes[modName]
     for frame, target in pairs(framelist) do
         if _G[frame]:IsShown() then
             local drTracker = _G[frame].DrTracker
-            
+
             local testSpells = {}
             local entryCount = 0
-            
+
             for spellId, cat in pairs(db.catList) do
                 testSpells[spellId] = cat
                 entryCount = entryCount + 1
             end
-            
+
             -- add dummy entries if we don't have at least 3
             while entryCount < 3 do
                 for spellId, cat in pairs(LAI.drSpells) do
-                    if entryCount > 3 then 
+                    if entryCount > 3 then
                         break
                     elseif random(1, 7) == 7 and not testSpells[cat] then
                         testSpells[spellId] = cat
@@ -822,10 +813,10 @@ function mod:TDR()
                     end
                 end
             end
-            
+
             local dummyGUID = UnitGUID(target[1])
             activeGUIDs[dummyGUID] = {}
-            
+
             for spellId, cat in pairs(testSpells) do
                 if not tonumber(cat) then
                     activeGUIDs[dummyGUID][cat] = {
@@ -836,7 +827,7 @@ function mod:TDR()
                     }
                 end
             end
-            
+
             self:DisplayDrActives(drTracker)
         end
     end
@@ -856,7 +847,7 @@ end
 
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
-	
+
 	mod:LoadConfig()
 	mod:Toggle()
 end

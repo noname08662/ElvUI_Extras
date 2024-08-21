@@ -1,22 +1,21 @@
 local E, L, _, P = unpack(ElvUI)
 local core = E:GetModule("Extras")
 local mod = core:NewModule("FCF", "AceHook-3.0")
-local UF = E:GetModule("UnitFrames")
 local ElvUF = E.oUF
 local LSM = E.Libs.LSM
 
 local modName = mod:GetName()
 
-local print, pairs, ipairs, loadstring, pcall, type, tonumber, select = print, pairs, ipairs, loadstring, pcall, type, tonumber, select
-local find, gsub, upper, match, format = string.find, string.gsub, string.upper, string.match, string.format
-local twipe, tsort, tinsert = table.wipe, table.sort, table.insert
-local GetSpellInfo, GetSpellLink, CopyTable, LUA_ERROR = GetSpellInfo, GetSpellLink, CopyTable, LUA_ERROR
+local pairs, ipairs, loadstring, pcall, type, tonumber, select = pairs, ipairs, loadstring, pcall, type, tonumber, select
+local find, gsub, match, format = string.find, string.gsub, string.match, string.format
+local tsort, tinsert = table.sort, table.insert
+local GetSpellInfo, GetSpellLink, CopyTable = GetSpellInfo, GetSpellLink, CopyTable
 local SCHOOL_MASK_NONE, SCHOOL_MASK_PHYSICAL, SCHOOL_MASK_HOLY, SCHOOL_MASK_FIRE,
 	SCHOOL_MASK_NATURE, SCHOOL_MASK_FROST, SCHOOL_MASK_SHADOW, SCHOOL_MASK_ARCANE =
 		SCHOOL_MASK_NONE, SCHOOL_MASK_PHYSICAL, SCHOOL_MASK_HOLY, SCHOOL_MASK_FIRE,
 		SCHOOL_MASK_NATURE, SCHOOL_MASK_FROST, SCHOOL_MASK_SHADOW, SCHOOL_MASK_ARCANE
 
-local function tagFunc(frame, unit)
+local function tagFunc(frame)
 	if frame.FloatingCombatFeedback then
 		ElvUF.uaeHook(frame)
 	end
@@ -82,11 +81,11 @@ P["Extras"]["unitframes"][modName] = {
 				[SCHOOL_MASK_PHYSICAL] = {179, 26, 26},
 				[SCHOOL_MASK_SHADOW] = {128, 128, 255},
 				-- multi-schools
-				[72] = {166, 192, 166}, -- SCHOOL_MASK_ASTRAL 
-				[127] = {182, 164, 142}, -- SCHOOL_MASK_CHAOS 
+				[72] = {166, 192, 166}, -- SCHOOL_MASK_ASTRAL
+				[127] = {182, 164, 142}, -- SCHOOL_MASK_CHAOS
 				[28] = {153, 212, 111}, -- SCHOOL_MASK_ELEMENTAL
-				[126] = {183, 187, 162}, -- SCHOOL_MASK_MAGIC 
-				[40] = {103, 192, 166}, -- SCHOOL_MASK_PLAGUE 
+				[126] = {183, 187, 162}, -- SCHOOL_MASK_MAGIC
+				[40] = {103, 192, 166}, -- SCHOOL_MASK_PLAGUE
 				[6] = {255, 178, 64}, -- SCHOOL_MASK_RADIANT
 				[36] = {192, 128, 128}, -- SCHOOL_MASK_SHADOWFLAME
 				[48] = {128, 192, 255}, -- SCHOOL_MASK_SHADOWFROST
@@ -123,16 +122,16 @@ function mod:LoadConfig()
 						width = "full",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Appends floating combat feedback fontstrings to frames."],
-						get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()].enabled end,
-						set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()].enabled = value self:Toggle() end,
+						get = function() return E.db.Extras.unitframes[modName].units[selectedUnit()].enabled end,
+						set = function(_, value) E.db.Extras.unitframes[modName].units[selectedUnit()].enabled = value self:Toggle() end,
 					},
 					unitDropdown = {
 						order = 2,
 						type = "select",
 						name = L["Select Unit"],
 						desc = "",
-						get = function(info) return E.db.Extras.unitframes[modName].selectedUnit end,
-						set = function(info, value) E.db.Extras.unitframes[modName].selectedUnit = value end,
+						get = function() return E.db.Extras.unitframes[modName].selectedUnit end,
+						set = function(_, value) E.db.Extras.unitframes[modName].selectedUnit = value end,
 						values = function() return core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].units) end,
 					},
 					playerOnly = {
@@ -140,8 +139,8 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Player Only"],
 						desc = L["Handle only player combat log events."],
-						get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()].playerOnly end,
-						set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()].playerOnly = value self:Toggle() end,
+						get = function() return E.db.Extras.unitframes[modName].units[selectedUnit()].playerOnly end,
+						set = function(_, value) E.db.Extras.unitframes[modName].units[selectedUnit()].playerOnly = value self:Toggle() end,
 						hidden = function() local unit = selectedUnit() return find(unit, 'pet') and not find(unit, 'target') or unit == 'boss' or unit == 'arena' end,
 					},
 				},
@@ -189,7 +188,7 @@ function mod:LoadConfig()
 						desc = "",
 						min = 0.6, max = 6, step = 0.1,
 					},
-					--[[    
+					--[[
 					fadeTime = {
 						order = 5,
 						type = "range",
@@ -258,8 +257,8 @@ function mod:LoadConfig()
 						name = L["Event"],
 						desc = "",
 						disabled = false,
-						get = function(info) return selectedEvent() end,
-						set = function(info, value) E.db.Extras.unitframes[modName].selectedEvent = value end,
+						get = function() return selectedEvent() end,
+						set = function(_, value) E.db.Extras.unitframes[modName].selectedEvent = value end,
 						values = {
 							["ABSORB"] = L["ABSORB"],
 							["BLOCK"] = L["BLOCK"],
@@ -291,8 +290,8 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["School"],
 						desc = "",
-						get = function(info) return E.db.Extras.unitframes[modName].selectedSchool end,
-						set = function(info, value) E.db.Extras.unitframes[modName].selectedSchool = value end,
+						get = function() return E.db.Extras.unitframes[modName].selectedSchool end,
+						set = function(_, value) E.db.Extras.unitframes[modName].selectedSchool = value end,
 						values = {
 							[SCHOOL_MASK_NONE] = L["None"],
 							[SCHOOL_MASK_PHYSICAL] = L["Physical"],
@@ -323,16 +322,16 @@ function mod:LoadConfig()
 						type = "color",
 						name = L["Colors"],
 						desc = "",
-						get = function(info) local color = E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()].colors return color[1], color[2], color[3] end,
-						set = function(info, r, g, b) E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()].colors = {r, g, b} self:Toggle() end,
+						get = function() local color = E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()].colors return color[1], color[2], color[3] end,
+						set = function(_, r, g, b) E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()].colors = {r, g, b} self:Toggle() end,
 					},
 					colorsSchool = {
 						order = 6,
 						type = "color",
 						name = L["Colors (School)"],
 						desc = "",
-						get = function(info) local color = E.db.Extras.unitframes[modName].units[selectedUnit()].school[E.db.Extras.unitframes[modName].selectedSchool] return color[1], color[2], color[3] end,
-						set = function(info, r, g, b) E.db.Extras.unitframes[modName].units[selectedUnit()].school[E.db.Extras.unitframes[modName].selectedSchool] = {r, g, b} self:Toggle() end,
+						get = function() local color = E.db.Extras.unitframes[modName].units[selectedUnit()].school[E.db.Extras.unitframes[modName].selectedSchool] return color[1], color[2], color[3] end,
+						set = function(_, r, g, b) E.db.Extras.unitframes[modName].units[selectedUnit()].school[E.db.Extras.unitframes[modName].selectedSchool] = {r, g, b} self:Toggle() end,
 					},
 					animation = {
 						order = 7,
@@ -357,16 +356,16 @@ function mod:LoadConfig()
 						desc = L["Define your custom animation as a lua function.\n\nExample:\nfunction(self)"..
 								"\nreturn self.x + self.xDirection * self.radius * (1 - m_cos(m_pi / 2 * self.progress)),"..
 								"\nself.y + self.yDirection * self.radius * m_sin(m_pi / 2 * self.progress) end"],
-					}, 
+					},
 				},
 			},
 			flags = {
 				order = 4,
 				type = "group",
 				name = L["Flag Settings"],
-				inline = true,				
+				inline = true,
 				get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()].flags[selectedFlag()][info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()].flags[selectedFlag()][info[#info]] = value self:Toggle() end,		
+				set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()].flags[selectedFlag()][info[#info]] = value self:Toggle() end,
 				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()].disabled end,
 				args = {
 					flag = {
@@ -374,8 +373,8 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Flag"],
 						desc = "",
-						get = function(info) return E.db.Extras.unitframes[modName].selectedFlag end,
-						set = function(info, value) E.db.Extras.unitframes[modName].selectedFlag = value end,
+						get = function() return E.db.Extras.unitframes[modName].selectedFlag end,
+						set = function(_, value) E.db.Extras.unitframes[modName].selectedFlag = value end,
 						values = {
 							["ABSORB"  ] = L["ABSORB"],
 							["BLOCK"   ] = L["BLOCK"],
@@ -429,7 +428,7 @@ function mod:LoadConfig()
 				name = L["Icon Settings"],
 				inline = true,
 				get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] = value self:Toggle() end,		
+				set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] = value self:Toggle() end,
 				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()].disabled end,
 				args = {
 					showIcon = {
@@ -471,12 +470,12 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Add Spell (by ID)"],
 						desc = L["E.g. 42292"],
-						get = function(info) return "" end,
-						set = function(info, value)
+						get = function() return "" end,
+						set = function(_, value)
 							local spellID = match(value, '%D*(%d+)%D*')
 							if spellID and GetSpellInfo(spellID) then
 								E.db.Extras.unitframes[modName].units[selectedUnit()].blacklist[tonumber(spellID)] = true
-								local name, _, icon = GetSpellInfo(spellID)
+								local _, _, icon = GetSpellInfo(spellID)
 								local link = GetSpellLink(spellID)
 								icon = gsub(icon, '\124', '\124\124')
 								local string = '\124T' .. icon .. ':16:16\124t' .. link
@@ -491,12 +490,12 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Remove Spell"],
 						desc = "",
-						get = function(info) return "" end,
-						set = function(info, value)
+						get = function() return "" end,
+						set = function(_, value)
 							for spellID in pairs(E.db.Extras.unitframes[modName].units[selectedUnit()].blacklist) do
 								if spellID == value then
 									E.db.Extras.unitframes[modName].units[selectedUnit()].blacklist[spellID] = nil
-									local name, _, icon = GetSpellInfo(spellID)
+									local _, _, icon = GetSpellInfo(spellID)
 									local link = GetSpellLink(spellID)
 									icon = gsub(icon, '\124', '\124\124')
 									local string = '\124T' .. icon .. ':16:16\124t' .. link
@@ -536,9 +535,9 @@ function mod:LoadConfig()
 	if not E.db.Extras.unitframes[modName].units.target then
 		for _, unitframeType in ipairs({'target', 'focus', 'raid', 'raid40', 'party', 'arena'}) do
 			E.db.Extras.unitframes[modName].units[unitframeType] = CopyTable(E.db.Extras.unitframes[modName].units.player)
-		end	
+		end
 	end
-end	
+end
 
 
 function mod:CustomAnim(frame, customAnimation, event, flag)
@@ -547,12 +546,12 @@ function mod:CustomAnim(frame, customAnimation, event, flag)
 
 		if luaFunction then
 			local success, customFunc = pcall(luaFunction)
-			
+
 			if not success then
 				core:print('FAIL', "FCF", customFunc)
 			else
 				local fcf = frame.FloatingCombatFeedback
-				
+
 				if type(customFunc) == "function" then
 					fcf.animations["animName"] = customFunc
 					fcf.xOffsetsByAnimation["animName"] = 0
@@ -577,28 +576,28 @@ function mod:ConstructFCF(frame, info)
 	if fcf then
 		fcf:SetFrameStrata(info.textStrata)
 		fcf:SetFrameLevel(info.textLevel)
-		return 
+		return
 	end
-	
+
 	fcf = CreateFrame("Frame", nil, frame)
 	fcf:SetFrameStrata(info.textStrata)
 	fcf:SetFrameLevel(info.textLevel)
 	fcf:Size(32, 32)
 	fcf:SetPoint("CENTER")
-	 
+
 	for i = 1, 6 do
 		-- give names to these font strings to avoid breaking /fstack and /tinspect
 		fcf[i] = fcf:CreateFontString("$parentFCFText" .. i, "OVERLAY")
 	end
-	
+
 	frame.FloatingCombatFeedback = fcf
-	
+
 	core:Tag("fcf", tagFunc)
 end
 
 function mod:UpdateFCFSettings(frame)
 	frame:DisableElement('FloatingCombatFeedback')
-	
+
 	local db = E.db.Extras.unitframes[modName]
 	for unit, info in pairs(db.units) do
 		if frame.unitframeType == unit then
@@ -611,29 +610,29 @@ function mod:UpdateFCFSettings(frame)
 				fcf:Point(info.textPoint, frame, info.textRelativeTo, info.textX, info.textY)
 
 				frame:EnableElement('FloatingCombatFeedback')
-			
+
 				fcf.font = LSM:Fetch("font", info.font)
 				fcf.fontHeight = info.fontSize
 				fcf.fontFlags = info.fontFlags
 				fcf.scrollTime = info.scrollTime
 				fcf.playerOnly = info.playerOnly
 				--fcf.fadeTime = info.fadeTime
-				
+
 				fcf.format = info.showIcon and (info.iconPosition == 'before' and "|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s" or "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t") or '%1$s'
 				fcf.iconBounce = info.showIcon and info.iconBounce or false
-				
+
 				fcf.blacklist = CopyTable(info.blacklist)
-				
+
 				for event, info in pairs(info.events) do
 					fcf.animationsByEvent[event] = not info.disabled and info.animation or false
-					
+
 					if info.tryToColorBySchool then
 						fcf.tryToColorBySchool[event] = true
 					else
 						fcf.tryToColorBySchool[event] = false
 						fcf.colors[event] = { r = info.colors[1], g = info.colors[2], b = info.colors[3] }
 					end
-					
+
 					self:CustomAnim(frame, info.customAnimation, event)
 				end
 				for school, colors in pairs(info.school) do
@@ -648,7 +647,7 @@ function mod:UpdateFCFSettings(frame)
 						fcf.animationsByFlag[flag] = nil
 					end
 				end
-			elseif fcf then 
+			elseif fcf then
 				core:Untag("fcf")
 			end
 		end
@@ -669,10 +668,10 @@ end
 
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
-	
+
 	mod:LoadConfig()
 	mod:Toggle()
-	
+
 	tinsert(core.frameUpdates, manageFCF)
 end
 

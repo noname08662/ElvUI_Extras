@@ -3,14 +3,18 @@ local core = E:GetModule("Extras")
 local mod = core:NewModule("Automation", "AceHook-3.0", "AceEvent-3.0")
 
 local modName = mod:GetName()
-local initialized = {}
 
 local select = select
 local match, gsub = string.match, string.gsub
-local ConfirmLootRoll, LootSlot, GetLootSlotInfo, GetNumLootItems, GetLootSlotLink = ConfirmLootRoll, LootSlot, GetLootSlotInfo, GetNumLootItems, GetLootSlotLink
-local QuestGetAutoAccept, AcceptQuest, CloseQuest, ConfirmAcceptQuest, GetNumQuestChoices, IsQuestCompletable, CompleteQuest, GetQuestReward = QuestGetAutoAccept, AcceptQuest, CloseQuest, ConfirmAcceptQuest, GetNumQuestChoices, IsQuestCompletable, CompleteQuest, GetQuestReward
-local GossipFrame, GetNumGossipOptions, GetGossipAvailableQuests, GetGossipActiveQuests, SelectGossipOption = GossipFrame, GetNumGossipOptions, GetGossipAvailableQuests, GetGossipActiveQuests, SelectGossipOption
-local StaticPopupDialogs, StaticPopup_Hide, IsModifierKeyDown, localizedQuestItemString, GetItemInfo = StaticPopupDialogs, StaticPopup_Hide, IsModifierKeyDown, select(12,GetAuctionItemClasses()), GetItemInfo
+local ConfirmLootRoll, LootSlot, GetLootSlotInfo = ConfirmLootRoll, LootSlot, GetLootSlotInfo
+local GetNumLootItems, GetLootSlotLink =  GetNumLootItems, GetLootSlotLink
+local QuestGetAutoAccept, AcceptQuest, CloseQuest, ConfirmAcceptQuest = QuestGetAutoAccept, AcceptQuest, CloseQuest, ConfirmAcceptQuest
+local GetNumQuestChoices, IsQuestCompletable, CompleteQuest, GetQuestReward = GetNumQuestChoices, IsQuestCompletable, CompleteQuest, GetQuestReward
+local GossipFrame, GetNumGossipOptions, GetGossipAvailableQuests = GossipFrame, GetNumGossipOptions, GetGossipAvailableQuests
+local GetGossipActiveQuests, SelectGossipOption = GetGossipActiveQuests, SelectGossipOption
+local StaticPopupDialogs, StaticPopup_Hide = StaticPopupDialogs, StaticPopup_Hide
+local IsModifierKeyDown, GetItemInfo = IsModifierKeyDown, GetItemInfo
+local localizedQuestItemString = select(12,GetAuctionItemClasses())
 local DELETE_ITEM_CONFIRM_STRING = DELETE_ITEM_CONFIRM_STRING
 
 P["Extras"]["blizzard"][modName] = {
@@ -108,12 +112,14 @@ function mod:Automations()
 	-- some of these have been stolen from LeatrixPlus
 	if E.db.Extras.blizzard[modName].FillDelete.enabled then
 		if not self:IsHooked(StaticPopupDialogs["DELETE_GOOD_ITEM"], 'OnShow') then
-			self:SecureHook(StaticPopupDialogs["DELETE_GOOD_ITEM"], 'OnShow', function(self) self.editBox:SetText(DELETE_ITEM_CONFIRM_STRING) end)
+			self:SecureHook(StaticPopupDialogs["DELETE_GOOD_ITEM"], 'OnShow', function(self)
+				self.editBox:SetText(DELETE_ITEM_CONFIRM_STRING)
+			end)
 		end
 	elseif self:IsHooked(StaticPopupDialogs["DELETE_GOOD_ITEM"], 'OnShow') then
 		self:Unhook(StaticPopupDialogs["DELETE_GOOD_ITEM"], 'OnShow')
 	end
-	
+
 	if E.db.Extras.blizzard[modName].Gossip.enabled then
 		if not self:IsHooked(GossipFrame, 'OnShow') then
 			self:SecureHookScript(GossipFrame, 'OnShow', function()
@@ -125,7 +131,7 @@ function mod:Automations()
 	elseif self:IsHooked(GossipFrame, 'OnShow') then
 		self:Unhook(GossipFrame, 'OnShow')
 	end
-	
+
 	if E.db.Extras.blizzard[modName].PickupQuest.enabled then
 		self:RegisterEvent('LOOT_OPENED', function()
 			for i = 1, GetNumLootItems() do
@@ -144,19 +150,40 @@ function mod:Automations()
 	else
 		self:UnregisterEvent('LOOT_OPENED')
 	end
-	
+
 	if E.db.Extras.blizzard[modName].AcceptQuest.enabled then
-		self:RegisterEvent('QUEST_DETAIL', function() if IsModifierKeyDown() then if not QuestGetAutoAccept() then AcceptQuest() else CloseQuest() end end end)
-		self:RegisterEvent('QUEST_ACCEPT_CONFIRM', function() if IsModifierKeyDown() then ConfirmAcceptQuest() StaticPopup_Hide("QUEST_ACCEPT_CONFIRM") end end)
-		self:RegisterEvent('QUEST_PROGRESS', function() if IsModifierKeyDown() then if IsQuestCompletable() then CompleteQuest() end end end)
-		self:RegisterEvent('QUEST_COMPLETE', function() if IsModifierKeyDown() then if GetNumQuestChoices() <= 1 then GetQuestReward(GetNumQuestChoices()) end end end)
+		self:RegisterEvent('QUEST_DETAIL', function()
+			if IsModifierKeyDown() then
+				if not QuestGetAutoAccept() then
+					AcceptQuest()
+				else
+					CloseQuest()
+				end
+			end
+		end)
+		self:RegisterEvent('QUEST_ACCEPT_CONFIRM', function()
+			if IsModifierKeyDown() then
+				ConfirmAcceptQuest()
+				StaticPopup_Hide("QUEST_ACCEPT_CONFIRM")
+			end
+		end)
+		self:RegisterEvent('QUEST_PROGRESS', function()
+			if IsModifierKeyDown() and IsQuestCompletable() then
+				CompleteQuest()
+			end
+		end)
+		self:RegisterEvent('QUEST_COMPLETE', function()
+			if IsModifierKeyDown() and GetNumQuestChoices() <= 1 then
+				GetQuestReward(GetNumQuestChoices())
+			end
+		end)
 	else
 		self:UnregisterEvent('QUEST_DETAIL')
 		self:UnregisterEvent('QUEST_ACCEPT_CONFIRM')
 		self:UnregisterEvent('QUEST_PROGRESS')
 		self:UnregisterEvent('QUEST_COMPLETE')
 	end
-	
+
 	if E.db.Extras.blizzard[modName].ConfirmRolls.enabled then
 		self:RegisterEvent('CONFIRM_LOOT_ROLL', function(...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
 		self:RegisterEvent('CONFIRM_DISENCHANT_ROLL', function(...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)

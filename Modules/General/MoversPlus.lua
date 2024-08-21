@@ -28,7 +28,7 @@ local function saveMoverPosition(name)
 end
 
 local function setMovers(enable)
-	for mover in pairs(E.CreatedMovers) do 
+	for mover in pairs(E.CreatedMovers) do
 		if E.db.movers and E.db.Extras.movers and E.db.movers[mover] and E.db.Extras.movers[mover] then
 			local point, anchor, relativeTo, x, y = split(",", enable and E.db.Extras.movers[mover] or E.db.movers[mover])
 			_G[mover]:ClearAllPoints()
@@ -41,7 +41,7 @@ end
 
 P["Extras"]["general"][modName] = {
 	["enabled"] = false,
-	
+
 	--[[ 						in case i'll be bringing it back
 	selectedProfile = 1,
 	profiles = { { name = "New Profile", moversData = E.db.movers } },
@@ -73,7 +73,7 @@ function mod:LoadConfig()
 			},
 		},
 	}
-end			
+end
 
 
 function mod:ResetMovers(self, arg)
@@ -95,9 +95,8 @@ end
 
 function mod:NudgeMover(self, nudgeX, nudgeY, pointCustom, anchorFrame, relativeToCustom)
 	local mover = ElvUIMoverNudgeWindow.child
-	local x, y = E:CalculateMoverPoints(mover, nudgeX, nudgeY)
 	local point, anchor, relativeTo, xDB, yDB
-	
+
 	if E.db.Extras.movers and E.db.Extras.movers[mover.name] then
 		point, anchor, relativeTo, xDB, yDB = split(",", E.db.Extras.movers[mover.name])
 	end
@@ -107,16 +106,16 @@ function mod:NudgeMover(self, nudgeX, nudgeY, pointCustom, anchorFrame, relative
 		mover:Point('CENTER', anchorFrame, 'CENTER', 0, 0)
 		if mover:GetScript('OnDragStart') then mover:RegisterForDrag(nil) end
 		saveMoverPosition(mover.name)
-		E:UpdateNudgeFrame(mover, x, y)
+		E:UpdateNudgeFrame(mover)
 	elseif anchor and anchor ~= E.UIParent then
 		mover:ClearAllPoints()
 		mover:Point(pointCustom or point, _G[anchor], relativeToCustom or relativeTo, xDB + (nudgeX or 0), yDB + (nudgeY or 0))
 		saveMoverPosition(mover.name)
-		E:UpdateNudgeFrame(mover, x, y)
+		E:UpdateNudgeFrame(mover)
 	end
 end
 
-function mod:UpdateNudgeFrame(self, mover, x, y)
+function mod:UpdateNudgeFrame(self, mover)
 	local ElvUIMoverNudgeWindow = ElvUIMoverNudgeWindow
 	local anchoredTo = ElvUIMoverNudgeWindow.anchoredTo
 	if not anchoredTo then
@@ -129,7 +128,7 @@ function mod:UpdateNudgeFrame(self, mover, x, y)
 			EditBox_ClearFocus(eb)
 			eb:SetText(anchoredTo.currentValue)
 		end)
-		
+
 		anchoredTo.text = anchoredTo:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		anchoredTo.text:Point("BOTTOM", anchoredTo, "TOP", 0, 4)
 		anchoredTo.text:SetText("Anchored to:")
@@ -143,7 +142,7 @@ function mod:UpdateNudgeFrame(self, mover, x, y)
 		ElvUIMoverNudgeWindow.yOffset:Point("TOPLEFT", anchoredTo, "BOTTOM", 16, -8)
 		ElvUIMoverNudgeWindow.resetButton:ClearAllPoints()
 		ElvUIMoverNudgeWindow.resetButton:Point('BOTTOM', ElvUIMoverNudgeWindow, 'BOTTOM', 0, 32)
-		
+
 		local function createDropdown(name, text, anchor, x, y)
 			local dropdown = CreateFrame("Frame", "$parent"..name, ElvUIMoverNudgeWindow, "UIDropDownMenuTemplate")
 			dropdown:Point('TOPRIGHT', anchor, 'BOTTOMRIGHT', x, y)
@@ -154,7 +153,7 @@ function mod:UpdateNudgeFrame(self, mover, x, y)
 			S:HandleDropDownBox(dropdown, 120)
 			return dropdown
 		end
-		
+
 		local function populateDropdown(dropdown, type)
 			local function CreateDropdownMenuItem(point)
 				local info = UIDropDownMenu_CreateInfo()
@@ -170,16 +169,16 @@ function mod:UpdateNudgeFrame(self, mover, x, y)
 				UIDropDownMenu_AddButton(CreateDropdownMenuItem(point))
 			end
 		end
-		
+
 		local pointDropdown = createDropdown("PointDropdown", L["Point:"], anchoredTo, 8, -30)
 		ElvUIMoverNudgeWindow.pointDropdown = pointDropdown
-		
+
 		local relativeToDropdown = createDropdown("RelativeToDropdown", L["Relative:"], pointDropdown, 0, 4)
 		ElvUIMoverNudgeWindow.relativeToDropdown = relativeToDropdown
-		
+
 		UIDropDownMenu_Initialize(pointDropdown, function() populateDropdown(pointDropdown, 'point') end)
 		UIDropDownMenu_Initialize(relativeToDropdown, function() populateDropdown(relativeToDropdown, 'relativeTo') end)
-			
+
 		local pickMoverButton = CreateFrame("Button", "$parentPickMoverButton", ElvUIMoverNudgeWindow, "UIPanelButtonTemplate")
 		pickMoverButton:SetText(L["Pick a..."])
 		pickMoverButton:Point("BOTTOM", ElvUIMoverNudgeWindow.resetButton, "TOP", 0, 24)
@@ -193,16 +192,16 @@ function mod:UpdateNudgeFrame(self, mover, x, y)
 
 		local function togglePickMode()
 			pickMode = not pickMode
-			if pickMode then 
+			if pickMode then
 				frameToAnchor = ElvUIMoverNudgeWindow.child
-				ElvUIMoverNudgeWindow:SetBackdropBorderColor(0,1,0) 
+				ElvUIMoverNudgeWindow:SetBackdropBorderColor(0,1,0)
 				pickModeHint:SetText(L["...mover to anchor."])
-			else 
+			else
 				ElvUIMoverNudgeWindow:SetBackdropBorderColor(unpack(E.media.rgbvaluecolor))
 				pickModeHint:SetText(L["...mover to anchor to."])
 			end
 		end
-		
+
 		pickMoverButton:SetScript("OnClick", function()
 			if not pickMode then togglePickMode() return end
 			if ElvUIMoverNudgeWindow.child ~= frameToAnchor and ElvUIMoverNudgeWindow.child:GetParent() ~= frameToAnchor and frameToAnchor:GetParent() ~= ElvUIMoverNudgeWindow.child then
@@ -210,12 +209,12 @@ function mod:UpdateNudgeFrame(self, mover, x, y)
 				E:NudgeMover(nil, nil, nil, frameToAnchor)
 				togglePickMode()
 			end
-		end)		
-		
+		end)
+
 		pickMoverButton:EnableKeyboard(true)
 		pickMoverButton:SetScript("OnKeyDown", function(_, key)
 			if key == 'ESCAPE' then
-				if pickMode then 
+				if pickMode then
 					togglePickMode()
 				else
 					ElvUIMoverNudgeWindow:Hide()
@@ -234,12 +233,12 @@ function mod:UpdateNudgeFrame(self, mover, x, y)
 		ElvUIMoverNudgeWindow.resetButton:ClearAllPoints()
 		ElvUIMoverNudgeWindow.resetButton:Point("BOTTOM", ElvUIMoverNudgeWindow, "BOTTOM", 0, 32)
 	end
-		
+
 	local point, anchor, relativeTo, x, y
 	if E.db.Extras.movers and E.db.Extras.movers[mover.name] then
-		point, anchor, relativeTo, x, y = split(",", E.db.Extras.movers[mover.name])	
+		point, anchor, relativeTo, x, y = split(",", E.db.Extras.movers[mover.name])
 	end
-	
+
 	if not anchor or anchor == E.UIParent then
 		x, y = E:CalculateMoverPoints(mover)
 		ElvUIMoverNudgeWindow.anchoredTo:SetText("")
@@ -250,13 +249,13 @@ function mod:UpdateNudgeFrame(self, mover, x, y)
 	else
 		ElvUIMoverNudgeWindow.anchoredTo:SetText(anchor)
 		ElvUIMoverNudgeWindow.anchoredTo.currentValue = anchor
-		UIDropDownMenu_SetSelectedValue(ElvUIMoverNudgeWindow.pointDropdown, point)	
+		UIDropDownMenu_SetSelectedValue(ElvUIMoverNudgeWindow.pointDropdown, point)
 		UIDropDownMenu_SetSelectedValue(ElvUIMoverNudgeWindow.relativeToDropdown, relativeTo)
 		ElvUIMoverNudgeWindow.pointDropdown:Show()
 		ElvUIMoverNudgeWindow.relativeToDropdown:Show()
 		ElvUIMoverNudgeWindow:Height(245)
 	end
-	
+
 	x = E:Round(x)
 	y = E:Round(y)
 	ElvUIMoverNudgeWindow.xOffset:SetText(x)

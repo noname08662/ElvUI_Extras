@@ -1,15 +1,14 @@
 local E, L, _, P = unpack(ElvUI)
 local core = E:GetModule("Extras")
 local mod = core:NewModule("GeneralMisc.", "AceHook-3.0")
-local CH = E:GetModule("Chat")
 
 local modName = mod:GetName()
 local initialized, alertFrame = {}
 local chatTypeIndexToName = {}
 
 local max = math.max
-local _G, unpack, pairs, ipairs, select, tonumber, print, pcall, loadstring, tostring = _G, unpack, pairs, ipairs, select, tonumber, print, pcall, loadstring, tostring
-local lower, find, match, format, gsub, sub = string.lower, string.find, string.match, string.format, string.gsub, string.sub
+local _G, unpack, pairs, ipairs, tonumber, print, pcall, loadstring, tostring = _G, unpack, pairs, ipairs, tonumber, print, pcall, loadstring, tostring
+local lower, find, match, gsub, sub = string.lower, string.find, string.match, string.gsub, string.sub
 local twipe, tinsert = table.wipe, table.insert
 local ChatFrame_AddMessageEventFilter, ChatFrame_RemoveMessageEventFilter = ChatFrame_AddMessageEventFilter, ChatFrame_RemoveMessageEventFilter
 local UIParent = UIParent
@@ -126,8 +125,8 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = function() return L[E.db.Extras.general[modName][selectedSubSection()].desc] end,
-						get = function(info) return E.db.Extras.general[modName][selectedSubSection()].enabled end,
-						set = function(info, value) E.db.Extras.general[modName][selectedSubSection()].enabled = value self:Toggle()
+						get = function() return E.db.Extras.general[modName][selectedSubSection()].enabled end,
+						set = function(_, value) E.db.Extras.general[modName][selectedSubSection()].enabled = value self:Toggle()
 							if selectedSubSection() == 'GlobalShadow' then E:StaticPopup_Show("PRIVATE_RL") end
 						end,
 					},
@@ -136,8 +135,8 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select"],
 						desc = "",
-						get = function(info) return selectedSubSection() end,
-						set = function(info, value) E.db.Extras.general[modName].selectedSubSection = value end,
+						get = function() return selectedSubSection() end,
+						set = function(_, value) E.db.Extras.general[modName].selectedSubSection = value end,
 						values = function()
 							local dropdownValues = {}
 							for section in pairs(E.db.Extras.general[modName]) do
@@ -155,7 +154,7 @@ function mod:LoadConfig()
 				name = L["Settings"],
 				guiInline = true,
 				disabled = function(info) return not E.db.Extras.general[modName][info[#info-1]].enabled end,
-				hidden = function(info) return selectedSubSection() ~= 'GlobalShadow' end,
+				hidden = function() return selectedSubSection() ~= 'GlobalShadow' end,
 				args = {
 					color = {
 						type = "color",
@@ -179,7 +178,7 @@ function mod:LoadConfig()
 				name = L["Settings"],
 				guiInline = true,
 				disabled = function(info) return not E.db.Extras.general[modName][info[#info-1]].enabled end,
-				hidden = function(info) return selectedSubSection() ~= 'ItemIcons' end,
+				hidden = function() return selectedSubSection() ~= 'ItemIcons' end,
 				args = {
 					orientation = {
 						type = "select",
@@ -205,7 +204,7 @@ function mod:LoadConfig()
 				name = L["Settings"],
 				guiInline = true,
 				disabled = function(info) return not E.db.Extras.general[modName][info[#info-1]].enabled end,
-				hidden = function(info) return selectedSubSection() ~= 'EnterCombatAlert' end,
+				hidden = function() return selectedSubSection() ~= 'EnterCombatAlert' end,
 				args = {
 					textColor = {
 						order = 1,
@@ -213,8 +212,8 @@ function mod:LoadConfig()
 						width = "full",
 						name = L["Text Color"],
 						desc = L["255, 210, 0 - Blizzard's yellow."],
-						get = function(info) return unpack(E.db.Extras.general[modName].EnterCombatAlert.textColor) end,
-						set = function(info, r, g, b) E.db.Extras.general[modName].EnterCombatAlert.textColor = { r, g, b } self:EnterCombatAlert(true) end,
+						get = function() return unpack(E.db.Extras.general[modName].EnterCombatAlert.textColor) end,
+						set = function(_, r, g, b) E.db.Extras.general[modName].EnterCombatAlert.textColor = { r, g, b } self:EnterCombatAlert(true) end,
 					},
 					customTextEnter = {
 						order = 2,
@@ -280,14 +279,14 @@ function mod:LoadConfig()
 			},
 		},
 	}
-end			
+end
 
 
 function mod:TooltipNotes(enable)
 	if enable then
 		local notes = E.db.Extras.general[modName].TooltipNotes.notes
 		local notesIndex = {}
-		
+
 		local function manageFuncNotes(data)
 			if data then
 				local luaFunction, errorMsg = loadstring(data.text)
@@ -300,10 +299,11 @@ function mod:TooltipNotes(enable)
 						data.func = luaFunction
 					end
 				elseif data.func then
+					core:print('LUA', L["TooltipNotes"], errorMsg)
 					data.func = nil
 				end
 			else
-				for key, noteData in pairs(notes) do
+				for _, noteData in pairs(notes) do
 					local luaFunction, errorMsg = loadstring(noteData.text)
 					if luaFunction then
 						local success, func = pcall(luaFunction)
@@ -313,20 +313,22 @@ function mod:TooltipNotes(enable)
 						else
 							noteData.func = luaFunction
 						end
+					else
+						core:print('LUA', L["TooltipNotes"], errorMsg)
 					end
 				end
 			end
 		end
 		manageFuncNotes()
-		
+
 		local function updateNotesIndex()
 			twipe(notesIndex)
-			for key, noteData in pairs(notes) do
+			for key in pairs(notes) do
 				tinsert(notesIndex, key)
 			end
 		end
 		updateNotesIndex()
-		
+
 		local function getTooltipKey()
 			local _, itemLink = GameTooltip:GetItem()
 			if itemLink then
@@ -346,7 +348,7 @@ function mod:TooltipNotes(enable)
 			end
 			return nil
 		end
-		
+
 		local function getTargetInfo(type, target)
 			if type == 'item' then
 				return target, GetItemIcon(tonumber(match(target, "item:(%d+)")))
@@ -358,11 +360,11 @@ function mod:TooltipNotes(enable)
 				return "|cff71D5FF"..target.."|r"
 			end
 		end
-		
+
 		local function updateTooltip()
 			local tt = GameTooltip
 			if not tt:IsShown() then return end
-			
+
 			local _, unit = tt:GetUnit()
 			local _, itemLink = tt:GetItem()
 			local _, _, spellID = tt:GetSpell()
@@ -386,11 +388,11 @@ function mod:TooltipNotes(enable)
 				print(core.customColorAlpha..L["Hover again to see the changes."])
 			end
 		end
-		
+
 		local function setNoteForTooltip(key, type, target, note)
 			local link, texture = getTargetInfo(type, target and target or "")
-			local icon, text = notes[key] and notes[key].icon, notes[key] and notes[key].text
-			
+			local icon = notes[key] and notes[key].icon
+
 			if note and match(note, '%S+') then
 				notes[key] = notes[key] or {}
 				notes[key].text = note
@@ -405,10 +407,10 @@ function mod:TooltipNotes(enable)
 				print(core.customColorAlpha..L["No note to clear for "]..(texture and ("|T"..texture..":0|t ") or "")..link)
 			end
 		end
-		
+
 		local function setIconForTooltip(key, type, target, icon)
 			local link, texture = getTargetInfo(type, target and target or "")
-			
+
 			if icon and match(icon, '%S+') then
 				notes[key] = notes[key] or {}
 				notes[key].icon = icon
@@ -422,19 +424,19 @@ function mod:TooltipNotes(enable)
 				print(core.customColorAlpha..L["No note icon to clear for "]..(texture and ("|T"..texture..":0|t ") or "")..link)
 			end
 		end
-		
+
 		local function getNoteForTooltip(key, type, target)
 			if notes[key] then
 				local link, texture = getTargetInfo(type, target and target or "")
 				local icon, text = notes[key].icon, notes[key].text
 				local note = icon and "|T"..icon..":0|t "..(text or "") or text
-				
+
 				print(core.customColorAlpha..L["Current note for "]..(texture and ("|T"..texture..":0|t ") or "")..link.."|r:", note)
 			else
 				print(core.customColorAlpha..L["No note found for this tooltip."])
 			end
 		end
-		
+
 		local function listAllNotes()
 			local noteList = {}
 			for index, key in ipairs(notesIndex) do
@@ -457,7 +459,7 @@ function mod:TooltipNotes(enable)
 		SLASH_TOOLTIPNOTES1 = "/tnote"
 		SlashCmdList["TOOLTIPNOTES"] = function(msg)
 			local index, command, value = match(msg, "^(%d*)%s*(%S*)%s*(.-)$")
-			
+
 			if command == "set" or command == "get" or command == "icon" then
 				local key
 				index = tonumber(index)
@@ -466,15 +468,15 @@ function mod:TooltipNotes(enable)
 				else
 					key = getTooltipKey()
 				end
-				
+
 				if not key then
 					print(core.customColorBeta..L["No tooltip is currently shown or unsupported tooltip type."])
 					return
 				else
 					local type, target = match(key, '(%P+):(.+)')
 					if command == "set" or command == "icon" then
-						if command == "set" then 
-							setNoteForTooltip(key, type, target, value) 
+						if command == "set" then
+							setNoteForTooltip(key, type, target, value)
 						else
 							setIconForTooltip(key, type, target, value)
 						end
@@ -499,48 +501,48 @@ function mod:TooltipNotes(enable)
 			local results = {}
 			local startIndex = 1
 			local delimiterLength = #delimiter
-			
+
 			while true do
 				local delimiterIndex = find(text, delimiter, startIndex, true)
 				if not delimiterIndex then
 					tinsert(results, sub(text, startIndex))
 					break
 				end
-				
+
 				tinsert(results, sub(text, startIndex, delimiterIndex - 1))
 				startIndex = delimiterIndex + delimiterLength
 			end
-			
+
 			return results
 		end
-		
+
 		local function applyColors(text)
-			if not text or not tostring(text) then return end 
-			
+			if not text or not tostring(text) then return end
+
 			local lines = {}
 			local defaultR, defaultG, defaultB = 1, 0.82, 0
-			
-			for i, line in ipairs(exactSplit(text, "::")) do
+
+			for _, line in ipairs(exactSplit(text, "::")) do
 				local r, g, b = defaultR, defaultG, defaultB
 				local loweredLine = lower(line)
-				
+
 				-- find the first color code in the line
-				local colorStart, colorEnd, color = find(loweredLine, "\124cff(%x%x%x%x%x%x)")
+				local _, _, color = find(loweredLine, "\124cff(%x%x%x%x%x%x)")
 				if color then
 					r = tonumber(sub(color, 1, 2), 16) / 255
 					g = tonumber(sub(color, 3, 4), 16) / 255
 					b = tonumber(sub(color, 5, 6), 16) / 255
 				end
-				
+
 				tinsert(lines, {text = line, r = r, g = g, b = b})
 			end
-			
+
 			return lines
 		end
-		
+
 		local funcHandler = CreateFrame("Frame")
 		funcHandler.elapsed = 0
-		
+
 		local function handler(tt)
 			local key = getTooltipKey()
 			if not key or not notes[key] then return end
@@ -551,7 +553,7 @@ function mod:TooltipNotes(enable)
 				if func then
 					funcHandler:SetScript("OnUpdate", function(self, elapsed)
 						self.elapsed = self.elapsed + elapsed
-						if UnitExists('mouseover') then 
+						if UnitExists('mouseover') then
 							text = applyColors(func())
 							for i, line in pairs(text) do
 								if line.text ~= "" then
@@ -565,9 +567,9 @@ function mod:TooltipNotes(enable)
 							tt:Show()
 							self.elapsed = 0
 							self:SetScript("OnUpdate", nil)
-						elseif self.elapsed > 0.1 then 
+						elseif self.elapsed > 0.1 then
 							self.elapsed = 0
-							self:SetScript("OnUpdate", nil) 
+							self:SetScript("OnUpdate", nil)
 						end
 					end)
 					return
@@ -587,16 +589,16 @@ function mod:TooltipNotes(enable)
 			end
 			tt:Show()
 		end
-		
-		if not self:IsHooked(GameTooltip, "OnShow") then 
+
+		if not self:IsHooked(GameTooltip, "OnShow") then
 			self:SecureHookScript(GameTooltip, "OnShow", function(tt)
 				local key = getTooltipKey()
 				if not key then return end
 				local type = match(key, '(%P+):')
 				if type == 'text' then handler(tt) end
-			end) 
+			end)
 		end
-		
+
 		for _, func in pairs({'OnTooltipSetUnit', 'OnTooltipSetSpell', 'OnTooltipSetItem'}) do
 			if not self:IsHooked(GameTooltip, func) then self:SecureHookScript(GameTooltip, func, handler) end
 		end
@@ -613,11 +615,11 @@ end
 
 function mod:ItemIcons(enable)
 	local ChatTypeInfo = ChatTypeInfo
-	
+
 	if enable then
 		if not initialized.ItemIcons then
 			-- credit: ElvUI_ChatTweaks
-			function mod:ItemIconsFilter(event, msg, ...)
+			function mod:ItemIconsFilter(_, msg, ...)
 				msg = gsub(msg, "(\124%x%x%x%x%x%x%x%x%x\124[Hh]item:.-\124[hH]\124[rR])", function(link)
 					local db = E.db.Extras.general[modName].ItemIcons
 					local texture = GetItemIcon(link)
@@ -625,16 +627,16 @@ function mod:ItemIcons(enable)
 				end)
 				return false, msg, ...
 			end
-			
+
 			local messages = {}
-			
+
 			for i = 1, NUM_CHAT_WINDOWS do
 				local frame = _G["ChatFrame"..i]
 				messages[frame] = {}
 				local maxLines = frame:GetMaxLines()
 				local numMessages = frame:GetNumMessages()
 				local ChatTypeInfo = ChatTypeInfo
-				
+
 				for i = max(1, numMessages - maxLines + 1), numMessages do
 					if numMessages - i > maxLines then break end
 					local msg, _, lineID = frame:GetMessageInfo(i)
@@ -642,23 +644,23 @@ function mod:ItemIcons(enable)
 					local r, g, b = info.r, info.g, info.b
 					tinsert(messages[frame], {msg = msg, r = r, g = g, b = b})
 				end
-				
+
 				frame:Clear()
-				
+
 				for _, info in ipairs(messages[frame]) do
 					local msg = info.msg
-					frame:AddMessage(gsub(msg, "(\124c%x+\124Hitem:.-\124h\124r)", 
+					frame:AddMessage(gsub(msg, "(\124c%x+\124Hitem:.-\124h\124r)",
 						function(link)
 							local db = E.db.Extras.general[modName].ItemIcons
 							local texture = GetItemIcon(link)
 							return (db.orientation == "left") and "\124T" .. texture .. ":" .. db.size .. "\124t" .. link or link .. "\124T" .. texture .. ":" .. db.size .. "\124t"
-						end), 
+						end),
 						info.r, info.g, info.b)
 				end
 			end
 			initialized.ItemIcons = true
 		end
-		
+
 		for _, event in ipairs(chatMsgEvents) do
 			ChatFrame_AddMessageEventFilter(event, self.ItemIconsFilter)
 		end
@@ -697,13 +699,13 @@ function mod:EnterCombatAlert(enable)
 			alertFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 			alertFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 			alertFrame:Hide()
-			
+
 			E:CreateMover(alertFrame, "alertFrameMover", L["Enter Combat Alert"], nil, nil, nil, 'ALL,SOLO')
-			
+
 			initialized.EnterCombatAlert = true
 		end
 		E:EnableMover("alertFrameMover")
-		
+
 		local db = E.db.Extras.general[modName].EnterCombatAlert
 		alertFrame.text:SetTextColor(unpack(db.textColor))
 		alertFrame.text:SetFont(E.Libs.LSM:Fetch("font", db.font), db.fontSize, db.fontOutline)

@@ -1,18 +1,16 @@
 local E, L, _, P = unpack(ElvUI)
 local core = E:GetModule("Extras")
 local mod = core:NewModule("Custom Commands", "AceHook-3.0")
-local S = E:GetModule("Skins")
 
-local modName = mod:GetName() 
-local errorCount, CCExEditFrame, lastEventTime = 0
+local modName = mod:GetName()
+local errorCount, lastEventTime = 0
 local handler = CreateFrame("Frame")
 local initialized
 
 local tostring, tonumber = tostring, tonumber
-local _G, pairs, ipairs, loadstring, pcall, print, select, unpack = _G, pairs, ipairs, loadstring, pcall, print, select, unpack
-local tinsert, tremove, twipe = table.insert, table.remove, table.wipe
+local pairs, ipairs, loadstring, pcall, print, select = pairs, ipairs, loadstring, pcall, print, select
+local tinsert, tremove = table.insert, table.remove
 local sub, find, gsub, upper, format = string.sub, string.find, string.gsub, string.upper, string.format
-local ChatFontNormal, UIParent, UISpecialFrames = ChatFontNormal, UIParent, UISpecialFrames
 local GetTime = GetTime
 local INTERRUPTED = INTERRUPTED
 
@@ -71,8 +69,8 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Enable Tab"],
 						desc = "",
-						get = function(info) return E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].enabled end,
-						set = function(info, value) E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].enabled = value self:SetupHandler() end,
+						get = function() return E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].enabled end,
+						set = function(_, value) E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].enabled = value self:SetupHandler() end,
 					},
 					throttleTime = {
 						order = 3,
@@ -80,8 +78,8 @@ function mod:LoadConfig()
 						min = 0, max = 600, step = 0.1,
 						name = L["Throttle Time"],
 						desc = L["Minimal time gap between two consecutive executions."],
-						get = function(info) return E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].throttleEvents[E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].selectedEvent] or 0.3 end,
-						set = function(info, value) E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].throttleEvents[E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].selectedEvent] = value end,
+						get = function() return E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].throttleEvents[E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].selectedEvent] or 0.3 end,
+						set = function(_, value) E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].throttleEvents[E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].selectedEvent] = value end,
 						disabled = function() return not E.db.Extras.general[modName].enabled or E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].selectedEvent == '' end,
 					},
 					tabSelection = {
@@ -89,8 +87,8 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select Tab"],
 						desc = "",
-						get = function(info) return tostring(E.db.Extras.general[modName].selected) end,
-						set = function(info, value) E.db.Extras.general[modName].selected = tonumber(value) end,
+						get = function() return tostring(E.db.Extras.general[modName].selected) end,
+						set = function(_, value) E.db.Extras.general[modName].selected = tonumber(value) end,
 						values = function()
 							local dropdownValues = {}
 							for i, tab in ipairs(E.db.Extras.general[modName].tabs) do
@@ -104,8 +102,8 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select Event"],
 						desc = "",
-						get = function(info) return E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].selectedEvent end,
-						set = function(info, value) E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].selectedEvent = value end,
+						get = function() return E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].selectedEvent end,
+						set = function(_, value) E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].selectedEvent = value end,
 						values = function()
 							local dropdownValues = {}
 							for event in pairs(E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].throttleEvents) do
@@ -121,7 +119,7 @@ function mod:LoadConfig()
 						name = L["Rename Tab"],
 						desc = "",
 						get = function() return "" end,
-						set = function(info, value)
+						set = function(_, value)
 							if value and value ~= "" then
 								E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].name = value
 							end
@@ -152,9 +150,9 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Open Edit Frame"],
 						desc = "",
-						func = function() 
+						func = function()
 							local db = E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected]
-							core:OpenEditor(L["Custom Commands"], db.commands, function() db.commands = core.EditFrame.editBox:GetText() mod:SetupHandler() end) 
+							core:OpenEditor(L["Custom Commands"], db.commands, function() db.commands = core.EditFrame.editBox:GetText() mod:SetupHandler() end)
 						end,
 						disabled = function() return not E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].enabled or not E.db.Extras.general[modName].enabled end,
 					},
@@ -163,10 +161,10 @@ function mod:LoadConfig()
 						type = "input",
 						multiline = true,
 						width = "double",
-						name = L["Events"],    
+						name = L["Events"],
 						desc = L["UNIT_AURA CHAT_MSG_WHISPER etc.\nONUPDATE - 'OnUpdate' script"],
-						get = function(info) return E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].events and E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].events or "" end,
-						set = function(info, value) E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].events = value self:SetupHandler() end,
+						get = function() return E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].events and E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].events or "" end,
+						set = function(_, value) E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].events = value self:SetupHandler() end,
 						disabled = function() return not E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].enabled or not E.db.Extras.general[modName].enabled end,
 					},
 					commandsEditbox = {
@@ -204,15 +202,15 @@ function mod:LoadConfig()
 							"\nend end@@@"..
 							"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."],
 						width = "double",
-						get = function(info) local storedValue = E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].commands ~= "" and E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].commands return storedValue end,
-						set = function(info, value) E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].commands = value mod:SetupHandler() end,
+						get = function() local storedValue = E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].commands ~= "" and E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].commands return storedValue end,
+						set = function(_, value) E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].commands = value mod:SetupHandler() end,
 						disabled = function() return not E.db.Extras.general[modName].tabs[E.db.Extras.general[modName].selected].enabled or not E.db.Extras.general[modName].enabled end,
 					},
 				},
 			},
 		},
 	}
-end	
+end
 
 
 function mod:LoadCommands(commands, eventArg, tabArg, ...)
@@ -225,7 +223,7 @@ function mod:LoadCommands(commands, eventArg, tabArg, ...)
 		core:print('FORMATTING', L["CustomCommands"], '')
 		return
 	end
-	
+
 	local luaFunction, errorMsg = loadstring("return function(...) "..commands.." end")
     if luaFunction then
         local success, fn = pcall(luaFunction)
@@ -233,7 +231,7 @@ function mod:LoadCommands(commands, eventArg, tabArg, ...)
 			core:print('FAIL', L["CustomCommands"], fn)
             return
         end
-		
+
 		local result
         if tabArg then
             local wrapperFunction = function()
@@ -268,16 +266,16 @@ function mod:SortArgs(db, commandsString, argsBlockStartIndex)
 		local arguments = sub(commandsString, argsBlockStartIndex + 1, argsBlockEndIndex - 1)
 
 		local _, _, argIndex, negate, argValue = find(arguments, "(%w+)(~?)=([^%]]+)")
-		
+
 		if argValue then
 			local argIsLua = sub(argValue, 1, 2) == '@@'
-			
-			if argIsLua then 
+
+			if argIsLua then
 				argValue = sub(argValue, 3, #argValue)
 			else
 				argValue = convertToValue(argValue)
 			end
-			
+
 			-- store args info
 			tinsert(db.args, { index = argIndex, argIsLua = argIsLua, arg = argValue, negate = negate == '~' })
 		end
@@ -292,7 +290,7 @@ function mod:SortEvents(db)
 	db.args = {}
 	db.eventCommandsPairs = {}
 	handler.OnUpdateEvent = false
-	
+
 	while true do
 		-- check if there are any events
 		local _, newStartIndex = find(eventsString, "[%u_]+", startIndex)
@@ -306,25 +304,25 @@ function mod:SortEvents(db)
 		else
 			handler:RegisterEvent(event)
 		end
-		
+
 		if not db.throttleEvents[event] then
 			db.throttleEvents[event] = 0.3
 		end
-		
+
 		-- check the args
 		local commandsBlockStart, eventNameEnd = find(commandsString, event, 1, true)
 		if commandsBlockStart ~= nil then
-			
+
 			-- sort and store args
 			local argsBlockStartIndex = eventNameEnd + 1
 			mod:SortArgs(db, commandsString, argsBlockStartIndex)
-			
+
 			-- locate commands and cut the rest
-			local _, commandBlockEnd, eventCommands = find(commandsString, "@@@(.-)@@@", eventNameEnd)
+			local _, _, eventCommands = find(commandsString, "@@@(.-)@@@", eventNameEnd)
 
 			-- store values
 			db.eventCommandsPairs[event] = eventCommands
-			
+
 		end
 		startIndex = newStartIndex + 1
 	end
@@ -333,11 +331,11 @@ end
 function mod:CheckArgs(tab, ...)
 	for _, argTab in ipairs(tab.args) do
 		local eventArg = select(argTab.index, ...)
-		if argTab.argIsLua then 
+		if argTab.argIsLua then
 			-- check the lua arg
 			local result = mod:LoadCommands('if select(1, ...) == select(2, ...) then return true end', eventArg, argTab.arg)
 
-			if (result and argTab.negate) or (not result and not argTab.negate) then 
+			if (result and argTab.negate) or (not result and not argTab.negate) then
 				return true
 			end
 		else
@@ -352,13 +350,13 @@ end
 function mod:SetupHandler()
 	local db = E.db.Extras.general[modName]
 	handler:UnregisterAllEvents()
-	
+
 	for i = 1, #db.tabs do
 		if db.tabs[i].enabled and db.tabs[i].commands and db.tabs[i].commands ~= "" and db.tabs[i].events and db.tabs[i].events ~= "" then
 			mod:SortEvents(db.tabs[i])
 		end
 	end
-	
+
 	if handler.OnUpdateEvent then
 		local lastTime = GetTime()
 		handler:SetScript('OnUpdate', function()
@@ -368,10 +366,10 @@ function mod:SetupHandler()
 					mod:LoadCommands(commandsToLoad)
 					lastTime = GetTime()
 				end
-			end	
+			end
 		end)
 	end
-	
+
 	handler:SetScript('OnEvent', function(self, event, ...)
 		for _, tab in pairs(db.tabs) do
 			if tab.enabled and find(tab.events, event) and (not lastEventTime or (GetTime() > lastEventTime + tab.throttleEvents[event])) then

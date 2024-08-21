@@ -6,12 +6,11 @@ local LSM = E.Libs.LSM
 
 local modName = mod:GetName()
 
-local _G, unpack, pairs, ipairs, select, tonumber, type, print = _G, unpack, pairs, ipairs, select, tonumber, type, print
+local _G, unpack, pairs, ipairs, select, tonumber, type = _G, unpack, pairs, ipairs, select, tonumber, type
 local match, format, gsub, find = string.match, string.format, string.gsub, string.find
 local floor, ceil, min, max = math.floor, math.ceil, math.min, math.max
-local tsort, tinsert, tcontains = table.sort, table.insert, tContains
-local InCombatLockdown = InCombatLockdown
-local UnitIsUnit, UnitCanAttack, CancelUnitBuff, UnitCanAttack = UnitIsUnit, UnitCanAttack, CancelUnitBuff, UnitCanAttack
+local tinsert, tcontains = table.insert, tContains
+local UnitIsUnit, CancelUnitBuff, UnitCanAttack = UnitIsUnit, CancelUnitBuff, UnitCanAttack
 local DebuffTypeColor, GetSpellInfo, GetSpellLink = DebuffTypeColor, GetSpellInfo, GetSpellLink
 
 local function centerAuras(_, frame)
@@ -95,16 +94,16 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Highlights auras."],
-						get = function(info) return E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
-						set = function(info, value) E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled = value self:UpdatePostUpdateAura(value) UF:Update_AllFrames() end,
+						get = function() return E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
+						set = function(_, value) E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled = value self:UpdatePostUpdateAura(value) UF:Update_AllFrames() end,
 					},
 					typeDropdown = {
 						order = 2,
 						type = "select",
 						name = L["Select Type"],
 						desc = "",
-						get = function(info) return E.db.Extras.unitframes[modName].Highlights.selectedType end,
-						set = function(info, value) E.db.Extras.unitframes[modName].Highlights.selectedType = value end,
+						get = function() return E.db.Extras.unitframes[modName].Highlights.selectedType end,
+						set = function(_, value) E.db.Extras.unitframes[modName].Highlights.selectedType = value end,
 						values = function() return core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].Highlights.types) end,
 					},
 				},
@@ -114,27 +113,27 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Highlights Settings"],
 				guiInline = true,
-				disabled = function(info) return not E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
-				hidden = function(info) return not E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
+				disabled = function() return not E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
+				hidden = function() return not E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
 				args = {
 					addSpell = {
 						order = 1,
 						type = "input",
 						name = L["Add Spell (by ID)"],
 						desc = L["E.g. 42292"],
-						get = function(info) return "" end,
-						set = function(info, value)
+						get = function() return "" end,
+						set = function(_, value)
 							local spellID = match(value, '%D*(%d+)%D*')
 							if spellID and GetSpellInfo(spellID) then
-								E.db.Extras.unitframes[modName].Highlights.types[selectedType()].spellList[tonumber(spellID)] = { 
+								E.db.Extras.unitframes[modName].Highlights.types[selectedType()].spellList[tonumber(spellID)] = {
 									["border"] = false,
 									["shadow"] = false,
-									["useGlobal"] = false, 
+									["useGlobal"] = false,
 									["size"] = 3,
 									["color"] = { 0.93, 0.91, 0.55, 1 },
 									["shadowColor"] = { 0.93, 0.91, 0.55, 1 },
 								}
-								local name, _, icon = GetSpellInfo(spellID)
+								local _, _, icon = GetSpellInfo(spellID)
 								local link = GetSpellLink(spellID)
 								icon = gsub(icon, '\124', '\124\124')
 								local string = '\124T' .. icon .. ':16:16\124t' .. link
@@ -157,12 +156,12 @@ function mod:LoadConfig()
 							end
 							return filters
 						end,
-						get = function(info) return "" end,
-						set = function(info, value)
-							E.db.Extras.unitframes[modName].Highlights.types[selectedType()].filterList[value] = { 
+						get = function() return "" end,
+						set = function(_, value)
+							E.db.Extras.unitframes[modName].Highlights.types[selectedType()].filterList[value] = {
 								["border"] = false,
 								["shadow"] = false,
-								["useGlobal"] = false, 
+								["useGlobal"] = false,
 								["size"] = 3,
 								["color"] = { 0.93, 0.91, 0.55, 1 },
 								["shadowColor"] = { 0.93, 0.91, 0.55, 1 },
@@ -179,15 +178,15 @@ function mod:LoadConfig()
 						func = function()
 							local selected = selectedSpellorFilter()
 							local db = E.db.Extras.unitframes[modName].Highlights.types[selectedType()]
-							if type(selected) == 'number' then 
-								db.spellList[selected] = nil 
-								local name, _, icon = GetSpellInfo(selected)
+							if type(selected) == 'number' then
+								db.spellList[selected] = nil
+								local _, _, icon = GetSpellInfo(selected)
 								local link = GetSpellLink(selected)
 								icon = gsub(icon, '\124', '\124\124')
 								local string = '\124T' .. icon .. ':16:16\124t' .. link
 								core:print('REMOVED', string)
-							else 
-								db.filterList[selected] = nil 
+							else
+								db.filterList[selected] = nil
 								core:print('REMOVED', selected, L[" filter removed."])
 							end
 							db.selected = "GLOBAL"
@@ -200,10 +199,10 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select Spell or Filter"],
 						desc = L["Priority: spell, filter, curable/stealable."],
-						get = function(info) return selectedSpellorFilter() end,
-						set = function(info, value) 
-							if (value == '--filters--' or value == '--spells--') then value = 'GLOBAL' end 
-							E.db.Extras.unitframes[modName].Highlights.types[selectedType()].selected = value 
+						get = function() return selectedSpellorFilter() end,
+						set = function(_, value)
+							if (value == '--filters--' or value == '--spells--') then value = 'GLOBAL' end
+							E.db.Extras.unitframes[modName].Highlights.types[selectedType()].selected = value
 						end,
 						values = function()
 							local effectType = selectedType() == 'FRIENDLY' and "CURABLE" or "STEALABLE"
@@ -240,13 +239,13 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Use Global Settings"],
 						desc = L["If toggled, the GLOBAL Spell or Filter entry values would be used."],
-						get = function(info)
+						get = function()
 							local selected = selectedSpellorFilter()
 							local db = E.db.Extras.unitframes[modName].Highlights.types[selectedType()]
 							local target = type(selected) == 'number' and db.spellList[selected] or db.filterList[selected]
 							return selected == 'GLOBAL' or selected == 'CURABLE' or selected == 'STEALABLE' or target.useGlobal
 						end,
-						set = function(info, value)
+						set = function(_, value)
 							local selected = selectedSpellorFilter()
 							local db = E.db.Extras.unitframes[modName].Highlights.types[selectedType()]
 							local target = type(selected) == 'number' and db.spellList[selected] or db.filterList[selected]
@@ -263,10 +262,10 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Selected Spell or Filter Values"],
 				inline = true,
-				disabled = function(info) return not E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
-				hidden = function(info) return not E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
+				disabled = function() return not E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
+				hidden = function() return not E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
 				get = function(info) return getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] end,
-				set = function(info, value) 
+				set = function(info, value)
 					getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] = value
 					UF:Update_AllFrames()
 				end,
@@ -293,7 +292,7 @@ function mod:LoadConfig()
 						desc = "",
 						hasAlpha = true,
 						get = function(info) return unpack(getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]]) end,
-						set = function(info, r, g, b, a) 
+						set = function(info, r, g, b, a)
 							getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] = {r, g, b, a}
 							UF:Update_AllFrames()
 						end,
@@ -311,7 +310,7 @@ function mod:LoadConfig()
 						name = L["Border Color"],
 						desc = "",
 						get = function(info) return unpack(getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]]) end,
-						set = function(info, r, g, b) 
+						set = function(info, r, g, b)
 							getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] = {r, g, b}
 							UF:Update_AllFrames()
 						end,
@@ -372,21 +371,10 @@ function mod:LoadConfig()
 	if not E.db.Extras.unitframes[modName].Highlights.types['ENEMY'] then
 		E.db.Extras.unitframes[modName].Highlights.types['ENEMY'] = CopyTable(E.db.Extras.unitframes[modName].Highlights.types['FRIENDLY'])
 	end
-end			
+end
 
 
 function mod:UpdateCenteredAuras(enable)
-	local function updateAurasPosition()
-		local units = core:AggregateUnitFrames()
-		for _, frame in ipairs(units) do
-			for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
-				if frame[auraType] and frame[auraType].db.enable and frame[auraType].PostUpdate and frame[auraType]['visible'..auraType] then
-					frame[auraType]:PostUpdate()
-				end
-			end
-		end
-	end
-	
 	local function locals(self)
 		local parent = self:GetParent()
 		local db = parent.db
@@ -400,10 +388,10 @@ function mod:UpdateCenteredAuras(enable)
 		local perRowd = db.debuffs.perrow
 		local numRowsb = db.buffs.numrows
 		local numRowsd = db.debuffs.numrows
-		
+
 		return buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd, numRowsb, numRowsd
 	end
-	
+
 	local directionProperties = {
 		["CENTER"] = {
 			isVertical = true,
@@ -464,17 +452,17 @@ function mod:UpdateCenteredAuras(enable)
 			framePoint = 'TOP'
 		}
 	}
-	
+
 	function mod:CenterAlignAuras(frame, numElements, perRow, offset)
 		if not numElements or perRow == 1 then return end
-		
+
 		local anchorPoint = frame.anchorPoint
 		local isVertical = directionProperties[anchorPoint].isVertical
 		local isReverse = directionProperties[anchorPoint].isReverse
 		local firstInRowPoint = directionProperties[anchorPoint].firstInRowPoint
 		local subsequentPoint = directionProperties[anchorPoint].subsequentPoint
 		local framePoint = directionProperties[anchorPoint].framePoint
-		
+
 		for i = 1, numElements do
 			local child = frame[i]
 			if child then
@@ -494,51 +482,31 @@ function mod:UpdateCenteredAuras(enable)
 				end
 			end
 		end
-		
+
 		local spacing = frame.spacing
 		local numRows = ceil(numElements/perRow)
 		local width = max(offset, offset * min(perRow, numElements) - spacing)
 		local height = max(offset, offset * numRows - spacing)
-		
+
 		frame:Size(isVertical and width or height, isVertical and height or width)
-		
+
 		if frame.auraBarsHolder then
 			frame.auraBarsHolder:Height(isVertical and height or width)
 		end
 	end
-	
+
 	function mod:UpdateBuffsHeaderPosition()
-		local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd, numRowsb = locals(self)
+		local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd = locals(self)
 		if not numDebuffs or numDebuffs == 0 then
 			mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
 		else
 			mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
 			mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
 		end
-	end		
-		
+	end
+
 	function mod:UpdateDebuffsHeaderPosition()
-		local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd, numRowsb, numRowsd = locals(self)
-		if not numBuffs or numBuffs == 0 then
-			mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
-		else
-			mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
-			mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
-		end
-	end	
-
-	function mod:UpdateBuffsPositionAndDebuffHeight()
-		local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd, numRowsb, numRowsd = locals(self)
-		if not numDebuffs or numDebuffs == 0 then
-			mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
-		else
-			mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
-			mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
-		end
-	end		
-
-	function mod:UpdateDebuffsPositionAndBuffHeight()
-		local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd, numRowsb = locals(self)
+		local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd = locals(self)
 		if not numBuffs or numBuffs == 0 then
 			mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
 		else
@@ -546,22 +514,42 @@ function mod:UpdateCenteredAuras(enable)
 			mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
 		end
 	end
-	
+
+	function mod:UpdateBuffsPositionAndDebuffHeight()
+		local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd = locals(self)
+		if not numDebuffs or numDebuffs == 0 then
+			mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
+		else
+			mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
+			mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
+		end
+	end
+
+	function mod:UpdateDebuffsPositionAndBuffHeight()
+		local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd = locals(self)
+		if not numBuffs or numBuffs == 0 then
+			mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
+		else
+			mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
+			mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
+		end
+	end
+
 	function mod:UpdateBuffsHeight()
-		local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd, numRowsb = locals(self)
+		local buffs, _, _, numBuffs, offsetb, _, perRowb = locals(self)
 		if numBuffs and numBuffs > 0 then
 			mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
 		end
 	end
-	
+
 	function mod:UpdateDebuffsHeight()
-		local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd, numRowsb, numRowsd = locals(self)
+		local _, debuffs, numDebuffs, _, _, offsetd, _, perRowd = locals(self)
 		if numDebuffs and numDebuffs > 0 then
-			mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)	
+			mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
 		end
 	end
 
-	function mod:Configure_Auras(frame, auraType)
+	function mod:Configure_Auras(frame)
 		if not frame.Buffs.PostUpdate then
 			frame.Buffs.PostUpdate = mod.UpdateBuffsHeaderPosition
 		end
@@ -569,14 +557,14 @@ function mod:UpdateCenteredAuras(enable)
 			frame.Debuffs.PostUpdate = mod.UpdateDebuffsHeaderPosition
 		end
 	end
-	
+
 	function mod:Configure_AuraBars(frame)
 		if not frame.VARIABLES_SET then return end
 
 		local auraBars = frame.AuraBars
 		local db = frame.db
 		if db.aurabar.enable then
-		
+
 			local numElements, perRow, attachTo
 			if db.aurabar.attachTo == "BUFFS" then
 				attachTo = frame.Buffs
@@ -589,12 +577,12 @@ function mod:UpdateCenteredAuras(enable)
 			end
 
 			if not attachTo then return end
-			
+
 			local anchorPoint, anchorTo = "BOTTOM", "TOP"
 			if db.aurabar.anchorPoint == "BELOW" then
 				anchorPoint, anchorTo = "TOP", "BOTTOM"
 			end
-			
+
 			local offset = attachTo.size + attachTo.spacing
 			local width = offset * max(1, perRow) - attachTo.spacing
 			local height = offset * max(1, numElements) - attachTo.spacing
@@ -604,8 +592,8 @@ function mod:UpdateCenteredAuras(enable)
 			attachTo.auraBarsHolder:Point(anchorPoint, attachTo, anchorPoint, 0, 0)
 			attachTo.auraBarsHolder:Width(width, height)
 
-			mod:CenterAlignAuras(attachTo, numElements, perRow, offset)	
-			
+			mod:CenterAlignAuras(attachTo, numElements, perRow, offset)
+
 			attachTo = attachTo.auraBarsHolder
 
 			local yOffset
@@ -628,7 +616,7 @@ function mod:UpdateCenteredAuras(enable)
 			auraBars:SetAnchors()
 		end
 	end
-	
+
 	function mod:UpdateFrame(frame, db)
 		local buffs = frame.Buffs
 		local debuffs = frame.Debuffs
@@ -638,20 +626,20 @@ function mod:UpdateCenteredAuras(enable)
 		local offsetd = (debuffs.size + debuffs.spacing)
 		local perRowb = db.buffs.perrow
 		local perRowd = db.debuffs.perrow
-		
+
 		if numDebuffs and numDebuffs > 0 then
 			mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
 		end
-		
+
 		if numBuffs and numBuffs > 0 then
 			mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
 		end
 	end
-	
+
 	if not tcontains(core.frameUpdates, centerAuras) then
 		tinsert(core.frameUpdates, centerAuras)
 	end
-	
+
 	if enable then
 		for _, type in ipairs({'Configure_Auras', 'Configure_AuraBars', 'UpdateBuffsHeaderPosition', 'UpdateDebuffsHeaderPosition', 'UpdateBuffsPositionAndDebuffHeight', 'UpdateDebuffsPositionAndBuffHeight', 'UpdateDebuffsHeight', 'UpdateBuffsHeight'}) do
 			if not self:IsHooked(UF, type) then self:SecureHook(UF, type, self[type]) end
@@ -675,13 +663,13 @@ function mod:UpdateClickCancel(enable)
 			if button == 'RightButton' then CancelUnitBuff("player", self:GetID()) end
 		end)
 	end
-	
+
 	if enable then
 		if not self:IsHooked(_G['ElvUF_PlayerBuffs'], "PostCreateIcon") then self:SecureHook(_G['ElvUF_PlayerBuffs'], "PostCreateIcon", RMBCancelBuff) end
 	else
 		if self:IsHooked(_G['ElvUF_PlayerBuffs'], "PostCreateIcon") then self:Unhook(_G['ElvUF_PlayerBuffs'], "PostCreateIcon") end
 	end
-	
+
 	for i = 1, _G['ElvUF_PlayerBuffs']:GetNumChildren() do
 		local child = select(i, _G['ElvUF_PlayerBuffs']:GetChildren())
 		_G['ElvUF_PlayerBuffs']:PostCreateIcon(child)
@@ -708,7 +696,7 @@ function mod:ApplyHighlight(db, button)
 	button.highlightApplied = true
 end
 
-function mod:ClearHighlights(button, unit, isDebuff, debuffType, unstableAffliction, vampiricTouch)
+function mod:ClearHighlights(button, unit, isDebuff, _, unstableAffliction, vampiricTouch)
 	if isDebuff then
 		if not button.isFriend and not button.isPlayer then
 			button:SetBackdropBorderColor(0.9, 0.1, 0.1)
@@ -738,12 +726,12 @@ end
 
 function mod:HandleCurableStealable(db, button, unit, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name, dispellList, purgeList)
 	if (db.shadow or db.border) and (attackable or (E.myclass == "WARLOCK" or (name and (name ~= unstableAffliction and name ~= vampiricTouch)))) and dtype and find(dtype, '%S+') then
-		if (attackable and isDebuff) or (not attackable and not isDebuff) 
+		if (attackable and isDebuff) or (not attackable and not isDebuff)
 		 or (isDebuff and not (dispellList and dispellList[dtype])) or (not isDebuff and not purgeList) then
 			if button.highlightApplied then
 				self:ClearHighlights(button, unit, isDebuff, debuffType, unstableAffliction, vampiricTouch)
 			end
-			return 
+			return
 		end
 		self:ApplyHighlight(db, button)
 	elseif button.highlightApplied then
@@ -755,10 +743,10 @@ function mod:UpdatePostUpdateAura(enable)
 	local dispellList, purgeList = core.DispellList[E.myclass], core.PurgeList[E.myclass]
 	function mod:PostUpdateAura(unit, button)
 		local db = E.db.Extras.unitframes[modName]
-		
+
 		local attackable = UnitCanAttack('player', unit) == 1
 		local isDebuff = button.isDebuff
-		
+
 		if isDebuff then
 			if db.SaturatedDebuffs.enabled then
 				button.icon:SetDesaturated(false)
@@ -767,15 +755,15 @@ function mod:UpdatePostUpdateAura(enable)
 				button:SetBackdropBorderColor(unpack(E.media.unitframeBorderColor))
 			end
 		end
-		
+
 		if attackable then
 			db = db.Highlights.types['ENEMY']
 		else
 			db = db.Highlights.types['FRIENDLY']
 		end
-		
+
 		if not db.enabled then return end
-		
+
 		local name, dtype, debuffType, spellID = button.name, button.dtype, button.debuffType, button.spellID
 		local unstableAffliction = GetSpellInfo(30108)
 		local vampiricTouch = GetSpellInfo(34914)
@@ -823,13 +811,13 @@ function mod:UpdatePostUpdateAura(enable)
 			end
 		end
 	end
-	
+
 	if enable then
 		if not self:IsHooked(UF, "PostUpdateAura") then self:SecureHook(UF, "PostUpdateAura", self.PostUpdateAura) end
 	else
 		if self:IsHooked(UF, "PostUpdateAura") then self:Unhook(UF, "PostUpdateAura") end
 	end
-	
+
 	local units = core:AggregateUnitFrames()
 	for _, frame in ipairs(units) do
 		for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
@@ -847,7 +835,7 @@ function mod:UpdatePostUpdateAura(enable)
 			end
 		end
 	end
-end	
+end
 
 
 function mod:Toggle()
@@ -863,14 +851,14 @@ function mod:Toggle()
 	if not enabled then
 		for _, info in pairs(E.db.Extras.unitframes[modName].Highlights.types) do
 			if info.enabled then enabled = true break end
-		end		
+		end
 	end
 	self:UpdatePostUpdateAura(enabled)
 end
 
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
-	
+
 	mod:LoadConfig()
 	mod:Toggle()
 end

@@ -46,7 +46,6 @@ P["Extras"]["blizzard"][modName] = {
 }
 
 function mod:LoadConfig()
-	local function selected() return E.db.Extras.blizzard[modName].StyledMsgs.selected end
 	core.blizzard.args[modName] = {
 		type = "group",
 		name = L["Misc."],
@@ -160,7 +159,7 @@ function mod:LoadConfig()
 			},
 		},
 	}
-end		
+end
 
 
 function mod:CreatePingFrame()
@@ -173,16 +172,16 @@ function mod:CreatePingFrame()
 	local PingText = PlayerPingFrame:CreateFontString(nil, "OVERLAY")
 	PingText:FontTemplate()
 	PingText:SetAllPoints()
-	
-	PlayerPingFrame.PingText = PingText 
-	
+
+	PlayerPingFrame.PingText = PingText
+
 	return PlayerPingFrame
 end
 
-function mod:ShowPlayerPing(x, y, playerName)
+function mod:ShowPlayerPing(playerName)
 	local _, playerClass = UnitClass(playerName)
 	local classColor = CUSTOM_CLASS_COLORS and CUSTOM_CLASS_COLORS[playerClass] or RAID_CLASS_COLORS[playerClass]
-	
+
 	mod.PlayerPingFrame.PingText:SetText(playerName)
 	mod.PlayerPingFrame.PingText:SetTextColor(classColor and classColor.r or 1, classColor and  classColor.g or 1, classColor and classColor.b or 1)
 	mod.PlayerPingFrame:Width(mod.PlayerPingFrame.PingText:GetStringWidth())
@@ -194,7 +193,7 @@ function mod:ShowPlayerPing(x, y, playerName)
 	local lastUpdate = 0
 
 	mod.PlayerPingFrame.start = GetTime()
-	
+
 	local x, y = MinimapPing:GetCenter()
 	x, y = (x > mapX and -1 or 1) * offsetX, (y > mapY and -1 or 1) * 12
 	mod.PlayerPingFrame:Point("CENTER", MinimapPing, "CENTER", x, y)
@@ -203,15 +202,15 @@ end
 function mod:LetterBox(enable)
 	if enable then
 		local db = E.db.Extras.blizzard[modName].LetterBox
-		WorldFrame:SetUserPlaced(true) 
+		WorldFrame:SetUserPlaced(true)
 		WorldFrame:ClearAllPoints()
-		WorldFrame:SetPoint("TOPLEFT", db.left, -db.top) 
+		WorldFrame:SetPoint("TOPLEFT", db.left, -db.top)
 		WorldFrame:SetPoint("BOTTOMRIGHT", -db.right, db.bottom)
 	else
-		WorldFrame:SetUserPlaced(false) 
+		WorldFrame:SetUserPlaced(false)
 		WorldFrame:ClearAllPoints()
-		WorldFrame:SetPoint("TOPLEFT") 
-		WorldFrame:SetPoint("BOTTOMRIGHT")	
+		WorldFrame:SetPoint("TOPLEFT")
+		WorldFrame:SetPoint("BOTTOMRIGHT")
 	end
 end
 
@@ -222,11 +221,7 @@ function mod:PlayerPings(enable)
 			initialized.PlayerPings = true
 		end
 		self:RegisterEvent("MINIMAP_PING", function(_, _, unitTarget, x, y)
-			local playerName = UnitName(unitTarget)
-			local adjustedX = x * Minimap:GetEffectiveScale() * Minimap:GetWidth()
-			local adjustedY = y * Minimap:GetEffectiveScale() * Minimap:GetHeight()
-
-			mod:ShowPlayerPing(adjustedX, adjustedY, playerName)
+			mod:ShowPlayerPing(UnitName(unitTarget))
 		end, x, y)
 		if not self:IsHooked(MinimapPing, "OnHide") then
 			self:SecureHookScript(MinimapPing, "OnHide", function() E:UIFrameFadeOut(mod.PlayerPingFrame.PingText, 1, 1, 0) end)
@@ -288,21 +283,21 @@ function mod:HeldCurrency(enable)
 		MerchantFrame.heldCurrencyHandler:SetScript("OnEvent", function()
 			if processing then return end
 			processing = true
-			
+
 			E:Delay(0.1, function()
 				updateMerchantCurrency()
 				processing = false
 			end)
 		end)
-		MerchantFrame.heldCurrencyHandler:SetScript("OnShow", function(self) 
-			self:RegisterEvent("BAG_UPDATE") 
-			self:RegisterEvent("CURRENCY_DISPLAY_UPDATE") 
+		MerchantFrame.heldCurrencyHandler:SetScript("OnShow", function(self)
+			self:RegisterEvent("BAG_UPDATE")
+			self:RegisterEvent("CURRENCY_DISPLAY_UPDATE")
 		end)
-		MerchantFrame.heldCurrencyHandler:SetScript("OnHide", function(self) 
-			self:UnregisterEvent("BAG_UPDATE") 
-			self:UnregisterEvent("CURRENCY_DISPLAY_UPDATE") 
+		MerchantFrame.heldCurrencyHandler:SetScript("OnHide", function(self)
+			self:UnregisterEvent("BAG_UPDATE")
+			self:UnregisterEvent("CURRENCY_DISPLAY_UPDATE")
 		end)
-		
+
 		if not self:IsHooked("MerchantFrame_UpdateMerchantInfo") then self:SecureHook("MerchantFrame_UpdateMerchantInfo", updateMerchantCurrency) end
 		if not self:IsHooked("MerchantFrame_UpdateBuybackInfo") then self:SecureHook("MerchantFrame_UpdateBuybackInfo", updateMerchantCurrency) end
 		updateMerchantCurrency()
@@ -375,10 +370,6 @@ function mod:LessTooltips(enable)
 		if mod:IsHooked(TT, "GameTooltip_OnTooltipSetSpell") then mod:Unhook(TT, "GameTooltip_OnTooltipSetSpell") end
 	end
 end
-
-function mod:StyledMsgs(enable)
-	
-end	
 
 
 function mod:Toggle()

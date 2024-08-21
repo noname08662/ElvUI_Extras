@@ -1,7 +1,6 @@
 local E, L, _, P = unpack(ElvUI)
 local core = E:GetModule("Extras")
 local mod = core:NewModule("CooldownsUF", "AceHook-3.0", "AceEvent-3.0")
-local UF = E:GetModule("UnitFrames")
 local LSM = E.Libs.LSM
 local LAI = E.Libs.LAI
 
@@ -13,9 +12,9 @@ local scanTool = CreateFrame("GameTooltip", "ScanTooltipUF", nil, "GameTooltipTe
 scanTool:SetOwner(WorldFrame, "ANCHOR_NONE")
 
 local band = bit.band
-local _G, pairs, ipairs, select, unpack, tonumber, print, type, next = _G, pairs, ipairs, select, unpack, tonumber, print, type, next
-local gsub, upper, match, find, format, len = string.gsub, string.upper, string.match, string.find, string.format, string.len
-local random, floor, min, max, ceil, abs = math.random, math.floor, math.min, math.max, math.ceil, math.abs
+local _G, pairs, ipairs, select, unpack, tonumber, next = _G, pairs, ipairs, select, unpack, tonumber, next
+local gsub, upper, match, find, format = string.gsub, string.upper, string.match, string.find, string.format
+local random, floor, min, ceil, abs = math.random, math.floor, math.min, math.ceil, math.abs
 local tinsert, tremove, tsort, twipe, tcontains = table.insert, table.remove, table.sort, table.wipe, tContains
 local GetTime, CooldownFrame_SetTimer = GetTime, CooldownFrame_SetTimer
 local GetSpellInfo, GetSpellLink = GetSpellInfo, GetSpellLink
@@ -26,8 +25,8 @@ local UNITNAME_SUMMON_TITLES = {gsub(format(UNITNAME_SUMMON_TITLE1, 1), '[%d%p%s
 
 
 local function tagFunc(frame, unit)
-	local playerName = UnitName(unit) 
-	local activeCooldowns = activeCooldowns[playerName] 
+	local playerName = UnitName(unit)
+	local activeCooldowns = activeCooldowns[playerName]
 
 	if activeCooldowns and tcontains(framelist, frame) then
 		for i, cooldown in ipairs(activeCooldowns) do
@@ -35,7 +34,7 @@ local function tagFunc(frame, unit)
 				tremove(activeCooldowns, i)
 			end
 		end
-		
+
 		mod:AttachCooldowns(frame, activeCooldowns)
 	elseif frame.CDTracker then
 		frame.CDTracker:Hide()
@@ -48,7 +47,6 @@ local function getPetOwner(unit)
 	local scanText = _G["ScanTooltipNPTextLeft2"]
 	local ownerText = scanText:GetText()
 	if ownerText then
-		local owner, playerName
 		for _, string in ipairs(UNITNAME_SUMMON_TITLES) do
 			if find(ownerText, string) then
 				return gsub(ownerText, string..'[%s]+', '')
@@ -98,14 +96,14 @@ local fallbackSpells = {
 }
 
 local function testMode()
-	for _, frame in ipairs(framelist) do 
+	for _, frame in ipairs(framelist) do
 		if frame.CDTracker then frame.CDTracker:Hide() end
 		if frame.unit then
 			if activeCooldowns[UnitName(frame.unit)] then twipe(activeCooldowns[UnitName(frame.unit)]) end
 		end
 	end
 	if testing then return end
-	
+
     local spellList = E.db.Extras.unitframes[modName][E.db.Extras.unitframes[modName].selectedType].spellList
     local spellIDs = {}
 
@@ -122,9 +120,9 @@ local function testMode()
             tinsert(spellIDs, id)
         end
     end
-	
+
     local numSpells = random(2, 7)
-    for i = 1, numSpells do
+    for _ = 1, numSpells do
         local spellID = spellIDs[random(#spellIDs)]
         local duration = spellList[spellID] or fallbackSpells[spellID]
         local startTime = GetTime() - random(0, duration/2)
@@ -147,7 +145,7 @@ local function testMode()
 		icon = select(3, GetSpellInfo(59752))
 	}
 	tinsert(testSpells, random(1, #testSpells), trinket)
-	
+
 	for _, frame in ipairs(framelist) do
 		local unit = frame.unit
 		if unit and UnitName(unit) and frame.unitframeType == E.db.Extras.unitframes[modName].selectedUnit then
@@ -243,7 +241,7 @@ P["Extras"]["unitframes"][modName] = {
 		[19647] = true,				--"Spell Lock",
 		[7812] = true,				--"Sacrifice",
 		--Pets(Mage)
-		[33395] = true,	
+		[33395] = true,
 	},
 	["FRIENDLY_PLAYER"] = {
 		["selectedSpell"] = '',
@@ -322,7 +320,7 @@ P["Extras"]["unitframes"][modName] = {
 			[49039] = 120,				--"Lichborne",
 			[47476] = 60,				--"Strangulate",
 			[48707] = 45,				--"Anti-Magic Shell",
-			[49576] = 25,				--"Death Grip",	
+			[49576] = 25,				--"Death Grip",
 			[47528] = 10,				--"Mind Freeze",
 			[49222] = 60,				--"Bone Shield",
 			--[51271] = 60,				--"Pillar of Frost",
@@ -365,16 +363,16 @@ P["Extras"]["unitframes"][modName] = {
 			[19503] = 30,				--"Scatter Shot",
 			[23989] = 180,				--"Readiness",
 			[34490] = 20,				--"Silencing Shot",
-			[19574] = 90,				--"Bestial Wrath",      
+			[19574] = 90,				--"Bestial Wrath",
 			--Mage
 			[2139] = 24,				--"Counterspell",
 			[42950] = 20,				--"Dragon's Breath",
 			[44572] = 30,				--"Deep Freeze",
 			[11958] = 384,				--"Cold Snap",
-			[45438] = 300,				--"Ice Block",			
-			[12042] = 106,				--"Arcane Power",		
+			[45438] = 300,				--"Ice Block",
+			[12042] = 106,				--"Arcane Power",
 			--[12051] = 240,				--"Evocation",
-			--[122] = 20,					--"Frost Nova",	
+			--[122] = 20,					--"Frost Nova",
 			--[11426] = 24,				--"Ice Barrier",
 			[12472] = 144,				--"Icy Veins",
 			--[55342] = 180,				--"Mirror Image",
@@ -382,7 +380,7 @@ P["Extras"]["unitframes"][modName] = {
 			[11113] = 15, 				--"Blast Wave",
 			[12043] = 90,				--"Presence of Mind",
 			[11129] = 120,				--"Combustion",
-			[31661] = 17,				--"Dragon's Breath",	
+			[31661] = 17,				--"Dragon's Breath",
 			--Paladin
 			[1044] = 25,				--"Hand of Freedom",
 			--[31884] = 120,				--"Avenging Wrath",
@@ -466,7 +464,7 @@ P["Extras"]["unitframes"][modName] = {
 			--[2565] = 30,				--"Shield Block",
 			[676] = 60,					--"Disarm",
 			--[5246] = 120,				--"Intimidation Shout",
-			[871] = 120,				--"Shield Wall",	
+			[871] = 120,				--"Shield Wall",
 			[20252] = 20,				--"Intercept",
 			--[20230] = 300,			--"Retaliation",
 			--[1719] = 240,				--"Recklessness",
@@ -568,10 +566,9 @@ function mod:LoadConfig()
 					selectedType = {
 						order = 4,
 						type = "select",
-						disabled = false,
 						name = L["Select Type"],
 						desc = "",
-						values = function(info)
+						values = function()
 							local list = {}
 							for type in pairs(E.db.Extras.unitframes[modName]) do
 								if upper(type) == type then list[type] = L[type] end
@@ -745,7 +742,7 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Growth Direction"],
 						desc = "",
-						values = function() 
+						values = function()
 							local points = {}
 							for point in pairs(E.db.Extras.pointOptions) do
 								points[point] = point
@@ -904,14 +901,14 @@ function mod:LoadConfig()
 						type = "input",
 						name = L["Add Spell (by ID)"],
 						desc = L["Format: 'spellID cooldown time', e.g. 42292 120"],
-						get = function(info) return "" end,
-						set = function(info, value)
+						get = function() return "" end,
+						set = function(_, value)
 							local spellID, cooldownTime = match(value, '%D*(%d+)%D*(%d+)')
 							if spellID and GetSpellInfo(spellID) then
 								cooldownTime = cooldownTime or LAI.spellDuration[spellID]
 								if not cooldownTime then return end
 								E.db.Extras.unitframes[modName][selectedType()].spellList[tonumber(spellID)] = cooldownTime
-								local name, _, icon = GetSpellInfo(spellID)
+								local _, _, icon = GetSpellInfo(spellID)
 								local link = GetSpellLink(spellID)
 								icon = gsub(icon, '\124', '\124\124')
 								local string = '\124T' .. icon .. ':16:16\124t' .. link
@@ -926,8 +923,8 @@ function mod:LoadConfig()
 						desc = "",
 						func = function()
 							local spellID = selectedSpell()
-							E.db.Extras.unitframes[modName][selectedType()].spellList[spellID] = nil 
-							local name, _, icon = GetSpellInfo(spellID)
+							E.db.Extras.unitframes[modName][selectedType()].spellList[spellID] = nil
+							local _, _, icon = GetSpellInfo(spellID)
 							local link = GetSpellLink(spellID)
 							icon = gsub(icon, '\124', '\124\124')
 							local string = '\124T' .. icon .. ':16:16\124t' .. link
@@ -942,10 +939,10 @@ function mod:LoadConfig()
 						name = L["Select Spell"],
 						desc = "",
 						get = function(info) return E.db.Extras.unitframes[modName][selectedType()][info[#info]] end,
-						set = function(info, value) 
-							E.db.Extras.unitframes[modName][selectedType()][info[#info]] = value 
-							if not E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] then 
-								E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] = { ["enabled"] = false, ["size"] = 1, ["color"] = {0,0,0,1} } 
+						set = function(info, value)
+							E.db.Extras.unitframes[modName][selectedType()][info[#info]] = value
+							if not E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] then
+								E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] = { ["enabled"] = false, ["size"] = 1, ["color"] = {0,0,0,1} }
 							end
 						end,
 						values = function()
@@ -976,8 +973,8 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Shadow"],
 						desc = L["For the important stuff."],
-						get = function(info) return E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] and E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].enabled or false end,
-						set = function(info, value) E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].enabled = value self:Toggle() end,
+						get = function() return E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] and E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].enabled or false end,
+						set = function(_, value) E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].enabled = value self:Toggle() end,
 						disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].selectedSpell end,
 					},
 					petSpell = {
@@ -985,8 +982,8 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Pet Ability"],
 						desc = L["Pet casts require some special treatment."],
-						get = function(info) return E.db.Extras.unitframes[modName].petSpells[selectedSpell()] end,
-						set = function(info, value) E.db.Extras.unitframes[modName].petSpells[selectedSpell()]= value and value or nil self:Toggle() end,
+						get = function() return E.db.Extras.unitframes[modName].petSpells[selectedSpell()] end,
+						set = function(_, value) E.db.Extras.unitframes[modName].petSpells[selectedSpell()]= value and value or nil self:Toggle() end,
 						disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].selectedSpell end,
 					},
 					shadowSize = {
@@ -995,8 +992,8 @@ function mod:LoadConfig()
 						name = L["Shadow Size"],
 						desc = "",
 						min = 1, max = 12, step = 1,
-						get = function(info) return E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] and E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].size or 0 end,
-						set = function(info, value) E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].size = value self:Toggle() end,
+						get = function() return E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] and E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].size or 0 end,
+						set = function(_, value) E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].size = value self:Toggle() end,
 						disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] or not E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].enabled end,
 					},
 					shadowColor = {
@@ -1005,8 +1002,8 @@ function mod:LoadConfig()
 						hasAlpha = true,
 						name = L["Shadow Color"],
 						desc = "",
-						get = function(info) return unpack(E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] and E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].color or {}) end,
-						set = function(info, r, g, b, a) E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].color = { r, g, b, a } self:Toggle() end,
+						get = function() return unpack(E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] and E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].color or {}) end,
+						set = function(_, r, g, b, a) E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].color = { r, g, b, a } self:Toggle() end,
 						disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] or not E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].enabled end,
 					},
 				},
@@ -1015,7 +1012,7 @@ function mod:LoadConfig()
 	}
 	if not E.db.Extras.unitframes[modName]['FRIENDLY_PLAYER'].units.player then
 		for _, unitframeType in ipairs({'player', 'focus', 'raid', 'raid40', 'party', 'arena'}) do
-			E.db.Extras.unitframes[modName]['FRIENDLY_PLAYER'].units[unitframeType] = CopyTable(E.db.Extras.unitframes[modName]['FRIENDLY_PLAYER'].units.target) 
+			E.db.Extras.unitframes[modName]['FRIENDLY_PLAYER'].units[unitframeType] = CopyTable(E.db.Extras.unitframes[modName]['FRIENDLY_PLAYER'].units.target)
 		end
 	end
 	if not E.db.Extras.unitframes[modName]['ENEMY_PLAYER'] then
@@ -1038,7 +1035,7 @@ local function setFillPoints(cooldown, fillWidth, direction)
     local fill = cooldown.fill
 
 	fill:ClearAllPoints()
-	
+
     if direction == "LEFT" then
         fill:Point("TOPRIGHT", cooldown, "TOPRIGHT", -border, -border)
         fill:Point("BOTTOMLEFT", cooldown, "BOTTOMLEFT", fillWidth + border, border)
@@ -1060,7 +1057,7 @@ local function setFillPointsReversed(cooldown, fillWidth, direction)
     local size = cooldown.size
 
     fill:ClearAllPoints()
-	
+
     if direction == "LEFT" then
         fill:Point("TOPLEFT", cooldown, "TOPLEFT", border, -border)
         fill:Point("BOTTOMRIGHT", cooldown, "BOTTOMRIGHT", fillWidth - size - border, border)
@@ -1076,7 +1073,7 @@ local function setFillPointsReversed(cooldown, fillWidth, direction)
     end
 end
 
-local function combatLogEvent(event, ...)
+local function combatLogEvent(_, ...)
     local _, eventType, _, sourceName, sourceFlags, _, _, _, spellID = ...
 
     if eventType == "SPELL_CAST_SUCCESS" and sourceName then
@@ -1107,7 +1104,7 @@ function mod:UpdateCooldowns(playerName, spellID, startTime, endTime)
         endTime = endTime,
         icon = select(3, GetSpellInfo(spellID)),
     }
-	
+
 	tinsert(activeCooldowns[playerName], spellInfo)
 	self:UpdateFrames(playerName)
 end
@@ -1170,25 +1167,22 @@ function mod:AttachCooldowns(frame, cooldowns, testMode)
 	end
 
 	if not shown then frame.CDTracker:Hide() return end
-	
+
 	local db_icons = db.icons
 	local db_text = db.text
 	local db_cooldownFill = db.cooldownFill
 
-    local offset = db_icons.size + db_icons.spacing
-    local cols = db_icons.perRow
-
 	local cmp = createCompareFunction(db_icons.sorting, db_icons.trinketOnTop)
 	tsort(cooldowns, cmp)
-	
+
     for i, cd in ipairs(cooldowns) do
 		if i > db_icons.perRow * db_icons.maxRows then break end
-		
+
         local cdFrame = frame.CDTracker.cooldowns[i]
-		
+
 		local endTime = cd.endTime
 		local startTime = cd.startTime
-		
+
         if not cdFrame then
             cdFrame = CreateFrame("Frame", nil, frame.CDTracker)
             cdFrame:Size(db_icons.size, db_icons.size)
@@ -1221,61 +1215,61 @@ function mod:AttachCooldowns(frame, cooldowns, testMode)
 			else
 				cdFrame.fillOn = db_cooldownFill.reversed and setFillPointsReversed or setFillPoints
 				cdFrame.size = db_icons.size
-			
+
 				cdFrame.fillOn(cdFrame, ((endTime - GetTime()) / (endTime - startTime)) * db_icons.size, cdFrame.fillDir)
 			end
 		end
-		
+
 		if db_text.enabled then
 			cdFrame.text:SetText(ceil(cd.endTime - GetTime()))
 			cdFrame.textOn = true
 		end
-		
+
 		if db_icons.borderCustomColor[1] > 0 or db_icons.borderCustomColor[2] > 0 or db_icons.borderCustomColor[3] > 0 then
 			cdFrame:SetBackdropBorderColor(unpack(db_icons.borderCustomColor))
 		elseif db_icons.borderColor then
 			cdFrame.col = testMode and E.db.Extras.unitframes[modName].selectedType or unitType
 			cdFrame:SetBackdropBorderColor(getColorByTime(endTime - GetTime(), endTime - startTime, cdFrame.col))
 		end
-		
+
         cdFrame.texture:SetTexture(cd.icon)
-		
+
         cdFrame.endTime = endTime
         cdFrame.startTime = startTime
         cdFrame.spellID = cd.spellID
 		cdFrame.throttle = db_icons.throttle
 		cdFrame.animateFadeOut = db_icons.animateFadeOut
-		
+
         cdFrame:SetScript("OnUpdate", function(self, elapsed)
             mod:OnUpdateCooldown(self, elapsed, cooldowns)
         end)
-		
+
         cdFrame:SetScript("OnHide", function(self)
             self:SetScript("OnUpdate", nil)
         end)
     end
 
 	local cdlen = #cooldowns
-	
+
 	for i = cdlen + 1, #frame.CDTracker.cooldowns do
         frame.CDTracker.cooldowns[i]:Hide()
     end
-	
+
 	frame.CDTracker:Show()
-	
+
 	self:RepositionIcons(db, frame.CDTracker, cdlen)
 end
 
 function mod:RepositionIcons(db, tracker, cdlen)
     local icons = db.icons
-    local perRow, maxRows, spacing, direction, size = icons.perRow, icons.maxRows, icons.spacing, icons.direction, icons.size
+    local perRow, spacing, direction, size = icons.perRow, icons.spacing, icons.direction, icons.size
     local offset = size + spacing
     local point = oppositeDirections[direction]
     local dirProps = directionProperties[direction]
     local isCentered, isVertical, isReverseX, isReverseY = dirProps.isCentered, dirProps.isVertical, dirProps.isReverseX, dirProps.isReverseY
-    
+
     local shown = min(cdlen, #tracker.cooldowns)
-    
+
     if shown == 0 then
         tracker:Size(1, 1)
         return
@@ -1284,19 +1278,19 @@ function mod:RepositionIcons(db, tracker, cdlen)
     for i = 1, shown do
         local cdFrame = tracker.cooldowns[i]
         cdFrame:ClearAllPoints()
-        
+
         local row = floor((i - 1) / perRow)
         local col = (i - 1) % perRow
-        
+
         local xOffset, yOffset
         if isCentered then
             local itemsInThisRow = min(perRow, shown - row * perRow)
             local rowSize = itemsInThisRow * size + (itemsInThisRow - 1) * spacing
             if isVertical then
-                yOffset = -rowSize / 2 + col * offset + size / 2 
+                yOffset = -rowSize / 2 + col * offset + size / 2
                 xOffset = isReverseX and (row * offset) or (-row * offset)
             else
-                xOffset = -rowSize / 2 + col * offset + size / 2 
+                xOffset = -rowSize / 2 + col * offset + size / 2
                 yOffset = isReverseY and (row * offset) or (-row * offset)
             end
         else
@@ -1308,9 +1302,9 @@ function mod:RepositionIcons(db, tracker, cdlen)
                 yOffset = isReverseY and (-row * offset) or (row * offset)
             end
         end
-        
+
         cdFrame:Point(point, tracker, point, xOffset, yOffset)
-        
+
         local highlight = highlightedSpells[cdFrame.spellID]
         if highlight and highlight.enabled then
             cdFrame.shadow:SetOutside(cdFrame, highlight.size, highlight.size)
@@ -1320,42 +1314,42 @@ function mod:RepositionIcons(db, tracker, cdlen)
         else
             cdFrame.shadow:Hide()
         end
-        
+
         cdFrame:Show()
     end
-    
+
     local numRows = ceil(shown / perRow)
     local numCols = min(shown, perRow)
-	
+
     local trackerWidth = isVertical and (numRows * offset - spacing) or (numCols * offset - spacing)
     local trackerHeight = isVertical and (numCols * offset - spacing) or (numRows * offset - spacing)
-	
+
     tracker:Size(trackerWidth, trackerHeight)
 end
 
 function mod:OnUpdateCooldown(cooldown, elapsed, cooldowns)
     cooldown.timeElapsed = (cooldown.timeElapsed or 0) + elapsed
-	
+
     if cooldown.timeElapsed > cooldown.throttle then
         cooldown.timeElapsed = 0
-		
+
 		local endTime = cooldown.endTime
 		local startTime = cooldown.startTime
         local remaining = endTime - GetTime()
-		
+
         if cooldown.textOn then
             cooldown.text:SetText(ceil(remaining))
         end
-		
+
         if cooldown.fillOn then
 			cooldown.fillOn(cooldown, (remaining / (endTime - startTime)) * cooldown.size, cooldown.fillDir)
         end
-		
+
         if cooldown.col then
 			local r, g = getColorByTime(remaining, endTime - startTime, cooldown.col)
 			cooldown:SetBackdropBorderColor(r, g)
         end
-		
+
 		if cooldown.animateFadeOut then
 			local progress = remaining / (cooldown.endTime - cooldown.startTime)
 			if progress < 0.25 and remaining < 6 then
@@ -1365,18 +1359,18 @@ function mod:OnUpdateCooldown(cooldown, elapsed, cooldowns)
 				cooldown:SetAlpha(1)
 			end
 		end
-		
+
 		if remaining > 0 then return end
-		
+
 		cooldown:SetScript("OnUpdate", nil)
 		cooldown:Hide()
-		
+
 		for i, cd in ipairs(cooldowns) do
 			if cd.endTime <= GetTime() then
 				tremove(cooldowns, i)
 			end
 		end
-		
+
 		if cooldown:GetParent():IsShown() then
 			mod:AttachCooldowns(cooldown:GetParent():GetParent(), cooldowns, testing)
 		end
@@ -1387,52 +1381,52 @@ end
 local function setupCooldowns()
 	local db = E.db.Extras.unitframes[modName]
 	local units = core:AggregateUnitFrames()
-	
+
 	twipe(framelist)
 	twipe(highlightedSpells)
 	twipe(petSpells)
-	
+
 	for _, type in ipairs({'FRIENDLY_PLAYER', 'ENEMY_PLAYER'}) do
 		for spellID, info in pairs(db[type].highlightedSpells) do
 			highlightedSpells[spellID] = info
 		end
 	end
-	
+
 	for spellID in pairs(db.petSpells) do
 		petSpells[spellID] = true
 	end
-	
+
 	for _, frame in ipairs(units) do
 		local unit = frame.unit
-		
+
 		if unit then
 			local playerName = UnitName(unit)
 			local unitType = UnitCanAttack(unit, 'player') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER'
 			local unitframeType = frame.unitframeType
 			local db_type = db[unitType].units[unitframeType]
-			
+
 			if db_type and db_type.enabled then
 				if not frame.CDTracker then
 					frame.CDTracker = CreateFrame("Frame", '$parentCDTracker', frame)
 					frame.CDTracker.cooldowns = {}
 					frame.CDTracker:Hide()
-					
+
 					core:Tag("cooldowns", tagFunc)
 				end
-				
+
 				local db_header = db_type.header
 				frame.CDTracker:ClearAllPoints()
 				frame.CDTracker:Point(db_header.point, frame, db_header.relativeTo, db_header.xOffset, db_header.yOffset)
 				frame.CDTracker:SetFrameLevel(db_header.level)
 				frame.CDTracker:SetFrameStrata(db_header.strata)
-				
+
 				for i = #frame.CDTracker.cooldowns, 1, -1 do
 					frame.CDTracker.cooldowns[i]:Hide()
 					frame.CDTracker.cooldowns[i] = nil
 				end
-				
+
 				tinsert(framelist, frame)
-				
+
 				if UnitIsPlayer(unit) then
 					if activeCooldowns[playerName] then
 						mod:AttachCooldowns(frame, activeCooldowns[playerName], testing)
@@ -1447,25 +1441,25 @@ function mod:Toggle()
 	local enabled
 
 	for _, type in ipairs({'FRIENDLY_PLAYER', 'ENEMY_PLAYER'}) do
-		for unit, info in pairs(E.db.Extras.unitframes[modName][type].units) do
-			if info.enabled then 
-				enabled = true 
+		for _, info in pairs(E.db.Extras.unitframes[modName][type].units) do
+			if info.enabled then
+				enabled = true
 				break
 			end
 		end
 	end
-	
+
 	if enabled then
 		setupCooldowns()
-		
+
 		self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(self, event, ...) combatLogEvent(self, event, ...) end)
 		self:RegisterEvent("ZONE_CHANGED_NEW_AREA", function()
 			local _, type = IsInInstance()
-			
-			if type == 'arena' then 
-				twipe(activeCooldowns) 
+
+			if type == 'arena' then
+				twipe(activeCooldowns)
 			end
-			
+
 			mod:UpdateFrames(nil, true)
 		end)
 	else
@@ -1477,10 +1471,10 @@ end
 
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
-	
+
 	mod:LoadConfig()
 	mod:Toggle()
-	
+
 	tinsert(core.frameUpdates, setupCooldowns)
 end
 

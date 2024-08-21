@@ -2,13 +2,12 @@ local E, L, _, P = unpack(ElvUI)
 local AB = E:GetModule("ActionBars")
 local core = E:GetModule("Extras")
 local mod = core:NewModule("Quest Bar", "AceHook-3.0", "AceEvent-3.0")
-local LAB = E.Libs.LAB
 
 local modName = mod:GetName()
 local initialized
 
 local _G = _G
-local find, tinsert, twipe = string.find, table.insert, table.wipe
+local tinsert, twipe = table.insert, table.wipe
 local pairs, ipairs, select, print = pairs, ipairs, select, print
 local GetContainerItemQuestInfo, GetContainerNumSlots, GetContainerItemID = GetContainerItemQuestInfo, GetContainerNumSlots, GetContainerItemID
 local PickupContainerItem, PlaceAction, ClearCursor = PickupContainerItem, PlaceAction, ClearCursor
@@ -37,7 +36,7 @@ P["Extras"]["general"][modName] = {
 	["showGrid"] = false,
 	["paging"] = {},
 	["visibility"] = "[vehicleui] hide; show",
-	
+
 	["blacklist"] = {},
 	["modifier"] = 'Alt'
 }
@@ -91,9 +90,9 @@ function mod:LoadConfig()
 						order = 2,
 						type = "toggle",
 						name = L["Show Empty Buttons"],
-						
+
 							hidden = function() return true end,
-						
+
 						set = function(info, value) E.db.Extras.general[modName][info[#info]] = value E.db.actionbar["bar"..modName][info[#info]] = value AB:UpdateButtonSettingsForBar("bar" .. modName) end,
 					},
 					mouseover = {
@@ -127,9 +126,9 @@ function mod:LoadConfig()
 						type = "range",
 						name = L["Buttons"],
 						desc = L["The amount of buttons to display."],
-						
+
 							hidden = function() return true end,
-						
+
 						min = 1, max = NUM_ACTIONBAR_BUTTONS, step = 1,
 					},
 					buttonsPerRow = {
@@ -137,9 +136,9 @@ function mod:LoadConfig()
 						type = "range",
 						name = L["Buttons Per Row"],
 						desc = L["The amount of buttons to display per row."],
-						
+
 							hidden = function() return true end,
-						
+
 						min = 1, max = NUM_ACTIONBAR_BUTTONS, step = 1,
 					},
 					buttonsize = {
@@ -209,10 +208,10 @@ function mod:CreateQuestBar()
 
 	AB.handledBars["bar"..modName] = bar
 	E:CreateMover(bar, "ElvAB_QuestBar", L["bar"..modName], nil, nil, nil,"ALL,ACTIONBARS",nil,"actionbar,barQuestBar")
-	
+
 	local localizedQuestItemType = select(12,GetAuctionItemClasses())
 	local function BlockAction(self, button)
-		local type, itemID = GetActionInfo(self._state_action)
+		local _, itemID = GetActionInfo(self._state_action)
 		if not itemID then return end
 		if select(6,GetItemInfo(itemID)) ~= localizedQuestItemType then
 			PickupAction(self._state_action)
@@ -222,30 +221,33 @@ function mod:CreateQuestBar()
 			self:SetAttribute("type", nil)
 		end
 	end
-	
+
 	for _, button in pairs(bar.buttons) do
 		button:HookScript("PreClick", BlockAction)
 		button:HookScript("PostClick", function(self) self:SetAttribute("type", "action") end)
 		button:HookScript("OnReceiveDrag", BlockAction)
 		button:HookScript("OnDragStop", function(self)
 			if not GetCursorInfo() then return end
-			if GetMouseFocus():GetParent() ~= self:GetParent() then 
+			if GetMouseFocus():GetParent() ~= self:GetParent() then
 				PickupAction(self._state_action)
 			else
 				PickupAction(GetMouseFocus()._state_action)
 				PickupAction(self._state_action)
-			end 
+			end
 		end)
 	end
 end
 
 function mod:CheckQuestItems()
-	if InCombatLockdown() then 
-		print(core.customColorBad..ERR_NOT_IN_COMBAT) 
-		self:RegisterEvent('PLAYER_REGEN_ENABLED', function(self, event) mod:CheckQuestItems() mod:UnregisterEvent('PLAYER_REGEN_ENABLED') end)
-		return 
+	if InCombatLockdown() then
+		print(core.customColorBad..ERR_NOT_IN_COMBAT)
+		self:RegisterEvent('PLAYER_REGEN_ENABLED', function()
+			mod:CheckQuestItems()
+			mod:UnregisterEvent('PLAYER_REGEN_ENABLED')
+		end)
+		return
 	end
-	
+
     local bar = AB.handledBars["bar"..modName]
     if not bar then return end
 
@@ -304,19 +306,19 @@ function mod:Toggle(enable)
 			E.Options.args.actionbar.args.bar10.hidden = true
 			if E.RefreshGUI then E:RefreshGUI() end
 		else
-			if not self:IsHooked(E, 'ToggleOptionsUI') then 
+			if not self:IsHooked(E, 'ToggleOptionsUI') then
 				self:SecureHook(E, 'ToggleOptionsUI', function()
-					if not E.Options.args.actionbar or not E.Options.args.actionbar.args.bar10 then 
-						self:Unhook(E, 'ToggleOptionsUI') 
-						return 
+					if not E.Options.args.actionbar or not E.Options.args.actionbar.args.bar10 then
+						self:Unhook(E, 'ToggleOptionsUI')
+						return
 					end
-					
-					E.Options.args.actionbar.args.bar10.hidden = true 
+
+					E.Options.args.actionbar.args.bar10.hidden = true
 					E:RefreshGUI()
-				end) 
+				end)
 			end
 		end
-		self:RegisterEvent("BAG_UPDATE", function(self, event) mod:CheckQuestItems() end)
+		self:RegisterEvent("BAG_UPDATE", function() mod:CheckQuestItems() end)
 		E:EnableMover("ElvAB_QuestBar")
 		SLASH_QUESTBARRESTORE1 = "/questbarRestore"
 		SlashCmdList["QUESTBARRESTORE"] = function() twipe(E.db.Extras.general[modName].blacklist) mod:CheckQuestItems() end
@@ -344,7 +346,7 @@ end
 
 function mod:InitializeCallback()
 	mod:LoadConfig()
-	
+
 	if not E.private.actionbar.enable then return end
 	mod:Toggle(E.db.Extras.general[modName].enabled)
 end

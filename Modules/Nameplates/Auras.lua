@@ -7,8 +7,8 @@ local LSM = E.Libs.LSM
 
 local modName = mod:GetName()
 
-local pairs, ipairs, print, unpack, type, tonumber = pairs, ipairs, print, unpack, type, tonumber
-local tinsert, tsort = table.insert, table.sort
+local pairs, ipairs, unpack, type, tonumber = pairs, ipairs, unpack, type, tonumber
+local tinsert = table.insert
 local floor, ceil, min, abs = math.floor, math.ceil, math.min, math.abs
 local find, gmatch, match, gsub, format = string.find, string.gmatch, string.match, string.gsub, string.format
 local GetTime, DebuffTypeColor, UnitCanAttack, GetSpellInfo, GetSpellLink, CreateFrame = GetTime, DebuffTypeColor, UnitCanAttack, GetSpellInfo, GetSpellLink, CreateFrame
@@ -23,7 +23,7 @@ local funcMap = {
 }
 
 local function updateVisiblePlates()
-	for plate in pairs(NP.VisiblePlates) do 
+	for plate in pairs(NP.VisiblePlates) do
 		for typelow, type in pairs({buffs = 'Buffs', debuffs = 'Debuffs'}) do
 			local db = NP.db.units[plate.UnitType][typelow]
 			if db.enable then
@@ -124,16 +124,16 @@ local function selectedType() return E.db.Extras.nameplates[modName].Highlights.
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Highlights auras."],
-						get = function(info) return E.db.Extras.nameplates[modName].Highlights.types[selectedType()].enabled end,
-						set = function(info, value) E.db.Extras.nameplates[modName].Highlights.types[selectedType()].enabled = value self:Toggle() end,
+						get = function() return E.db.Extras.nameplates[modName].Highlights.types[selectedType()].enabled end,
+						set = function(_, value) E.db.Extras.nameplates[modName].Highlights.types[selectedType()].enabled = value self:Toggle() end,
 					},
 					typeDropdown = {
 						order = 2,
 						type = "select",
 						name = L["Select Type"],
 						desc = "",
-						get = function(info) return E.db.Extras.nameplates[modName].Highlights.selectedType end,
-						set = function(info, value) E.db.Extras.nameplates[modName].Highlights.selectedType = value end,
+						get = function() return E.db.Extras.nameplates[modName].Highlights.selectedType end,
+						set = function(_, value) E.db.Extras.nameplates[modName].Highlights.selectedType = value end,
 						values = function() return core:GetUnitDropdownOptions(E.db.Extras.nameplates[modName].Highlights.types) end,
 					},
 				},
@@ -143,27 +143,27 @@ local function selectedType() return E.db.Extras.nameplates[modName].Highlights.
 				type = "group",
 				name = L["Highlights Settings"],
 				guiInline = true,
-				disabled = function(info) return not E.db.Extras.nameplates[modName].Highlights.types[selectedType()].enabled end,
-				hidden = function(info) return not E.db.Extras.nameplates[modName].Highlights.types[selectedType()].enabled end,
+				disabled = function() return not E.db.Extras.nameplates[modName].Highlights.types[selectedType()].enabled end,
+				hidden = function() return not E.db.Extras.nameplates[modName].Highlights.types[selectedType()].enabled end,
 				args = {
 					addSpell = {
 						order = 1,
 						type = "input",
 						name = L["Add Spell (by ID)"],
 						desc = L["E.g. 42292"],
-						get = function(info) return "" end,
-						set = function(info, value)
+						get = function() return "" end,
+						set = function(_, value)
 							local spellID = match(value, '%D*(%d+)%D*')
 							if spellID and GetSpellInfo(spellID) then
-								E.db.Extras.nameplates[modName].Highlights.types[selectedType()].spellList[tonumber(spellID)] = { 
+								E.db.Extras.nameplates[modName].Highlights.types[selectedType()].spellList[tonumber(spellID)] = {
 									["border"] = false,
 									["shadow"] = false,
-									["useGlobal"] = false, 
+									["useGlobal"] = false,
 									["size"] = 3,
 									["color"] = { 0.93, 0.91, 0.55, 1 },
 									["shadowColor"] = { 0.93, 0.91, 0.55, 1 },
 								}
-								local name, _, icon = GetSpellInfo(spellID)
+								local _, _, icon = GetSpellInfo(spellID)
 								local link = GetSpellLink(spellID)
 								icon = gsub(icon, '\124', '\124\124')
 								local string = '\124T' .. icon .. ':16:16\124t' .. link
@@ -186,12 +186,12 @@ local function selectedType() return E.db.Extras.nameplates[modName].Highlights.
 							end
 							return filters
 						end,
-						get = function(info) return "" end,
-						set = function(info, value)
-							E.db.Extras.nameplates[modName].Highlights.types[selectedType()].filterList[value] = { 
+						get = function() return "" end,
+						set = function(_, value)
+							E.db.Extras.nameplates[modName].Highlights.types[selectedType()].filterList[value] = {
 								["border"] = false,
 								["shadow"] = false,
-								["useGlobal"] = false, 
+								["useGlobal"] = false,
 								["size"] = 3,
 								["color"] = { 0.93, 0.91, 0.55, 1 },
 								["shadowColor"] = { 0.93, 0.91, 0.55, 1 },
@@ -208,15 +208,15 @@ local function selectedType() return E.db.Extras.nameplates[modName].Highlights.
 						func = function()
 							local selected = selectedSpellorFilter()
 							local db = E.db.Extras.nameplates[modName].Highlights.types[selectedType()]
-							if type(selected) == 'number' then 
-								db.spellList[selected] = nil 
-								local name, _, icon = GetSpellInfo(selected)
+							if type(selected) == 'number' then
+								db.spellList[selected] = nil
+								local _, _, icon = GetSpellInfo(selected)
 								local link = GetSpellLink(selected)
 								icon = gsub(icon, '\124', '\124\124')
 								local string = '\124T' .. icon .. ':16:16\124t' .. link
 								core:print('REMOVED', string)
-							else 
-								db.filterList[selected] = nil 
+							else
+								db.filterList[selected] = nil
 								core:print('REMOVED', selected, L[" filter removed."])
 							end
 							db.selected = "GLOBAL"
@@ -229,10 +229,10 @@ local function selectedType() return E.db.Extras.nameplates[modName].Highlights.
 						type = "select",
 						name = L["Select Spell or Filter"],
 						desc = L["Priority: spell, filter, curable/stealable."],
-						get = function(info) return selectedSpellorFilter() end,
-						set = function(info, value) 
-							if (value == '--filters--' or value == '--spells--') then value = 'GLOBAL' end 
-							E.db.Extras.nameplates[modName].Highlights.types[selectedType()].selected = value 
+						get = function() return selectedSpellorFilter() end,
+						set = function(_, value)
+							if (value == '--filters--' or value == '--spells--') then value = 'GLOBAL' end
+							E.db.Extras.nameplates[modName].Highlights.types[selectedType()].selected = value
 						end,
 						values = function()
 							local effectType = selectedType() == 'FRIENDLY' and "CURABLE" or "STEALABLE"
@@ -269,13 +269,13 @@ local function selectedType() return E.db.Extras.nameplates[modName].Highlights.
 						type = "toggle",
 						name = L["Use Global Settings"],
 						desc = L["If toggled, the GLOBAL Spell or Filter entry values would be used."],
-						get = function(info)
+						get = function()
 							local selected = selectedSpellorFilter()
 							local db = E.db.Extras.nameplates[modName].Highlights.types[selectedType()]
 							local target = type(selected) == 'number' and db.spellList[selected] or db.filterList[selected]
 							return selected == 'GLOBAL' or selected == 'CURABLE' or selected == 'STEALABLE' or target.useGlobal
 						end,
-						set = function(info, value)
+						set = function(_, value)
 							local selected = selectedSpellorFilter()
 							local db = E.db.Extras.nameplates[modName].Highlights.types[selectedType()]
 							local target = type(selected) == 'number' and db.spellList[selected] or db.filterList[selected]
@@ -292,10 +292,10 @@ local function selectedType() return E.db.Extras.nameplates[modName].Highlights.
 				type = "group",
 				name = L["Selected Spell or Filter Values"],
 				inline = true,
-				disabled = function(info) return not E.db.Extras.nameplates[modName].Highlights.types[selectedType()].enabled end,
-				hidden = function(info) return not E.db.Extras.nameplates[modName].Highlights.types[selectedType()].enabled end,
+				disabled = function() return not E.db.Extras.nameplates[modName].Highlights.types[selectedType()].enabled end,
+				hidden = function() return not E.db.Extras.nameplates[modName].Highlights.types[selectedType()].enabled end,
 				get = function(info) return getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] end,
-				set = function(info, value) 
+				set = function(info, value)
 					getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] = value
 					updateVisiblePlates()
 				end,
@@ -322,7 +322,7 @@ local function selectedType() return E.db.Extras.nameplates[modName].Highlights.
 						desc = "",
 						hasAlpha = true,
 						get = function(info) return unpack(getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]]) end,
-						set = function(info, r, g, b, a) 
+						set = function(info, r, g, b, a)
 							getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] = {r, g, b, a}
 							updateVisiblePlates()
 						end,
@@ -340,7 +340,7 @@ local function selectedType() return E.db.Extras.nameplates[modName].Highlights.
 						name = L["Border Color"],
 						desc = "",
 						get = function(info) return unpack(getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]]) end,
-						set = function(info, r, g, b) 
+						set = function(info, r, g, b)
 							getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] = {r, g, b}
 							updateVisiblePlates()
 						end,
@@ -467,15 +467,15 @@ local directionProperties = {
 function mod:CenterAlignAuras(frame, db)
 	local aurasFrame = frame
 	local offset, spacing, perRow = db.size + db.spacing, db.spacing, db.perrow
-	local numElements = aurasFrame.type == 'debuffs' and aurasFrame.visibleDebuffs or aurasFrame.visibleBuffs	
-	
+	local numElements = aurasFrame.type == 'debuffs' and aurasFrame.visibleDebuffs or aurasFrame.visibleBuffs
+
 	local anchorPoint = db.anchorPoint
 	local isVertical = directionProperties[anchorPoint].isVertical
 	local isReverse = directionProperties[anchorPoint].isReverse
 	local firstInRowPoint = directionProperties[anchorPoint].firstInRowPoint
 	local subsequentPoint = directionProperties[anchorPoint].subsequentPoint
 	local framePoint = directionProperties[anchorPoint].framePoint
-	
+
 	for i = 1, numElements do
 		local child = frame[i]
 		if child then
@@ -496,23 +496,22 @@ function mod:CenterAlignAuras(frame, db)
 		end
 	end
 
-	local maxWidth, maxHeight = 0, 0
 	local numRows = ceil(numElements / perRow)
     local maxWidth = min(numElements, perRow) * offset - spacing
     local maxHeight = numRows * offset - spacing
-	
+
 	if isVertical then
         aurasFrame:Size(maxWidth, maxHeight)
     else
         aurasFrame:Size(maxHeight, maxWidth)
     end
 end
-	
+
 function mod:Update_AurasPosition(frame, db)
 	if not E.db.Extras.nameplates[modName].CenteredAuras.enabled then return end
 	mod:CenterAlignAuras(frame, db)
 end
-	
+
 function mod:UpdateElement_Auras(frame)
 	if not frame.Health:IsShown() or not E.db.Extras.nameplates[modName].CenteredAuras.enabled then return end
 	local db = NP.db.units[frame.UnitType].buffs
@@ -529,7 +528,7 @@ function mod:UpdateElement_Auras(frame)
 	end
 end
 
-function mod:UpdateTime(elapsed)
+function mod:UpdateTime()
 	local remaining = self.timeLeft
 	local progress = remaining / (self.duration)
 
@@ -581,14 +580,14 @@ function mod:ClearHighlights(button, isDebuff, debuffType, unstableAffliction, v
 	button.highlightApplied = false
 end
 
-function mod:HandleCurableStealable(db, button, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name, dispellList, purgeList)
+function mod:HandleCurableStealable(db, button, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name)
 	if (db.shadow or db.border) and (attackable or (E.myclass == "WARLOCK" or (name and (name ~= unstableAffliction and name ~= vampiricTouch)))) and dtype and find(dtype, '%S+') then
-		if (attackable and isDebuff) or (not attackable and not isDebuff) 
+		if (attackable and isDebuff) or (not attackable and not isDebuff)
 		 or (isDebuff and not (dispellList and dispellList[dtype])) or (not isDebuff and not purgeList) then
 			if button.highlightApplied then
 				self:ClearHighlights(button, isDebuff, debuffType, unstableAffliction, vampiricTouch)
 			end
-			return 
+			return
 		end
 		self:ApplyHighlight(db, button)
 	elseif button.highlightApplied then
@@ -597,32 +596,32 @@ function mod:HandleCurableStealable(db, button, debuffType, unstableAffliction, 
 end
 
 function mod:SetAura(frame, guid, index, filter, isDebuff, visible)
-	local isAura, name, texture, count, debuffType, duration, expiration, caster, spellID, _ = LAI:GUIDAura(guid, index, filter)
+	local isAura, name, _, _, debuffType, _, _, _, spellID = LAI:GUIDAura(guid, index, filter)
 	if isAura then
 		local position = visible + 1
 		local button = frame[position] or NP:Construct_AuraIcon(frame, position)
 		local db = E.db.Extras.nameplates[modName]
-		
+
 		if db.CooldownDisable.enabled then
 			button:SetStatusBarColor(1,1,1,0)
 			button.bg:SetAlpha(0)
 		end
-		
+
 		if isDebuff and db.TypeBorders.enabled then
 			NP:StyleFrameColor(button, unpack(E.media.bordercolor))
 		end
-	
+
 		local plate = frame:GetParent()
 		local attackable = plate.unit and UnitCanAttack('player', plate.unit) == 1 or (frame.UnitType and match(frame.UnitType, 'ENEMY'))
-		
+
 		if attackable then
 			db = db.Highlights.types['ENEMY']
 		else
 			db = db.Highlights.types['FRIENDLY']
 		end
-	
+
 		if not db.enabled then return end
-		
+
 		local dtype = button.dtype
 		local dbSpell = db.spellList[spellID]
 		local unstableAffliction = GetSpellInfo(30108)
@@ -630,7 +629,7 @@ function mod:SetAura(frame, guid, index, filter, isDebuff, visible)
 		if dbSpell then
 			local settings = (dbSpell.shadow or dbSpell.border or dbSpell.useGlobal) and (dbSpell.useGlobal and db.global or dbSpell)
 			if not settings then
-				mod:HandleCurableStealable(db.special, button, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name, dispellList, purgeList)
+				mod:HandleCurableStealable(db.special, button, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name)
 			else
 				mod:ApplyHighlight(settings, button)
 			end
@@ -660,7 +659,7 @@ function mod:SetAura(frame, guid, index, filter, isDebuff, visible)
 				end
 			end
 			if not settings then
-				mod:HandleCurableStealable(db.special, button, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name, dispellList, purgeList)
+				mod:HandleCurableStealable(db.special, button, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name)
 			elseif settings.border or settings.shadow then
 				mod:ApplyHighlight(settings, button)
 			elseif button.highlightApplied then
@@ -695,7 +694,7 @@ end
 
 function mod:InitializeCallback()
 	if not E.private.nameplates.enable then return end
-	
+
 	mod:LoadConfig()
 	mod:Toggle()
 end

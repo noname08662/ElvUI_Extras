@@ -58,8 +58,8 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select Unit"],
 						desc = "",
-						get = function(info) return E.db.Extras.unitframes[modName].selectedUnit end,
-						set = function(info, value) E.db.Extras.unitframes[modName].selectedUnit = value end,
+						get = function() return E.db.Extras.unitframes[modName].selectedUnit end,
+						set = function(_, value) E.db.Extras.unitframes[modName].selectedUnit = value end,
 						values = function() return core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].units) end,
 					},
 				},
@@ -172,21 +172,21 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Bounce Icon Points"],
 						desc = L["Set icon to the opposite side of the bar each new bar."],
-					},		
+					},
 					bounceFlipStartPos = {
 						order = 2,
 						type = "toggle",
 						name = L["Flip Starting Position"],
 						desc = "",
 						disabled = function() return not E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].enabled or not E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].bounce end,
-					},		
+					},
 					iconSize = {
 						order = 3,
 						type = "range",
 						min = 4, max = 60, step = 1,
 						name = L["Icon Size"],
 						desc = "",
-					},			
+					},
 					iconXoffset = {
 						order = 4,
 						type = "range",
@@ -203,7 +203,7 @@ function mod:LoadConfig()
 			E.db.Extras.unitframes[modName].units[type] = CopyTable(E.db.Extras.unitframes[modName].units.player)
 		end
 	end
-end	
+end
 
 
 local function positionBars(db, bar, iconHolder, barIndex)
@@ -235,14 +235,14 @@ function mod:Construct_AuraBars()
 	local frame = self:GetParent():GetParent()
 	local unitframeType = frame.unitframeType
 	local db = E.db.Extras.unitframes[modName].units[unitframeType]
-	
+
 	if not db.enabled then return end
-	
+
 	barsCreated[unitframeType] = barsCreated[unitframeType] + 1
-	
+
 	local bar = self.statusBar
 	positionBars(db, bar, bar.iconHolder, barsCreated[unitframeType])
-	
+
 	if db.spelltimeHide then
 		bar.spelltime:Hide()
 	else
@@ -260,28 +260,27 @@ function mod:Construct_AuraBars()
 		end
 		bar.spellname:Show()
 	end
-	
+
 	bar.iconHolder:Size(db.iconSize, db.iconSize)
 end
 
 function mod:UpdateFrame(frame, db)
 	local auraBars = frame.AuraBars
 	if not auraBars or not db.aurabar.enable then return end
-	
+
 	local unitframeType = frame.unitframeType
-	
+
 	barsCreated[unitframeType] = 0
 	for _, bar in ipairs(auraBars.bars) do
 		UF.Construct_AuraBars(bar)
 		bar.statusBar.icon:SetTexCoord(unpack(E.TexCoords))
 	end
-	
-	if frame == _G["ElvUF_Player"] and _G["ElvUF_Target"] 
-	 and E.db.unitframe.units.target.aurabar.enable 
+
+	if frame == _G["ElvUF_Player"] and _G["ElvUF_Target"]
+	 and E.db.unitframe.units.target.aurabar.enable
 	 and E.db.unitframe.units.target.aurabar.attachTo == "PLAYER_AURABARS" then
-		local auraBars = _G["ElvUF_Target"].AuraBars
 		barsCreated['target'] = 0
-		for _, bar in ipairs(auraBars.bars) do
+		for _, bar in ipairs(_G["ElvUF_Target"].AuraBars.bars) do
 			UF.Construct_AuraBars(bar)
 			bar.statusBar.icon:SetTexCoord(unpack(E.TexCoords))
 		end
@@ -301,7 +300,7 @@ function mod:UpdatePostUpdateAuraBars()
 				auraBars.gap = db[unitframeType].enabled and -frame.db.aurabar.height or (-frame.BORDER + frame.SPACING*3)
 				auraBars.PostCreateBar = UF.Construct_AuraBars
 				auraBars:SetAnchors()
-				
+
 				UF:Configure_AuraBars(frame)
 
 				-- update existing bars
@@ -343,7 +342,7 @@ end
 
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
-	
+
 	mod:LoadConfig()
 	mod:Toggle()
 end
