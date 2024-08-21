@@ -82,15 +82,15 @@ end
 
 function E:CreateGlobalShadow(frame)
 	if frame.globalShadow then return end
-	
+
 	local shadow = CreateFrame("Frame", nil, frame)
 	local strata = frame:GetFrameStrata()
 	if strata ~= 'UNKNOWN' then shadow:SetFrameStrata(strata) end
 	shadow:SetFrameLevel(1)
-	shadow:SetOutside(frame, globalShadowSize, globalShadowSize)
-	shadow:SetBackdrop({edgeFile = LSM:Fetch("border", "ElvUI GlowBorder"), edgeSize = E:Scale(globalShadowSize)})
+	shadow:SetOutside(frame, globalShadowSize or 1, globalShadowSize or 1)
+	shadow:SetBackdrop({edgeFile = LSM:Fetch("border", "ElvUI GlowBorder"), edgeSize = E:Scale(globalShadowSize or 2)})
 	shadow:SetBackdropColor(0, 0, 0, 0)
-	shadow:SetBackdropBorderColor(globalShadowR, globalShadowG, globalShadowB, globalShadowA)
+	shadow:SetBackdropBorderColor(globalShadowR or 0, globalShadowG or 0, globalShadowB or 0, globalShadowA or 0.8)
 	frame.globalShadow = shadow
 end
 
@@ -153,16 +153,16 @@ local function SetTemplate(frame, template, glossTex, ignoreUpdates, forcePixelM
 			E.frames[frame] = true
 		end
 	end
-	
+
 	--GLOBAL SHADOW--
 	local db = E.db.Extras and E.db.Extras.general["GeneralMisc."].GlobalShadow
-	
+
 	if db then
 		globalShadowSize = db.size
-		globalShadowR, globalShadowG, globalShadowB, globalShadowA = unpack(db.color)
+		globalShadowR, globalShadowG, globalShadowB, globalShadowA = unpack(db.color or {0,0,0,0.8})
 		globalShadow = db.enabled
 	end
-	
+
 	if globalShadow then
 		E:CreateGlobalShadow(frame)
 	end
