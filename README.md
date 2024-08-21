@@ -14,7 +14,6 @@ What's inside:
 	(CustomCommands) - fairly basic event and onupdate script handlers;
 	(MoversPlus) - anchoring options for movers;
 	(QuestBar) - self-explanatory;
-	(SecureExecution) - secureActionButton handler;
 	(Misc) - item icons for the chat;
 		global shadow for all of the skinned frames:
 		combat state alert frame;
