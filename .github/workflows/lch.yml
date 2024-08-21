@@ -61,4 +61,4 @@ jobs:
         rm -rf $GITHUB_WORKSPACE/luarocks-${{ env.LUAROCKS_VERSION }}
 
     - name: Luacheck
-      run: .luarocks/bin/luacheck . --no-max-comment-line-length --ignore '111 113 212' -q
+      run: .luarocks/bin/luacheck . --config=.luacheckrc -q
