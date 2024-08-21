@@ -1,5 +1,7 @@
 ElvUI Plugin: ElvUI_Extras
 
+If you're using https://github.com/FrostAtom/awesome_wotlk, make sure to replace your existing AwesomeWotlkLib.dll file with the one provided in the Optionals folder (a small fix for nameplates changing owners silently).
+
 What's inside:
 ```
 [General]:
