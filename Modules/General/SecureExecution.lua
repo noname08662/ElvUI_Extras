@@ -1512,6 +1512,7 @@ function mod:Toggle(enable)
 
 				if i < 6 then
 					self.units["arena"..i] = createButton("arena"..i)
+					self.units["arenapet"..i] = createButton("arena"..i)
 				end
 
 				self.units["boss"..i] = createButton("boss"..i)
