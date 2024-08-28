@@ -83,7 +83,7 @@ L["Multiply the backdrops height or width by this value. This is usefull if you 
 L["This works like a macro, you can run different situations to get the actionbar to show/hide differently.\n Example: '[combat] showhide'"] = "這就像一個巨集，你可以運行不同的情況來讓動作條以不同方式顯示/隱藏。\n 例如：'[combat] showhide'"
 L["Adds anchoring options to movers' nudges."] = "為移動器的微調添加錨點選項。"
 L["Mod-clicking an item suggest a skill/item to process it."] = "按住 Mod 鍵點擊物品會建議處理該物品的技能/物品。"
-L["Holding %s while left-clicking a stack splits it in two; to combine available copies, right-click instead.\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."] = 
+L["Holding %s while left-clicking a stack splits it in two; to combine available copies, right-click instead.\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."] =
 	"按住%s的同時左鍵點擊堆疊可將其分為兩半；要合併可用副本，請右鍵點擊。\n\n還修改了SplitStackFrame，使用編輯框而不是箭頭。"
 L["Extends the bags functionality."] = "擴展背包功能。"
 L["Handles automated repositioning of the newly received items."] = "處理新獲得物品的自動重新定位。"
@@ -99,7 +99,7 @@ L["Item received: "] = "收到物品："
 L[" added."] = " 已添加。"
 L[" removed."] = " 已移除。"
 L["Handles automated repositioning of the newly received items."..
-	"\n\Syntax: filter@value\n\n"..
+	"\nSyntax: filter@value\n\n"..
 	"Available filters:\n"..
 	"id@number - matches itemID,\n"..
 	"name@string - matches name,\n"..
@@ -122,7 +122,7 @@ L["Handles automated repositioning of the newly received items."..
 	"local _, link = GetItemInfo(itemID)\n"..
 	"icon = gsub(icon, '\\124', '\\124\\124')\n"..
 	"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
-	"print('Item received: ' .. string)"] = 
+	"print('Item received: ' .. string)"] =
 		"處理新獲得物品的自動重新定位。"..
 		"\n\語法: 過濾器@值\n\n"..
 		"可用過濾器:\n"..
@@ -153,7 +153,7 @@ L["Default method: type > inventoryslotid > ilvl > name.\n\n"..
 	"function(a,b)\n"..
 	"--your sorting logic here\n"..
 	"end\n\n"..
-	"Leave blank to go default."] = 
+	"Leave blank to go default."] =
 		"預設方法: 類型 > 庫存欄位ID > 物品等級 > 名稱。\n\n"..
 		"接受自定義函數（a/b.bagID/slotID可用）。\n\n"..
 		"function(a,b)\n"..
@@ -191,7 +191,7 @@ L["Syntax:"..
 	"\nif UnitDebuff('party'..i, 'Bad Spell')"..
 	"\nthen print(UnitName('party'..i)..' is afflicted!')"..
 	"\nend end@@@"..
-	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] = 
+	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"語法:"..
 		"\n\nEVENT[n~=nil]"..
 		"\n[n~=value]"..
@@ -446,12 +446,12 @@ L["Add Texture Path"] = "添加材質路徑"
 L["Remove Selected Texture"] = "移除所選材質"
 L["Titles"] = "頭銜"
 L["Reaction Color"] = "反應顏色"
-L["Hold this while using /addOccupation command to clear the list of the current target/mouseover occupation.\nDon't forget to unbind the modifier+key bind!"] = 
+L["Hold this while using /addOccupation command to clear the list of the current target/mouseover occupation.\nDon't forget to unbind the modifier+key bind!"] =
 	"使用 /addOccupation 命令時按住此鍵以清除當前目標/滑鼠懸停對象的職業列表。\n別忘了解除修飾鍵+按鍵綁定！"
 L["Color based on reaction type."] = "根據反應類型著色。"
 L["Nameplates"] = "名條"
 L["Unitframes"] = "單位框架"
-L["An icon similar to the minimap search.\n\nTooltip scanning, might not be precise.\n\nFor consistency reasons, no keywards are added by defult, use /addOccupation command to mark the appropriate ones yourself (only need to do it once per unique occupation text)."] = 
+L["An icon similar to the minimap search.\n\nTooltip scanning, might not be precise.\n\nFor consistency reasons, no keywards are added by defult, use /addOccupation command to mark the appropriate ones yourself (only need to do it once per unique occupation text)."] =
 	"類似於小地圖搜索的圖標。\n\n工具提示掃描，可能不準確。\n\n為了一致性，默認情況下不添加任何關鍵詞，請使用 /addOccupation 命令自行標記適當的關鍵詞（每個獨特的職業文本只需做一次）。"
 L["Displays player guild text."] = "顯示玩家的公會文本。"
 L["Displays NPC occupation text."] = "顯示NPC的職業文本。"
@@ -472,7 +472,7 @@ L["Class Color"] = "職業顏色"
 L["Use class colors."] = "使用職業顏色。"
 L["Unmark All"] = "取消所有標記"
 L["Unmark all plates."] = "取消所有姓名板的標記。"
-L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"] = 
+L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"] =
 	"用法：將 '/qmark' 宏綁定到您選擇的按鍵。\n\n不要忘記解除您的修飾鍵綁定！"
 L["Use Backdrop"] = "使用背景"
 L["Usage:\n%%d=%%s\n\n%%d - index from the list below\n%%s - keywords to look for\n\nIndexes of icons:"..
@@ -491,7 +491,7 @@ L["Usage:\n%%d=%%s\n\n%%d - index from the list below\n%%s - keywords to look fo
 	"\n13 - %s"..
 	"\n14 - %s"..
 	"\n\n\nAlso available as a '/addOccupation %%d' slash command where %%d is an optional icon index. "..
-	"If no index is provided, this command will cycle through all of the available icons. Works on either TARGET or MOUSEOVER, prioritising the latter."] = 
+	"If no index is provided, this command will cycle through all of the available icons. Works on either TARGET or MOUSEOVER, prioritising the latter."] =
 		"用法:\n%%d=%%s\n\n%%d - 下列表中的索引\n%%s - 要查找的關鍵詞\n\n圖標索引:"..
 			"\n1 - %s"..
 			"\n2 - %s"..
@@ -851,7 +851,7 @@ L["Usage example:"..
 	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group (more than 5 in the example above)"..
 	"\n'return {}' - you can dynamically color the frames by returning the colors in a table format: to apply to the statusbar, assign your rgb values to mR, mG and mB respectively; to apply the glow - to gR, gG, gB, gA (alpha); for borders - bR, bG, bB; and for the flash - fR, fG, fB, fA."..
 	"\n\nFeel free to use '@unit' to register current unit like this: UnitBuff(@unit, 'player')."..
-	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] = 
+	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"使用示例："..
 			"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
 			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - 根據相關標籤（在上面的例子中：'player' - 目標單位；'Power' - 目標狀態欄；'3' - 目標標籤）是否活動返回true/false（提及相同的單位/組是禁用的；不是遞歸的）"..
@@ -865,45 +865,6 @@ L["...mover to anchor to."] = "...要錨定的移動器。"
 L["...mover to anchor."] = "...錨定移動器。"
 L["Point:"] = "點:"
 L["Relative:"] = "相對:"
-L["Secure Execution Manager"] = "安全執行管理器"
-L["Keybind"] = "按鍵綁定"
-L["ALT-CTRL-F, SHIFT-T, W, BUTTON4, etc."] = "ALT-CTRL-F, SHIFT-T, W, BUTTON44等"
-L["Rename Button"] = "重命名按鈕"
-L["Select Button"] = "選擇按鈕"
-L["Create New Button"] = "創建新按鈕"
-L["Delete Selected Button"] = "刪除選定的按鈕"
-L["Open Editor"] = "打開編輯器"
-L["Block Condition"] = "阻擋條件"
-L["Prevents any action upon meeting set conditions.\nAccepts function bodies, no payload arguments."] = "在滿足設定條件時阻止任何動作。\n接受函數主體，無負載參數。"
-L["Fade"] = "淡出"
-L["Fade Strength"] = "淡出強度"
-L["Name Position"] = "名稱位置"
-L["Retrieve Name"] = "獲取名稱"
-L["Displays matched character's name."] = "顯示匹配角色的名稱。"
-L["Abbreviate Name"] = "縮寫名稱"
-L["Color Name by Reaction"] = "根據反應著色名稱"
-L["Color Name by Class"] = "根據職業著色名稱"
-L["Show Bind Key"] = "顯示綁定按鍵"
-L["Show Macro Text"] = "顯示巨集文字"
-L["Scan Plates"] = "掃描姓名版"
-L["Retrieve Unit"] = "獲取單位"
-L["Fetches matched character's unitId, if available.\nAll instances of @unit found within the value section are going to get replaced with a fetched unitId (e.g. /target [@unit] -> /target [@raid3])."] = 
-	"如果可用，獲取匹配角色的unitId。\n值部分中找到的所有@unit實例都將被獲取的unitId替換（例如：/target [@unit] -> /target [@raid3]）。"
-L["Put Unit on Cursor"] = "將單位放在游標上"
-L["This exists due to nameplateN unitIds being unavailable inside the secure environment.\nAwesome WotLK only."] = "這是因為在安全環境中無法使用nameplateN unitId。\n僅適用於Awesome WotLK。"
-L["Target by Name"] = "按名稱選擇目標"
-L["When used with a name of those characters that are not a part of your group/guild/friendlist, the @nameString unitIds only work for the /target command, I think.\nTargets nearest matched name carrier.\nAwesome WotLK only."] = 
-	"當用於不屬於你的隊伍/公會/好友列表中的角色名稱時，我認為@nameString unitId只適用於/target命令。\n選擇最近的匹配名稱持有者為目標。\n僅適用於Awesome WotLK。"
-L["Broom UI"] = "掃帚UI"
-L["Hides the UI temporarily. The game prioritizes 3d models over frames, so be careful to not mouse any while scanning."] = "暫時隱藏UI。遊戲優先考慮3D模型而不是框架，所以在掃描時請小心不要用滑鼠點擊任何東西。"
-L["Action Type"] = "動作類型"
-L["Action Attribute"] = "動作屬性"
-L["Item or Spell ID"] = "物品或法術ID"
-L["Fetches tooltip info, texture, and item count."] = "獲取工具提示信息、材質和物品數量。"
-L["Action Value Editor"] = "動作值編輯器"
-L["Condition Editor"] = "條件編輯器"
-L["Accepts function bodies.\nPayload:\n  frame - matched character's UF/plate\n  unit - matched character's unitId\n  isPlate - true for plates"] = 
-	"接受函數主體。\n負載：\n  frame - 匹配角色的UF/姓名版\n  unit - 匹配角色的unitId\n  isPlate - 對於姓名版為true"
 L["Unless holding a modifier, hovering units draws no tooltip.\nCursor tooltips only."] = "除非按住修飾鍵，否則滑鼠懸停在單位上不會顯示提示。\n只顯示游標提示。"
 L["Dock all chat frames before enabling.\nShift-click the manager button to access tab settings."] = "啟用前請先停靠所有聊天框。\nShift-點擊管理按鈕以存取標籤設定。"
 L["Mouseover"] = "滑鼠懸停"
@@ -940,7 +901,7 @@ L["Search and filter utility for the chat frames."..
 	"\nShift-Right-Click it to access the search config."..
 	"\nAlt-Right-Click for the blocked messages."..
 	"\nCtrl-Right-Click to purge filtered messages cache."..
-	"\n\nChannel names and timestamps are not parsed."] = 
+	"\n\nChannel names and timestamps are not parsed."] =
 		"聊天框的搜索和過濾工具。"..
 			"\n\n語法："..
 			"\n  :: - 'and' 語句"..
@@ -995,3 +956,12 @@ L["Move left"] = "向左移動"
 L["Move right"] = "向右移動"
 L["Mouseover: Left"] = "滑鼠懸停: 左側"
 L["Mouseover: Right"] = "滑鼠懸停: 右側"
+L["Automatic Onset"] = "自動開始"
+L["Scans tooltip texts and sets icons automatically."] = "掃描提示文字並自動設置圖標。"
+L["Icon (Default)"] = "圖標 (預設)"
+L["Icon (Kill)"] = "圖標 (擊殺)"
+L["Icon (Chat)"] = "圖標 (聊天)"
+L["Icon (Item)"] = "圖標 (物品)"
+L["Show Text"] = "顯示文本"
+L["Display progress status."] = "顯示進度狀態。"
+L["Name"] = "名稱"

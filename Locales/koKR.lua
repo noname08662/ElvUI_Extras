@@ -82,7 +82,7 @@ L["Multiply the backdrops height or width by this value. This is usefull if you 
 L["This works like a macro, you can run different situations to get the actionbar to show/hide differently.\n Example: '[combat] showhide'"] = "이것은 매크로처럼 작동하며, 다양한 상황에서 액션 바를 다르게 표시/숨길 수 있습니다.\n 예: '[combat] showhide'"
 L["Adds anchoring options to movers' nudges."] = "이동기의 미세 조정에 고정 옵션을 추가합니다."
 L["Mod-clicking an item suggest a skill/item to process it."] = "수정자 키를 누른 채 아이템을 클릭하면 처리할 기술/아이템을 제안합니다."
-L["Holding %s while left-clicking a stack splits it in two; to combine available copies, right-click instead.\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."] = 
+L["Holding %s while left-clicking a stack splits it in two; to combine available copies, right-click instead.\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."] =
 	"%s 를 누른 상태에서 스택을 왼쪽 클릭하면 두 개로 나뉩니다; 사용 가능한 복사본을 결합하려면 대신 오른쪽 클릭하세요."..
     "\n\n또한 SplitStackFrame을 수정하여 화살표 대신 편집 상자를 사용합니다."
 L["Extends the bags functionality."] = "가방 기능을 확장합니다."
@@ -99,7 +99,7 @@ L["Item received: "] = "아이템 받음: "
 L[" added."] = " 추가됨."
 L[" removed."] = " 제거됨."
 L["Handles automated repositioning of the newly received items."..
-	"\n\Syntax: filter@value\n\n"..
+	"\nSyntax: filter@value\n\n"..
 	"Available filters:\n"..
 	"id@number - matches itemID,\n"..
 	"name@string - matches name,\n"..
@@ -122,7 +122,7 @@ L["Handles automated repositioning of the newly received items."..
 	"local _, link = GetItemInfo(itemID)\n"..
 	"icon = gsub(icon, '\\124', '\\124\\124')\n"..
 	"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
-	"print('Item received: ' .. string)"] = 
+	"print('Item received: ' .. string)"] =
 		"새로 받은 아이템의 자동 재배치를 처리합니다."..
 		"\n\구문: 필터@값\n\n"..
 		"사용 가능한 필터:\n"..
@@ -153,7 +153,7 @@ L["Default method: type > inventoryslotid > ilvl > name.\n\n"..
 	"function(a,b)\n"..
 	"--your sorting logic here\n"..
 	"end\n\n"..
-	"Leave blank to go default."] = 
+	"Leave blank to go default."] =
 		"기본 방식: 유형 > 인벤토리 슬롯 ID > 아이템 레벨 > 이름.\n\n"..
 		"사용자 정의 함수를 허용합니다 (bagID와 slotID는 a/b.bagID/slotID에서 사용 가능).\n\n"..
 		"function(a,b)\n"..
@@ -191,7 +191,7 @@ L["Syntax:"..
 	"\nif UnitDebuff('party'..i, 'Bad Spell')"..
 	"\nthen print(UnitName('party'..i)..' is afflicted!')"..
 	"\nend end@@@"..
-	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] = 
+	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"구문:"..
 		"\n\nEVENT[n~=nil]"..
 		"\n[n~=value]"..
@@ -446,12 +446,12 @@ L["Add Texture Path"] = "텍스처 경로 추가"
 L["Remove Selected Texture"] = "선택한 텍스처 제거"
 L["Titles"] = "칭호"
 L["Reaction Color"] = "반응 색상"
-L["Hold this while using /addOccupation command to clear the list of the current target/mouseover occupation.\nDon't forget to unbind the modifier+key bind!"] = 
+L["Hold this while using /addOccupation command to clear the list of the current target/mouseover occupation.\nDon't forget to unbind the modifier+key bind!"] =
 	"/addOccupation 명령을 사용하여 현재 대상/마우스오버 직업 목록을 지우려면 이것을 누르고 있으세요.\n수정자+키 바인딩을 해제하는 것을 잊지 마세요!"
 L["Color based on reaction type."] = "반응 유형에 따른 색상."
 L["Nameplates"] = "이름표"
 L["Unitframes"] = "유닛프레임"
-L["An icon similar to the minimap search.\n\nTooltip scanning, might not be precise.\n\nFor consistency reasons, no keywards are added by defult, use /addOccupation command to mark the appropriate ones yourself (only need to do it once per unique occupation text)."] = 
+L["An icon similar to the minimap search.\n\nTooltip scanning, might not be precise.\n\nFor consistency reasons, no keywards are added by defult, use /addOccupation command to mark the appropriate ones yourself (only need to do it once per unique occupation text)."] =
 	"미니맵 검색과 유사한 아이콘입니다.\n\n툴팁 스캔, 정확하지 않을 수 있습니다.\n\n일관성을 위해 기본적으로 키워드가 추가되지 않습니다. /addOccupation 명령어를 사용하여 적절한 키워드를 직접 표시하세요 (고유한 직업 텍스트마다 한 번만 수행하면 됩니다)."
 L["Displays player guild text."] = "플레이어의 길드 텍스트를 표시합니다."
 L["Displays NPC occupation text."] = "NPC의 직업 텍스트를 표시합니다."
@@ -472,7 +472,7 @@ L["Class Color"] = "직업 색상"
 L["Use class colors."] = "직업 색상을 사용합니다."
 L["Unmark All"] = "모두 표시 해제"
 L["Unmark all plates."] = "모든 이름표의 표시를 해제합니다."
-L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"] = 
+L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"] =
 	"사용법: '/qmark' 매크로를 원하는 키에 바인딩하세요.\n\n수정자 키 바인딩도 해제하는 것을 잊지 마세요!"
 L["Use Backdrop"] = "배경 사용"
 L["Usage:\n%%d=%%s\n\n%%d - index from the list below\n%%s - keywords to look for\n\nIndexes of icons:"..
@@ -491,7 +491,7 @@ L["Usage:\n%%d=%%s\n\n%%d - index from the list below\n%%s - keywords to look fo
 	"\n13 - %s"..
 	"\n14 - %s"..
 	"\n\n\nAlso available as a '/addOccupation %%d' slash command where %%d is an optional icon index. "..
-	"If no index is provided, this command will cycle through all of the available icons. Works on either TARGET or MOUSEOVER, prioritising the latter."] = 
+	"If no index is provided, this command will cycle through all of the available icons. Works on either TARGET or MOUSEOVER, prioritising the latter."] =
 		"사용 방법:\n%%d=%%s\n\n%%d - 아래 목록에서 인덱스\n%%s - 찾을 키워드\n\n아이콘 인덱스:"..
 			"\n1 - %s"..
 			"\n2 - %s"..
@@ -792,7 +792,7 @@ L["Copies color of the selected bar."] = "선택한 바의 색상을 복사합�
 L["InfoPanel Adapt To"] = "정보 패널 적응"
 L["Override Mode"] = "오버라이드 모드"
 L["'None' - threat borders highlight will be prioritized over this one"..
-    "\n'Threat' - this highlight will be prioritized."] = 
+    "\n'Threat' - this highlight will be prioritized."] =
 		"'없음' - 위협 테두리 강조가 우선시됩니다"..
 		"\n'위협' - 이 강조가 우선시됩니다."
 L["Threat"] = "위협"
@@ -854,7 +854,7 @@ L["Usage example:"..
 	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group (more than 5 in the example above)"..
 	"\n'return {}' - you can dynamically color the frames by returning the colors in a table format: to apply to the statusbar, assign your rgb values to mR, mG and mB respectively; to apply the glow - to gR, gG, gB, gA (alpha); for borders - bR, bG, bB; and for the flash - fR, fG, fB, fA."..
 	"\n\nFeel free to use '@unit' to register current unit like this: UnitBuff(@unit, 'player')."..
-	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] = 
+	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"사용 예시:"..
 			"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
 			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - 해당 탭(위의 예에서: 'player' - 대상 유닛; 'Power' - 대상 상태 바; '3' - 대상 탭)이 활성화되어 있는지 여부에 따라 true/false를 반환합니다 (동일한 유닛/그룹 언급은 비활성화됨; 재귀적이지 않음)"..
@@ -868,48 +868,7 @@ L["...mover to anchor to."] = "...고정할 요소를 선택하세요."
 L["...mover to anchor."] = "...고정할 요소."
 L["Point:"] = "지점:"
 L["Relative:"] = "상대적:"
-L["Secure Execution Manager"] = "보안 실행 관리자"
-L["Keybind"] = "단축키"
-L["ALT-CTRL-F, SHIFT-T, W, BUTTON4, etc."] = "ALT-CTRL-F, SHIFT-T, W, BUTTON4 등"
-L["Rename Button"] = "버튼 이름 변경"
-L["Select Button"] = "버튼 선택"
-L["Create New Button"] = "새 버튼 만들기"
-L["Delete Selected Button"] = "선택한 버튼 삭제"
-L["Open Editor"] = "편집기 열기"
-L["Block Condition"] = "차단 조건"
-L["Prevents any action upon meeting set conditions.\nAccepts function bodies, no payload arguments."] = 
-	"설정된 조건을 충족하면 모든 동작을 방지합니다.\n함수 본문을 허용하며, 페이로드 인수는 없습니다."
-L["Fade"] = "페이드"
-L["Fade Strength"] = "페이드 강도"
-L["Name Position"] = "이름 위치"
-L["Retrieve Name"] = "이름 가져오기"
-L["Displays matched character's name."] = "일치하는 캐릭터의 이름을 표시합니다."
-L["Abbreviate Name"] = "이름 축약"
-L["Color Name by Reaction"] = "반응에 따라 이름 색상 지정"
-L["Color Name by Class"] = "직업에 따라 이름 색상 지정"
-L["Show Bind Key"] = "단축키 표시"
-L["Show Macro Text"] = "매크로 텍스트 표시"
-L["Scan Plates"] = "플레이트 스캔"
-L["Retrieve Unit"] = "유닛 가져오기"
-L["Fetches matched character's unitId, if available.\nAll instances of @unit found within the value section are going to get replaced with a fetched unitId (e.g. /target [@unit] -> /target [@raid3])."] = 
-	"가능한 경우 일치하는 캐릭터의 unitId를 가져옵니다.\n값 섹션 내에서 발견된 모든 @unit 인스턴스는 가져온 unitId로 대체됩니다(예: /target [@unit] -> /target [@raid3])."
-L["Put Unit on Cursor"] = "커서에 유닛 놓기"
-L["This exists due to nameplateN unitIds being unavailable inside the secure environment.\nAwesome WotLK only."] = "보안 환경 내에서 nameplateN unitId를 사용할 수 없기 때문에 이 기능이 존재합니다.\nAwesome WotLK에서만 사용 가능합니다."
-L["Target by Name"] = "이름으로 대상 지정"
-L["When used with a name of those characters that are not a part of your group/guild/friendlist, the @nameString unitIds only work for the /target command, I think.\nTargets nearest matched name carrier.\nAwesome WotLK only."] = 
-	"그룹/길드/친구 목록에 없는 캐릭터의 이름을 사용할 때, @nameString unitId는 /target 명령어에만 작동한다고 생각합니다.\n가장 가까운 일치하는 이름의 대상을 지정합니다.\nAwesome WotLK에서만 사용 가능합니다."
-L["Broom UI"] = "빗자루 UI"
-L["Hides the UI temporarily. The game prioritizes 3d models over frames, so be careful to not mouse any while scanning."] = 
-	"UI를 일시적으로 숨깁니다. 게임은 프레임보다 3D 모델을 우선시하므로 스캔 중에 마우스를 움직이지 않도록 주의하세요."
-L["Action Type"] = "동작 유형"
-L["Action Attribute"] = "동작 속성"
-L["Item or Spell ID"] = "아이템 또는 주문 ID"
-L["Fetches tooltip info, texture, and item count."] = "툴팁 정보, 텍스처 및 아이템 수를 가져옵니다."
-L["Action Value Editor"] = "동작 값 편집기"
-L["Condition Editor"] = "조건 편집기"
-L["Accepts function bodies.\nPayload:\n  frame - matched character's UF/plate\n  unit - matched character's unitId\n  isPlate - true for plates"] = 
-	"함수 본문을 허용합니다.\n페이로드:\n  frame - 일치하는 캐릭터의 UF/플레이트\n  unit - 일치하는 캐릭터의 unitId\n  isPlate - 플레이트의 경우 true"
-	L["Unless holding a modifier, hovering units draws no tooltip.\nCursor tooltips only."] = "수정자를 누르지 않으면 유닛에 마우스를 올려도 툴팁이 표시되지 않습니다.\n커서 툴팁만 표시됩니다."
+L["Unless holding a modifier, hovering units draws no tooltip.\nCursor tooltips only."] = "수정자를 누르지 않으면 유닛에 마우스를 올려도 툴팁이 표시되지 않습니다.\n커서 툴팁만 표시됩니다."
 L["Dock all chat frames before enabling.\nShift-click the manager button to access tab settings."] = "활성화하기 전에 모든 채팅 창을 도킹하세요.\n관리자 버튼을 Shift-클릭하여 탭 설정에 액세스하세요."
 L["Mouseover"] = "마우스오버"
 L["Manager button visibility."] = "관리자 버튼 가시성."
@@ -945,7 +904,7 @@ L["Search and filter utility for the chat frames."..
 	"\nShift-Right-Click it to access the search config."..
 	"\nAlt-Right-Click for the blocked messages."..
 	"\nCtrl-Right-Click to purge filtered messages cache."..
-	"\n\nChannel names and timestamps are not parsed."] = 
+	"\n\nChannel names and timestamps are not parsed."] =
 		"채팅 창을 위한 검색 및 필터 유틸리티."..
 			"\n\n구문:"..
 			"\n  :: - 'and' 문"..
@@ -1000,3 +959,12 @@ L["Move left"] = "왼쪽으로 이동"
 L["Move right"] = "오른쪽으로 이동"
 L["Mouseover: Left"] = "마우스오버: 왼쪽"
 L["Mouseover: Right"] = "마우스오버: 오른쪽"
+L["Automatic Onset"] = "자동 시작"
+L["Scans tooltip texts and sets icons automatically."] = "툴팁 텍스트를 스캔하고 아이콘을 자동으로 설정합니다."
+L["Icon (Default)"] = "아이콘 (기본)"
+L["Icon (Kill)"] = "아이콘 (처치)"
+L["Icon (Chat)"] = "아이콘 (채팅)"
+L["Icon (Item)"] = "아이콘 (아이템)"
+L["Show Text"] = "텍스트 표시"
+L["Display progress status."] = "진행 상태를 표시합니다."
+L["Name"] = "이름"

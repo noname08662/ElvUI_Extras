@@ -77,7 +77,7 @@ L["Item received: "] = true
 L[" added."] = true
 L[" removed."] = true
 L["Handles automated repositioning of the newly received items."..
-	"\n\Syntax: filter@value\n\n"..
+	"\nSyntax: filter@value\n\n"..
 	"Available filters:\n"..
 	"id@number - matches itemID,\n"..
 	"name@string - matches name,\n"..
@@ -725,42 +725,7 @@ L["...mover to anchor to."] = true
 L["...mover to anchor."] = true
 L["Point:"] = true
 L["Relative:"] = true
-L["Secure Execution Manager"] = true
-L["Keybind"] = true
-L["ALT-CTRL-F, SHIFT-T, W, BUTTON4, etc."] = true
-L["Rename Button"] = true
-L["Select Button"] = true
-L["Create New Button"] = true
-L["Delete Selected Button"] = true
 L["Open Editor"] = true
-L["Block Condition"] = true
-L["Prevents any action upon meeting set conditions.\nAccepts function bodies, no payload arguments."] = true
-L["Fade"] = true
-L["Fade Strength"] = true
-L["Name Position"] = true
-L["Retrieve Name"] = true
-L["Displays matched character's name."] = true
-L["Abbreviate Name"] = true
-L["Color Name by Reaction"] = true
-L["Color Name by Class"] = true
-L["Show Bind Key"] = true
-L["Show Macro Text"] = true
-L["Scan Plates"] = true
-L["Retrieve Unit"] = true
-L["Fetches matched character's unitId, if available.\nAll instances of @unit found within the value section are going to get replaced with a fetched unitId (e.g. /target [@unit] -> /target [@raid3])."] = true
-L["Put Unit on Cursor"] = true
-L["This exists due to nameplateN unitIds being unavailable inside the secure environment.\nAwesome WotLK only."] = true
-L["Target by Name"] = true
-L["When used with a name of those characters that are not a part of your group/guild/friendlist, the @nameString unitIds only work for the /target command, I think.\nTargets nearest matched name carrier.\nAwesome WotLK only."] = true
-L["Broom UI"] = true
-L["Hides the UI temporarily. The game prioritizes 3d models over frames, so be careful to not mouse any while scanning."] = true
-L["Action Type"] = true
-L["Action Attribute"] = true
-L["Item or Spell ID"] = true
-L["Fetches tooltip info, texture, and item count."] = true
-L["Action Value Editor"] = true
-L["Condition Editor"] = true
-L["Accepts function bodies.\nPayload:\n  frame - matched character's UF/plate\n  unit - matched character's unitId\n  isPlate - true for plates"] = true
 L["Dock all chat frames before enabling.\nShift-click the manager button to access tab settings."] = true
 L["Mouseover"] = true
 L["Manager button visibility."] = true
@@ -824,3 +789,12 @@ L["Move left"] = true
 L["Move right"] = true
 L["Mouseover: Left"] = true
 L["Mouseover: Right"] = true
+L["Automatic Onset"] = true
+L["Scans tooltip texts and sets icons automatically."] = true
+L["Icon (Default)"] = true
+L["Icon (Kill)"] = true
+L["Icon (Chat)"] = true
+L["Icon (Item)"] = true
+L["Show Text"] = true
+L["Display progress status."] = true
+L["Name"] = true

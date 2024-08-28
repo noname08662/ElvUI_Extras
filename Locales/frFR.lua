@@ -82,7 +82,7 @@ L["Multiply the backdrops height or width by this value. This is usefull if you 
 L["This works like a macro, you can run different situations to get the actionbar to show/hide differently.\n Example: '[combat] showhide'"] = "Cela fonctionne comme une macro, vous pouvez exécuter différentes situations pour faire apparaître/disparaître la barre d'action différemment.\n Exemple : '[combat] showhide'"
 L["Adds anchoring options to movers' nudges."] = "Ajoute des options d'ancrage aux déplacements des mouveurs."
 L["Mod-clicking an item suggest a skill/item to process it."] = "Cliquer avec le modificateur sur un objet suggère une compétence/objet pour le traiter."
-L["Holding %s while left-clicking a stack splits it in two; to combine available copies, right-click instead.\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."] = 
+L["Holding %s while left-clicking a stack splits it in two; to combine available copies, right-click instead.\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."] =
 	"Maintenir %s tout en faisant un clic gauche sur une pile la divise en deux; pour combiner les copies disponibles, faites un clic droit à la place."..
     "\n\nModifie également le SplitStackFrame pour utiliser une zone de saisie au lieu de flèches."
 L["Extends the bags functionality."] = "Étend la fonctionnalité des sacs."
@@ -99,7 +99,7 @@ L["Item received: "] = "Objet reçu : "
 L[" added."] = " ajouté."
 L[" removed."] = " supprimé."
 L["Handles automated repositioning of the newly received items."..
-	"\n\Syntax: filter@value\n\n"..
+	"\nSyntax: filter@value\n\n"..
 	"Available filters:\n"..
 	"id@number - matches itemID,\n"..
 	"name@string - matches name,\n"..
@@ -122,7 +122,7 @@ L["Handles automated repositioning of the newly received items."..
 	"local _, link = GetItemInfo(itemID)\n"..
 	"icon = gsub(icon, '\\124', '\\124\\124')\n"..
 	"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
-	"print('Item received: ' .. string)"] = 
+	"print('Item received: ' .. string)"] =
 		"Gère le repositionnement automatique des objets nouvellement reçus."..
 		"\n\Syntaxe: filtre@valeur\n\n"..
 		"Filtres disponibles:\n"..
@@ -153,7 +153,7 @@ L["Default method: type > inventoryslotid > ilvl > name.\n\n"..
 	"function(a,b)\n"..
 	"--your sorting logic here\n"..
 	"end\n\n"..
-	"Leave blank to go default."] = 
+	"Leave blank to go default."] =
 		"Méthode par défaut: type > ID d'emplacement d'inventaire > niveau d'objet > nom.\n\n"..
 		"Accepte les fonctions personnalisées (bagID et slotID sont disponibles sous a/b.bagID/slotID).\n\n"..
 		"function(a,b)\n"..
@@ -191,7 +191,7 @@ L["Syntax:"..
 	"\nif UnitDebuff('party'..i, 'Bad Spell')"..
 	"\nthen print(UnitName('party'..i)..' is afflicted!')"..
 	"\nend end@@@"..
-	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] = 
+	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"Syntaxe:"..
 		"\n\nEVENEMENT[n~=nil]"..
 		"\n[n~=valeur]"..
@@ -446,12 +446,12 @@ L["Add Texture Path"] = "Ajouter un chemin de texture"
 L["Remove Selected Texture"] = "Supprimer la texture sélectionnée"
 L["Titles"] = "Titres"
 L["Reaction Color"] = "Couleur de réaction"
-L["Hold this while using /addOccupation command to clear the list of the current target/mouseover occupation.\nDon't forget to unbind the modifier+key bind!"] = 
+L["Hold this while using /addOccupation command to clear the list of the current target/mouseover occupation.\nDon't forget to unbind the modifier+key bind!"] =
 	"Maintenez ceci tout en utilisant la commande /addOccupation pour effacer la liste de l'occupation actuelle de la cible/survol.\nN'oubliez pas de délier la combinaison modificateur+touche !"
 L["Color based on reaction type."] = "Couleur basée sur le type de réaction."
 L["Nameplates"] = "Barres d'informations"
 L["Unitframes"] = "Cadres d'unité"
-L["An icon similar to the minimap search.\n\nTooltip scanning, might not be precise.\n\nFor consistency reasons, no keywards are added by defult, use /addOccupation command to mark the appropriate ones yourself (only need to do it once per unique occupation text)."] = 
+L["An icon similar to the minimap search.\n\nTooltip scanning, might not be precise.\n\nFor consistency reasons, no keywards are added by defult, use /addOccupation command to mark the appropriate ones yourself (only need to do it once per unique occupation text)."] =
 	"Une icône similaire à la recherche sur la minicarte.\n\nAnalyse des infobulles, peut ne pas être précise.\n\nPour des raisons de cohérence, aucun mot-clé n'est ajouté par défaut, utilisez la commande /addOccupation pour marquer vous-même les appropriés (à faire une seule fois par texte d'occupation unique)."
 L["Displays player guild text."] = "Affiche le texte de guilde du joueur."
 L["Displays NPC occupation text."] = "Affiche le texte d'occupation du PNJ."
@@ -472,7 +472,7 @@ L["Class Color"] = "Couleur de classe"
 L["Use class colors."] = "Utiliser les couleurs de classe."
 L["Unmark All"] = "Tout démarquer"
 L["Unmark all plates."] = "Démarque toutes les barres d'informations."
-L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"] = 
+L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"] =
 	"Utilisation : macro '/qmark' liée à une touche de votre choix.\n\nN'oubliez pas de délier également vos raccourcis de modificateur !"
 L["Use Backdrop"] = "Utiliser l'arrière-plan"
 L["Usage:\n%%d=%%s\n\n%%d - index from the list below\n%%s - keywords to look for\n\nIndexes of icons:"..
@@ -491,7 +491,7 @@ L["Usage:\n%%d=%%s\n\n%%d - index from the list below\n%%s - keywords to look fo
 	"\n13 - %s"..
 	"\n14 - %s"..
 	"\n\n\nAlso available as a '/addOccupation %%d' slash command where %%d is an optional icon index. "..
-	"If no index is provided, this command will cycle through all of the available icons. Works on either TARGET or MOUSEOVER, prioritising the latter."] = 
+	"If no index is provided, this command will cycle through all of the available icons. Works on either TARGET or MOUSEOVER, prioritising the latter."] =
 		"Utilisation :\n%%d=%%s\n\n%%d - index de la liste ci-dessous\n%%s - mots-clés à rechercher\n\nIndices des icônes :"..
 			"\n1 - %s"..
 			"\n2 - %s"..
@@ -792,7 +792,7 @@ L["Copies color of the selected bar."] = "Copie la couleur de la barre sélectio
 L["InfoPanel Adapt To"] = "Adapter le Panneau d'Information À"
 L["Override Mode"] = "Mode de Remplacement"
 L["'None' - threat borders highlight will be prioritized over this one"..
-    "\n'Threat' - this highlight will be prioritized."] = 
+    "\n'Threat' - this highlight will be prioritized."] =
 		"'Aucun' - la surbrillance des bordures de menace sera prioritaire"..
 		"\n'Menace' - cette surbrillance sera prioritaire."
 L["Threat"] = "Menace"
@@ -854,7 +854,7 @@ L["Usage example:"..
 	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group (more than 5 in the example above)"..
 	"\n'return {}' - you can dynamically color the frames by returning the colors in a table format: to apply to the statusbar, assign your rgb values to mR, mG and mB respectively; to apply the glow - to gR, gG, gB, gA (alpha); for borders - bR, bG, bB; and for the flash - fR, fG, fB, fA."..
 	"\n\nFeel free to use '@unit' to register current unit like this: UnitBuff(@unit, 'player')."..
-	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] = 
+	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"Exemple d'utilisation:"..
 		"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
 		"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - renvoie vrai/faux selon que l'onglet en question (dans l'exemple ci-dessus : 'player' - unité cible ; 'Power' - barre d'état cible ; '3' - onglet cible) est actif ou non (mentionner la même unité/groupe est désactivé ; n'est pas récursif)"..
@@ -868,49 +868,7 @@ L["...mover to anchor to."] = "...élément pour ancrer."
 L["...mover to anchor."] = "...élément à ancrer."
 L["Point:"] = "Point :"
 L["Relative:"] = "Relatif :"
-L["Secure Execution Manager"] = "Gestionnaire d'Exécution Sécurisée"
-L["Keybind"] = "Raccourci clavier"
-L["ALT-CTRL-F, SHIFT-T, W, BUTTON4, etc."] = "ALT-CTRL-F, SHIFT-T, W, BUTTON4, etc."
-L["Rename Button"] = "Renommer le bouton"
-L["Select Button"] = "Sélectionner le bouton"
-L["Create New Button"] = "Créer un nouveau bouton"
-L["Delete Selected Button"] = "Supprimer le bouton sélectionné"
-L["Open Editor"] = "Ouvrir l'éditeur"
-L["Block Condition"] = "Condition de blocage"
-L["Prevents any action upon meeting set conditions.\nAccepts function bodies, no payload arguments."] = 
-	"Empêche toute action lorsque les conditions définies sont remplies.\nAccepte les corps de fonction, pas d'arguments de charge utile."
-L["Fade"] = "Estomper"
-L["Fade Strength"] = "Force d'estompage"
-L["Name Position"] = "Position du nom"
-L["Retrieve Name"] = "Récupérer le nom"
-L["Displays matched character's name."] = "Affiche le nom du personnage correspondant."
-L["Abbreviate Name"] = "Abréger le nom"
-L["Color Name by Reaction"] = "Colorer le nom selon la réaction"
-L["Color Name by Class"] = "Colorer le nom selon la classe"
-L["Show Bind Key"] = "Afficher la touche de raccourci"
-L["Show Macro Text"] = "Afficher le texte de la macro"
-L["Scan Plates"] = "Scanner les plaques"
-L["Retrieve Unit"] = "Récupérer l'unité"
-L["Fetches matched character's unitId, if available.\nAll instances of @unit found within the value section are going to get replaced with a fetched unitId (e.g. /target [@unit] -> /target [@raid3])."] = 
-	"Récupère l'unitId du personnage correspondant, si disponible.\nToutes les instances de @unit trouvées dans la section de valeur seront remplacées par un unitId récupéré (ex. /target [@unit] -> /target [@raid3])."
-L["Put Unit on Cursor"] = "Mettre l'unité sur le curseur"
-L["This exists due to nameplateN unitIds being unavailable inside the secure environment.\nAwesome WotLK only."] = 
-	"Cela existe car les unitIds nameplateN ne sont pas disponibles dans l'environnement sécurisé.\nUniquement pour Awesome WotLK."
-L["Target by Name"] = "Cibler par nom"
-L["When used with a name of those characters that are not a part of your group/guild/friendlist, the @nameString unitIds only work for the /target command, I think.\nTargets nearest matched name carrier.\nAwesome WotLK only."] = 
-	"Lorsqu'utilisé avec le nom de personnages qui ne font pas partie de votre groupe/guilde/liste d'amis, les unitIds @nameString ne fonctionnent que pour la commande /target, je pense.\nCible le porteur du nom correspondant le plus proche.\nUniquement pour Awesome WotLK."
-L["Broom UI"] = "Interface Balai"
-L["Hides the UI temporarily. The game prioritizes 3d models over frames, so be careful to not mouse any while scanning."] = 
-	"Cache temporairement l'interface. Le jeu priorise les modèles 3D sur les cadres, alors faites attention à ne pas passer la souris sur quoi que ce soit pendant le scan."
-L["Action Type"] = "Type d'action"
-L["Action Attribute"] = "Attribut d'action"
-L["Item or Spell ID"] = "ID d'objet ou de sort"
-L["Fetches tooltip info, texture, and item count."] = "Récupère les infos de l'infobulle, la texture et le nombre d'objets."
-L["Action Value Editor"] = "Éditeur de valeur d'action"
-L["Condition Editor"] = "Éditeur de condition"
-L["Accepts function bodies.\nPayload:\n  frame - matched character's UF/plate\n  unit - matched character's unitId\n  isPlate - true for plates"] = 
-	"Accepte les corps de fonction.\nCharge utile :\n  frame - UF/plaque du personnage correspondant\n  unit - unitId du personnage correspondant\n  isPlate - vrai pour les plaques"
-	L["Unless holding a modifier, hovering units draws no tooltip.\nCursor tooltips only."] = "Sans maintenir un modificateur, survoler les unités n'affiche pas d'infobulle.\nInfobulles du curseur uniquement."
+L["Unless holding a modifier, hovering units draws no tooltip.\nCursor tooltips only."] = "Sans maintenir un modificateur, survoler les unités n'affiche pas d'infobulle.\nInfobulles du curseur uniquement."
 L["Dock all chat frames before enabling.\nShift-click the manager button to access tab settings."] = "Ancrez toutes les fenêtres de discussion avant d'activer.\nMaj-clic sur le bouton du gestionnaire pour accéder aux paramètres des onglets."
 L["Mouseover"] = "Survol"
 L["Manager button visibility."] = "Visibilité du bouton du gestionnaire."
@@ -946,7 +904,7 @@ L["Search and filter utility for the chat frames."..
 	"\nShift-Right-Click it to access the search config."..
 	"\nAlt-Right-Click for the blocked messages."..
 	"\nCtrl-Right-Click to purge filtered messages cache."..
-	"\n\nChannel names and timestamps are not parsed."] = 
+	"\n\nChannel names and timestamps are not parsed."] =
 		"Utilitaire de recherche et de filtrage pour les fenêtres de discussion."..
 			"\n\nSyntaxe :"..
 			"\n  :: - instruction 'et'"..
@@ -1001,3 +959,12 @@ L["Move left"] = "Déplacer à gauche"
 L["Move right"] = "Déplacer à droite"
 L["Mouseover: Left"] = "Survol: Gauche"
 L["Mouseover: Right"] = "Survol: Droite"
+L["Automatic Onset"] = "Début automatique"
+L["Scans tooltip texts and sets icons automatically."] = "Analyse les textes des infobulles et définit les icônes automatiquement."
+L["Icon (Default)"] = "Icône (Par défaut)"
+L["Icon (Kill)"] = "Icône (Tuer)"
+L["Icon (Chat)"] = "Icône (Discussion)"
+L["Icon (Item)"] = "Icône (Objet)"
+L["Show Text"] = "Afficher le texte"
+L["Display progress status."] = "Afficher l'état de progression."
+L["Name"] = "Nom"
