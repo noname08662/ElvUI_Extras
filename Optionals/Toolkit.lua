@@ -7,8 +7,7 @@ local unpack, type, select, getmetatable = unpack, type, select, getmetatable
 --WoW API / Variables
 local CreateFrame = CreateFrame
 
-local globalShadow = false
-local globalShadowSize, globalShadowR, globalShadowG, globalShadowB, globalShadowA = 1, 1, 1, 1, 1
+E.pendingShadowUpdate = {}
 
 local backdropr, backdropg, backdropb, backdropa, borderr, borderg, borderb = 0, 0, 0, 1, 0, 0, 0
 local function GetTemplate(template, isUnitFrameElement)
@@ -80,17 +79,23 @@ local function SetInside(obj, anchor, xOffset, yOffset, anchor2)
 	obj:Point("BOTTOMRIGHT", anchor2 or anchor, "BOTTOMRIGHT", -xOffset, yOffset)
 end
 
-function E:CreateGlobalShadow(frame)
-	if frame.globalShadow then return end
+function E:CreateGlobalShadow(db, frame)
+	if frame.globalShadow or not db.enabled then return end
+	
+	local size = db.size
+	local r, g, b, a =  unpack(db.color or {0,0,0,0.8})
 
 	local shadow = CreateFrame("Frame", nil, frame)
 	local strata = frame:GetFrameStrata()
+	
 	if strata ~= 'UNKNOWN' then shadow:SetFrameStrata(strata) end
+	
 	shadow:SetFrameLevel(1)
-	shadow:SetOutside(frame, globalShadowSize or 1, globalShadowSize or 1)
-	shadow:SetBackdrop({edgeFile = LSM:Fetch("border", "ElvUI GlowBorder"), edgeSize = E:Scale(globalShadowSize or 2)})
+	shadow:SetOutside(frame, size, size)
+	shadow:SetBackdrop({edgeFile = LSM:Fetch("border", "ElvUI GlowBorder"), edgeSize = E:Scale(size)})
 	shadow:SetBackdropColor(0, 0, 0, 0)
-	shadow:SetBackdropBorderColor(globalShadowR or 0, globalShadowG or 0, globalShadowB or 0, globalShadowA or 0.8)
+	shadow:SetBackdropBorderColor(r, g, b, a)
+	
 	frame.globalShadow = shadow
 end
 
@@ -155,16 +160,12 @@ local function SetTemplate(frame, template, glossTex, ignoreUpdates, forcePixelM
 	end
 
 	--GLOBAL SHADOW--
-	local db = E.db.Extras and E.db.Extras.general["GeneralMisc."].GlobalShadow
+	local db = E.globalShadow
 
 	if db then
-		globalShadowSize = db.size
-		globalShadowR, globalShadowG, globalShadowB, globalShadowA = unpack(db.color or {0,0,0,0.8})
-		globalShadow = db.enabled
-	end
-
-	if globalShadow then
-		E:CreateGlobalShadow(frame)
+		E:CreateGlobalShadow(db, frame)
+	elseif E.pendingShadowUpdate then
+		E.pendingShadowUpdate[frame] = true
 	end
 	--GLOBAL SHADOW--
 end
