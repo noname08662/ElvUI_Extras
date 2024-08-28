@@ -1360,7 +1360,7 @@ function core:GetOptions()
 				args = {
 					colors = {
 						type = "group",
-						name = L["Version: "].."Alpha-0.1",
+						name = L["Version: "].."1.0",
 						guiInline = true,
 						get = function(info) return colorConvert(E.db.Extras[info[#info]]) end,
 						set = function(info, r, g, b) local color = colorConvert(r, g, b) E.db.Extras[info[#info]] = color core[info[#info]] = color E:RefreshGUI() end,
