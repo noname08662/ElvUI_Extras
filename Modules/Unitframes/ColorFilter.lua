@@ -1201,7 +1201,14 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 
 		self:HandleExtraBars(frame, statusbar, unit, threatBorders, nil)
 	elseif appliedBorders.applied then
-		local r, g, b = (threatBorders and (threatBorders == 'BORDERS' or (threatBorders == 'HEALTHBORDER' and statusbar == 'Health'))) and GetThreatStatusColor(colorFilter.threatBordersColors) or unpack(E.media.unitframeBorderColor)
+		local r, g, b
+
+		if (threatBorders and (threatBorders == 'BORDERS' or (threatBorders == 'HEALTHBORDER' and statusbar == 'Health'))) then
+			r, g ,b = GetThreatStatusColor(colorFilter.threatBordersColors)
+		else
+			r, g, b = unpack(E.media.unitframeBorderColor)
+		end
+
 		colorFilter.appliedBordersColors[statusbar].applied = false
 		colorFilter.appliedBordersColors[statusbar].override = false
 
