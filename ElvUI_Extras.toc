@@ -1,6 +1,6 @@
 ## Interface: 30300
 ## Author: noname08662
-## Version: Alpha-0.1
+## Version: 1.0
 ## Title: |cff1784d1E|r|cffe5e3e3lvUI|r |cff1784d1Ex|r|cffe5e3e3tras
 ## RequiredDeps: ElvUI
 
