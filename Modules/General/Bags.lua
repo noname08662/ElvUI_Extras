@@ -106,12 +106,12 @@ local inventorySlotIDs = {
 
 local filter = {
 	id = function(item) return item.id end,
-    type = function(item) return lower(gsub(gsub(item.type, '%s+', ''), '%p+', '')) end,
-    subtype = function(item) return lower(gsub(gsub(item.subType, '%s+', ''), '%p+', '')) end,
+    type = function(item) return item.type and lower(gsub(gsub(item.type, '%s+', ''), '%p+', '')) end,
+    subtype = function(item) return item.subType and lower(gsub(gsub(item.subType, '%s+', ''), '%p+', '')) end,
     ilvl = function(item) return item.ilvl end,
     uselevel = function(item) return item.useLevel end,
     quality = function(item) return item.quality end,
-    name = function(item) return lower(gsub(gsub(item.name, '%s+', ''), '%p+', '')) end,
+    name = function(item) return item.name and lower(gsub(gsub(item.name, '%s+', ''), '%p+', '')) end,
     equipslot = function(item) return inventorySlotIDs[item.equipSlot] end,
     maxstack = function(item) return item.maxStack end,
     price = function(item) return item.sellPrice end,
