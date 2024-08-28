@@ -871,6 +871,7 @@ L["...mover to anchor to."] = "...перемещаемый элемент для
 L["...mover to anchor."] = "...перемещаемый элемент для привязки."
 L["Point:"] = "Точка:"
 L["Relative:"] = "Относительно:"
+L["Open Editor"] = "Открыть редактор"
 L["Unless holding a modifier, hovering units, items, and spells draws no tooltip.\nModifies cursor tooltips only."] = "Если не удерживается модификатор, при наведении на юниты, предметы и заклинания, всплывающая подсказка не отображается.\nИзменяет только всплывающие подсказки курсора."
 L["Dock all chat frames before enabling.\nShift-click the manager button to access tab settings."] = "Закрепите все окна чата перед активацией.\nShift-клик на кнопке менеджера для доступа к настройкам вкладок."
 L["Mouseover"] = "При наведении"
