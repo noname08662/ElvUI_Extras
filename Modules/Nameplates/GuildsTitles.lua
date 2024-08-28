@@ -3,6 +3,7 @@ local E, L, _, P = unpack(ElvUI)
 local core = E:GetModule("Extras")
 local mod = core:NewModule("GuildsTitles", "AceHook-3.0", "AceEvent-3.0")
 local NP = E:GetModule("NamePlates")
+local LSM = E.Libs.LSM
 
 local modName = mod:GetName()
 local isAwesome = C_NamePlate
@@ -670,7 +671,7 @@ end
 
 local function manageTitleFrame(frame, db, unitType, addIcon)
 	local Title = frame.Title
-	Title.str:SetFont(E.LSM:Fetch("font", db.font), db.fontSize, db.fontOutline)
+	Title.str:SetFont(LSM:Fetch("font", db.font), db.fontSize, db.fontOutline)
 	Title:Height(db.fontSize)
 
 	Title:ClearAllPoints()
@@ -718,13 +719,13 @@ local function manageTitleFrame(frame, db, unitType, addIcon)
 end
 
 function mod:UpdateTitle(frame, unit, UnitTitle, name)
+	local db = E.db.Extras.nameplates[modName]
+	
 	name = name and name or frame.UnitName
 	unit = unit and unit or name
 	UnitTitle = UnitTitle and UnitTitle or db.UnitTitle[name]
 
 	if not unit or not name or not UnitTitle then return end
-
-	local db = E.db.Extras.nameplates[modName]
 
 	local _, unitType = NP:GetUnitInfo(frame)
 	if db.Guilds.enabled and (unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER') then
