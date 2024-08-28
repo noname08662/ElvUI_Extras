@@ -1,4 +1,4 @@
-﻿local E, L, _, P = unpack(ElvUI)
+local E, L, _, P = unpack(ElvUI)
 local core = E:NewModule("Extras", "AceHook-3.0", "AceEvent-3.0")
 local UF = E:GetModule("UnitFrames")
 local NP = E:GetModule("NamePlates")
@@ -18,7 +18,7 @@ core.frameUpdates = {}
 local CreateFrame, UIParent, UIDropDownMenu_Refresh = CreateFrame, UIParent, UIDropDownMenu_Refresh
 local _G, unpack, pairs, ipairs, select, tonumber, print = _G, unpack, pairs, ipairs, select, tonumber, print
 local gsub, find, sub, lower, upper, format = string.gsub, string.find, string.sub, string.lower, string.upper, string.format
-local min, max, ceil, floor = math.min, math.max, math.ceil, math.floor
+local max, ceil, floor = math.max, math.ceil, math.floor
 local tinsert, tremove, twipe, tsort = table.insert, table.remove, table.wipe, table.sort
 local UnitGUID, UnitClass, UnitExists = UnitGUID, UnitClass, UnitExists
 local UnitThreatSituation, GetThreatStatusColor = UnitThreatSituation, GetThreatStatusColor
@@ -26,6 +26,7 @@ local UnitReaction, UnitIsPlayer, UnitFactionGroup = UnitReaction, UnitIsPlayer,
 local GetNumMacroIcons, GetMacroIconInfo, GameTooltip = GetNumMacroIcons, GetMacroIconInfo, GameTooltip
 local UnitPopupMenus, UnitPopupShown = UnitPopupMenus, UnitPopupShown
 local GetRaidRosterInfo, IsPartyLeader, IsRaidOfficer = GetRaidRosterInfo, IsPartyLeader, IsRaidOfficer
+local InCombatLockdown, IsControlKeyDown = InCombatLockdown, IsControlKeyDown
 local LUA_ERROR, FORMATTING, ERROR_CAPS = LUA_ERROR, FORMATTING, ERROR_CAPS
 
 local E_Delay = E.Delay
@@ -43,6 +44,23 @@ local function colorConvert(r, g, b)
 
 		return r, g, b
 	end
+end
+
+
+-- make worlmap quests open quest log on ctrl-click
+if not core:IsHooked("WorldMapQuestFrame_OnMouseUp") then
+	core:SecureHook("WorldMapQuestFrame_OnMouseUp", function(self)
+		if InCombatLockdown() then
+			return
+		elseif IsControlKeyDown() then
+			if not QuestLogFrame:IsShown() then
+				ShowUIPanel(QuestLogFrame)
+			end
+
+			QuestLog_SetSelection(self.questLogIndex)
+			QuestLog_Update()
+		end
+	end)
 end
 
 
@@ -1057,6 +1075,18 @@ P["Extras"] = {
 			["icon"] = 'Interface\\GossipFrame\\AvailableQuestIcon',
 			["label"] = 'Quest Mark',
 		},
+		["Interface\\Icons\\ABILITY_DualWield"] = {
+			["icon"] = 'Interface\\Icons\\ABILITY_DualWield',
+			["label"] = 'Kill Mark',
+		},
+		["Interface\\Icons\\INV_Misc_Note_01"] = {
+			["icon"] = 'Interface\\Icons\\INV_Misc_Note_01',
+			["label"] = 'Chat Mark',
+		},
+		["Interface\\Icons\\INV_Misc_Bag_08"] = {
+			["icon"] = 'Interface\\Icons\\INV_Misc_Bag_08',
+			["label"] = 'Pickup Mark',
+		},
 		["Interface\\Icons\\ability_hunter_markedfordeath"] = {
 			["icon"] = 'Interface\\Icons\\ability_hunter_markedfordeath',
 			["label"] = "Hunter's Mark",
@@ -1426,43 +1456,10 @@ function core:Initialize()
 		NP:UnregisterEvent("PARTY_MEMBERS_CHANGED")
 		NP:UnregisterEvent("RAID_ROSTER_UPDATE")
 		NP:UnregisterEvent("UNIT_NAME_UPDATE")
+
 		for _, func in pairs({'UnitClass', 'GetUnitInfo', 'GetUnitByName', 'SetTargetFrame', 'ResetNameplateFrameLevel', 'UnitDetailedThreatSituation'}) do
 			if not self:IsHooked(NP, func) then self:RawHook(NP, func) end
 		end
-	end
-
-	if E.db.Extras.general["GeneralMisc."] and E.db.Extras.general["GeneralMisc."].GlobalShadow
-	 and E.db.Extras.general["GeneralMisc."].GlobalShadow.enabled and E.CreateGlobalShadow then
-		local M = E:GetModule("Misc")
-		local createShadow = E.CreateGlobalShadow
-		createShadow(nil, _G["Minimap"])
-
-		if not self:IsHooked(NP, "StyleFrame") then
-			self:SecureHook(NP, "StyleFrame", function(_, frame)
-				createShadow(nil, frame)
-			end)
-		end
-		if not self:IsHooked(M, "SkinBubble") then
-			self:SecureHook(M, "SkinBubble", function(_, frame)
-				createShadow(nil, frame)
-			end)
-		end
-
-		local globalShadowSize = E.db.Extras.general["GeneralMisc."].GlobalShadow.size
-
-		tinsert(core.frameUpdates, function()
-			local units = core:AggregateUnitFrames()
-			for _, frame in ipairs(units) do
-				if frame.USE_POWERBAR and frame.Power and frame.Health.backdrop.globalShadow and frame.Power.backdrop.globalShadow then
-					frame.Health.backdrop.globalShadow:SetOutside(frame, globalShadowSize, globalShadowSize)
-					if frame.POWERBAR_DETACHED then
-						frame.Power.backdrop.globalShadow:Show()
-					else
-						frame.Power.backdrop.globalShadow:Hide()
-					end
-				end
-			end
-		end)
 	end
 
 	EP:RegisterPlugin(AddOnName, self.GetOptions)
@@ -1470,6 +1467,55 @@ function core:Initialize()
 	for _, module in pairs(self.modules) do
         module()
     end
+
+	local shadow_db = E.globalShadow
+
+	if shadow_db then
+		local M = E:GetModule("Misc")
+		local createShadow = E.CreateGlobalShadow
+		local size = shadow_db.size
+
+		createShadow(nil, shadow_db, _G["Minimap"])
+
+		if E.pendingShadowUpdate then
+			for frame in pairs(E.pendingShadowUpdate) do
+				createShadow(nil, shadow_db, frame)
+			end
+		end
+
+		if not self:IsHooked(NP, "StyleFrame") then
+			self:SecureHook(NP, "StyleFrame", function(_, frame)
+				createShadow(nil, shadow_db, frame)
+			end)
+		end
+
+		if not self:IsHooked(M, "SkinBubble") then
+			self:SecureHook(M, "SkinBubble", function(_, frame)
+				createShadow(nil, shadow_db, frame)
+			end)
+		end
+
+		tinsert(core.frameUpdates, function()
+			local units = core:AggregateUnitFrames()
+
+			for _, frame in ipairs(units) do
+				local healthBackdrop = frame.Health.backdrop
+				local powerBackdrop = (frame.USE_POWERBAR and frame.Power) and frame.Power.backdrop
+
+				if healthBackdrop.globalShadow and powerBackdrop and powerBackdrop.globalShadow then
+					healthBackdrop.globalShadow:SetOutside(frame, size, size)
+
+					if frame.POWERBAR_DETACHED then
+						powerBackdrop.globalShadow:Show()
+					else
+						powerBackdrop.globalShadow:Hide()
+					end
+				end
+			end
+		end)
+	end
+
+	E.pendingShadowUpdate = nil
 end
 
 local function InitializeCallback()
