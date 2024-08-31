@@ -821,7 +821,7 @@ function mod:UpdatePostUpdateAura(enable)
 	local units = core:AggregateUnitFrames()
 	for _, frame in ipairs(units) do
 		for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
-			if frame[auraType] and frame[auraType].db.enable then
+			if frame[auraType] and frame[auraType].db and frame[auraType].db.enable then
 				frame[auraType].PostUpdateIcon = UF.PostUpdateAura
 				-- hide leftover shadows
 				for _, button in ipairs({frame[auraType]:GetChildren()}) do
