@@ -240,7 +240,6 @@ end
 
 function mod:CheckQuestItems()
 	if InCombatLockdown() then
-		print(core.customColorBad..ERR_NOT_IN_COMBAT)
 		self:RegisterEvent('PLAYER_REGEN_ENABLED', function()
 			mod:CheckQuestItems()
 			mod:UnregisterEvent('PLAYER_REGEN_ENABLED')
