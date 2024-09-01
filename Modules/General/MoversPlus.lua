@@ -31,9 +31,16 @@ local function setMovers(enable)
 	for mover in pairs(E.CreatedMovers) do
 		if E.db.movers and E.db.Extras.movers and E.db.movers[mover] and E.db.Extras.movers[mover] then
 			local point, anchor, relativeTo, x, y = split(",", enable and E.db.Extras.movers[mover] or E.db.movers[mover])
-			_G[mover]:ClearAllPoints()
-			_G[mover]:Point(point, _G[anchor], relativeTo, x, y)
-			if not enable and _G[mover]:GetScript("OnDragStart") then _G[mover]:RegisterForDrag("LeftButton", "RightButton") end
+			local anchorFrame = _G[anchor]
+
+			if anchorFrame then
+				_G[mover]:ClearAllPoints()
+				_G[mover]:Point(point, anchorFrame, relativeTo, x, y)
+			end
+
+			if not enable and _G[mover]:GetScript("OnDragStart") then
+				_G[mover]:RegisterForDrag("LeftButton", "RightButton")
+			end
 		end
 	end
 end
