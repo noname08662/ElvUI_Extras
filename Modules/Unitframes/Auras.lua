@@ -559,7 +559,9 @@ function mod:UpdateCenteredAuras(enable)
 	end
 
 	function mod:Configure_AuraBars(frame)
-		if not frame.VARIABLES_SET then return end
+		if not frame.VARIABLES_SET or (E.db.abm and E.db.abm[frame.unitframeType]) then
+			return 
+		end
 
 		local auraBars = frame.AuraBars
 		local db = frame.db
