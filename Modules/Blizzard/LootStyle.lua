@@ -12,7 +12,7 @@ local initialized = {}
 local _G, unpack, tonumber, select, pairs, ipairs, print, type, next = _G, unpack, tonumber, select, pairs, ipairs, print, type, next
 local tinsert, tremove, twipe, tsort, tconcat = table.insert, table.remove, table.wipe, table.sort, table.concat
 local lower, find, match, format, gsub, sub, byte, split = string.lower, string.find, string.match, string.format, string.gsub, string.sub, string.byte, string.split
-local ceil, floor = math.ceil, math.floor
+local max, ceil, floor = math.max, math.ceil, math.floor
 local UnitClass, UnitName, GetTime, AlertFrame_FixAnchors = UnitClass, UnitName, GetTime, AlertFrame_FixAnchors
 local ChatFrame_AddMessageEventFilter, ChatFrame_RemoveMessageEventFilter = ChatFrame_AddMessageEventFilter, ChatFrame_RemoveMessageEventFilter
 local GetNumFriends, GetFriendInfo, IsInGuild = GetNumFriends, GetFriendInfo, IsInGuild
@@ -1124,15 +1124,16 @@ function mod:LootInfo(enable)
 end
 
 function mod:LootBars(enable)
-	function mod:updateBars()
-		local db = E.db.Extras.blizzard[modName].LootBars
+	local db = E.db.Extras.blizzard[modName].LootBars
+	
+	local function updateBars()
 		for _, frame in pairs(M.RollBars) do
 			local p, pa, re, x, y = frame:GetPoint()
 			frame:Height(db.heightBar)
 			frame:Width(db.widthBar)
 			frame.itemButton:ClearAllPoints()
 			frame.itemButton:Point('BOTTOMRIGHT', frame, 'BOTTOMLEFT', -4, 1)
-			frame.itemButton:Size(db.sizeIcon, db.sizeIcon)
+			frame.itemButton:Size(db.sizeIcon)
 			frame.needButton:ClearAllPoints()
 			frame.greedButton:ClearAllPoints()
 			frame.disenchantButton:ClearAllPoints()
@@ -1147,20 +1148,20 @@ function mod:LootBars(enable)
 			frame.itemName:Point("BOTTOMLEFT", frame, "TOPLEFT", 4, 0)
 			frame.itemName:Point("TOPRIGHT", frame.bindText, "TOPLEFT", -6, 0)
 			frame:ClearAllPoints()
-			frame:Point(p, pa, re, x, p == 'TOP' and (y - (db.sizeIcon - db.heightBar/2)) or (y + (db.sizeIcon + db.heightBar/2)))
+			frame:Point(p, pa, re, x, p == 'TOP' and (y - (max(26, db.sizeIcon) - db.heightBar/2)) or (y + (max(26, db.sizeIcon) + db.heightBar/2)))
 		end
+		AlertFrame_FixAnchors()
 	end
 
 	if enable then
 		if not E.private.general.lootRoll then E.private.general.lootRoll = true E:StaticPopup_Show("PRIVATE_RL") end
-		if not self:IsHooked(M, "START_LOOT_ROLL") then self:SecureHook(M, "START_LOOT_ROLL", mod.updateBars) end
+		if not self:IsHooked(M, "START_LOOT_ROLL") then self:SecureHook(M, "START_LOOT_ROLL", updateBars) end
 
 		AlertFrame_FixAnchors()
 	elseif self:IsHooked(M, "START_LOOT_ROLL") then
 		self:Unhook(M, "START_LOOT_ROLL")
 
 		if M.numFrames > 1 then
-			local db = E.db.Extras.blizzard[modName].LootBars
 			for _, frame in pairs(M.RollBars) do
 				frame:Size(328, 28)
 				frame.itemButton:Size(28 - (E.Border * 2))
