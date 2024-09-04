@@ -14,7 +14,7 @@ local PickupContainerItem, PlaceAction, ClearCursor = PickupContainerItem, Place
 local InCombatLockdown, GetItemInfo, GetAuctionItemClasses = InCombatLockdown, GetItemInfo, GetAuctionItemClasses
 local GetActionInfo, PickupAction, IsModifierKeyDown = GetActionInfo, PickupAction, IsModifierKeyDown
 local GetCursorInfo, GetMouseFocus = GetCursorInfo, GetMouseFocus
-local GetItemSpell, ERR_NOT_IN_COMBAT, NUM_ACTIONBAR_BUTTONS = GetItemSpell, ERR_NOT_IN_COMBAT, NUM_ACTIONBAR_BUTTONS
+local GetItemSpell, NUM_ACTIONBAR_BUTTONS = GetItemSpell, NUM_ACTIONBAR_BUTTONS
 local RegisterStateDriver, UnregisterStateDriver = RegisterStateDriver, UnregisterStateDriver
 local NUM_BAG_SLOTS = NUM_BAG_SLOTS
 

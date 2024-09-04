@@ -91,7 +91,7 @@ L["Default method: type > inventoryslotid > ilvl > name."] = "Método padrão: t
 L["Listed ItemIDs will not get sorted."] = "IDs de itens listados não serão ordenados."
 L["Double-click the title text to minimize the section."] = "Clique duas vezes no texto do título para minimizar a seção."
 L["Minimized section's line color."] = "Cor da linha da seção minimizada."
-L["E.g. Interface\\Icons\\INV_Misc_QuestionMark"] = "Ex: Interface\Icons\INV_Misc_QuestionMark"
+L["E.g. Interface\\Icons\\INV_Misc_QuestionMark"] = "Ex: Interface\\Icons\\INV_Misc_QuestionMark"
 L["Invalid condition format: "] = "Formato de condição inválido: "
 L["The generated custom sorting method did not return a function."] = "O método de ordenação personalizado gerado não retornou uma função."
 L["The loaded custom sorting method did not return a function."] = "O método de ordenação personalizado carregado não retornou uma função."
@@ -148,7 +148,6 @@ L["Handles automated repositioning of the newly received items."..
 		"icon = gsub(icon, '\\124', '\\124\\124')\n"..
 		"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
 		"print('Item recebido: ' .. string)"
-
 L["Default method: type > inventoryslotid > ilvl > name.\n\n"..
     "Accepts custom functions (bagID and slotID are available at the a/b.bagID/slotID).\n\n"..
     "function(a,b)\n"..
@@ -161,7 +160,6 @@ L["Default method: type > inventoryslotid > ilvl > name.\n\n"..
 		"--sua lógica de ordenação aqui\n"..
 		"end\n\n"..
 		"Deixe em branco para usar o padrão."
-
 L["Event and OnUpdate handler."] = "Manipulador de eventos e OnUpdate."
 L["Minimal time gap between two consecutive executions."] = "Intervalo mínimo de tempo entre duas execuções consecutivas."
 L["UNIT_AURA CHAT_MSG_WHISPER etc.\nONUPDATE - 'OnUpdate' script"] = "UNIT_AURA CHAT_MSG_WHISPER etc.\nONUPDATE - Script 'OnUpdate'"
@@ -223,8 +221,6 @@ L["Syntax:"..
 		"\nthen print(UnitName('party'..i)..' está afetado!')"..
 		"\nend end@@@"..
 		"\n\nEste módulo analisa strings, então tente fazer com que seu código siga a sintaxe estritamente, caso contrário, pode não funcionar."
-
---NAMEPLATES--
 L["Highlights auras."] = "Destaca auras."
 L["E.g. 42292"] = "Ex.: 42292"
 L["Aplies highlights to all auras passing the selected filter."] = "Destaca todas as auras que passam pelo filtro selecionado."
@@ -238,7 +234,6 @@ L["Click Cancel"] = "Cancelar ao clicar"
 L["Right-click a player buff to cancel it."] = "Clique com o botão direito em um buff do jogador para cancelá-lo."
 L["Disables debuffs desaturation."] = "Desativa a dessaturação de debuffs."
 L["Saturated Debuffs"] = "Debuffs Saturados"
-
 L["Confirm Rolls"] = "Confirmar rolagens"
 L["Quest Items and Money"] = "Itens de missão e dinheiro"
 L["Fill Delete"] = "Preencher exclusão"
@@ -971,3 +966,5 @@ L["Icon (Item)"] = "Ícone (Item)"
 L["Show Text"] = "Mostrar texto"
 L["Display progress status."] = "Mostrar status de progresso."
 L["Name"] = "Nome"
+L["Frequent Updates"] = "Atualizações Frequentes"
+L["Events (optional)"] = "Eventos (opcional)"

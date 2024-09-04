@@ -21,6 +21,7 @@ local function centerAuras(_, frame)
 	end
 end
 
+
 P["Extras"]["unitframes"][modName] = {
 	["CenteredAuras"] = {
 		["enabled"] = false,
@@ -560,7 +561,7 @@ function mod:UpdateCenteredAuras(enable)
 
 	function mod:Configure_AuraBars(frame)
 		if not frame.VARIABLES_SET or (E.db.abm and E.db.abm[frame.unitframeType]) then
-			return 
+			return
 		end
 
 		local auraBars = frame.AuraBars

@@ -125,7 +125,7 @@ L["Handles automated repositioning of the newly received items."..
     "local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
     "print('Item received: ' .. string)"] =
 		"Обрабатывает автоматическое перемещение новых полученных предметов."..
-		"\n\Синтаксис: фильтр@значение\n\n"..
+		"\nСинтаксис: фильтр@значение\n\n"..
 		"Доступные фильтры:\n"..
 		"id@число - соответствует ID предмета,\n"..
 		"name@строка - соответствует названию,\n"..
@@ -149,7 +149,6 @@ L["Handles automated repositioning of the newly received items."..
 		"icon = gsub(icon, '\\124', '\\124\\124')\n"..
 		"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
 		"print('Получен предмет: ' .. string)"
-
 L["Default method: type > inventoryslotid > ilvl > name.\n\n"..
     "Accepts custom functions (bagID and slotID are available at the a/b.bagID/slotID).\n\n"..
     "function(a,b)\n"..
@@ -224,8 +223,6 @@ L["Syntax:"..
 		"\nthen print(UnitName('party'..i)..' подвержен воздействию!')"..
 		"\nend end@@@"..
 		"\n\nЭтот модуль анализирует строки, поэтому постарайтесь, чтобы ваш код строго следовал синтаксису, иначе он может не работать."
-
---NAMEPLATES--
 L["Highlights auras."] = "Подсвечивает ауры."
 L["E.g. 42292"] = "Например, 42292"
 L["Aplies highlights to all auras passing the selected filter."] = "Подсвечивает все ауры, проходящие выбранный фильтр."
@@ -972,3 +969,5 @@ L["Icon (Item)"] = "Иконка (Предмет)"
 L["Show Text"] = "Показать текст"
 L["Display progress status."] = "Отображать статус прогресса."
 L["Name"] = "Имя"
+L["Frequent Updates"] = "Частые обновления"
+L["Events (optional)"] = "События (опционально)"

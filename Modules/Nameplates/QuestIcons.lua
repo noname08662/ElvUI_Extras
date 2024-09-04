@@ -521,7 +521,6 @@ function mod:UpdateQuestStatus(frame, unit, unitName, unitType)
             if questIcon.showText then
                 updateCount(questIcon, count, total, isPercent)
             end
-
 			questIcon.texture:SetTexture(iconTypes[questType] or iconTypes.DEFAULT)
             questIcon:Show()
         end
@@ -713,28 +712,38 @@ end
 
 
 function mod:QUEST_ACCEPTED(_, questIndex)
-    local questLink = GetQuestLink(questIndex)
+	E:Delay(0.1, function()
+		local questLink = GetQuestLink(questIndex)
 
-    if questLink then
-		local _, item = GetQuestLogLeaderBoard(questIndex)
-		if item then
-			itemPickupQuests[GetQuestLogTitle(questIndex)] = true
+		if questLink then
+			local _, item = GetQuestLogLeaderBoard(questIndex)
+			if item then
+				itemPickupQuests[GetQuestLogTitle(questIndex)] = true
+			end
 		end
-    end
+		if isAwesome then
+			self:UpdateAllPlates()
+		end
+	end)
 end
 
 function mod:QUEST_REMOVED()
-	twipe(itemPickupQuests)
+	E:Delay(0.1, function()
+		twipe(itemPickupQuests)
 
-    for i = 1, GetNumQuestLogEntries() do
-		for j = 1, GetNumQuestLeaderBoards(i) do
-			local _, objectiveType, completed = GetQuestLogLeaderBoard(j, i)
-			if objectiveType == "item" and not completed then
-				itemPickupQuests[GetQuestLogTitle(i)] = true
-				break
+		for i = 1, GetNumQuestLogEntries() do
+			for j = 1, GetNumQuestLeaderBoards(i) do
+				local _, objectiveType, completed = GetQuestLogLeaderBoard(j, i)
+				if objectiveType == "item" and not completed then
+					itemPickupQuests[GetQuestLogTitle(i)] = true
+					break
+				end
 			end
 		end
-    end
+		if isAwesome then
+			self:UpdateAllPlates()
+		end
+	end)
 end
 
 
@@ -779,13 +788,9 @@ function mod:Toggle(enable)
 		self:RegisterEvent("QUEST_LOG_UPDATE", function()
 			self:QUEST_REMOVED()
 			self:UnregisterEvent("QUEST_LOG_UPDATE")
-
-			if isAwesome then
-				self:RegisterEvent("QUEST_LOG_UPDATE", function() self:UpdateAllPlates() end)
-			end
 		end)
 
-		if db.automatic then
+		if db.automatic and not isAwesome then
 			self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() parseTip('mouseover') end)
 			self:RegisterEvent("PLAYER_TARGET_CHANGED", function() parseTip('target') end)
 			self:RegisterEvent("PLAYER_FOCUS_CHANGED", function() parseTip('focus') end)

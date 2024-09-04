@@ -9,7 +9,7 @@ local initialized = {}
 local _G, pairs, ipairs = _G, pairs, ipairs
 local gsub, match, format = gsub, string.match, string.format
 local WorldFrame, UIErrorsFrame, GetTime, IsModifierKeyDown = WorldFrame, UIErrorsFrame, GetTime, IsModifierKeyDown
-local UnitClass, UnitName = UnitClass, UnitName
+local UnitClass, UnitName, GetActionInfo = UnitClass, UnitName, GetActionInfo
 local GetMerchantItemCostItem, GetMerchantItemInfo, GetItemCount = GetMerchantItemCostItem, GetMerchantItemInfo, GetItemCount
 local MAX_ITEM_COST, MERCHANT_ITEMS_PER_PAGE = MAX_ITEM_COST, MERCHANT_ITEMS_PER_PAGE
 local ERR_INV_FULL, ERR_QUEST_LOG_FULL, ERR_RAID_GROUP_ONLY, ERR_PARTY_LFG_BOOT_LIMIT, ERR_PARTY_LFG_BOOT_DUNGEON_COMPLETE,
@@ -360,14 +360,23 @@ function mod:LessTooltips(enable)
 			initialized.LessTooltips = true
 		end
 		for _, funcType in ipairs({'Unit', 'Item', 'Spell'}) do
-			if not mod:IsHooked(TT, "GameTooltip_OnTooltipSet"..funcType) then
-				mod:Hook(TT, "GameTooltip_OnTooltipSet"..funcType, mod.GameTooltip_OnTooltipSetStuff)
+			if not self:IsHooked(TT, "GameTooltip_OnTooltipSet"..funcType) then
+				self:SecureHook(TT, "GameTooltip_OnTooltipSet"..funcType, self.GameTooltip_OnTooltipSetStuff)
 			end
 		end
+		if not self:IsHooked("GameTooltip_SetDefaultAnchor") then
+			self:SecureHook("GameTooltip_SetDefaultAnchor", function(tt, parent)
+				local action = parent._state_action
+				if action and GetActionInfo(action) == "macro" then
+					self:GameTooltip_OnTooltipSetStuff(tt)
+				end
+			end)
+		end
 	elseif initialized.LessTooltips then
-		if mod:IsHooked(TT, "GameTooltip_OnTooltipSetUnit") then mod:Unhook(TT, "GameTooltip_OnTooltipSetUnit") end
-		if mod:IsHooked(TT, "GameTooltip_OnTooltipSetItem") then mod:Unhook(TT, "GameTooltip_OnTooltipSetItem") end
-		if mod:IsHooked(TT, "GameTooltip_OnTooltipSetSpell") then mod:Unhook(TT, "GameTooltip_OnTooltipSetSpell") end
+		if self:IsHooked(TT, "GameTooltip_OnTooltipSetUnit") then self:Unhook(TT, "GameTooltip_OnTooltipSetUnit") end
+		if self:IsHooked(TT, "GameTooltip_OnTooltipSetItem") then self:Unhook(TT, "GameTooltip_OnTooltipSetItem") end
+		if self:IsHooked(TT, "GameTooltip_OnTooltipSetSpell") then self:Unhook(TT, "GameTooltip_OnTooltipSetSpell") end
+		if self:IsHooked(TT, "GameTooltip_SetDefaultAnchor") then self:Unhook(TT, "GameTooltip_SetDefaultAnchor") end
 	end
 end
 

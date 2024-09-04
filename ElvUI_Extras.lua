@@ -1,4 +1,4 @@
-local E, L, _, P = unpack(ElvUI)
+﻿local E, L, _, P = unpack(ElvUI)
 local core = E:NewModule("Extras", "AceHook-3.0", "AceEvent-3.0")
 local UF = E:GetModule("UnitFrames")
 local NP = E:GetModule("NamePlates")
@@ -288,7 +288,7 @@ if isAwesome then
 			for _, np in pairs(GetNamePlates()) do
 				local unitframe = np.UnitFrame
 				local unit = np.unit
-				if unitframe and unitframe.isMouseover and unit and UnitGUID(plate.unit) ~= UnitGUID(unit) then
+				if unitframe and unitframe.isMouseover and unit and plate.unit and UnitGUID(plate.unit) ~= UnitGUID(unit) then
 					NP:SetMouseoverFrame(unitframe)
 				end
 			end
@@ -1360,7 +1360,7 @@ function core:GetOptions()
 				args = {
 					colors = {
 						type = "group",
-						name = L["Version: "].."1.0",
+						name = L["Version: "].."1.02",
 						guiInline = true,
 						get = function(info) return colorConvert(E.db.Extras[info[#info]]) end,
 						set = function(info, r, g, b) local color = colorConvert(r, g, b) E.db.Extras[info[#info]] = color core[info[#info]] = color E:RefreshGUI() end,
@@ -1501,6 +1501,7 @@ function core:Initialize()
 			for _, frame in ipairs(units) do
 				local healthBackdrop = frame.Health.backdrop
 				local powerBackdrop = (frame.USE_POWERBAR and frame.Power) and frame.Power.backdrop
+				local infoPanelBackdrop = (frame.USE_INFO_PANEL and frame.InfoPanel) and frame.InfoPanel.backdrop
 
 				if healthBackdrop.globalShadow and powerBackdrop and powerBackdrop.globalShadow then
 					healthBackdrop.globalShadow:SetOutside(frame, size, size)
@@ -1509,6 +1510,36 @@ function core:Initialize()
 						powerBackdrop.globalShadow:Show()
 					else
 						powerBackdrop.globalShadow:Hide()
+					end
+				end
+
+				if infoPanelBackdrop and infoPanelBackdrop.globalShadow then
+					infoPanelBackdrop.globalShadow:Hide()
+				end
+			end
+
+			local target = _G["ElvUF_Target"]
+
+			if target and target.USE_CLASSBAR then
+				for _, comboPoint in ipairs(target.ComboPoints) do
+					local backdrop = comboPoint.backdrop
+
+					if backdrop and backdrop.globalShadow then
+						if not target.USE_MINI_CLASSBAR then
+							backdrop.globalShadow:Hide()
+						else
+							backdrop.globalShadow:Show()
+						end
+					end
+				end
+
+				local backdrop = target.ComboPoints and target.ComboPoints.backdrop
+
+				if backdrop and backdrop.globalShadow then
+					if not target.CLASSBAR_DETACHED then
+						backdrop.globalShadow:Hide()
+					else
+						backdrop.globalShadow:Show()
 					end
 				end
 			end

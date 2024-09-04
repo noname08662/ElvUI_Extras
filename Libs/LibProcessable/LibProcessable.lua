@@ -25,7 +25,7 @@ local ProfessionNames = {
 		[393] = "Skinning",
 		[755] = "Jewelcrafting",
 		[773] = "Inscription",
-	},	
+	},
 	enGB = {
 		[164] = "Blacksmithing",
 		[165] = "Leatherworking",

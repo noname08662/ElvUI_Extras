@@ -22,7 +22,7 @@ local trackingTypes = {}
 local iconIndex = 1
 
 local max = math.max
-local _G, pairs, ipairs, tonumber = _G, pairs, ipairs, tonumber
+local _G, pairs, ipairs, tonumber, select = _G, pairs, ipairs, tonumber, select
 local twipe, tinsert, tremove = table.wipe, table.insert, table.remove
 local format, match, find, gsub = string.format, string.match, string.find, string.gsub
 local UIParent, GetGuildInfo = UIParent, GetGuildInfo
@@ -93,53 +93,98 @@ P["Extras"]["nameplates"][modName] = {
 	["Titles"] = {
 		["enabled"] = false,
 		["desc"] = L["Displays NPC occupation text."],
-		["font"] = "Expressway",
-		["fontSize"] = 11,
-		["fontOutline"] = "OUTLINE",
-		["separator"] = "BOX",
-		["point"] = "CENTER",
-		["relativeTo"] = "CENTER",
-		["xOffset"] = 0,
-		["yOffset"] = -4,
-		["level"] = 15,
-		["color"] = { r = 0.9, g = 0.9, b = 0.3 },
-		["reactionColor"] = false,
+		["selectedType"] = "ENEMY_NPC",
+		["ENEMY_NPC"] = {
+			["font"] = "Expressway",
+			["fontSize"] = 11,
+			["fontOutline"] = "OUTLINE",
+			["separator"] = "BOX",
+			["point"] = "CENTER",
+			["relativeTo"] = "CENTER",
+			["xOffset"] = 0,
+			["yOffset"] = -4,
+			["level"] = 15,
+			["color"] = { r = 0.9, g = 0.9, b = 0.3 },
+			["reactionColor"] = false,
+		},
+		["FRIENDLY_NPC"] = {
+			["font"] = "Expressway",
+			["fontSize"] = 11,
+			["fontOutline"] = "OUTLINE",
+			["separator"] = "BOX",
+			["point"] = "CENTER",
+			["relativeTo"] = "CENTER",
+			["xOffset"] = 0,
+			["yOffset"] = -4,
+			["level"] = 15,
+			["color"] = { r = 0.9, g = 0.9, b = 0.3 },
+			["reactionColor"] = false,
+		},
 	},
 	["Guilds"] = {
 		["enabled"] = false,
 		["desc"] = L["Displays player guild text."],
-		["visibility"] = {
-			["city"] = true,
-			["pvp"] = true,
-			["arena"] = true,
-			["party"] = true,
-			["raid"] = true,
+		["selectedType"] = "ENEMY_PLAYER",
+		["ENEMY_PLAYER"] = {
+			["visibility"] = {
+				["city"] = true,
+				["pvp"] = true,
+				["arena"] = true,
+				["party"] = true,
+				["raid"] = true,
+			},
+			["font"] = "Expressway",
+			["fontSize"] = 11,
+			["fontOutline"] = "OUTLINE",
+			["separator"] = "ARROW",
+			["point"] = "CENTER",
+			["relativeTo"] = "CENTER",
+			["xOffset"] = 0,
+			["yOffset"] = -4,
+			["level"] = 15,
+			["colors"] = {
+				["raid"] = { r = 0.3, g = 0.6, b = 0.9 },
+				["party"] = { r = 0.6, g = 0.9, b = 0.3 },
+				["guild"] = { r = 0.9, g = 0.6, b = 0.3 },
+				["none"] = { r = 0.6, g = 0.6, b = 0.6 },
+			},
 		},
-		["font"] = "Expressway",
-		["fontSize"] = 11,
-		["fontOutline"] = "OUTLINE",
-		["separator"] = "ARROW",
-		["point"] = "CENTER",
-		["relativeTo"] = "CENTER",
-		["xOffset"] = 0,
-		["yOffset"] = -4,
-		["level"] = 15,
-		["colors"] = {
-			["raid"] = { r = 0.3, g = 0.6, b = 0.9 },
-			["party"] = { r = 0.6, g = 0.9, b = 0.3 },
-			["guild"] = { r = 0.9, g = 0.6, b = 0.3 },
-			["none"] = { r = 0.6, g = 0.6, b = 0.6 },
+		["FRIENDLY_PLAYER"] = {
+			["visibility"] = {
+				["city"] = true,
+				["pvp"] = true,
+				["arena"] = true,
+				["party"] = true,
+				["raid"] = true,
+			},
+			["font"] = "Expressway",
+			["fontSize"] = 11,
+			["fontOutline"] = "OUTLINE",
+			["separator"] = "ARROW",
+			["point"] = "CENTER",
+			["relativeTo"] = "CENTER",
+			["xOffset"] = 0,
+			["yOffset"] = -4,
+			["level"] = 15,
+			["colors"] = {
+				["raid"] = { r = 0.3, g = 0.6, b = 0.9 },
+				["party"] = { r = 0.6, g = 0.9, b = 0.3 },
+				["guild"] = { r = 0.9, g = 0.6, b = 0.3 },
+				["none"] = { r = 0.6, g = 0.6, b = 0.6 },
+			},
 		},
 	},
 }
 
 function mod:LoadConfig()
 	local function selectedSubSection() return E.db.Extras.nameplates[modName].selectedSubSection end
+	local function selectedType() return E.db.Extras.nameplates[modName].Titles.selectedType end
+	local function selectedPlayerType() return E.db.Extras.nameplates[modName].Guilds.selectedType end
 	core.nameplates.args[modName] = {
 		type = "group",
 		name = L["Guilds&Titles"],
 		get = function(info) return E.db.Extras.nameplates[modName][selectedSubSection()][info[#info]] end,
-		set = function(info, value) E.db.Extras.nameplates[modName][selectedSubSection()][info[#info]] = value mod:UpdateAllSettings() end,
+		set = function(info, value) E.db.Extras.nameplates[modName][selectedSubSection()][info[#info]] = value self:UpdateAllSettings() end,
 		args = {
 			SubSection = {
 				order = 1,
@@ -153,7 +198,7 @@ function mod:LoadConfig()
 						name = core.pluginColor..L["Enable"],
 						desc = function() return E.db.Extras.nameplates[modName][selectedSubSection()].desc end,
 						get = function() return E.db.Extras.nameplates[modName][selectedSubSection()].enabled end,
-						set = function(_, value) E.db.Extras.nameplates[modName][selectedSubSection()].enabled = value mod:Toggle() end,
+						set = function(_, value) E.db.Extras.nameplates[modName][selectedSubSection()].enabled = value self:Toggle() end,
 					},
 					selectedSubSection = {
 						order = 2,
@@ -186,9 +231,23 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Guilds"],
 				guiInline = true,
+				get = function(info) return E.db.Extras.nameplates[modName][selectedSubSection()][selectedPlayerType()][info[#info]] end,
+				set = function(info, value) E.db.Extras.nameplates[modName][selectedSubSection()][selectedPlayerType()][info[#info]] = value self:UpdateAllSettings() end,
 				disabled = function() return not E.db.Extras.nameplates[modName][selectedSubSection()].enabled end,
 				hidden = function() return selectedSubSection() ~= 'Guilds' end,
 				args = {
+					selectedType = {
+						order = 1,
+						type = "select",
+						name = L["Select Type"],
+						desc = "",
+						get = function(info) return E.db.Extras.nameplates[modName][selectedSubSection()][info[#info]] end,
+						set = function(info, value) E.db.Extras.nameplates[modName][selectedSubSection()][info[#info]] = value end,
+						values = {
+							["ENEMY_PLAYER"] = L["ENEMY_PLAYER"],
+							["FRIENDLY_PLAYER"] = L["FRIENDLY_PLAYER"],
+						},
+					},
 					font = {
 						order = 2,
 						type = "select",
@@ -277,8 +336,8 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Visibility State"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.nameplates[modName].Guilds.visibility[info[#info]] end,
-				set = function(info, value) E.db.Extras.nameplates[modName].Guilds.visibility[info[#info]] = value NP:ConfigureAll() end,
+				get = function(info) return E.db.Extras.nameplates[modName].Guilds[selectedPlayerType()].visibility[info[#info]] end,
+				set = function(info, value) E.db.Extras.nameplates[modName].Guilds[selectedPlayerType()].visibility[info[#info]] = value NP:ConfigureAll() end,
 				disabled = function() return not E.db.Extras.nameplates[modName][selectedSubSection()].enabled end,
 				hidden = function() return selectedSubSection() ~= 'Guilds' end,
 				args = {
@@ -319,8 +378,15 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Colors"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.nameplates[modName].Guilds.colors[info[#info]].r, E.db.Extras.nameplates[modName].Guilds.colors[info[#info]].g, E.db.Extras.nameplates[modName].Guilds.colors[info[#info]].b end,
-				set = function(info, r, g, b) E.db.Extras.nameplates[modName].Guilds.colors[info[#info]].r, E.db.Extras.nameplates[modName].Guilds.colors[info[#info]].g, E.db.Extras.nameplates[modName].Guilds.colors[info[#info]].b = r, g, b NP:ConfigureAll() end,
+				get = function(info)
+					local colors = E.db.Extras.nameplates[modName].Guilds[selectedPlayerType()].colors[info[#info]]
+					return colors.r, colors.g, colors.b
+				end,
+				set = function(info, r, g, b)
+					local colors = E.db.Extras.nameplates[modName].Guilds[selectedPlayerType()].colors[info[#info]]
+					colors.r, colors.g, colors.b = r, g, b
+					NP:ConfigureAll()
+				end,
 				disabled = function() return not E.db.Extras.nameplates[modName][selectedSubSection()].enabled end,
 				hidden = function() return selectedSubSection() ~= 'Guilds' end,
 				args = {
@@ -371,7 +437,7 @@ function mod:LoadConfig()
 						desc = "",
 						get = function(info) return E.db.Extras.nameplates[modName][selectedSubSection()][info[#info]] end,
 						set = function(info, value) E.db.Extras.nameplates[modName][selectedSubSection()][info[#info]] = value
-							mod:UpdateAllSettings()
+							self:UpdateAllSettings()
 							if E.db.Extras.nameplates[modName][selectedSubSection()][info[#info]] == 'TEXT' then
 								for frame in pairs(NP.CreatedPlates) do
 									if frame and frame.UnitFrame then
@@ -449,7 +515,7 @@ function mod:LoadConfig()
 						set = function(_, value)
 							if value and value ~= "" then
 								tinsert(E.db.Extras.nameplates[modName].OccupationIcon.playerList, value)
-								mod:UpdateAllSettings()
+								self:UpdateAllSettings()
 							end
 						end,
 					},
@@ -472,7 +538,7 @@ function mod:LoadConfig()
 									tremove(E.db.Extras.nameplates[modName].OccupationIcon.playerList, i)
 								end
 							end
-							mod:UpdateAllSettings()
+							self:UpdateAllSettings()
 						end,
 					},
 					modifier = {
@@ -538,9 +604,23 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Titles"],
 				guiInline = true,
+				get = function(info) return E.db.Extras.nameplates[modName][selectedSubSection()][selectedType()][info[#info]] end,
+				set = function(info, value) E.db.Extras.nameplates[modName][selectedSubSection()][selectedType()][info[#info]] = value self:UpdateAllSettings() end,
 				disabled = function() return not E.db.Extras.nameplates[modName][selectedSubSection()].enabled end,
 				hidden = function() return selectedSubSection() ~= 'Titles' end,
 				args = {
+					selectedType = {
+						order = 1,
+						type = "select",
+						name = L["Select Type"],
+						desc = "",
+						get = function(info) return E.db.Extras.nameplates[modName][selectedSubSection()][info[#info]] end,
+						set = function(info, value) E.db.Extras.nameplates[modName][selectedSubSection()][info[#info]] = value end,
+						values = {
+							["ENEMY_NPC"] = L["ENEMY_NPC"],
+							["FRIENDLY_NPC"] = L["FRIENDLY_NPC"],
+						},
+					},
 					font = {
 						order = 2,
 						type = "select",
@@ -568,8 +648,30 @@ function mod:LoadConfig()
 							["THICKOUTLINE"] = "THICKOUTLINE"
 						},
 					},
-					separator = {
+					color = {
 						order = 5,
+						type = "color",
+						name = L["Color"],
+						desc = "",
+						get = function()
+							local colors = E.db.Extras.nameplates[modName].Titles[selectedType()].color
+							return colors.r, colors.g, colors.b
+						end,
+						set = function(_, r, g, b)
+							local colors = E.db.Extras.nameplates[modName].Titles[selectedType()].color
+							colors.r, colors.g, colors.b = r, g, b
+							NP:ConfigureAll()
+						end,
+						disabled = function() return E.db.Extras.nameplates[modName].Titles.reactionColor end
+					},
+					reactionColor = {
+						order = 6,
+						type = "toggle",
+						name = L["Reaction Color"],
+						desc = L["Color based on reaction type."]
+					},
+					separator = {
+						order = 7,
 						type = "select",
 						name = L["Separator"],
 						desc = "",
@@ -586,21 +688,6 @@ function mod:LoadConfig()
 							CURVE = "()",
 							CURVE1 = "( )"
 						},
-					},
-					reactionColor = {
-						order = 6,
-						type = "toggle",
-						name = L["Reaction Color"],
-						desc = L["Color based on reaction type."]
-					},
-					color = {
-						order = 7,
-						type = "color",
-						name = L["Color"],
-						desc = "",
-						get = function() return E.db.Extras.nameplates[modName].Titles.color.r, E.db.Extras.nameplates[modName].Titles.color.g, E.db.Extras.nameplates[modName].Titles.color.b end,
-						set = function(_, r, g, b) E.db.Extras.nameplates[modName].Titles.color.r, E.db.Extras.nameplates[modName].Titles.color.g, E.db.Extras.nameplates[modName].Titles.color.b = r, g, b NP:ConfigureAll() end,
-						disabled = function() return E.db.Extras.nameplates[modName].Titles.reactionColor end
 					},
 					point = {
 						order = 8,
@@ -669,29 +756,28 @@ local function findPlateByName(unit)
 	end
 end
 
-local function manageTitleFrame(frame, db, unitType, addIcon)
-	local Title = frame.Title
-	Title.str:SetFont(LSM:Fetch("font", db.font), db.fontSize, db.fontOutline)
-	Title:Height(db.fontSize)
+local function manageTitleFrame(frame, db, unitType, db_icon)
+	local title = frame.Title
 
-	Title:ClearAllPoints()
-	Title:Point(db.point, frame, db.relativeTo, db.xOffset, db.yOffset)
-	Title:SetFrameLevel(max(1,frame:GetFrameLevel()+db.level))
+	title.str:SetFont(LSM:Fetch("font", db.font), db.fontSize, db.fontOutline)
+	title:Height(db.fontSize)
 
-	if not addIcon then return end
+	title:ClearAllPoints()
+	title:Point(db.point, frame, db.relativeTo, db.xOffset, db.yOffset)
+	title:SetFrameLevel(max(1, frame:GetFrameLevel() + db.level))
 
-	local iconHolder, anchor = Title.iconHolder
+	if not db_icon then return end
 
-	db = E.db.Extras.nameplates[modName].OccupationIcon
+	local iconHolder, anchor = title.iconHolder
 
-	if db.anchor == "FRAME" then
+	if db_icon.anchor == "FRAME" then
 		anchor = frame.Health:IsShown() and frame.Health or frame.Name
 
 		if not healthEnabled[unitType] and not mod:IsHooked(frame.Health, "OnShow") then
 			mod:SecureHookScript(frame.Health, "OnShow", function(self)
-				if Title and Title.iconHolder then
-					Title.iconHolder:ClearAllPoints()
-					Title.iconHolder:Point(db.point, self, db.relativeTo, db.xOffset, db.yOffset)
+				if title and title.iconHolder then
+					title.iconHolder:ClearAllPoints()
+					title.iconHolder:Point(db_icon.point, self, db_icon.relativeTo, db_icon.xOffset, db_icon.yOffset)
 				end
 			end)
 		end
@@ -700,15 +786,15 @@ local function manageTitleFrame(frame, db, unitType, addIcon)
 			mod:Unhook(frame.Health, "OnShow")
 		end
 
-		anchor = Title
+		anchor = title
 	end
 
 	iconHolder:ClearAllPoints()
-	iconHolder:Size(db.size)
-	iconHolder:Point(db.point, anchor, db.relativeTo, db.xOffset, db.yOffset)
-	iconHolder:SetFrameLevel(max(1,frame:GetFrameLevel()+db.level))
+	iconHolder:Size(db_icon.size)
+	iconHolder:Point(db_icon.point, anchor, db_icon.relativeTo, db_icon.xOffset, db_icon.yOffset)
+	iconHolder:SetFrameLevel(max(1,frame:GetFrameLevel() + db_icon.level))
 
-	if db.backdrop then
+	if db_icon.backdrop then
 		if not iconHolder.backdrop then
 			iconHolder:CreateBackdrop("Transparent")
 		end
@@ -720,16 +806,18 @@ end
 
 function mod:UpdateTitle(frame, unit, UnitTitle, name)
 	local db = E.db.Extras.nameplates[modName]
-	
+
 	name = name and name or frame.UnitName
 	unit = unit and unit or name
 	UnitTitle = UnitTitle and UnitTitle or db.UnitTitle[name]
 
 	if not unit or not name or not UnitTitle then return end
 
+	local title = frame.Title
 	local _, unitType = NP:GetUnitInfo(frame)
+
 	if db.Guilds.enabled and (unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER') then
-		db = db.Guilds
+		db = db.Guilds[unitType]
 
 		local shown
 		if IsResting() then
@@ -753,6 +841,7 @@ function mod:UpdateTitle(frame, unit, UnitTitle, name)
 			manageTitleFrame(frame, db, unitType)
 
 			local color
+
 			if UnitInRaid(unit) then
 				color = db.colors.raid
 			elseif UnitInParty(unit) then
@@ -763,30 +852,30 @@ function mod:UpdateTitle(frame, unit, UnitTitle, name)
 				color = db.colors.none
 			end
 
-			frame.Title.str:SetTextColor(color.r, color.g, color.b)
-			frame.Title.str:SetFormattedText(separatorMap[db.separator], UnitTitle)
-			frame.Title:Width(frame.Title.str:GetStringWidth())
+			title.str:SetTextColor(color.r, color.g, color.b)
+			title.str:SetFormattedText(separatorMap[db.separator], UnitTitle)
+			title:Width(title.str:GetStringWidth())
 
-			frame.Title:Show()
-			frame.Title.iconHolder:Hide()
+			title:Show()
+			title.iconHolder:Hide()
 		else
-			frame.Title:Hide()
-			frame.Title.iconHolder:Hide()
+			title:Hide()
+			title.iconHolder:Hide()
 		end
 	elseif (db.Titles.enabled or db.OccupationIcon.enabled) and (unitType == 'FRIENDLY_NPC' or unitType == 'ENEMY_NPC') then
-		manageTitleFrame(frame, db.Titles, unitType, db.OccupationIcon.enabled)
+		manageTitleFrame(frame, db.Titles[unitType], unitType, db.OccupationIcon.enabled and db.OccupationIcon)
 
 		if db.OccupationIcon.enabled then
-			frame.Title.iconHolder:Hide()
+			title.iconHolder:Hide()
 
 			if db.NPCOccupations[name] then
-				frame.Title.icon:SetTexture(db.NPCOccupations[name].icon)
-				frame.Title.iconHolder:Show()
+				title.icon:SetTexture(db.NPCOccupations[name].icon)
+				title.iconHolder:Show()
 			else
 				for type, icon in pairs(trackingTypes) do
 					if find(gsub(gsub(UnitTitle, '%p+', ''), '%s+', ''), type) then
-						frame.Title.icon:SetTexture(icon)
-						frame.Title.iconHolder:Show()
+						title.icon:SetTexture(icon)
+						title.iconHolder:Show()
 						db.NPCOccupations[name] = { occupation = type, icon = icon }
 						break
 					end
@@ -794,8 +883,9 @@ function mod:UpdateTitle(frame, unit, UnitTitle, name)
 			end
 		end
 
-		db = db.Titles
-		if not db.enabled then return end
+		if not db.Titles.enabled then return end
+
+		db = db.Titles[unitType]
 
 		if db.reactionColor then
 			local colors = NP.db.colors
@@ -814,15 +904,15 @@ function mod:UpdateTitle(frame, unit, UnitTitle, name)
 				r, g, b = 1, 1, 1
 			end
 
-			frame.Title.str:SetTextColor(r, g, b)
+			title.str:SetTextColor(r, g, b)
 		else
-			frame.Title.str:SetTextColor(db.color.r, db.color.g, db.color.b)
+			title.str:SetTextColor(db.color.r, db.color.g, db.color.b)
 		end
 
-		frame.Title.str:SetFormattedText(separatorMap[db.separator], UnitTitle)
-		frame.Title:Width(frame.Title.str:GetStringWidth())
+		title.str:SetFormattedText(separatorMap[db.separator], UnitTitle)
+		title:Width(title.str:GetStringWidth())
 
-		frame.Title:Show()
+		title:Show()
 	end
 end
 
@@ -881,7 +971,7 @@ end
 
 function mod:UpdateUnitInfo(frame, unit)
 	local db = E.db.Extras.nameplates[modName]
-	if UnitIsPlayer(unit) and UnitReaction(unit, "player") ~= 2 then
+	if UnitIsPlayer(unit) then
 		local name, realm = UnitName(unit)
 		if realm or not name or name == UNKNOWN then return end
 
@@ -898,7 +988,22 @@ function mod:UpdateUnitInfo(frame, unit)
 			return
 		end
 
-		if find(gsub(guildName, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then return end
+		if find(gsub(guildName, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
+			-- sometimes the guild info is too late to load
+			if updatePending then return end
+			updatePending = true
+
+			E_Delay(nil, 0.1, function()
+				if name ~= UnitName(unit) then return end
+
+				guildName = GetGuildInfo(unit)
+				if guildName then
+					mod:UpdateTitle(frame, unit, guildName, name)
+				end
+				updatePending = false
+			end)
+			return
+		end
 
 		if db.UnitTitle[name] ~= guildName then
 			db.UnitTitle[name] = guildName
@@ -1035,8 +1140,12 @@ function mod:Toggle()
 				self:SecureHook(NP, "ResetNameplateFrameLevel", function(self, frame)
 					local title = frame.Title
 					if title then
-						title:SetFrameLevel(max(1,title:GetParent():GetFrameLevel()+db.Titles.level))
-						title.iconHolder:SetFrameLevel(max(1,title:GetParent():GetFrameLevel()+db.OccupationIcon.level))
+						local unitType = frame.UnitType or select(2,NP:GetUnitInfo(frame))
+						if unitType and (unitType == "FRIENDLY_NPC" or unitType == "ENEMY_NPC") then
+							local level = frame:GetFrameLevel()
+							title:SetFrameLevel(max(1, level + db.Titles[unitType].level))
+							title.iconHolder:SetFrameLevel(max(1, level + db.OccupationIcon.level))
+						end
 					end
 				end)
 			end

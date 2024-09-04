@@ -128,6 +128,8 @@ P["Extras"]["unitframes"][modName] = {
 				["Health"] = {
 					["enabled"] = false,
 					["selectedTab"] = 1,
+					["frequentUpdates"] = false,
+					["updateThrottle"] = 0.1,
 					["events"] = "",
 					["tabs"] = {
 						{	["enabled"] = false,
@@ -188,7 +190,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Color Filter"],
 				guiInline = true,
-				disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or UFUnitEnabled() end,
+				disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() end,
 				args = {
 					enabled = {
 						order = 1,
@@ -241,8 +243,29 @@ function mod:LoadConfig()
 							return dropdownValues
 						end,
 					},
-					events = {
+					frequentUpdates = {
 						order = 5,
+						type = "toggle",
+						name = L["Frequent Updates"],
+						desc = "",
+						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or selectedBar() == 'Castbar' end,
+						hidden = function() return selectedBar() == 'Castbar' end,
+						get = function(info) return db.units[selectedUnit()].statusbars[selectedBar()][info[#info]] end,
+						set = function(info, value) db.units[selectedUnit()].statusbars[selectedBar()][info[#info]] = value self:Toggle() end,
+					},
+					updateThrottle = {
+						order = 6,
+						type = "range",
+						min = 0, max = 10, step = 0.1,
+						name = L["Throttle Time"],
+						desc = "",
+						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or not db.units[selectedUnit()].statusbars[selectedBar()].frequentUpdates end,
+						hidden = function() return selectedBar() == 'Castbar' end,
+						get = function(info) return db.units[selectedUnit()].statusbars[selectedBar()][info[#info]] end,
+						set = function(info, value) db.units[selectedUnit()].statusbars[selectedBar()][info[#info]] = value self:Toggle() end,
+					},
+					events = {
+						order = 7,
 						type = "input",
 						multiline = true,
 						width = "double",
@@ -1459,6 +1482,8 @@ function mod:ParseTabs(frame, statusbar, unit, tabs, isEvent, event, ...)
 					targetBar.colorApplied = true
 					targetBar.appliedColorTabIndex = tabIndex
 
+					metaFrame[unit].lastUpdate = GetTime()
+
 					return result, colors, tab
 				elseif appliedColorTabIndex and tabIndex == appliedColorTabIndex then
 					-- conditions from the tab currently coloring the bar are no longer true, revert
@@ -1640,6 +1665,8 @@ function mod:InitAndUpdateColorFilter()
 	end
 
 	for unit, unitsCluster in pairs(metaTable.units) do
+		if not metaFrame[unit] then metaFrame[unit] = CreateFrame("Frame") end
+
 		for _, frame in ipairs(unitsCluster) do
 			for statusbar, bar in pairs(db.units[unit].statusbars) do
 				local targetBar = frame.colorFilter[statusbar]
@@ -1649,7 +1676,6 @@ function mod:InitAndUpdateColorFilter()
 						metaTable.statusbars[unit][statusbar] = bar
 
 						if find(bar.events, '%S+') then
-							if not metaFrame[unit] then metaFrame[unit] = CreateFrame("Frame") end
 							self:SortEvents(bar, statusbar, unit)
 						end
 					end
@@ -1707,6 +1733,42 @@ function mod:InitAndUpdateColorFilter()
 									if targetBar.mentions then
 										mod:UpdateMentions(targetBar)
 									end
+								end
+							end
+						end
+					end)
+				end
+
+				local barInfo = metaTable.statusbars[unit]
+				if barInfo and metaTable.statusbars[unit][statusbar].frequentUpdates and statusbar ~= 'Castbar' then
+					local updateThrottle = metaTable.statusbars[unit][statusbar].updateThrottle
+
+					metaFrame[unit].lastUpdate = GetTime()
+					metaFrame[unit]:SetScript('OnUpdate', function(self)
+						if GetTime() - self.lastUpdate < updateThrottle then return end
+
+						for _, frame in ipairs(unitInfo) do
+							if frame:IsShown() and (not frame.id or (frame.isForced or (GetNumPartyMembers() >= 1 or GetNumRaidMembers() >= 1))) then
+								local frameBar = frame[statusbar]
+								local targetBar = frame.colorFilter[statusbar]
+								if frameBar:IsShown() then
+									local result, colors, tab = mod:ParseTabs(frame, statusbar, frame.unit, barInfo)
+
+									local highlight = tab and tab.highlight
+									mod:UpdateGlow(frame, colors, statusbar, unit, result and highlight.glow.enabled, highlight)
+									mod:UpdateBorders(frame, colors, statusbar, unit, result and highlight.borders.enabled, highlight)
+
+									if not targetBar.colorApplied then
+										frameBar:ForceUpdate()
+										local flashTexture = targetBar.flashTexture
+										if flashTexture:IsShown() then
+											flashTexture.anim:Stop()
+											flashTexture:Hide()
+										end
+									end
+								end
+								if targetBar.mentions then
+									mod:UpdateMentions(targetBar)
 								end
 							end
 						end

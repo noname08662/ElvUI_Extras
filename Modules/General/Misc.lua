@@ -727,6 +727,11 @@ function mod:EnterCombatAlert(enable)
 	end
 end
 
+function mod:GlobalShadow(enable)
+	if enable then
+		E.globalShadow = E.db.Extras.general[modName].GlobalShadow
+	end
+end
 
 function mod:Toggle()
 	for mod, info in pairs(E.db.Extras.general[modName]) do

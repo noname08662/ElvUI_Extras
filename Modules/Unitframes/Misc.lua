@@ -274,7 +274,7 @@ function mod:UpdateNameSettings(frame, childType)
 		db = E.db.Extras.unitframes[modName].NameAutoShorten.units[frame.unitframeType]
 		if db then
 			frame.Name:SetJustifyH("LEFT")
-			frame.Name:Point('RIGHT', (db.toHealth and frame.Health and frame.Health.value:GetText()) and frame.Health.value or attachPoint, db.toHealth and 'LEFT' or 'RIGHT', db.xOffset ~= 0 and db.xOffset or x, y)
+			frame.Name:Point('RIGHT', (db.toHealth and frame.Health and frame.Health.value) and frame.Health.value or attachPoint, db.toHealth and 'LEFT' or 'RIGHT', db.xOffset ~= 0 and db.xOffset or x, y)
 		end
 	end
 end
