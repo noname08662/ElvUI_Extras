@@ -798,3 +798,5 @@ L["Icon (Item)"] = true
 L["Show Text"] = true
 L["Display progress status."] = true
 L["Name"] = true
+L["Frequent Updates"] = true
+L["Events (optional)"] = true

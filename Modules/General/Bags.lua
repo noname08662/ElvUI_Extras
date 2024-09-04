@@ -1020,7 +1020,7 @@ function mod:HandleControls(f, section, buttonSize)
 				timeElapsed = timeElapsed + elapsed
 				if timeElapsed > 0.1 then
 					if InCombatLockdown() then
-						print(core.customColorBad..ERR_NOT_IN_COMBAT)
+						--print(core.customColorBad..ERR_NOT_IN_COMBAT)
 						sectionFrame.isBeingSorted = false
 						sectionFrame.concatenateButton:SetScript('OnUpdate', nil)
 						mod:UpdateSection(f, section, buttonSize)
@@ -1870,18 +1870,21 @@ function mod:CreateProcessingButton()
 		GameTooltip:Hide()
 	end)
 
+	RegisterStateDriver(ProcessButton, "visibility", "[combat] hide")
+
 	return ProcessButton
 end
 
-function mod:Process(self)
+function mod:Process(self, modifier)
 	local ProcessButton = mod.ProcessButton
 	if not ProcessButton then return end
-	if InCombatLockdown() then
-		print(core.customColorBad..ERR_NOT_IN_COMBAT)
-		return
-	end
-	local modifier = E.db.Extras.general[modName].EasierProcessing.modifier
+
 	if IsModifierKeyDown() and (modifier == 'ANY' or _G['Is'..modifier..'KeyDown']()) then
+		if InCombatLockdown() then
+			print(core.customColorBad..ERR_NOT_IN_COMBAT)
+			return
+		end
+
 		local itemID = GetContainerItemID(self.bagID, self.slotID)
 		if not itemID then return end
 
@@ -2123,11 +2126,13 @@ end
 function mod:EasierProcessing(enable)
 	if enable then
 		if not self:IsHooked(B, 'Layout') then self:SecureHook(B, 'Layout') end
+
+		self.ProcessButton = self.ProcessButton and self.ProcessButton or self:CreateProcessingButton()
 		self.localhooks.EasierProcessing = {
-			["OnClick"] = function(self) mod:Process(self) end,
+			["OnClick"] = function(self) mod:Process(self, E.db.Extras.general[modName].EasierProcessing.modifier) end,
 			["OnHide"] = function() if mod.ProcessButton:IsShown() then mod.ProcessButton:Hide() end end
 		}
-		self.ProcessButton = self.ProcessButton and self.ProcessButton or self:CreateProcessingButton()
+
 		initialized.EasierProcessing = true
 	elseif initialized.EasierProcessing then
 		local db = E.db.Extras.general[modName]
@@ -2143,9 +2148,11 @@ end
 function mod:SplitStack(enable)
 	if enable then
 		if not self:IsHooked(B, 'Layout') then self:SecureHook(B, 'Layout') end
+
 		self.localhooks.SplitStack = {
 			["OnClick"] = function(self, button) mod:SplitHandler(self, button) end
 		}
+
 		self:ModifyStackSplitFrame(true)
 		initialized.SplitStack = true
 	elseif initialized.SplitStack then

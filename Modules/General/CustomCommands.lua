@@ -372,7 +372,7 @@ function mod:SetupHandler()
 
 	handler:SetScript('OnEvent', function(self, event, ...)
 		for _, tab in pairs(db.tabs) do
-			if tab.enabled and find(tab.events, event) and (not lastEventTime or (GetTime() > lastEventTime + tab.throttleEvents[event])) then
+			if tab.enabled and find(tab.events, event) and (not lastEventTime or (GetTime() > lastEventTime + (tab.throttleEvents[event] or 0))) then
 				local commandsToLoad = tab.eventCommandsPairs[event]
 				local failedTheArgs
 				if ... and #tab.args > 0 then

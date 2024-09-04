@@ -3,6 +3,7 @@ local core = E:GetModule("Extras")
 local mod = core:NewModule("LootStyle", "AceHook-3.0", "AceEvent-3.0")
 local M = E:GetModule("Misc")
 local CH = E:GetModule("Chat")
+local B = E:GetModule("Blizzard")
 
 local modName = mod:GetName()
 local styleHistory, filterApplied, testlootbar
@@ -217,10 +218,9 @@ for type, messages in ipairs(rollMsgs) do
         local formattedMsg = format(message, 1, 1, 1, 1, 1)
         local parts = { split(1, formattedMsg) }
         for j, part in ipairs(parts) do
-            part = gsub(part, "1", "")
-            part = gsub(part, "[%s%p%d]+", "")
-            if part ~= "" then
-                table.insert(processedMessage, part)
+            part = gsub(part, "[1%s%p%d]+", "")
+            if part ~= "" and part ~= "x" then
+                tinsert(processedMessage, part)
             end
         end
         rollMsgsProcessed[type][i] = processedMessage
@@ -228,7 +228,8 @@ for type, messages in ipairs(rollMsgs) do
 end
 
 local function parseEventMsg(msg)
-    msg = gsub(gsub(gsub(msg, '|cff.+|h|r[%w-]*', ''), '|T.+|t', ''), '[%s%p%d]+', '')
+    msg = gsub(gsub(gsub(msg, '|[tT].+|[tT]', ''), '|%x%x%x%x%x%x%x%x%x.+|[hH]|[rR][%w-]*', ''), '[%s%p%d]', '')
+
 	for type, messages in pairs(rollMsgsProcessed) do
         for _, processedMessage in ipairs(messages) do
             local tempMsg = msg
@@ -478,10 +479,10 @@ function mod:StyledMsgs(enable)
 		if not initialized.StyledMsgs then
 			local myname, myclass = E.myname, E.myclass
 			local playerName = lower(myname)
-			local _, part1, _, part2 = split(1, format(RANDOM_ROLL_RESULT, 1, 1, 1, 1))
-			local rollMsgProcessed = {part1, part2}
 			local friendOnlineMsgProcessed = gsub(tconcat({split(1, format(gsub(ERR_FRIEND_ONLINE_SS, '[%[%]]',''), 1, 1))}), "|H.+|h", "")
 			local _, playerJoinsGuild = split(1, format(ERR_GUILD_JOIN_S, 1))
+			local _, part1, part2, part3 = split(1, format(RANDOM_ROLL_RESULT, 1, 1, 1, 1))
+			part2 = match(part2 or "", ".*%.") or match(part3 or "", ".*%.") or false
 
 			function mod:UpdateFriendMap()
 				twipe(friendMap)
@@ -680,7 +681,7 @@ function mod:StyledMsgs(enable)
 			end
 
 			local function handleRollMessage(msg)
-				local playerName, rollResult, rollStart, rollEnd = match(msg, '[%p%d]*([^%p*]+)'..part1..'%D*(%d+)%D*(%d+)-(%d+)')
+				local playerName, rollResult, rollStart, rollEnd = match(msg, '[%p%d]*([^%p*]+)'..part1..'%D*(%d+).*(%d+)%D+(%d+)')
 				local playerClass = playerName and select(2, UnitClass(playerName))
 
 				if playerClass then
@@ -698,10 +699,10 @@ function mod:StyledMsgs(enable)
 					local _, _, indicator, indicatorColor = mod:GetPlayerInfo(lower(playerName))
 					local formattedName = getString(playerName, indicator, indicatorColor, getClassColor(playerClass) or '')
 
-					msg = gsub(msg, rollResult, color ..'['.. rollResult ..']'.. "|r", 1)
+					msg = gsub(msg, rollResult, color .."[".. rollResult .. "]|r", 1)
 					msg = gsub(msg, playerName, formattedName)
 					if rollStart == 1 and rollEnd == 100 then
-						local _, newMsgEndIndex = find(msg, rollResult ..']'.. "|r")
+						local _, newMsgEndIndex = find(msg, part2 or rollResult .. "]|r")
 						msg = sub(msg, 1, newMsgEndIndex)
 					end
 				end
@@ -715,7 +716,7 @@ function mod:StyledMsgs(enable)
 					msg = gsub(msg, '%%s', format('|Hplayer:%s|h[%s]|h', playerName, formattedName), 1)
 					return false, msg, formattedName, ...
 				elseif event == "CHAT_MSG_SYSTEM" then
-					if find(msg, rollMsgProcessed[1]) and find(msg, rollMsgProcessed[2]) then
+					if find(msg, part1) then
 						return false, handleRollMessage(msg), ...
 					elseif find(msg, playerJoinsGuild) then
 						local playerName = match(msg, '[%p%d]*([^%p*]+)'..playerJoinsGuild)
@@ -940,7 +941,7 @@ function mod:StyledLootings(enable)
 					"|cffc0c0c0%1|r|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:0:0|t", 1)
 				msg = gsub(msg, "(%d*)"..copperProcessed,
 					"|cffb87333%1|r|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:0:0|t", 1)
-				return '+'..gsub(msg, '%.$', '')
+				return "+"..gsub(msg, "(.*|t).*", "%1")
 			end
 
 			local function formatPlayerName(playerName, playerClass)
@@ -1038,7 +1039,7 @@ function mod:LootInfo(enable)
 				local rollType, playerName = parseEventMsg(msg)
 				if rollType and rollType < 6 then return end
 
-				lootMessages[index] = { msg = msg, args = {...}, timestamp = GetTime(), isPlayer = not playerName }
+				lootMessages[index] = { msg = msg, args = {...}, timestamp = GetTime(), isPlayer = not playerName or playerName == YOU }
 
 				index = index % 256 + 1
 			end
@@ -1053,7 +1054,7 @@ function mod:LootInfo(enable)
 					end
 				end)
 				for _, lootMessage in ipairs(lootMessages) do
-					local msg = lower(gsub(lootMessage.msg, '|H.*%[', ''))
+					local msg = lower(gsub(lootMessage.msg, '|[hH].*%[', ''))
 					if (not tonumber(timeLimit) or (lootMessage.timestamp > GetTime() - tonumber(timeLimit))) and
 						(find(msg, itemName, 1, true) or (find(itemName, '@self', 1, true) and lootMessage.isPlayer)) then
 						tinsert(lootMessagesFound, lootMessage)
@@ -1125,7 +1126,7 @@ end
 
 function mod:LootBars(enable)
 	local db = E.db.Extras.blizzard[modName].LootBars
-	
+
 	local function updateBars()
 		for _, frame in pairs(M.RollBars) do
 			local p, pa, re, x, y = frame:GetPoint()
@@ -1150,16 +1151,27 @@ function mod:LootBars(enable)
 			frame:ClearAllPoints()
 			frame:Point(p, pa, re, x, p == 'TOP' and (y - (max(26, db.sizeIcon) - db.heightBar/2)) or (y + (max(26, db.sizeIcon) + db.heightBar/2)))
 		end
-		AlertFrame_FixAnchors()
 	end
 
 	if enable then
+		local passBarsUpdate = false
 		if not E.private.general.lootRoll then E.private.general.lootRoll = true E:StaticPopup_Show("PRIVATE_RL") end
-		if not self:IsHooked(M, "START_LOOT_ROLL") then self:SecureHook(M, "START_LOOT_ROLL", updateBars) end
+		if not self:IsHooked(E, "PostAlertMove") then
+			self:SecureHook(E, "PostAlertMove", function()
+				if passBarsUpdate then return end
+				updateBars()
+
+				passBarsUpdate = true
+				AlertFrame_FixAnchors()
+				passBarsUpdate = false
+			end)
+		end
+		if B:IsHooked("AlertFrame_FixAnchors") then B:Unhook("AlertFrame_FixAnchors") end
+		B:SecureHook("AlertFrame_FixAnchors", E.PostAlertMove)
 
 		AlertFrame_FixAnchors()
-	elseif self:IsHooked(M, "START_LOOT_ROLL") then
-		self:Unhook(M, "START_LOOT_ROLL")
+	elseif self:IsHooked(E, "PostAlertMove") then
+		self:Unhook(E, "PostAlertMove")
 
 		if M.numFrames > 1 then
 			for _, frame in pairs(M.RollBars) do

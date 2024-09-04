@@ -183,6 +183,7 @@ end
 
 if E.db.chat.chatHistory then
 	if not mod:IsHooked(CH, "DisplayChatHistory") then
+		mod.soundTimer = true
 		mod:SecureHook(CH, "DisplayChatHistory", function(self)
 			for _, frameName in ipairs(CHAT_FRAMES) do
 				local frame = _G[frameName]
@@ -208,6 +209,8 @@ if E.db.chat.chatHistory then
 			tinsert(MessageEventHandlerPostHooks, function()
 				CH.SoundTimer = nil
 			end)
+
+			mod.soundTimer = nil
 		end)
 	end
 elseif not mod:IsHooked(CH, "ChatFrame_MessageEventHandler") then
@@ -779,9 +782,10 @@ local function setupCompactChat(db)
 				if db.rightSideChats[i] then
 					local isSelected = i == selectedRightTab
 					local searchButton = chatFrame.searchButton
+					local embedded = EMB and EMB.mainFrame and EMB.mainFrame:IsShown() and emb_db.rightChatPanel
 
-					chatFrame:SetAlpha(isSelected and 1 or 0)
-					chatFrame:SetFrameLevel(rightChatLevel + (isSelected and 1 or -1))
+					chatFrame:SetAlpha((isSelected and not embedded) and 1 or 0)
+					chatFrame:SetFrameLevel(rightChatLevel + ((isSelected  and not embedded) and 1 or -1))
 
 					FCF_SetUninteractable(chatFrame, not isSelected)
 
@@ -829,6 +833,8 @@ local function setupCompactChat(db)
 			chatFrame:ClearAllPoints()
 			chatFrame:Point("TOPLEFT", parentFrame, "TOPLEFT", db.rightOffset, -db.topOffset)
 			chatFrame:Point("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -db.leftOffset, db.bottomOffset)
+			chatFrame:SetFrameStrata(parentFrame:GetFrameStrata() or "LOW")
+			chatFrame:SetFrameLevel(parentFrame:GetFrameLevel() or 100)
 
 			local tab = _G["ChatFrame"..id.."Tab"]
 			tab:ClearAllPoints()
@@ -1322,7 +1328,17 @@ local function setupCompactChat(db)
 		for i = 1, NUM_CHAT_WINDOWS do
 			local chatFrame = _G["ChatFrame"..i]
 			if db.rightSideChats[i] then
-				moveChatFrame(chatFrame, i, "right")
+				if not mod:IsHooked(chatFrame, "OnUpdate") then
+					mod:SecureHookScript(chatFrame, "OnUpdate", function(self)
+						local _, anchor = self:GetParent()
+
+						if anchor ~= RightChatPanel then
+							moveChatFrame(self, i, "right")
+						else
+							mod:Unhook(self, "OnUpdate")
+						end
+					end)
+				end
 			end
 		end
 

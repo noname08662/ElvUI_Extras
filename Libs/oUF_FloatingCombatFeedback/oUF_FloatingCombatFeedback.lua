@@ -25,7 +25,7 @@ local UnitGUID = _G.UnitGUID
 local function AbbreviateNumbers(value)
     local strLen = strlen(value)
     local retString = value
-    
+
     if value >= 1e9 then
         retString = format("%.1fB", value / 1e9)
     elseif value >= 1e6 then
@@ -36,7 +36,7 @@ local function AbbreviateNumbers(value)
 
     -- Ensure there is no trailing '.0'
     retString = gsub(retString, "%.0([BKM])", "%1")
-    
+
     return retString
 end
 -- modified
@@ -339,7 +339,7 @@ local function Update(self, _, unit, event, flag, amount, school, texture)
 
 		-- modified
 		if element.iconBounce then element.bounce = not element.bounce end
-	
+
 		string:SetFont(element.font, element.fontHeight * (element.multipliersByFlag[flag] or element.multipliersByFlag[""]), element.fontFlags)
 		string:SetFormattedText(element.iconBounce and (element.bounce and iconFormats[1] or iconFormats[2]) or element.format, text, texture or "")
 		string:SetTextColor(color.r, color.g, color.b)
@@ -585,11 +585,11 @@ local function Enable(self)
 		element.scrollTime = element.scrollTime or 1.2
 		element.fadeTime = element.fadeTime or element.scrollTime / 3
 		element.format = element.format or "%1$s" -- "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t"
-		
+
 		-- modified
 		iconFormats[1] = element.format == "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t" and "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t" or "|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s"
 		iconFormats[2] = iconFormats[1] == "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t" and "|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s" or "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t"
-	
+
 		element.radius = element.radius or 65
 		element.xDirection = element.xDirection or 1
 		element.yDirection = element.yDirection or 1

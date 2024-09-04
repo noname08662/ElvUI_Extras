@@ -81,21 +81,21 @@ end
 
 function E:CreateGlobalShadow(db, frame)
 	if frame.globalShadow or not db.enabled then return end
-	
+
 	local size = db.size
 	local r, g, b, a =  unpack(db.color or {0,0,0,0.8})
 
 	local shadow = CreateFrame("Frame", nil, frame)
 	local strata = frame:GetFrameStrata()
-	
+
 	if strata ~= 'UNKNOWN' then shadow:SetFrameStrata(strata) end
-	
+
 	shadow:SetFrameLevel(1)
 	shadow:SetOutside(frame, size, size)
 	shadow:SetBackdrop({edgeFile = LSM:Fetch("border", "ElvUI GlowBorder"), edgeSize = E:Scale(size)})
 	shadow:SetBackdropColor(0, 0, 0, 0)
 	shadow:SetBackdropBorderColor(r, g, b, a)
-	
+
 	frame.globalShadow = shadow
 end
 
