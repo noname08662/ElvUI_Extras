@@ -319,15 +319,27 @@ local function updateLayouts()
 		for _, isBank in ipairs({false, true}) do
 			local f = B_GetContainerFrame(nil, isBank)
 			if f and f.currentLayout then
-				local buttonSize = isBank and B.db.bankSize or B.db.bagSize
-				for _, section in ipairs(f.currentLayout.sections) do
-					if isInCombat then
-						section.frame.minimized = false
-					else
-						section.frame.minimized = section.db.minimized
+				if not isInCombat and updatePending then
+					local changes = mod:ScanBags(f)
+					mod:ApplyBagChanges(f, changes)
+					for bagID, bagName in pairs(equippedBags) do
+						if bagName ~= GetBagName(bagID) then
+							equippedBags[bagID] = GetBagName(bagID)
+							B:UpdateAll()
+						end
 					end
-					mod:ToggleMinimizeSection(f, section, buttonSize)
-					mod:UpdateSection(f, section, buttonSize, isInCombat)
+					updatePending = false
+				else
+					local buttonSize = isBank and B.db.bankSize or B.db.bagSize
+					for _, section in ipairs(f.currentLayout.sections) do
+						if isInCombat then
+							section.frame.minimized = false
+						else
+							section.frame.minimized = section.db.minimized
+						end
+						mod:ToggleMinimizeSection(f, section, buttonSize)
+						mod:UpdateSection(f, section, buttonSize, isInCombat)
+					end
 				end
 			end
 		end
@@ -1668,18 +1680,20 @@ function mod:UpdateBagSlots(self, f, bagID)
 	if updatePending then return end
 	updatePending = true
 
-	E_Delay(nil, 0.1, function()
-		local changes = mod:ScanBags(f)
-		mod:ApplyBagChanges(f, changes)
-		for bagID, bagName in pairs(equippedBags) do
-			if bagName ~= GetBagName(bagID) then
-				-- due to increased load (i guess?) introduced by this plugin, real bag removal isn't being registered properly
-				equippedBags[bagID] = GetBagName(bagID)
-				B:UpdateAll()
+	if not InCombatLockdown() then
+		E_Delay(nil, 0.1, function()
+			local changes = mod:ScanBags(f)
+			mod:ApplyBagChanges(f, changes)
+			for bagID, bagName in pairs(equippedBags) do
+				if bagName ~= GetBagName(bagID) then
+					-- due to increased load (i guess?) introduced by this plugin, real bag removal isn't being registered properly
+					equippedBags[bagID] = GetBagName(bagID)
+					B:UpdateAll()
+				end
 			end
-		end
-		updatePending = false
-	end)
+			updatePending = false
+		end)
+	end
 end
 
 function mod:UpdateSlot(self, f, bagID, slotID)
