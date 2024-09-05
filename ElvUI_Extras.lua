@@ -1,4 +1,4 @@
-﻿local E, L, _, P = unpack(ElvUI)
+local E, L, _, P = unpack(ElvUI)
 local core = E:NewModule("Extras", "AceHook-3.0", "AceEvent-3.0")
 local UF = E:GetModule("UnitFrames")
 local NP = E:GetModule("NamePlates")
@@ -77,6 +77,7 @@ local function createSecurePromoteButton(name, role)
 	button:RegisterEvent("PLAYER_REGEN_DISABLED")
 	button:RegisterEvent("PLAYER_REGEN_ENABLED")
 
+	RegisterStateDriver(button, "visibility", "[combat] hide")
     return button
 end
 
@@ -168,6 +169,7 @@ end
 
 if not core:IsHooked(DropDownList1, "OnHide") then
 	core:SecureHookScript(DropDownList1, "OnHide", function()
+		if InCombatLockdown() then return end
         secureTankButton:Hide()
         secureAssistButton:Hide()
 	end)
