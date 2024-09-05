@@ -1549,14 +1549,16 @@ function mod:Layout(self, isBank)
     mod:ScanBags(f, true)
 end
 
-function mod:ResizeFrame(f, buttonSize)
+function mod:ResizeFrame(f, buttonSize, combatUpd)
     local yOffset = -buttonSize/4
     local totalHeight = f.topOffset + f.bottomOffset
 	local layout = f.currentLayout
 
     for i, section in ipairs(layout.sections) do
-        section.frame:ClearAllPoints()
-        section.frame:Point("TOPLEFT", f.holderFrame, "TOPLEFT", 0, yOffset)
+		if not combatUpd then
+			section.frame:ClearAllPoints()
+			section.frame:Point("TOPLEFT", f.holderFrame, "TOPLEFT", 0, yOffset)
+		end
 
         local sectionHeight = section.frame:GetHeight()
 
@@ -1783,7 +1785,7 @@ function mod:UpdateSection(f, section, buttonSize, combatUpd)
     sectionFrame:Height(totalSectionHeight)
 
     if f.currentLayout and numRows ~= oldNumRows then
-        self:ResizeFrame(f, buttonSize)
+        self:ResizeFrame(f, buttonSize, combatUpd)
     end
 
 	section.numRows = numRows
