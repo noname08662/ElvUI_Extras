@@ -31,7 +31,7 @@ local ERR_NOT_IN_COMBAT, ERR_INVALID_ITEM_TARGET, ERR_SPLIT_FAILED = ERR_NOT_IN_
 local CURRENCY, NUM_BAG_SLOTS, EMPTY = CURRENCY, NUM_BAG_SLOTS, EMPTY
 
 local B_PickupItem, B_GetItemID, B_GetItemInfo, B_GetContainerFrame, B_SplitItem = B.PickupItem, B.GetItemID, B.GetItemInfo, B.GetContainerFrame, B.SplitItem
-local E_Delay = E.Delay
+local E_Delay, E_Flash, E_StopFlash = E.Delay, E.Flash, E.StopFlash
 local updatePending = false
 
 local scanner = CreateFrame("GameTooltip", "ExtrasBags_ScanningTooltip", nil, "GameTooltipTemplate")
@@ -312,6 +312,27 @@ local function updateSortMethods(section)
 	end
 end
 
+
+local function updateLayouts()
+	E_Delay(nil, 0.1, function()
+		local isInCombat = InCombatLockdown()
+		for _, isBank in ipairs({false, true}) do
+			local f = B_GetContainerFrame(nil, isBank)
+			if f and f.currentLayout then
+				local buttonSize = isBank and B.db.bankSize or B.db.bagSize
+				for _, section in ipairs(f.currentLayout.sections) do
+					if isInCombat then
+						section.frame.minimized = false
+					else
+						section.frame.minimized = section.db.minimized
+					end
+					mod:ToggleMinimizeSection(f, section, buttonSize)
+					mod:UpdateSection(f, section, buttonSize, isInCombat)
+				end
+			end
+		end
+	end)
+end
 
 local function wipeLayout(layout)
 	if not layout then return end
@@ -1086,6 +1107,7 @@ function mod:HandleControls(f, section, buttonSize)
 			sectionFrame.minimizeHandler = CreateFrame("Button", nil, sectionFrame, "UIPanelButtonTemplate")
 			sectionFrame.minimizeHandler:SetAllPoints(sectionFrame.title)
 			sectionFrame.minimizeHandler:SetScript("OnDoubleClick", function()
+				if InCombatLockdown() then return end
 				section.db.minimized = not section.db.minimized
 				section.frame.minimized = section.db.minimized
 				mod:ToggleMinimizeSection(f, section, buttonSize)
@@ -1449,9 +1471,62 @@ function mod:Layout(self, isBank)
 
 	local minIconLeft = huge
 	for _, section in ipairs(f.currentLayout.sections) do
-		for _, button in ipairs(section.buttons) do
-			buttonMap[button.bagID][button.slotID] = section
-		end
+		local prevButton
+        for i, button in ipairs(section.buttons) do
+            buttonMap[button.bagID][button.slotID] = section
+            RegisterStateDriver(button, "visibility", "[combat] show")
+
+			local col = (i - 1) % section.numColumns
+			local row = floor((i - 1) / section.numColumns)
+
+			if not button.highlight then
+				button.highlight = CreateFrame("Frame", nil, button)
+				button.highlight:SetAllPoints()
+
+				button.highlight.glow = CreateFrame("Frame", nil, button.highlight)
+				button.highlight.glow:SetAllPoints()
+				button.highlight.glow.tex = button.highlight.glow:CreateTexture(nil, "OVERLAY")
+				button.highlight.glow.tex:SetAllPoints()
+				button.highlight.glow.tex:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+				button.highlight.glow.tex:SetBlendMode("ADD")
+
+				button.highlight.pulse = CreateFrame("Frame", nil, button.highlight)
+				button.highlight.pulse:SetAllPoints()
+				button.highlight.pulse.tex = button.highlight.pulse:CreateTexture(nil, "OVERLAY")
+				button.highlight.pulse.tex:SetAllPoints()
+				button.highlight.pulse.tex:SetTexture("Interface\\Cooldown\\star4")
+				button.highlight.pulse.tex:SetBlendMode("ADD")
+
+				button.highlight:Hide()
+
+				button.highlight:HookScript("OnShow", function(self)
+					E_Flash(nil, self.pulse, 1, true)
+				end)
+
+				button.highlight:HookScript("OnHide", function(self)
+					E_StopFlash(nil, self.pulse)
+				end)
+			end
+
+			if not mod:IsHooked(button, "OnEnter") then
+				mod:SecureHookScript(button, "OnEnter", function(self)
+					self.highlight:Hide()
+				end)
+			end
+
+			button:ClearAllPoints()
+			if col == 0 then
+				if row == 0 then
+					button:Point("TOPLEFT", section.frame, "TOPLEFT", buttonSpacing, -(section.sectionSpacing or 0)/2 - buttonSpacing*2)
+				else
+					button:Point("TOP", section.buttons[i - section.numColumns], "BOTTOM", 0, -buttonSpacing)
+				end
+			else
+				button:Point("LEFT", prevButton, "RIGHT", buttonSpacing, 0)
+			end
+
+			prevButton = button
+        end
 		mod:ToggleMinimizeSection(f, section, buttonSize)
 		if section.db.icon.enabled then
 			minIconLeft = min(minIconLeft, section.frame.icon:GetLeft())
@@ -1609,54 +1684,55 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 	if not f.currentLayout or (f.Bags[bagID] and f.Bags[bagID].numSlots ~= GetContainerNumSlots(bagID)) or not f.Bags[bagID] or not f.Bags[bagID][slotID] then return end
 
     local button = f.Bags[bagID][slotID]
-	if button.isHidden then button:Hide() end
+	if not InCombatLockdown() and button.isHidden then button:Hide() end
 end
 
-function mod:UpdateSection(f, section, buttonSize)
+function mod:UpdateSection(f, section, buttonSize, combatUpd)
     local sectionFrame = section.frame
+	local buttons = section.buttons
+
+	if InCombatLockdown() and not combatUpd then
+		if f:IsShown() then
+			sectionFrame.newUnshown = sectionFrame.newUnshown or {}
+			for i in ipairs(buttons) do
+				sectionFrame.newUnshown[i] = true
+			end
+		end
+		return
+	end
+
     local buttonSpacing = E.Border * 2
     local sectionHeaderHeight = section.sectionSpacing or 0
     local visibleButtons, lastEmpty = 0, 0
     local oldNumRows = section.numRows or 0
-	local buttons = section.buttons
 
-	if InCombatLockdown() then
-		self:RegisterEvent("PLAYER_REGEN_ENABLED", function()
-			self:UnregisterEvent("PLAYER_REGEN_ENABLED")
-			self:UpdateSection(f, section, buttonSize)
-			if sectionFrame.concatenateButton and sectionFrame.expandButton then
-				sectionFrame.concatenateButton:Show()
-				sectionFrame.expandButton:Show()
-			end
-		end)
-	end
-
-	if sectionFrame.minimized then
+	if sectionFrame.minimized and not combatUpd then
         sectionFrame:Height(section.sectionSpacing)
 		buttons[1]:Point("TOPLEFT", sectionFrame, "TOPLEFT", buttonSpacing, -sectionHeaderHeight/2 - buttonSpacing*2)
-		if section.frame.title then
-			local minimizedCount = section.frame.minimizedCount or 0
-			section.frame.newUnshown = section.frame.newUnshown or {}
+		if sectionFrame.title then
+			local minimizedCount = sectionFrame.minimizedCount or 0
+			sectionFrame.newUnshown = sectionFrame.newUnshown or {}
 			for i, button in ipairs(buttons) do
-				local occupied, unshown = section.frame.occupied[i], section.frame.newUnshown[i]
+				local occupied, unshown = sectionFrame.occupied[i], sectionFrame.newUnshown[i]
 				local itemID = B_GetItemID(nil, button.bagID, button.slotID)
 				if not occupied or (itemID and occupied ~= itemID) then
-					section.frame.occupied[i] = itemID
+					sectionFrame.occupied[i] = itemID
 					if not unshown and itemID then
 						minimizedCount = minimizedCount + 1
-						section.frame.newUnshown[i] = true
+						sectionFrame.newUnshown[i] = true
+						button.highlight:Show()
 					elseif unshown and not itemID then
 						minimizedCount = minimizedCount - 1
-						section.frame.newUnshown[i] = false
+						sectionFrame.newUnshown[i] = false
 					end
-				elseif section.frame.newUnshown[i] and not itemID then
-					section.frame.occupied[i] = false
-					section.frame.newUnshown[i] = false
+				elseif sectionFrame.newUnshown[i] and not itemID then
+					sectionFrame.occupied[i] = false
+					sectionFrame.newUnshown[i] = false
 					minimizedCount = minimizedCount - 1
 				end
 			end
-			section.frame.title:SetText(section.db.title.text .. (minimizedCount > 0 and " (+" .. minimizedCount .. ")" or ""))
-			section.frame.minimizedCount = max(0, minimizedCount)
+			sectionFrame.title:SetText(section.db.title.text .. (minimizedCount > 0 and " (+" .. minimizedCount .. ")" or ""))
+			sectionFrame.minimizedCount = max(0, minimizedCount)
 		end
 		return
     end
@@ -1671,19 +1747,13 @@ function mod:UpdateSection(f, section, buttonSize)
 		end
     end
 
-	if InCombatLockdown() then
+	if combatUpd then
+        self:UpdateEmptySlotCount(buttons[visibleButtons + 1], 0)
 		lastEmpty = #buttons
-		for i = 1, lastEmpty, -1 do
-			local button = buttons[i]
-			if button and not B_GetItemID(nil, button.bagID, button.slotID) then
-				lastEmpty = i
-				break
-			end
-		end
 	else
 		for i, button in ipairs(buttons) do
 			local itemID = B_GetItemID(nil, button.bagID, button.slotID)
-			section.frame.occupied[i] = itemID
+			sectionFrame.occupied[i] = itemID
 
 			if not itemID and i > visibleButtons + 1 then
 				button:Hide()
@@ -1691,14 +1761,6 @@ function mod:UpdateSection(f, section, buttonSize)
 				lastEmpty = i
 				button:Show()
 				button.isHidden = false
-			end
-
-			if button:IsShown() then
-				local col = (i - 1) % section.numColumns
-				local row = floor((i - 1) / section.numColumns)
-				button:Point("TOPLEFT", sectionFrame, "TOPLEFT",
-								buttonSpacing + col * (buttonSize + buttonSpacing),
-								-sectionHeaderHeight/2 - buttonSpacing*2 - row * (buttonSize + buttonSpacing))
 			end
 		end
 	end
@@ -1709,15 +1771,10 @@ function mod:UpdateSection(f, section, buttonSize)
     end
 
 	if sectionFrame.concatenateButton and sectionFrame.expandButton then
-		if InCombatLockdown() then
-			sectionFrame.concatenateButton:Hide()
-			sectionFrame.expandButton:Hide()
-		else
-			sectionFrame.concatenateButton:ClearAllPoints()
-			sectionFrame.concatenateButton:Point("TOPLEFT", buttons[lastEmpty], "TOPRIGHT", buttonSpacing, 0)
-			sectionFrame.expandButton:ClearAllPoints()
-			sectionFrame.expandButton:Point("BOTTOMLEFT", buttons[lastEmpty], "BOTTOMRIGHT", buttonSpacing, 0)
-		end
+		sectionFrame.concatenateButton:ClearAllPoints()
+		sectionFrame.concatenateButton:Point("TOPLEFT", buttons[lastEmpty], "TOPRIGHT", buttonSpacing, 0)
+		sectionFrame.expandButton:ClearAllPoints()
+		sectionFrame.expandButton:Point("BOTTOMLEFT", buttons[lastEmpty], "BOTTOMRIGHT", buttonSpacing, 0)
 	end
 
     local numRows = ceil(lastEmpty / section.numColumns)
@@ -1857,6 +1914,8 @@ function mod:BagsExtended(enable)
 				end)
 			end
 		end
+		self:RegisterEvent("PLAYER_REGEN_DISABLED", updateLayouts)
+		self:RegisterEvent("PLAYER_REGEN_ENABLED", updateLayouts)
 		self:UpdateAll()
 		initialized.BagsExtended = true
 	elseif initialized.BagsExtended then
