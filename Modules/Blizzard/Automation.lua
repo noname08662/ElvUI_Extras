@@ -15,6 +15,7 @@ local GetGossipActiveQuests, SelectGossipOption = GetGossipActiveQuests, SelectG
 local StaticPopupDialogs, StaticPopup_Hide = StaticPopupDialogs, StaticPopup_Hide
 local IsModifierKeyDown, GetItemInfo = IsModifierKeyDown, GetItemInfo
 local localizedQuestItemString = select(12,GetAuctionItemClasses())
+local InCombatLockdown = InCombatLockdown
 local DELETE_ITEM_CONFIRM_STRING = DELETE_ITEM_CONFIRM_STRING
 
 P["Extras"]["blizzard"][modName] = {
@@ -134,6 +135,8 @@ function mod:Automations()
 
 	if E.db.Extras.blizzard[modName].PickupQuest.enabled then
 		self:RegisterEvent('LOOT_OPENED', function()
+			if InCombatLockdown() then return end
+
 			for i = 1, GetNumLootItems() do
 				local lootLink = GetLootSlotLink(i)
 				if lootLink then
