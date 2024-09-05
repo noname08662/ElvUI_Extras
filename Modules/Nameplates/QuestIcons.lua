@@ -788,6 +788,17 @@ function mod:Toggle(enable)
 		self:RegisterEvent("QUEST_LOG_UPDATE", function()
 			self:QUEST_REMOVED()
 			self:UnregisterEvent("QUEST_LOG_UPDATE")
+
+			if isAwesome then
+				self:RegisterEvent("QUEST_LOG_UPDATE", function()
+					for frame in pairs(NP.VisiblePlates) do
+						local unit = frame:GetParent().unit
+						if unit then
+							self:UpdateQuestStatus(frame, unit, frame.UnitName or UnitName(unit), unitType or NP:GetUnitTypeFromUnit(unit))
+						end
+					end
+				end)
+			end
 		end)
 
 		if db.automatic and not isAwesome then
