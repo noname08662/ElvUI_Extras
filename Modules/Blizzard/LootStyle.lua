@@ -1154,16 +1154,12 @@ function mod:LootBars(enable)
 	end
 
 	if enable then
-		local passBarsUpdate = false
 		if not E.private.general.lootRoll then E.private.general.lootRoll = true E:StaticPopup_Show("PRIVATE_RL") end
 		if not self:IsHooked(E, "PostAlertMove") then
 			self:SecureHook(E, "PostAlertMove", function()
-				if passBarsUpdate then return end
 				updateBars()
-
-				passBarsUpdate = true
-				AlertFrame_FixAnchors()
-				passBarsUpdate = false
+				AchievementAlertFrame_FixAnchors()
+				DungeonCompletionAlertFrame_FixAnchors()
 			end)
 		end
 		if B:IsHooked("AlertFrame_FixAnchors") then B:Unhook("AlertFrame_FixAnchors") end
