@@ -1032,16 +1032,20 @@ function mod:HandleControls(f, section, buttonSize)
 						stacked = mod:StackSection(sectionButtons)
 						if stacked then
 							local ignoreList = db.ignoreList
-							for _, button in ipairs(sectionButtons) do
+							local ignored = {}
+							for i, button in ipairs(sectionButtons) do
 								local bagID, slotID = button.bagID, button.slotID
 								local itemID = B_GetItemID(nil, bagID, slotID)
 								if ignoreList[itemID] then
-									tinsert(buttons, {positioned = true})
+									tinsert(ignored, i)
 								else
 									tinsert(buttons, {itemID = itemID, bagID = bagID, slotID = slotID})
 								end
 							end
 							tsort(buttons, section.sortMethodFunc)
+							for _, i in ipairs(ignored) do
+								tinsert(buttons, i, {positioned = true})
+							end
 						end
 					elseif not positioned then
 						positioned = mod:SortSection(buttons, sectionButtons)
