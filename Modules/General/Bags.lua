@@ -1741,12 +1741,11 @@ function mod:UpdateSection(f, section, buttonSize, combatUpd)
 				button.isHidden = false
 			end
 		end
+		local emptyCount = #buttons - lastEmpty + 1
+		if lastEmpty and emptyCount > 0 and not sectionFrame.expanded then
+			self:UpdateEmptySlotCount(buttons[lastEmpty], emptyCount)
+		end
 	end
-
-    local emptyCount = #buttons - lastEmpty + 1
-    if lastEmpty and emptyCount > 0 and not sectionFrame.expanded then
-        self:UpdateEmptySlotCount(buttons[lastEmpty], emptyCount)
-    end
 
 	if sectionFrame.concatenateButton and sectionFrame.expandButton then
 		sectionFrame.concatenateButton:ClearAllPoints()
