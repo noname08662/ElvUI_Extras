@@ -23,7 +23,6 @@ local UnitGUID = _G.UnitGUID
 
 -- modified
 local function AbbreviateNumbers(value)
-    local strLen = strlen(value)
     local retString = value
 
     if value >= 1e9 then

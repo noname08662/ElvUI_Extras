@@ -217,7 +217,7 @@ for type, messages in ipairs(rollMsgs) do
         local processedMessage = {}
         local formattedMsg = format(message, 1, 1, 1, 1, 1)
         local parts = { split(1, formattedMsg) }
-        for j, part in ipairs(parts) do
+        for _, part in ipairs(parts) do
             part = gsub(part, "[1%s%p%d]+", "")
             if part ~= "" and part ~= "x" then
                 tinsert(processedMessage, part)

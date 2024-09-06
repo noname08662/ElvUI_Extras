@@ -250,18 +250,18 @@ function mod:Update_Level(frame)
 		local reactionType = frame.UnitReaction
 		local classColor, useClassColor, useReactionColor
 		local colors = self.db.colors
-		if class and mod_db.classColor then
+		if class and db.classColor then
 			classColor = CUSTOM_CLASS_COLORS and CUSTOM_CLASS_COLORS[class] or RAID_CLASS_COLORS[class]
 			useClassColor = unitType_db.name and unitType_db.name.useClassColor
 		end
-		if reactionType and mod_db.reactionColor then
+		if reactionType and db.reactionColor then
 			useReactionColor = unitType_db.name and unitType_db.name.useReactionColor
 		end
 		if useClassColor and (unitType == "FRIENDLY_PLAYER" or unitType == "ENEMY_PLAYER") then
 			if class and classColor then
 				r, g, b = classColor.r, classColor.g, classColor.b
 			end
-		elseif (not unitType_db.health.enable and not frame.isTarget) or ((useReactionColor and (unitType == "FRIENDLY_NPC" or unitType == "ENEMY_NPC")) or mod_db.reactionColor) then
+		elseif (not unitType_db.health.enable and not frame.isTarget) or ((useReactionColor and (unitType == "FRIENDLY_NPC" or unitType == "ENEMY_NPC")) or db.reactionColor) then
 			if reactionType and reactionType == 1 then
 				r, g, b = colors.reactions.tapped.r, colors.reactions.tapped.g, colors.reactions.tapped.b
 			elseif reactionType and reactionType == 4 then

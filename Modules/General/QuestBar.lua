@@ -8,7 +8,7 @@ local initialized
 
 local _G = _G
 local tinsert, twipe = table.insert, table.wipe
-local pairs, ipairs, select, print = pairs, ipairs, select, print
+local pairs, ipairs, select = pairs, ipairs, select
 local GetContainerItemQuestInfo, GetContainerNumSlots, GetContainerItemID = GetContainerItemQuestInfo, GetContainerNumSlots, GetContainerItemID
 local PickupContainerItem, PlaceAction, ClearCursor = PickupContainerItem, PlaceAction, ClearCursor
 local InCombatLockdown, GetItemInfo, GetAuctionItemClasses = InCombatLockdown, GetItemInfo, GetAuctionItemClasses

@@ -1,7 +1,7 @@
 local MAJOR, MINOR = 'LibProcessable', 2
 assert(LibStub, MAJOR .. ' requires LibStub')
 
-local lib, oldMinor = LibStub:NewLibrary(MAJOR, MINOR)
+local lib = LibStub:NewLibrary(MAJOR, MINOR)
 if(not lib) then
 	return
 end
@@ -346,10 +346,7 @@ function lib:IsOpenable(itemID)
 	end
 end
 
-local Handler = CreateFrame('Frame')
-
 -- modified to work with 3.3.5 api
-
 local Handler = CreateFrame('Frame')
 Handler:RegisterEvent('SKILL_LINES_CHANGED')
 Handler:SetScript('OnEvent', function(s, event)

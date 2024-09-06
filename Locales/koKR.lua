@@ -124,7 +124,7 @@ L["Handles automated repositioning of the newly received items."..
 	"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
 	"print('Item received: ' .. string)"] =
 		"새로 받은 아이템의 자동 재배치를 처리합니다."..
-		"\n\구문: 필터@값\n\n"..
+		"\n구문: 필터@값\n\n"..
 		"사용 가능한 필터:\n"..
 		"id@숫자 - 아이템 ID와 일치,\n"..
 		"name@문자열 - 이름과 일치,\n"..

@@ -190,8 +190,6 @@ function mod:ShowPlayerPing(playerName)
 	local mapX, mapY = Minimap:GetCenter()
 	local offsetX = mod.PlayerPingFrame.PingText:GetStringWidth() / 2
 
-	local lastUpdate = 0
-
 	mod.PlayerPingFrame.start = GetTime()
 
 	local x, y = MinimapPing:GetCenter()

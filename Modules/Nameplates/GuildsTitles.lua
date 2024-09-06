@@ -917,8 +917,6 @@ function mod:UpdateTitle(frame, unit, UnitTitle, name)
 end
 
 function mod:AwesomeUpdateUnitInfo(frame, unit)
-	local db = E.db.Extras.nameplates[modName]
-
 	if UnitIsPlayer(unit) and UnitReaction(unit, "player") ~= 2 then
 		local name, realm = UnitName(unit)
 		if realm or not name or name == UNKNOWN then return end

@@ -794,7 +794,7 @@ function mod:Toggle(enable)
 					for frame in pairs(NP.VisiblePlates) do
 						local unit = frame:GetParent().unit
 						if unit then
-							self:UpdateQuestStatus(frame, unit, frame.UnitName or UnitName(unit), unitType or NP:GetUnitTypeFromUnit(unit))
+							self:UpdateQuestStatus(frame, unit, frame.UnitName or UnitName(unit), frame.UnitType or NP:GetUnitTypeFromUnit(unit))
 						end
 					end
 				end)

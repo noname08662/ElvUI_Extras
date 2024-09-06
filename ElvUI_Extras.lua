@@ -1,4 +1,4 @@
-local E, L, _, P = unpack(ElvUI)
+﻿local E, L, _, P = unpack(ElvUI)
 local core = E:NewModule("Extras", "AceHook-3.0", "AceEvent-3.0")
 local UF = E:GetModule("UnitFrames")
 local NP = E:GetModule("NamePlates")
@@ -570,6 +570,10 @@ function core:OpenEditor(title, text, acceptFunc)
 		self.EditFrame.editBox:SetText(text)
 		self.EditFrame.editBox:SetTextColor(1,0.82,0)
 		self.EditFrame.editBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+		
+		self.EditFrame.editBox:SetScript("OnTabPressed", function(self)
+			self:Insert("    ")
+		end)
 
 		self.EditFrame.scrollFrame:SetScrollChild(self.EditFrame.editBox)
 
@@ -1362,7 +1366,7 @@ function core:GetOptions()
 				args = {
 					colors = {
 						type = "group",
-						name = L["Version: "].."1.02",
+						name = L["Version: "].."1.03",
 						guiInline = true,
 						get = function(info) return colorConvert(E.db.Extras[info[#info]]) end,
 						set = function(info, r, g, b) local color = colorConvert(r, g, b) E.db.Extras[info[#info]] = color core[info[#info]] = color E:RefreshGUI() end,

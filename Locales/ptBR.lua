@@ -124,7 +124,7 @@ L["Handles automated repositioning of the newly received items."..
     "local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
     "print('Item received: ' .. string)"] =
 		"Lida com o reposicionamento automático dos itens recém-recebidos."..
-		"\n\Sintaxe: filtro@valor\n\n"..
+		"\nSintaxe: filtro@valor\n\n"..
 		"Filtros disponíveis:\n"..
 		"id@número - corresponde ao ID do item,\n"..
 		"name@string - corresponde ao nome,\n"..

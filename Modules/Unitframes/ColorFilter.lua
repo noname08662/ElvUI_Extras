@@ -7,27 +7,13 @@ local modName = mod:GetName()
 local metaFrame = CreateFrame("Frame")
 local metaTable = { units = {}, statusbars = {}, events = {} }
 
-local _G, pairs, ipairs, tonumber, tostring, unpack, select, loadstring, type, pcall = _G, pairs, ipairs, tonumber, tostring, unpack, select, loadstring, type, pcall
+local _G, pairs, ipairs, tonumber, tostring, unpack, loadstring, type, pcall = _G, pairs, ipairs, tonumber, tostring, unpack, loadstring, type, pcall
 local find, gsub, match, sub, upper, lower = string.find, string.gsub, string.match, string.sub, string.upper, string.lower
 local tinsert, twipe, tremove = table.insert, table.wipe, table.remove
 local GetNumPartyMembers, GetNumRaidMembers = GetNumPartyMembers, GetNumRaidMembers
 local GetThreatStatusColor = GetThreatStatusColor
 local GetTime = GetTime
 
-
-local function convertToValue(value, unit)
-	if value == '@unit' then
-		return gsub(value, '@unit', unit)
-	elseif value == 'nil' then
-		return nil
-	elseif value == 'true' then
-		return true
-	elseif value == 'false' then
-		return false
-	else
-		return value
-	end
-end
 
 local function compare(value, operator, target)
 	if operator == '>' then
@@ -1614,9 +1600,8 @@ function mod:InitAndUpdateColorFilter()
 					metaFrame[unit]:SetScript('OnEvent', function(_, event, ...)
 						for _, frame in ipairs(unitInfo) do
 							if frame:IsShown() and (not frame.id or (frame.isForced or (GetNumPartyMembers() >= 1 or GetNumRaidMembers() >= 1))) then
-								for statusbar, bar in pairs(eventsInfo) do
+								for statusbar in pairs(eventsInfo) do
 									local frameBar = frame[statusbar]
-									local targetBar = frame.colorFilter[statusbar]
 									if frameBar:IsShown() then
 										frameBar:ForceUpdate()
 									end
@@ -1629,7 +1614,6 @@ function mod:InitAndUpdateColorFilter()
 				local barInfo = metaTable.statusbars[unit][statusbar]
 				if barInfo and barInfo.frequentUpdates and statusbar ~= 'Castbar' then
 					local updateThrottle = barInfo.updateThrottle or 0
-					local tabs = barInfo.tabs
 
 					metaFrame[unit][statusbar].lastUpdate = GetTime()
 					metaFrame[unit][statusbar]:SetScript('OnUpdate', function(self)

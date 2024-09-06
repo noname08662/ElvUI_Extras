@@ -397,40 +397,6 @@ P["Extras"]["general"][modName] = {
 				["specialBags"] = {},
 				["sections"] = {
 					{
-						["length"] = 8,
-						["yOffset"] = 4,
-						["sortMethod"] = '',
-						["collectionMethod"] = 'type@'..Consumable,
-						["ignoreList"] = {},
-						["title"] = {
-							["enabled"] = true,
-							["text"] = "Consumables",
-							["toIcon"] = true,
-							["color"] = { 1, 1, 1 },
-							["font"] = "Expressway",
-							["size"] = 13,
-							["flags"] = "OUTLINE",
-							["point"] = "BOTTOMLEFT",
-							["relativeTo"] = "TOPLEFT",
-							["xOffset"] = 0,
-							["yOffset"] = 4,
-						},
-						["icon"] = {
-							["enabled"] = false,
-							["texture"] = "Interface\\Icons\\INV_Potion_93",
-							["point"] = "RIGHT",
-							["relativeTo"] = "LEFT",
-							["xOffset"] = 0,
-							["yOffset"] = 0,
-							["toText"] = false,
-							["size"] = 12,
-						},
-						["minimize"] = {
-							["enabled"] = true,
-							["lineColor"] = { 1, 1, 1, 0.5 },
-						},
-					},
-					{
 						["length"] = 999,
 						["yOffset"] = 0,
 						["sortMethod"] = '',
@@ -2084,7 +2050,6 @@ function mod:SplitHandler(self, button)
 
                 self.isStacking = true
                 local timeElapsed, partialStacks = 0, {}
-                local _, _, _, _, _, _, _, maxStack = GetItemInfo(itemID)
 
                 if isBagsExtended then
                     for _, button in ipairs(bagSpace.buttons) do

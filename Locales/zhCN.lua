@@ -124,7 +124,7 @@ L["Handles automated repositioning of the newly received items."..
 	"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
 	"print('Item received: ' .. string)"] =
 		"处理新获得物品的自动重新定位。"..
-		"\n\语法: 过滤器@值\n\n"..
+		"\n语法: 过滤器@值\n\n"..
 		"可用过滤器:\n"..
 		"id@数字 - 匹配物品ID,\n"..
 		"name@字符串 - 匹配名称,\n"..
