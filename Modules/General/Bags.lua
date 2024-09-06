@@ -1520,18 +1520,19 @@ function mod:Layout(self, isBank)
     mod:ScanBags(f, true)
 end
 
-function mod:ResizeFrame(f, buttonSize, combatUpd)
+function mod:ResizeFrame(f, buttonSize, combatUpd, addedHeight)
     local yOffset = -buttonSize/4
     local totalHeight = f.topOffset + f.bottomOffset
 	local layout = f.currentLayout
 
     for i, section in ipairs(layout.sections) do
+		local sectionFrame = section.frame
 		if not combatUpd then
-			section.frame:ClearAllPoints()
-			section.frame:Point("TOPLEFT", f.holderFrame, "TOPLEFT", 0, yOffset)
+			sectionFrame:ClearAllPoints()
+			sectionFrame:Point("TOPLEFT", f.holderFrame, "TOPLEFT", 0, yOffset)
 		end
 
-        local sectionHeight = section.frame:GetHeight()
+        local sectionHeight = sectionFrame.height or sectionFrame:GetHeight()
 
         yOffset = yOffset - sectionHeight
 		if i == #layout.sections then
@@ -1543,7 +1544,7 @@ function mod:ResizeFrame(f, buttonSize, combatUpd)
         totalHeight = totalHeight + sectionHeight
     end
 
-    f:Height(totalHeight)
+    f:Height(totalHeight + (addedHeight or 0))
 end
 
 function mod:ScanBags(f, updateLast)
@@ -1756,8 +1757,11 @@ function mod:UpdateSection(f, section, buttonSize, combatUpd)
 
     local numRows = ceil(lastEmpty / section.numColumns)
 	local totalSectionHeight = sectionHeaderHeight + numRows * (buttonSize + buttonSpacing) - buttonSpacing
+	sectionFrame.height = totalSectionHeight
 
-    sectionFrame:Height(totalSectionHeight)
+	if not combatUpd then
+		sectionFrame:Height(totalSectionHeight)
+	end
 
     if f.currentLayout and numRows ~= oldNumRows then
         self:ResizeFrame(f, buttonSize, combatUpd)
