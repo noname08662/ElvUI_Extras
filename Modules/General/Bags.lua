@@ -1520,7 +1520,7 @@ function mod:Layout(self, isBank)
     mod:ScanBags(f, true)
 end
 
-function mod:ResizeFrame(f, buttonSize, combatUpd, addedHeight)
+function mod:ResizeFrame(f, buttonSize, combatUpd)
     local yOffset = -buttonSize/4
     local totalHeight = f.topOffset + f.bottomOffset
 	local layout = f.currentLayout
@@ -1544,7 +1544,7 @@ function mod:ResizeFrame(f, buttonSize, combatUpd, addedHeight)
         totalHeight = totalHeight + sectionHeight
     end
 
-    f:Height(totalHeight + (addedHeight or 0))
+    f:Height(totalHeight)
 end
 
 function mod:ScanBags(f, updateLast)
