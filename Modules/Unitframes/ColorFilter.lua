@@ -1425,6 +1425,7 @@ end
 function mod:ParseTabs(frame, statusbar, unit, tabs, isEvent, event, ...)
 	local targetBar = frame.colorFilter[statusbar]
 	local appliedColorTabIndex = targetBar.appliedColorTabIndex
+
 	for tabIndex, tab in ipairs(tabs) do
 		-- if colored already, do not check tabs with lower priority
 		if appliedColorTabIndex and tabIndex > appliedColorTabIndex then break end
@@ -1563,39 +1564,34 @@ function mod:PostUpdatePowerColor()
 end
 
 function mod:CastOnupdate()
-	--self.CFtimeElapsed = self.CFtimeElapsed + elapsed
-	--if self.CFtimeElapsed > 0.05 then
-	--	self.CFtimeElapsed = 0
+	local frame = self:GetParent()
+	local colorFilter = frame.colorFilter
+	if not (colorFilter and colorFilter.Castbar) then return end
 
-		local frame = self:GetParent()
-		local colorFilter = frame.colorFilter
-		if not (colorFilter and colorFilter.Castbar) then return end
+	local unit = frame.unitframeType
 
-		local unit = frame.unitframeType
+	local unitInfo = metaTable.statusbars[unit]
+	if unitInfo and unitInfo.Castbar and frame:IsShown() then
+		local result, colors, tab = mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs)
 
-		local unitInfo = metaTable.statusbars[unit]
-		if unitInfo and unitInfo.Castbar and frame:IsShown() then
-			local result, colors, tab = mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs)
+		local highlight = tab and tab.highlight
+		mod:UpdateGlow(frame, colors, 'Castbar', unit, result and highlight.glow.enabled, highlight)
+		mod:UpdateBorders(frame, colors, 'Castbar', unit, result and highlight.borders.enabled, highlight)
 
-			local highlight = tab and tab.highlight
-			mod:UpdateGlow(frame, colors, 'Castbar', unit, result and highlight.glow.enabled, highlight)
-			mod:UpdateBorders(frame, colors, 'Castbar', unit, result and highlight.borders.enabled, highlight)
+		if colorFilter.Castbar.mentions then
+			mod:UpdateMentions(colorFilter.Castbar)
+		end
 
-			if colorFilter.Castbar.mentions then
-				mod:UpdateMentions(colorFilter.Castbar)
-			end
-
-			local targetBar = colorFilter['Castbar']
-			if not targetBar.colorApplied then
-				frame.Castbar:ForceUpdate()
-				local flashTexture = targetBar.flashTexture
-				if flashTexture:IsShown() then
-					flashTexture.anim:Stop()
-					flashTexture:Hide()
-				end
+		local targetBar = colorFilter['Castbar']
+		if not targetBar.colorApplied then
+			frame.Castbar:ForceUpdate()
+			local flashTexture = targetBar.flashTexture
+			if flashTexture:IsShown() then
+				flashTexture.anim:Stop()
+				flashTexture:Hide()
 			end
 		end
-	--end
+	end
 end
 
 function mod:PostCastStart()
@@ -1739,9 +1735,10 @@ function mod:InitAndUpdateColorFilter()
 					end)
 				end
 
-				local barInfo = metaTable.statusbars[unit]
-				if barInfo and metaTable.statusbars[unit][statusbar].frequentUpdates and statusbar ~= 'Castbar' then
-					local updateThrottle = metaTable.statusbars[unit][statusbar].updateThrottle
+				local barInfo = metaTable.statusbars[unit][statusbar]
+				if barInfo and barInfo.frequentUpdates and statusbar ~= 'Castbar' then
+					local updateThrottle = barInfo.updateThrottle or 0
+					local tabs = barInfo.tabs
 
 					metaFrame[unit].lastUpdate = GetTime()
 					metaFrame[unit]:SetScript('OnUpdate', function(self)
@@ -1752,7 +1749,7 @@ function mod:InitAndUpdateColorFilter()
 								local frameBar = frame[statusbar]
 								local targetBar = frame.colorFilter[statusbar]
 								if frameBar:IsShown() then
-									local result, colors, tab = mod:ParseTabs(frame, statusbar, frame.unit, barInfo)
+									local result, colors, tab = mod:ParseTabs(frame, statusbar, frame.unit, tabs)
 
 									local highlight = tab and tab.highlight
 									mod:UpdateGlow(frame, colors, statusbar, unit, result and highlight.glow.enabled, highlight)
