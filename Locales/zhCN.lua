@@ -163,6 +163,7 @@ L["Default method: type > inventoryslotid > ilvl > name.\n\n"..
 L["Event and OnUpdate handler."] = "事件和OnUpdate处理程序。"
 L["Minimal time gap between two consecutive executions."] = "两次连续执行之间的最小时间间隔。"
 L["UNIT_AURA CHAT_MSG_WHISPER etc.\nONUPDATE - 'OnUpdate' script"] = "UNIT_AURA CHAT_MSG_WHISPER 等。\nONUPDATE - 'OnUpdate' 脚本"
+L["UNIT_AURA CHAT_MSG_WHISPER etc."] = "UNIT_AURA CHAT_MSG_WHISPER 等。"
 L["Syntax:"..
 	"\n\nEVENT[n~=nil]"..
 	"\n[n~=value]"..
@@ -800,50 +801,6 @@ L["Font Settings"] = "字体设置"
 L["Player Only"] = "仅玩家"
 L["Handle only player combat log events."] = "仅处理玩家战斗日志事件。"
 L["Rotate Icon"] = "旋转图标"
-L["Events to call updates on."..
-	"\n\nEVENT[n~=nil]"..
-	"\n[n~=value]"..
-	"\n[m=false]"..
-	"\n[q=@unit]"..
-	"\n[k~=@@UnitName('player')]"..
-	"\n\n'EVENT' - Event from the events section above"..
-	"\n'n, m, q, k' - indexes of the desired payload args (number)"..
-	"\n'nil/value/boolean/lua code' - desired output arg value"..
-	"\n'@unit' - UnitID of a currently selected unit"..
-	"\n'@@' - lua arg flag, must go before the lua code within the args' value section"..
-	"\n'~' - negate flag, add before the equals sign to have the code executed if n/m/q/k values do not match the arg value"..
-	"\n\nExample:"..
-	"\n\nUNIT_AURA[1=player]"..
-	"\n\nCHAT_MSG_WHISPER"..
-	"\n[5~=@@UnitName(@unit)]"..
-	"\n[14=false]"..
-	"\n\nCOMBAT_LOG_EVENT_"..
-	"\nUNFILTERED"..
-	"\n[5=@@UnitName('arena1')]"..
-	"\n[5=@@UnitName('arena2')]"..
-	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
-		"用于调用更新的事件。"..
-			"\n\n事件[n~=nil]"..
-			"\n[n~=值]"..
-			"\n[m=false]"..
-			"\n[q=@unit]"..
-			"\n[k~=@@UnitName('player')]"..
-			"\n\n'事件' - 上面事件部分的事件"..
-			"\n'n, m, q, k' - 所需负载参数的索引（数字）"..
-			"\n'nil/值/布尔值/lua代码' - 所需输出参数值"..
-			"\n'@unit' - 当前选定单位的UnitID"..
-			"\n'@@' - lua参数标志，必须在参数值部分的lua代码之前"..
-			"\n'~' - 否定标志，在等号前添加，以便在n/m/q/k值不匹配参数值时执行代码"..
-			"\n\n示例："..
-			"\n\nUNIT_AURA[1=player]"..
-			"\n\nCHAT_MSG_WHISPER"..
-			"\n[5~=@@UnitName(@unit)]"..
-			"\n[14=false]"..
-			"\n\nCOMBAT_LOG_EVENT_"..
-			"\nUNFILTERED"..
-			"\n[5=@@UnitName('arena1')]"..
-			"\n[5=@@UnitName('arena2')]"..
-			"\n\n此模块解析字符串，因此请尝试让您的代码严格遵循语法，否则可能无法工作。"
 L["Usage example:"..
 	"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
 	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..

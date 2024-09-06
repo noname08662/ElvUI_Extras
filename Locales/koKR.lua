@@ -163,6 +163,7 @@ L["Default method: type > inventoryslotid > ilvl > name.\n\n"..
 L["Event and OnUpdate handler."] = "이벤트 및 OnUpdate 처리기."
 L["Minimal time gap between two consecutive executions."] = "연속 실행 사이의 최소 시간 간격."
 L["UNIT_AURA CHAT_MSG_WHISPER etc.\nONUPDATE - 'OnUpdate' script"] = "UNIT_AURA CHAT_MSG_WHISPER 등.\nONUPDATE - 'OnUpdate' 스크립트"
+L["UNIT_AURA CHAT_MSG_WHISPER etc."] = "UNIT_AURA CHAT_MSG_WHISPER 등."
 L["Syntax:"..
 	"\n\nEVENT[n~=nil]"..
 	"\n[n~=value]"..
@@ -804,50 +805,6 @@ L["Font Settings"] = "글꼴 설정"
 L["Player Only"] = "플레이어만"
 L["Handle only player combat log events."] = "플레이어 전투 로그 이벤트만 처리합니다."
 L["Rotate Icon"] = "아이콘 회전"
-L["Events to call updates on."..
-	"\n\nEVENT[n~=nil]"..
-	"\n[n~=value]"..
-	"\n[m=false]"..
-	"\n[q=@unit]"..
-	"\n[k~=@@UnitName('player')]"..
-	"\n\n'EVENT' - Event from the events section above"..
-	"\n'n, m, q, k' - indexes of the desired payload args (number)"..
-	"\n'nil/value/boolean/lua code' - desired output arg value"..
-	"\n'@unit' - UnitID of a currently selected unit"..
-	"\n'@@' - lua arg flag, must go before the lua code within the args' value section"..
-	"\n'~' - negate flag, add before the equals sign to have the code executed if n/m/q/k values do not match the arg value"..
-	"\n\nExample:"..
-	"\n\nUNIT_AURA[1=player]"..
-	"\n\nCHAT_MSG_WHISPER"..
-	"\n[5~=@@UnitName(@unit)]"..
-	"\n[14=false]"..
-	"\n\nCOMBAT_LOG_EVENT_"..
-	"\nUNFILTERED"..
-	"\n[5=@@UnitName('arena1')]"..
-	"\n[5=@@UnitName('arena2')]"..
-	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
-		"업데이트를 호출할 이벤트."..
-			"\n\n이벤트[n~=nil]"..
-			"\n[n~=값]"..
-			"\n[m=false]"..
-			"\n[q=@unit]"..
-			"\n[k~=@@UnitName('player')]"..
-			"\n\n'이벤트' - 위의 이벤트 섹션의 이벤트"..
-			"\n'n, m, q, k' - 원하는 페이로드 인수의 인덱스 (숫자)"..
-			"\n'nil/값/불리언/lua 코드' - 원하는 출력 인수 값"..
-			"\n'@unit' - 현재 선택된 유닛의 UnitID"..
-			"\n'@@' - lua 인수 플래그, 인수 값 섹션 내의 lua 코드 앞에 와야 함"..
-			"\n'~' - 부정 플래그, n/m/q/k 값이 인수 값과 일치하지 않을 때 코드가 실행되도록 등호 앞에 추가"..
-			"\n\n예시:"..
-			"\n\nUNIT_AURA[1=player]"..
-			"\n\nCHAT_MSG_WHISPER"..
-			"\n[5~=@@UnitName(@unit)]"..
-			"\n[14=false]"..
-			"\n\nCOMBAT_LOG_EVENT_"..
-			"\nUNFILTERED"..
-			"\n[5=@@UnitName('arena1')]"..
-			"\n[5=@@UnitName('arena2')]"..
-			"\n\n이 모듈은 문자열을 파싱하므로 코드가 구문을 엄격히 따르도록 하세요. 그렇지 않으면 작동하지 않을 수 있습니다."
 L["Usage example:"..
 	"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
 	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..

@@ -165,6 +165,7 @@ L["Default method: type > inventoryslotid > ilvl > name.\n\n"..
 L["Event and OnUpdate handler."] = "Обработчик событий и OnUpdate."
 L["Minimal time gap between two consecutive executions."] = "Минимальный временной интервал между двумя последовательными выполнениями."
 L["UNIT_AURA CHAT_MSG_WHISPER etc.\nONUPDATE - 'OnUpdate' script"] = "UNIT_AURA CHAT_MSG_WHISPER и т.д.\nONUPDATE - скрипт 'OnUpdate'"
+L["UNIT_AURA CHAT_MSG_WHISPER etc."] = "UNIT_AURA CHAT_MSG_WHISPER и т.д."
 L["Syntax:"..
 	"\n\nEVENT[n~=nil]"..
 	"\n[n~=value]"..
@@ -804,50 +805,6 @@ L["Font Settings"] = "Настройки шрифта"
 L["Player Only"] = "Только игрок"
 L["Handle only player combat log events."] = "Обрабатывать только события журнала боя игрока."
 L["Rotate Icon"] = "Повернуть иконку"
-L["Events to call updates on."..
-	"\n\nEVENT[n~=nil]"..
-	"\n[n~=value]"..
-	"\n[m=false]"..
-	"\n[q=@unit]"..
-	"\n[k~=@@UnitName('player')]"..
-	"\n\n'EVENT' - Event from the events section above"..
-	"\n'n, m, q, k' - indexes of the desired payload args (number)"..
-	"\n'nil/value/boolean/lua code' - desired output arg value"..
-	"\n'@unit' - UnitID of a currently selected unit"..
-	"\n'@@' - lua arg flag, must go before the lua code within the args' value section"..
-	"\n'~' - negate flag, add before the equals sign to have the code executed if n/m/q/k values do not match the arg value"..
-	"\n\nExample:"..
-	"\n\nUNIT_AURA[1=player]"..
-	"\n\nCHAT_MSG_WHISPER"..
-	"\n[5~=@@UnitName(@unit)]"..
-	"\n[14=false]"..
-	"\n\nCOMBAT_LOG_EVENT_"..
-	"\nUNFILTERED"..
-	"\n[5=@@UnitName('arena1')]"..
-	"\n[5=@@UnitName('arena2')]"..
-	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
-		"События для вызова обновлений."..
-			"\n\nСОБЫТИЕ[n~=nil]"..
-			"\n[n~=значение]"..
-			"\n[m=false]"..
-			"\n[q=@unit]"..
-			"\n[k~=@@UnitName('player')]"..
-			"\n\n'СОБЫТИЕ' - Событие из раздела событий выше"..
-			"\n'n, m, q, k' - индексы желаемых аргументов нагрузки (число)"..
-			"\n'nil/значение/логическое/lua код' - желаемое значение выходного аргумента"..
-			"\n'@unit' - UnitID текущего выбранного юнита"..
-			"\n'@@' - флаг аргумента lua, должен идти перед lua кодом в разделе значения аргументов"..
-			"\n'~' - флаг отрицания, добавьте перед знаком равенства, чтобы код выполнялся, если значения n/m/q/k не соответствуют значению аргумента"..
-			"\n\nПример:"..
-			"\n\nUNIT_AURA[1=player]"..
-			"\n\nCHAT_MSG_WHISPER"..
-			"\n[5~=@@UnitName(@unit)]"..
-			"\n[14=false]"..
-			"\n\nCOMBAT_LOG_EVENT_"..
-			"\nUNFILTERED"..
-			"\n[5=@@UnitName('arena1')]"..
-			"\n[5=@@UnitName('arena2')]"..
-			"\n\nЭтот модуль анализирует строки, поэтому постарайтесь, чтобы ваш код строго следовал синтаксису, иначе он может не работать."
 L["Usage example:"..
 	"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
 	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
