@@ -12,6 +12,7 @@ local find, gsub, match, sub, upper, lower = string.find, string.gsub, string.ma
 local tinsert, twipe, tremove = table.insert, table.wipe, table.remove
 local GetNumPartyMembers, GetNumRaidMembers = GetNumPartyMembers, GetNumRaidMembers
 local GetThreatStatusColor = GetThreatStatusColor
+local GetTime = GetTime
 
 
 local function convertToValue(value, unit)
@@ -270,28 +271,7 @@ function mod:LoadConfig()
 						multiline = true,
 						width = "double",
 						name = L["Events (optional)"],
-						desc = L["Events to call updates on."..
-							"\n\nEVENT[n~=nil]"..
-							"\n[n~=value]"..
-							"\n[m=false]"..
-							"\n[q=@unit]"..
-							"\n[k~=@@UnitName('player')]"..
-							"\n\n'EVENT' - Event from the events section above"..
-							"\n'n, m, q, k' - indexes of the desired payload args (number)"..
-							"\n'nil/value/boolean/lua code' - desired output arg value"..
-							"\n'@unit' - UnitID of a currently selected unit"..
-							"\n'@@' - lua arg flag, must go before the lua code within the args' value section"..
-							"\n'~' - negate flag, add before the equals sign to have the code executed if n/m/q/k values do not match the arg value"..
-							"\n\nExample:"..
-							"\n\nUNIT_AURA[1=player]"..
-							"\n\nCHAT_MSG_WHISPER"..
-							"\n[5~=@@UnitName(@unit)]"..
-							"\n[14=false]"..
-							"\n\nCOMBAT_LOG_EVENT_"..
-							"\nUNFILTERED"..
-							"\n[5=@@UnitName('arena1')]"..
-							"\n[5=@@UnitName('arena2')]"..
-							"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."],
+						desc = L["UNIT_AURA CHAT_MSG_WHISPER etc."],
 						hidden = function() return selectedBar() == 'Castbar' end,
 						get = function() return db.units[selectedUnit()].statusbars[selectedBar()].events and db.units[selectedUnit()].statusbars[selectedBar()].events or "" end,
 						set = function(_, value) db.units[selectedUnit()].statusbars[selectedBar()].events = value self:Toggle() end,
@@ -917,33 +897,6 @@ function mod:ConstructHighlight(frame)
 end
 
 
-function mod:SortArgs(bar, eventsString, argsBlockStartIndex, unit)
-	while sub(eventsString, argsBlockStartIndex, argsBlockStartIndex) == '[' do
-		local argsBlockEndIndex = find(eventsString, "]", argsBlockStartIndex + 1)
-		local arguments = sub(eventsString, argsBlockStartIndex + 1, argsBlockEndIndex - 1)
-
-		local _, _, argIndex, negate, argValue = find(arguments, "(%d+)(~?)=([^%]]+)")
-		eventsString = gsub(eventsString, "(%d+)(~?)=([^%]]+)", '', 1)
-
-		if argValue then
-			-- check for lua flag
-			local argIsLua = sub(argValue, 1, 2) == '@@'
-
-			if argIsLua then
-				argValue = sub(argValue, 3, #argValue)
-			else
-				argValue = convertToValue(argValue, unit)
-			end
-
-			tinsert(bar.args, { index = argIndex, argIsLua = argIsLua, arg = argValue, negate = negate == '~' })
-		end
-
-		argsBlockStartIndex = argsBlockEndIndex + 1
-	end
-
-	return eventsString
-end
-
 function mod:SortEvents(bar, statusbar, unit)
 	local startIndex = 1
 	local eventsString = bar.events
@@ -954,12 +907,7 @@ function mod:SortEvents(bar, statusbar, unit)
 		local eventStart, eventEnd = find(eventsString, "[%u_]+", startIndex)
 		if not eventStart then break end
 
-		local argsBlockStartIndex = eventEnd + 1
-
-		eventsString = self:SortArgs(bar, eventsString, argsBlockStartIndex, unit)
-		local event = sub(eventsString, eventStart, eventEnd)
-
-		metaFrame[unit]:RegisterEvent(event)
+		metaFrame[unit]:RegisterEvent(sub(eventsString, eventStart, eventEnd))
 		metaTable.events[unit] = {[statusbar] = bar}
 
 		startIndex = eventEnd + 1
@@ -1108,7 +1056,7 @@ function mod:UpdateGlow(frame, colors, statusbar, unit, showGlow, highlight)
 	local detached = frame.USE_POWERBAR and frame.POWERBAR_DETACHED
 	local colorFilter = frame.colorFilter
 	local appliedGlowColors = colorFilter.appliedGlowColors
-	if showGlow then
+	if showGlow and (not colors or colors.g ~= false) then
 		local glow = highlight.glow
 		local glowSize = highlight.glow.size
 		local glowColors = glow.colors
@@ -1174,7 +1122,7 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 	local power = frame.Power
 	local health = frame.Health
 	local db = E.db.Extras.unitframes[modName].units[unit]
-	if showBorders then
+	if showBorders and (not colors or colors.b ~= false) then
 		local borders = highlight.borders
 		-- in case no borders have been applied prior to the threat borders
 		if not appliedBorders.override then
@@ -1348,81 +1296,39 @@ function mod:UpdateThreat(unit, status)
 end
 
 
-function mod:LoadConditions(frame, statusbar, unit, tab, eventArg, tabArg)
-	if not tab then return end
+function mod:LoadConditions(frame, statusbar, unit, tab)
+    if not tab then return end
 
-	local success, result, colors
-	local conditions = tab.conditions or tab
+    local conditions = tab.conditions or tab
+    conditions = conditions:gsub('@unit', "'"..unit.."'")
 
-	local function executeCondition(isArgLua)
-		local luaFunction, errorMsg = loadstring(conditions)
+    -- check tabs state
+    local tabsStateBlock = match(conditions, '@@%[.-%]@@')
+    if tabsStateBlock then
+        conditions = self:SortTabsState(frame, conditions, unit, statusbar)
+    end
 
-		if luaFunction then
-			local wrapperFunction = function(isArgLua)
-				if isArgLua then
-					local evaluatedTabArg = loadstring("return "..tabArg)()
-					return pcall(luaFunction, eventArg, evaluatedTabArg)
-				else
-					return pcall(luaFunction)
-				end
-			end
+    local luaFunction, errorMsg = loadstring(conditions)
+    if not luaFunction then
+        core:print('LUA', L["Color Filter"], errorMsg)
+        return
+    end
 
-			success, result = wrapperFunction(isArgLua)
+    local success, result = pcall(luaFunction)
+    if not success then
+        core:print('FAIL', L["Color Filter"], result)
+        return
+    end
 
-			if not success then
-				core:print('FAIL', L["Color Filter"], result)
-				return
-			end
+    local colors
+    if type(result) == "table" then
+        colors = result
+    end
 
-			if type(result) == "table" then
-				colors = result
-			end
-		else
-			core:print('LUA', L["Color Filter"], errorMsg)
-		end
-	end
-
-	-- check the lua arg/conditions
-	if tabArg then
-		tabArg = gsub(tabArg, '@unit', "'"..unit.."'")
-		executeCondition(true)
-	else
-		conditions = gsub(conditions, '@unit', "'"..unit.."'")
-
-		-- check tabs state
-		local tabsStateBlock = match(conditions, '@@%[.-%]@@')
-
-		if tabsStateBlock then
-			conditions = self:SortTabsState(frame, conditions, unit, statusbar)
-		end
-
-		executeCondition()
-	end
-
-	return result, colors
+    return result, colors
 end
 
-function mod:CheckArgs(unit, tab, ...)
-	for _, argTab in ipairs(tab.args) do
-		local eventArg = select(argTab.index, ...)
-		if argTab.argIsLua then
-			-- check the lua arg
-			local result = self:LoadConditions(nil, nil, unit, "if select(1, ...) == select(2, ...) then return true end", nil, eventArg, argTab.arg)
-
-			if (result and argTab.negate) or (not result and not argTab.negate) then
-				return true
-			end
-		else
-			-- check if negated
-			if (not argTab.negate and argTab.arg ~= eventArg)
-			 or (argTab.negate and argTab.arg == eventArg) then
-				return true
-			end
-		end
-	end
-end
-
-function mod:ParseTabs(frame, statusbar, unit, tabs, isEvent, event, ...)
+function mod:ParseTabs(frame, statusbar, unit, tabs, isPostUpdate, isEvent, event, ...)
 	local targetBar = frame.colorFilter[statusbar]
 	local appliedColorTabIndex = targetBar.appliedColorTabIndex
 
@@ -1431,69 +1337,65 @@ function mod:ParseTabs(frame, statusbar, unit, tabs, isEvent, event, ...)
 		if appliedColorTabIndex and tabIndex > appliedColorTabIndex then break end
 
 		if tab.enabled then
-			local failedTheArgs
+			local result, colors = self:LoadConditions(frame, statusbar, unit, tab)
 
-			if isEvent and ... and tab.args and #tab.args > 0 then
-				failedTheArgs = self:CheckArgs(unit, tab, ...)
-			end
-
-			-- continue only if the args are fine (this is an overkill...)
-			if not failedTheArgs then
-				local result, colors = self:LoadConditions(frame, statusbar, unit, tab, tabIndex)
-
-				if result then
-					-- no retriggering please
-					local flash = tab.flash
-					local flashTexture = targetBar.flashTexture
-					if flash.enabled then
-						local flashColors = flash.colors
-						local r, g, b = flashColors[1], flashColors[2], flashColors[3]
-						if colors then
-							r, g, b = colors.fR and colors.fR or r, colors.fG and colors.fG or g, colors.fB and colors.fB or b
-						end
-						flashTexture:SetVertexColor(r, g, b)
-						flashTexture:Show()
-
-						local anim = flashTexture.anim
-						local IsPlaying = anim and anim:IsPlaying()
-						if (not anim or not IsPlaying) or (not appliedColorTabIndex or tabIndex < appliedColorTabIndex) then
-							if IsPlaying then anim:Stop() end
-							anim.fadein:SetDuration(flash.speed)
-							anim.fadeout:SetDuration(flash.speed)
-							anim:Play()
-						end
-					elseif flashTexture and flashTexture:IsShown() then
-						local anim = flashTexture.anim
-						if anim:IsPlaying() then anim:Stop() end
-						flashTexture:Hide()
-					end
-
-					local tabColors = tab.colors
-					local r, g, b = tabColors[1], tabColors[2], tabColors[3]
-
+			if result then
+				-- no retriggering please
+				local flash = tab.flash
+				local flashTexture = targetBar.flashTexture
+				if flash.enabled and (not colors or colors.f ~= false) then
+					local flashColors = flash.colors
+					local r, g, b = flashColors[1], flashColors[2], flashColors[3]
 					if colors then
-						r, g, b = colors.mR and colors.mR or r, colors.mG and colors.mG or g, colors.mB and colors.mB or b
+						r, g, b = colors.fR and colors.fR or r, colors.fG and colors.fG or g, colors.fB and colors.fB or b
 					end
+					flashTexture:SetVertexColor(r, g, b)
+					flashTexture:Show()
 
-					if tab.enableColors then
-						frame[statusbar]:SetStatusBarColor(r, g, b)
+					local anim = flashTexture.anim
+					local IsPlaying = anim and anim:IsPlaying()
+					if (not anim or not IsPlaying) or (not appliedColorTabIndex or tabIndex < appliedColorTabIndex) then
+						if IsPlaying then anim:Stop() end
+						anim.fadein:SetDuration(flash.speed)
+						anim.fadeout:SetDuration(flash.speed)
+						anim:Play()
 					end
-
-					-- store the current tab index
-					targetBar.colorApplied = true
-					targetBar.appliedColorTabIndex = tabIndex
-
-					metaFrame[unit].lastUpdate = GetTime()
-
-					return result, colors, tab
-				elseif appliedColorTabIndex and tabIndex == appliedColorTabIndex then
-					-- conditions from the tab currently coloring the bar are no longer true, revert
-					targetBar.colorApplied = false
-					targetBar.appliedColorTabIndex = nil
+				elseif flashTexture and flashTexture:IsShown() then
+					local anim = flashTexture.anim
+					if anim:IsPlaying() then anim:Stop() end
+					flashTexture:Hide()
 				end
+
+				local tabColors = tab.colors
+				local r, g, b = tabColors[1], tabColors[2], tabColors[3]
+
+				if colors then
+					r, g, b = colors.mR and colors.mR or r, colors.mG and colors.mG or g, colors.mB and colors.mB or b
+				end
+
+				if tab.enableColors then
+					if not colors or colors.m ~= false then
+						frame[statusbar]:SetStatusBarColor(r, g, b)
+					elseif not isPostUpdate then
+						frame[statusbar]:ForceUpdate()
+					end
+				end
+
+				-- store the current tab index
+				targetBar.colorApplied = true
+				targetBar.appliedColorTabIndex = tabIndex
+
+				metaFrame[unit][statusbar].lastUpdate = GetTime()
+
+				return result, colors, tab
+			elseif appliedColorTabIndex and tabIndex == appliedColorTabIndex then
+				-- conditions from the tab currently coloring the bar are no longer true, revert
+				targetBar.colorApplied = false
+				targetBar.appliedColorTabIndex = nil
 			end
 		end
 	end
+	metaFrame[unit][statusbar].lastUpdate = GetTime()
 end
 
 
@@ -1511,7 +1413,7 @@ function mod:PostUpdateHealthColor()
 
 	local unitInfo = metaTable.statusbars[unit]
 	if unitInfo and unitInfo.Health and frame:IsShown() then
-		local result, colors, tab = mod:ParseTabs(frame, 'Health', frame.unit, unitInfo.Health.tabs)
+		local result, colors, tab = mod:ParseTabs(frame, 'Health', frame.unit, unitInfo.Health.tabs, true)
 
 		local highlight = tab and tab.highlight
 		mod:UpdateGlow(frame, colors, 'Health', unit, result and highlight.glow.enabled, highlight)
@@ -1542,7 +1444,7 @@ function mod:PostUpdatePowerColor()
 
 	local unitInfo = metaTable.statusbars[unit]
 	if unitInfo and unitInfo.Power and frame:IsShown() then
-		local result, colors, tab = mod:ParseTabs(frame, 'Power', frame.unit, unitInfo.Power.tabs)
+		local result, colors, tab = mod:ParseTabs(frame, 'Power', frame.unit, unitInfo.Power.tabs, true)
 
 		local highlight = tab and tab.highlight
 		mod:UpdateGlow(frame, colors, 'Power', unit, result and highlight.glow.enabled, highlight)
@@ -1572,7 +1474,7 @@ function mod:CastOnupdate()
 
 	local unitInfo = metaTable.statusbars[unit]
 	if unitInfo and unitInfo.Castbar and frame:IsShown() then
-		local result, colors, tab = mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs)
+		local result, colors, tab = mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs, true)
 
 		local highlight = tab and tab.highlight
 		mod:UpdateGlow(frame, colors, 'Castbar', unit, result and highlight.glow.enabled, highlight)
@@ -1603,7 +1505,7 @@ function mod:PostCastStart()
 
 	local unitInfo = metaTable.statusbars[unit]
 	if unitInfo and unitInfo.Castbar and frame:IsShown() then
-		local result, colors, tab = mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs)
+		local result, colors, tab = mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs, true)
 
 		local highlight = tab and tab.highlight
 		mod:UpdateGlow(frame, colors, 'Castbar', unit, result and highlight.glow.enabled, highlight)
@@ -1649,6 +1551,7 @@ function mod:Construct_Castbar(frame)
 	mod:ConstructHighlight(frame)
 end
 
+
 function mod:InitAndUpdateColorFilter()
 	local db = E.db.Extras.unitframes[modName]
 
@@ -1661,10 +1564,14 @@ function mod:InitAndUpdateColorFilter()
 	end
 
 	for unit, unitsCluster in pairs(metaTable.units) do
-		if not metaFrame[unit] then metaFrame[unit] = CreateFrame("Frame") end
+		if not metaFrame[unit] then
+			metaFrame[unit] = CreateFrame("Frame")
+		end
 
 		for _, frame in ipairs(unitsCluster) do
 			for statusbar, bar in pairs(db.units[unit].statusbars) do
+				metaFrame[unit][statusbar] = metaFrame[unit][statusbar] or CreateFrame("Frame")
+
 				local targetBar = frame.colorFilter[statusbar]
 				local unitInfo = metaTable.statusbars[unit][statusbar]
 				if bar.enabled and targetBar then
@@ -1711,23 +1618,7 @@ function mod:InitAndUpdateColorFilter()
 									local frameBar = frame[statusbar]
 									local targetBar = frame.colorFilter[statusbar]
 									if frameBar:IsShown() then
-										local result, colors, tab = mod:ParseTabs(frame, statusbar, frame.unit, bar.tabs, true, event, ...)
-
-										local highlight = tab and tab.highlight
-										mod:UpdateGlow(frame, colors, statusbar, unit, result and highlight.glow.enabled, highlight)
-										mod:UpdateBorders(frame, colors, statusbar, unit, result and highlight.borders.enabled, highlight)
-
-										if not targetBar.colorApplied then
-											frameBar:ForceUpdate()
-											local flashTexture = targetBar.flashTexture
-											if flashTexture:IsShown() then
-												flashTexture.anim:Stop()
-												flashTexture:Hide()
-											end
-										end
-									end
-									if targetBar.mentions then
-										mod:UpdateMentions(targetBar)
+										frameBar:ForceUpdate()
 									end
 								end
 							end
@@ -1740,36 +1631,21 @@ function mod:InitAndUpdateColorFilter()
 					local updateThrottle = barInfo.updateThrottle or 0
 					local tabs = barInfo.tabs
 
-					metaFrame[unit].lastUpdate = GetTime()
-					metaFrame[unit]:SetScript('OnUpdate', function(self)
+					metaFrame[unit][statusbar].lastUpdate = GetTime()
+					metaFrame[unit][statusbar]:SetScript('OnUpdate', function(self)
 						if GetTime() - self.lastUpdate < updateThrottle then return end
 
 						for _, frame in ipairs(unitInfo) do
 							if frame:IsShown() and (not frame.id or (frame.isForced or (GetNumPartyMembers() >= 1 or GetNumRaidMembers() >= 1))) then
 								local frameBar = frame[statusbar]
-								local targetBar = frame.colorFilter[statusbar]
 								if frameBar:IsShown() then
-									local result, colors, tab = mod:ParseTabs(frame, statusbar, frame.unit, tabs)
-
-									local highlight = tab and tab.highlight
-									mod:UpdateGlow(frame, colors, statusbar, unit, result and highlight.glow.enabled, highlight)
-									mod:UpdateBorders(frame, colors, statusbar, unit, result and highlight.borders.enabled, highlight)
-
-									if not targetBar.colorApplied then
-										frameBar:ForceUpdate()
-										local flashTexture = targetBar.flashTexture
-										if flashTexture:IsShown() then
-											flashTexture.anim:Stop()
-											flashTexture:Hide()
-										end
-									end
-								end
-								if targetBar.mentions then
-									mod:UpdateMentions(targetBar)
+									frameBar:ForceUpdate()
 								end
 							end
 						end
 					end)
+				else
+					metaFrame[unit][statusbar]:SetScript('OnUpdate', nil)
 				end
 			end
 		end
