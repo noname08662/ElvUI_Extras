@@ -803,19 +803,32 @@ L["Handle only player combat log events."] = "Nur Kampfprotokoll-Ereignisse des 
 L["Rotate Icon"] = "Symbol drehen"
 L["Usage example:"..
 	"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
+	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
+	"\nif UnitIsUnit(@unit, 'target') then return true end"..
+	"\n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
 	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group (more than 5 in the example above)"..
-	"\n'return {}' - you can dynamically color the frames by returning the colors in a table format: to apply to the statusbar, assign your rgb values to mR, mG and mB respectively; to apply the glow - to gR, gG, gB, gA (alpha); for borders - bR, bG, bB; and for the flash - fR, fG, fB, fA."..
+	"\n\n'return {bR=1,f=false}' - you can dynamically color the frames by returning the colors in a table format:"..
+	"\n  to apply to the statusbar, assign your rgb values to mR, mG and mB respectively"..
+	"\n  to apply the glow - to gR, gG, gB, gA (alpha)"..
+	"\n  for borders - bR, bG, bB"..
+	"\n  and for the flash - fR, fG, fB, fA"..
+	"\n  to prevent the elements styling, return {m = false, g = false, b = false, f = false}"..
 	"\n\nFeel free to use '@unit' to register current unit like this: UnitBuff(@unit, 'player')."..
 	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"Verwendungsbeispiel:"..
 			"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - gibt true/false zurück, basierend darauf, ob der betreffende Tab (im obigen Beispiel: 'player' - Zieleinheit; 'Power' - Ziel-Statusleiste; '3' - Ziel-Tab) aktiv ist oder nicht (Erwähnung derselben Einheit/Gruppe ist deaktiviert; ist nicht rekursiv)"..
-			"\n(>/>=/<=/</~= Zahl) - (optional, nur Gruppeneinheiten) Vergleich mit einer bestimmten Anzahl ausgelöster Frames innerhalb der Gruppe (mehr als 5 im obigen Beispiel)"..
-			"\n'return {}' - Sie können die Frames dynamisch färben, indem Sie die Farben im Tabellenformat zurückgeben: Um auf die Statusleiste anzuwenden, weisen Sie Ihre RGB-Werte jeweils mR, mG und mB zu; für das Leuchten - gR, gG, gB, gA (Alpha); für Ränder - bR, bG, bB; und für den Blitz - fR, fG, fB, fA."..
-			"\n\nSie können '@unit' frei verwenden, um die aktuelle Einheit so zu registrieren: UnitBuff(@unit, 'player')."..
-			"\n\nDieses Modul analysiert Zeichenketten, also versuchen Sie, sich strikt an die Syntax zu halten, sonst funktioniert es möglicherweise nicht."
-L["Pick a..."] = "Wähle ein..."
+			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
+			"\nif UnitIsUnit(@unit, 'target') then return true end"..
+			"\n\n@@[raid, Health, 2, >5]@@ - gibt true/false zurück, basierend darauf, ob der betreffende Tab (im obigen Beispiel: 'player' - Zieleinheit; 'Power' - Ziel-Statusleiste; '3' - Ziel-Tab) aktiv ist oder nicht (Erwähnung derselben Einheit/Gruppe ist deaktiviert; nicht rekursiv)"..
+			"\n(>/>=/<=/</~= num) - (optional, nur für Gruppeneinheiten) Vergleich mit einer bestimmten Anzahl von ausgelösten Frames innerhalb der Gruppe (mehr als 5 im obigen Beispiel)"..
+			"\n\n'return {bR=1,f=false}' - Sie können die Frames dynamisch einfärben, indem Sie die Farben in einem Tabellenformat zurückgeben:"..
+			"\n  Um auf die Statusleiste anzuwenden, weisen Sie Ihre RGB-Werte jeweils mR, mG und mB zu"..
+			"\n  Um das Leuchten anzuwenden - gR, gG, gB, gA (Alpha)"..
+			"\n  Für Ränder - bR, bG, bB"..
+			"\n  Und für den Blitz - fR, fG, fB, fA"..
+			"\n  Um die Stilisierung der Elemente zu verhindern, geben Sie {m = false, g = false, b = false, f = false} zurück"..
+			"\n\nSie können '@unit' verwenden, um die aktuelle Einheit so zu registrieren: UnitBuff(@unit, 'player')."..
+			"\n\nDieses Modul analysiert Zeichenketten, also versuchen Sie, Ihren Code streng nach der Syntax zu gestalten, sonst funktioniert er möglicherweise nicht."L["Pick a..."] = "Wähle ein..."
 L["...mover to anchor to."] = "...Element zum Verankern auswählen."
 L["...mover to anchor."] = "...Element zum Verankern."
 L["Point:"] = "Point :"

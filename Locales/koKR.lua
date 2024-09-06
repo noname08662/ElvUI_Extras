@@ -807,18 +807,32 @@ L["Handle only player combat log events."] = "플레이어 전투 로그 이벤�
 L["Rotate Icon"] = "아이콘 회전"
 L["Usage example:"..
 	"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
+	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
+	"\nif UnitIsUnit(@unit, 'target') then return true end"..
+	"\n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
 	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group (more than 5 in the example above)"..
-	"\n'return {}' - you can dynamically color the frames by returning the colors in a table format: to apply to the statusbar, assign your rgb values to mR, mG and mB respectively; to apply the glow - to gR, gG, gB, gA (alpha); for borders - bR, bG, bB; and for the flash - fR, fG, fB, fA."..
+	"\n\n'return {bR=1,f=false}' - you can dynamically color the frames by returning the colors in a table format:"..
+	"\n  to apply to the statusbar, assign your rgb values to mR, mG and mB respectively"..
+	"\n  to apply the glow - to gR, gG, gB, gA (alpha)"..
+	"\n  for borders - bR, bG, bB"..
+	"\n  and for the flash - fR, fG, fB, fA"..
+	"\n  to prevent the elements styling, return {m = false, g = false, b = false, f = false}"..
 	"\n\nFeel free to use '@unit' to register current unit like this: UnitBuff(@unit, 'player')."..
 	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"사용 예시:"..
 			"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - 해당 탭(위의 예에서: 'player' - 대상 유닛; 'Power' - 대상 상태 바; '3' - 대상 탭)이 활성화되어 있는지 여부에 따라 true/false를 반환합니다 (동일한 유닛/그룹 언급은 비활성화됨; 재귀적이지 않음)"..
-			"\n(>/>=/<=/</~= num) - (선택적, 그룹 유닛만 해당) 그룹 내에서 트리거된 특정 프레임 수와 일치 (위의 예에서 5개 이상)"..
-			"\n'return {}' - 테이블 형식으로 색상을 반환하여 프레임을 동적으로 색칠할 수 있습니다: 상태 바에 적용하려면 RGB 값을 각각 mR, mG 및 mB에 할당하세요; 발광에는 gR, gG, gB, gA (알파)에; 테두리에는 bR, bG, bB에; 플래시에는 fR, fG, fB, fA에 할당하세요."..
-			"\n\n'@unit'를 자유롭게 사용하여 현재 유닛을 이렇게 등록할 수 있습니다: UnitBuff(@unit, 'player')."..
-			"\n\n이 모듈은 문자열을 파싱하므로 코드가 구문을 엄격히 따르도록 하세요. 그렇지 않으면 작동하지 않을 수 있습니다."
+			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
+			"\nif UnitIsUnit(@unit, 'target') then return true end"..
+			"\n\n@@[raid, Health, 2, >5]@@ - 해당 탭(위 예시에서: 'player' - 대상 유닛; 'Power' - 대상 상태 바; '3' - 대상 탭)이 활성화되어 있는지 여부에 따라 true/false를 반환합니다 (동일한 유닛/그룹 언급은 비활성화됨; 재귀적이지 않음)"..
+			"\n(>/>=/<=/</~= num) - (선택적, 그룹 유닛만 해당) 그룹 내에서 트리거된 프레임의 특정 개수와 일치 (위 예시에서는 5개 초과)"..
+			"\n\n'return {bR=1,f=false}' - 색상을 테이블 형식으로 반환하여 프레임을 동적으로 색칠할 수 있습니다:"..
+			"\n  상태 바에 적용하려면 rgb 값을 각각 mR, mG, mB에 할당하세요"..
+			"\n  발광 효과를 적용하려면 gR, gG, gB, gA(알파)에 할당하세요"..
+			"\n  테두리는 bR, bG, bB에 할당하세요"..
+			"\n  그리고 플래시는 fR, fG, fB, fA에 할당하세요"..
+			"\n  요소 스타일링을 방지하려면 {m = false, g = false, b = false, f = false}를 반환하세요"..
+			"\n\n'@unit'을 사용하여 현재 유닛을 다음과 같이 등록할 수 있습니다: UnitBuff(@unit, 'player')."..
+			"\n\n이 모듈은 문자열을 분석하므로 코드가 구문을 엄격히 따르도록 하세요. 그렇지 않으면 작동하지 않을 수 있습니다."
 L["Unless holding a modifier, hovering units, items, and spells draws no tooltip.\nModifies cursor tooltips only."] = "수정 키를 누르지 않으면 유닛, 아이템, 주문에 마우스를 올려도 툴팁이 표시되지 않습니다.\n커서 툴팁만 수정됩니다."
 L["Pick a..."] = "...선택하세요"
 L["...mover to anchor to."] = "...고정할 요소를 선택하세요."

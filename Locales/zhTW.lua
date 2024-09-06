@@ -804,18 +804,32 @@ L["Handle only player combat log events."] = "僅處理玩家戰鬥日誌事件�
 L["Rotate Icon"] = "旋轉圖示"
 L["Usage example:"..
 	"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
+	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
+	"\nif UnitIsUnit(@unit, 'target') then return true end"..
+	"\n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
 	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group (more than 5 in the example above)"..
-	"\n'return {}' - you can dynamically color the frames by returning the colors in a table format: to apply to the statusbar, assign your rgb values to mR, mG and mB respectively; to apply the glow - to gR, gG, gB, gA (alpha); for borders - bR, bG, bB; and for the flash - fR, fG, fB, fA."..
+	"\n\n'return {bR=1,f=false}' - you can dynamically color the frames by returning the colors in a table format:"..
+	"\n  to apply to the statusbar, assign your rgb values to mR, mG and mB respectively"..
+	"\n  to apply the glow - to gR, gG, gB, gA (alpha)"..
+	"\n  for borders - bR, bG, bB"..
+	"\n  and for the flash - fR, fG, fB, fA"..
+	"\n  to prevent the elements styling, return {m = false, g = false, b = false, f = false}"..
 	"\n\nFeel free to use '@unit' to register current unit like this: UnitBuff(@unit, 'player')."..
 	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"使用示例："..
 			"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - 根據相關標籤（在上面的例子中：'player' - 目標單位；'Power' - 目標狀態欄；'3' - 目標標籤）是否活動返回true/false（提及相同的單位/組是禁用的；不是遞歸的）"..
-			"\n(>/>=/<=/</~= num) - （可選，僅限組單位）匹配組內觸發的特定框架數（在上面的例子中超過5個）"..
-			"\n'return {}' - 您可以通過以表格格式返回顏色來動態著色框架：要應用於狀態欄，請將您的rgb值分別分配給mR、mG和mB；要應用發光效果 - 分配給gR、gG、gB、gA（透明度）；對於邊框 - bR、bG、bB；對於閃爍 - fR、fG、fB、fA。"..
-			"\n\n隨意使用'@unit'來註冊當前單位，如：UnitBuff(@unit, 'player')。"..
-			"\n\n此模塊解析字符串，因此請嘗試讓您的代碼嚴格遵循語法，否則可能無法工作。"
+			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
+			"\nif UnitIsUnit(@unit, 'target') then return true end"..
+			"\n\n@@[raid, Health, 2, >5]@@ - 根據相關標籤（在上面的例子中：'player' - 目標單位；'Power' - 目標狀態條；'3' - 目標標籤）是否處於活動狀態來返回 true/false（提及相同單位/群組的功能已禁用；不是遞歸的）"..
+			"\n(>/>=/<=/</~= num) - （可選，僅適用於群組單位）匹配群組內觸發框架的特定數量（上面例子中大於 5）"..
+			"\n\n'return {bR=1,f=false}' - 你可以通過以表格格式返回顏色來動態為框架上色："..
+			"\n  要應用於狀態條，請將你的 rgb 值分別指派給 mR、mG 和 mB"..
+			"\n  要應用發光效果 - 指派給 gR、gG、gB、gA（透明度）"..
+			"\n  邊框顏色 - bR、bG、bB"..
+			"\n  閃光效果 - fR、fG、fB、fA"..
+			"\n  要防止元素樣式，返回 {m = false, g = false, b = false, f = false}"..
+			"\n\n你可以自由使用 '@unit' 來註冊當前單位，例如：UnitBuff(@unit, 'player')。"..
+			"\n\n此模組解析字符串，所以請嘗試讓你的代碼嚴格遵循語法，否則可能無法正常工作。"
 L["Unless holding a modifier, hovering units, items, and spells draws no tooltip.\nModifies cursor tooltips only."] = "除非按住修飾鍵，否則懸停單位、物品和法術不會顯示工具提示。\n僅修改游標工具提示。"
 L["Pick a..."] = "選擇一個..."
 L["...mover to anchor to."] = "...要錨定的移動器。"

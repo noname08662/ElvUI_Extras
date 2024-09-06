@@ -807,17 +807,31 @@ L["Handle only player combat log events."] = "Обрабатывать толь�
 L["Rotate Icon"] = "Повернуть иконку"
 L["Usage example:"..
 	"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
+	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
+	"\nif UnitIsUnit(@unit, 'target') then return true end"..
+	"\n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
 	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group (more than 5 in the example above)"..
-	"\n'return {}' - you can dynamically color the frames by returning the colors in a table format: to apply to the statusbar, assign your rgb values to mR, mG and mB respectively; to apply the glow - to gR, gG, gB, gA (alpha); for borders - bR, bG, bB; and for the flash - fR, fG, fB, fA."..
+	"\n\n'return {bR=1,f=false}' - you can dynamically color the frames by returning the colors in a table format:"..
+	"\n  to apply to the statusbar, assign your rgb values to mR, mG and mB respectively"..
+	"\n  to apply the glow - to gR, gG, gB, gA (alpha)"..
+	"\n  for borders - bR, bG, bB"..
+	"\n  and for the flash - fR, fG, fB, fA"..
+	"\n  to prevent the elements styling, return {m = false, g = false, b = false, f = false}"..
 	"\n\nFeel free to use '@unit' to register current unit like this: UnitBuff(@unit, 'player')."..
 	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"Пример использования:"..
 			"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - возвращает true/false в зависимости от того, активна ли данная вкладка (в примере выше: 'player' - целевой юнит; 'Power' - целевая полоса состояния; '3' - целевая вкладка) или нет (упоминание того же юнита/группы отключено; не рекурсивно)"..
-			"\n(>/>=/<=/</~= число) - (опционально, только для групповых юнитов) соответствует определенному количеству сработавших фреймов в группе (больше 5 в примере выше)"..
-			"\n'return {}' - вы можете динамически окрашивать фреймы, возвращая цвета в формате таблицы: для применения к полосе состояния присвойте ваши значения rgb соответственно mR, mG и mB; для применения свечения - gR, gG, gB, gA (альфа); для границ - bR, bG, bB; и для вспышки - fR, fG, fB, fA."..
-			"\n\nНе стесняйтесь использовать '@unit' для регистрации текущего юнита так: UnitBuff(@unit, 'player')."..
+			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
+			"\nif UnitIsUnit(@unit, 'target') then return true end"..
+			"\n\n@@[raid, Health, 2, >5]@@ - возвращает true/false в зависимости от того, активна ли рассматриваемая вкладка (в приведенном выше примере: 'player' - целевая единица; 'Power' - целевая строка состояния; '3' - целевая вкладка) или нет (упоминание той же единицы/группы отключено; не рекурсивно)"..
+			"\n(>/>=/<=/</~= num) - (необязательно, только для групповых единиц) соответствует определенному количеству активированных фреймов в группе (более 5 в приведенном выше примере)"..
+			"\n\n'return {bR=1,f=false}' - вы можете динамически окрашивать фреймы, возвращая цвета в формате таблицы:"..
+			"\n  чтобы применить к строке состояния, присвойте свои значения rgb соответственно mR, mG и mB"..
+			"\n  чтобы применить свечение - gR, gG, gB, gA (альфа)"..
+			"\n  для границ - bR, bG, bB"..
+			"\n  и для вспышки - fR, fG, fB, fA"..
+			"\n  чтобы предотвратить стилизацию элементов, верните {m = false, g = false, b = false, f = false}"..
+			"\n\nНе стесняйтесь использовать '@unit' для регистрации текущей единицы таким образом: UnitBuff(@unit, 'player')."..
 			"\n\nЭтот модуль анализирует строки, поэтому постарайтесь, чтобы ваш код строго следовал синтаксису, иначе он может не работать."
 L["Unless holding a modifier, hovering units draws no tooltip.\nCursor tooltips only."] = "Wenn keine Modifier-Taste gedrückt wird, werden beim Überfahren von Einheiten keine Tooltips angezeigt.\nNur Mauszeiger-Tooltips."
 L["Pick a..."] = "Выберите..."

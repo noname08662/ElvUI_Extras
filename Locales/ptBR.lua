@@ -804,16 +804,30 @@ L["Handle only player combat log events."] = "Lidar apenas com eventos do regist
 L["Rotate Icon"] = "Girar ícone"
 L["Usage example:"..
 	"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
+	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
+	"\nif UnitIsUnit(@unit, 'target') then return true end"..
+	"\n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
 	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group (more than 5 in the example above)"..
-	"\n'return {}' - you can dynamically color the frames by returning the colors in a table format: to apply to the statusbar, assign your rgb values to mR, mG and mB respectively; to apply the glow - to gR, gG, gB, gA (alpha); for borders - bR, bG, bB; and for the flash - fR, fG, fB, fA."..
+	"\n\n'return {bR=1,f=false}' - you can dynamically color the frames by returning the colors in a table format:"..
+	"\n  to apply to the statusbar, assign your rgb values to mR, mG and mB respectively"..
+	"\n  to apply the glow - to gR, gG, gB, gA (alpha)"..
+	"\n  for borders - bR, bG, bB"..
+	"\n  and for the flash - fR, fG, fB, fA"..
+	"\n  to prevent the elements styling, return {m = false, g = false, b = false, f = false}"..
 	"\n\nFeel free to use '@unit' to register current unit like this: UnitBuff(@unit, 'player')."..
 	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"Exemplo de uso:"..
 			"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - retorna verdadeiro/falso com base em se a aba em questão (no exemplo acima: 'player' - unidade alvo; 'Power' - barra de status alvo; '3' - aba alvo) está ativa ou não (mencionar a mesma unidade/grupo está desativado; não é recursivo)"..
+			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
+			"\nif UnitIsUnit(@unit, 'target') then return true end"..
+			"\n\n@@[raid, Health, 2, >5]@@ - retorna verdadeiro/falso com base em se a aba em questão (no exemplo acima: 'player' - unidade alvo; 'Power' - barra de status alvo; '3' - aba alvo) está ativa ou não (mencionar a mesma unidade/grupo está desativado; não é recursivo)"..
 			"\n(>/>=/<=/</~= num) - (opcional, apenas unidades de grupo) corresponde a uma contagem específica de quadros acionados dentro do grupo (mais de 5 no exemplo acima)"..
-			"\n'return {}' - você pode colorir os quadros dinamicamente retornando as cores em formato de tabela: para aplicar à barra de status, atribua seus valores rgb a mR, mG e mB respectivamente; para aplicar o brilho - a gR, gG, gB, gA (alfa); para bordas - bR, bG, bB; e para o flash - fR, fG, fB, fA."..
+			"\n\n'return {bR=1,f=false}' - você pode colorir dinamicamente os quadros retornando as cores em um formato de tabela:"..
+			"\n  para aplicar à barra de status, atribua seus valores rgb a mR, mG e mB respectivamente"..
+			"\n  para aplicar o brilho - a gR, gG, gB, gA (alfa)"..
+			"\n  para bordas - bR, bG, bB"..
+			"\n  e para o flash - fR, fG, fB, fA"..
+			"\n  para evitar a estilização dos elementos, retorne {m = false, g = false, b = false, f = false}"..
 			"\n\nSinta-se à vontade para usar '@unit' para registrar a unidade atual assim: UnitBuff(@unit, 'player')."..
 			"\n\nEste módulo analisa strings, então tente fazer com que seu código siga a sintaxe estritamente, caso contrário, pode não funcionar."
 L["Unless holding a modifier, hovering units, items, and spells draws no tooltip.\nModifies cursor tooltips only."] = "A menos que esteja segurando um modificador, passar o cursor sobre unidades, itens e feitiços não exibe nenhum tooltip.\nModifica apenas os tooltips do cursor."
