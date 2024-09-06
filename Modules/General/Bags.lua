@@ -319,27 +319,19 @@ local function updateLayouts()
 		for _, isBank in ipairs({false, true}) do
 			local f = B_GetContainerFrame(nil, isBank)
 			if f and f.currentLayout then
+				local updatedSections = {}
 				if not isInCombat and updatePending then
-					local changes = mod:ScanBags(f)
-					mod:ApplyBagChanges(f, changes)
-					for bagID, bagName in pairs(equippedBags) do
-						if bagName ~= GetBagName(bagID) then
-							equippedBags[bagID] = GetBagName(bagID)
-							B:UpdateAll()
-						end
-					end
+					updatedSections = mod:ApplyBagChanges(f, mod:ScanBags(f))
 					updatePending = false
-				else
-					local buttonSize = isBank and B.db.bankSize or B.db.bagSize
-					for _, section in ipairs(f.currentLayout.sections) do
-						if isInCombat then
-							section.frame.minimized = false
-						else
-							section.frame.minimized = section.db.minimized
-						end
-						mod:ToggleMinimizeSection(f, section, buttonSize)
-						mod:UpdateSection(f, section, buttonSize, isInCombat)
+				end
+				local buttonSize = isBank and B.db.bankSize or B.db.bagSize
+				for _, section in ipairs(f.currentLayout.sections) do
+					if isInCombat then
+						section.frame.minimized = false
+					else
+						section.frame.minimized = section.db.minimized
 					end
+					mod:ToggleMinimizeSection(f, section, buttonSize, isInCombat, updatedSections)
 				end
 			end
 		end
@@ -1053,7 +1045,6 @@ function mod:HandleControls(f, section, buttonSize)
 				timeElapsed = timeElapsed + elapsed
 				if timeElapsed > 0.1 then
 					if InCombatLockdown() then
-						--print(core.customColorBad..ERR_NOT_IN_COMBAT)
 						sectionFrame.isBeingSorted = false
 						sectionFrame.concatenateButton:SetScript('OnUpdate', nil)
 						mod:UpdateSection(f, section, buttonSize)
@@ -1138,7 +1129,7 @@ function mod:HandleControls(f, section, buttonSize)
 	end
 end
 
-function mod:ToggleMinimizeSection(f, section, buttonSize)
+function mod:ToggleMinimizeSection(f, section, buttonSize, isInCombat, updatedSections)
     if not section.frame.minimized then
         section.frame.concatenateButton:Show()
         section.frame.expandButton:Show()
@@ -1157,8 +1148,10 @@ function mod:ToggleMinimizeSection(f, section, buttonSize)
 			section.frame.minimizedLine:Show()
 		end
     end
-    mod:UpdateSection(f, section, buttonSize)
-    mod:ResizeFrame(f, buttonSize)
+	if not updatedSections or not updatedSections[section] then
+		mod:UpdateSection(f, section, buttonSize, isInCombat)
+		mod:ResizeFrame(f, buttonSize)
+	end
 end
 
 function mod:HandleSortButton(f, enable, isBank)
@@ -1639,6 +1632,7 @@ function mod:ScanBags(f, updateLast)
 end
 
 function mod:ApplyBagChanges(f, changes)
+	local updatedSections = {}
 	local occupied = {}
 	local layout = f.currentLayout
     for bagID, slots in pairs(changes) do
@@ -1661,10 +1655,12 @@ function mod:ApplyBagChanges(f, changes)
                     B_PickupItem(nil, targetBagID, targetSlotID)
                     mod:UpdateSection(f, section, layout.buttonSize)
 					occupied[targetBagID..'-'..targetSlotID] = true
+					updatedSections[section] = true
                 end
             end
         end
     end
+	return updatedSections
 end
 
 function mod:UpdateBagSlots(self, f, bagID)
@@ -1673,17 +1669,16 @@ function mod:UpdateBagSlots(self, f, bagID)
 
 	if not equippedBags[bagID] then equippedBags[bagID] = GetBagName(bagID) end
 
-    for _, section in ipairs(layout.sections) do
+	for _, section in ipairs(layout.sections) do
 		mod:UpdateSection(f, section, layout.buttonSize)
-    end
+	end
 
 	if updatePending then return end
 	updatePending = true
 
 	if not InCombatLockdown() then
 		E_Delay(nil, 0.1, function()
-			local changes = mod:ScanBags(f)
-			mod:ApplyBagChanges(f, changes)
+			mod:ApplyBagChanges(f, mod:ScanBags(f))
 			for bagID, bagName in pairs(equippedBags) do
 				if bagName ~= GetBagName(bagID) then
 					-- due to increased load (i guess?) introduced by this plugin, real bag removal isn't being registered properly
