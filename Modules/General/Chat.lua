@@ -75,6 +75,9 @@ for chatType in pairs(ChatTypeInfo) do
 	chatTypeIndexToName[GetChatTypeIndex(chatType)] = chatType
 end
 
+for _, frameName in ipairs(CHAT_FRAMES) do
+	lastHisoryMsgIndex[_G[frameName]] = 1
+end
 
 local function colorLine(msg, origColor)
 	if lower(origColor) == "|cffffffff" then return msg end
@@ -784,10 +787,7 @@ local function setupCompactChat(db)
 					local searchButton = chatFrame.searchButton
 					local embedded = EMB and EMB.mainFrame and EMB.mainFrame:IsShown() and emb_db.rightChatPanel
 
-					chatFrame:SetAlpha((isSelected and not embedded) and 1 or 0)
-					chatFrame:SetFrameLevel(rightChatLevel + ((isSelected  and not embedded) and 1 or -1))
-
-					FCF_SetUninteractable(chatFrame, not isSelected)
+					chatFrame:SetParent((isSelected and not embedded) and RightChatPanel or E.HiddenFrame)
 
 					if searchButton then
 						if isSelected then
@@ -797,9 +797,6 @@ local function setupCompactChat(db)
 						end
 					end
 				elseif chatFrame:IsShown() then
-					chatFrame:SetAlpha(1)
-					FCF_SelectDockFrame(chatFrame)
-					FCF_SetUninteractable(chatFrame, false)
 					db.selectedLeftTab = i
 				end
 			end
@@ -852,7 +849,8 @@ local function setupCompactChat(db)
 			else
 				FCF_DockFrame(chatFrame)
 				FCF_SelectDockFrame(chatFrame)
-				chatFrame:SetAlpha(1)
+
+			chatFrame:SetParent(LeftChatPanel)
 				for id, val in pairs(db.rightSideChats) do
 					if val then
 						db.selectedRightTab = id
@@ -1179,10 +1177,20 @@ local function setupCompactChat(db)
 			end
 		end
 
-		if EMB and not mod:IsHooked(EMB, "UpdateSwitchButton") then
-			mod:SecureHook(EMB, "UpdateSwitchButton", function()
-				EMB.switchButton:Hide()
-			end)
+		if EMB then
+			if not mod:IsHooked(EMB, "UpdateSwitchButton") then
+				mod:SecureHook(EMB, "UpdateSwitchButton", function()
+					EMB.switchButton:Hide()
+				end)
+			end
+			if EMB.mainFrame then
+				if not mod:IsHooked(EMB.mainFrame, "OnShow") then
+					mod:SecureHookScript(EMB.mainFrame, "OnShow", function() updateChatVisibility(db.selectedRightTab) end)
+				end
+				if not mod:IsHooked(EMB.mainFrame, "OnHide") then
+					mod:SecureHookScript(EMB.mainFrame, "OnHide", function() updateChatVisibility(db.selectedRightTab) end)
+				end
+			end
 		end
 
 		if not mod:IsHooked(CH, "PositionChat") then
@@ -1215,6 +1223,7 @@ local function setupCompactChat(db)
 						end
 					end
 				end
+				updateChatVisibility(db.selectedRightTab)
 			end)
 		end
 
@@ -1248,7 +1257,6 @@ local function setupCompactChat(db)
 					local chatFrame = _G["ChatFrame"..i]
 					if chatFrame.isDocked and db.rightSideChats[i] then
 						db.rightSideChats[i] = nil
-						chatFrame:SetAlpha(1)
 					end
 				end
 			end)
@@ -1330,8 +1338,7 @@ local function setupCompactChat(db)
 			if db.rightSideChats[i] then
 				if not mod:IsHooked(chatFrame, "OnUpdate") then
 					mod:SecureHookScript(chatFrame, "OnUpdate", function(self)
-						local _, anchor = self:GetParent()
-
+						local _, anchor = self:GetPoint()
 						if anchor ~= RightChatPanel then
 							moveChatFrame(self, i, "right")
 						else
@@ -1348,7 +1355,11 @@ local function setupCompactChat(db)
 		selectChatTab(_G["ChatFrame"..db.selectedRightTab], db.selectedRightTab, true)
 	elseif initialized.compactChat then
 		if MessageEventHandlerPostHooks['compactChat'] then MessageEventHandlerPostHooks['compactChat'] = nil end
-		if EMB and mod:IsHooked(EMB, "UpdateSwitchButton") then mod:Unhook(EMB, "UpdateSwitchButton") end
+		if EMB then
+			if mod:IsHooked(EMB, "UpdateSwitchButton") then mod:Unhook(EMB, "UpdateSwitchButton") end
+			if EMB.mainFrame and mod:IsHooked(EMB.mainFrame, "OnShow") then mod:Unhook(EMB.mainFrame, "OnShow") end
+			if EMB.mainFrame and mod:IsHooked(EMB.mainFrame, "OnHide") then mod:Unhook(EMB.mainFrame, "OnHide") end
+		end
 		if mod:IsHooked(CH, "PositionChat") then mod:Unhook(CH, "PositionChat") end
 		if mod:IsHooked(CH, "StyleChat") then mod:Unhook(CH, "StyleChat") end
 

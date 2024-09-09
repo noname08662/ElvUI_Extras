@@ -283,23 +283,33 @@ if isAwesome then
 
 	core:RegisterEvent('UPDATE_MOUSEOVER_UNIT', function()
 		local plate = GetNamePlateForUnit('mouseover')
-		if not plate or not plate.UnitFrame then return end
-		local frame = plate.UnitFrame
-		NP:SetMouseoverFrame(frame)
-		mouseover:SetScript("OnUpdate", function()
+		if plate and plate.UnitFrame then
 			for _, np in pairs(GetNamePlates()) do
 				local unitframe = np.UnitFrame
-				local unit = np.unit
-				if unitframe and unitframe.isMouseover and unit and plate.unit and UnitGUID(plate.unit) ~= UnitGUID(unit) then
-					NP:SetMouseoverFrame(unitframe)
+				if unitframe and unitframe.isMouseover then
+					if unitframe.oldHighlight:IsShown() then
+						unitframe.isMouseover = true
+						NP:Update_Highlight(unitframe)
+					elseif unitframe.isMouseover then
+						unitframe.isMouseover = nil
+						NP:Update_Highlight(unitframe)
+					end
 				end
 			end
-			if not UnitExists('mouseover') then
-				NP:SetMouseoverFrame(frame)
-				mouseover:SetScript("OnUpdate", nil)
-				return
-			end
-		end)
+			NP:SetMouseoverFrame(plate.UnitFrame)
+			mouseover:SetScript("OnUpdate", function()
+				if not UnitExists('mouseover') then
+					for _, np in pairs(GetNamePlates()) do
+						local unitframe = np.UnitFrame
+						if unitframe and unitframe.isMouseover then
+							unitframe.isMouseover = nil
+							NP:Update_Highlight(unitframe)
+						end
+					end
+					mouseover:SetScript("OnUpdate", nil)
+				end
+			end)
+		end
 	end)
 
 	core:RegisterEvent('UNIT_THREAT_LIST_UPDATE', function(_, unit)
@@ -570,7 +580,7 @@ function core:OpenEditor(title, text, acceptFunc)
 		self.EditFrame.editBox:SetText(text)
 		self.EditFrame.editBox:SetTextColor(1,0.82,0)
 		self.EditFrame.editBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-		
+
 		self.EditFrame.editBox:SetScript("OnTabPressed", function(self)
 			self:Insert("    ")
 		end)
@@ -1478,15 +1488,33 @@ function core:Initialize()
 
 	if shadow_db then
 		local M = E:GetModule("Misc")
+		local chatBubbles = E.private.general.chatBubbles
 		local createShadow = E.CreateGlobalShadow
 		local size = shadow_db.size
 
 		createShadow(nil, shadow_db, _G["Minimap"])
 
+		for _, frame in ipairs({WorldFrame:GetChildren()}) do
+			if frame.isSkinnedElvUI then
+				createShadow(nil, shadow_db, frame)
+			end
+		end
+
 		if E.pendingShadowUpdate then
 			for frame in pairs(E.pendingShadowUpdate) do
 				createShadow(nil, shadow_db, frame)
 			end
+		end
+
+		if not self:IsHooked(M, "SkinBubble") then
+			self:SecureHook(M, "SkinBubble", function(_, frame)
+				createShadow(nil, shadow_db, frame)
+				if chatBubbles == "backdrop_noborder" then
+					frame.globalShadow:SetOutside(frame)
+				elseif frame.globalShadow and chatBubbles == "nobackdrop" then
+					frame.globalShadow:Hide()
+				end
+			end)
 		end
 
 		if not self:IsHooked(NP, "StyleFrame") then

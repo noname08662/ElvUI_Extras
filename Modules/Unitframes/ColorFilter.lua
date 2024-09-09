@@ -736,12 +736,19 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Conditions"],
 						desc = L["Usage example:"..
-								"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-								"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end \nif UnitIsUnit(@unit, 'target') then return true end \n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
-								"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group (more than 5 in the example above)"..
-								"\n'return {}' - you can dynamically color the frames by returning the colors in a table format: to apply to the statusbar, assign your rgb values to mR, mG and mB respectively; to apply the glow - to gR, gG, gB, gA (alpha); for borders - bR, bG, bB; and for the flash - fR, fG, fB, fA."..
-								"\n\nFeel free to use '@unit' to register current unit like this: UnitBuff(@unit, 'player')."..
-								"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."],
+									"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
+									"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
+									"\nif UnitIsUnit(@unit, 'target') then return true end"..
+									"\n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
+									"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group (more than 5 in the example above)"..
+									"\n\n'return {bR=1,f=false}' - you can dynamically color the frames by returning the colors in a table format:"..
+									"\n  to apply to the statusbar, assign your rgb values to mR, mG and mB respectively"..
+									"\n  to apply the glow - to gR, gG, gB, gA (alpha)"..
+									"\n  for borders - bR, bG, bB"..
+									"\n  and for the flash - fR, fG, fB, fA"..
+									"\n  to prevent the elements styling, return {m = false, g = false, b = false, f = false}"..
+									"\n\nFeel free to use '@unit' to register current unit like this: UnitBuff(@unit, 'player')."..
+									"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."],
 					},
 				},
 			},
