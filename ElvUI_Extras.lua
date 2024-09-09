@@ -1497,6 +1497,11 @@ function core:Initialize()
 		for _, frame in ipairs({WorldFrame:GetChildren()}) do
 			if frame.isSkinnedElvUI then
 				createShadow(nil, shadow_db, frame)
+				if chatBubbles == "backdrop_noborder" then
+					frame.globalShadow:SetOutside(frame.backdrop, size, size)
+				elseif frame.globalShadow and chatBubbles == "nobackdrop" then
+					frame.globalShadow:Hide()
+				end
 			end
 		end
 
@@ -1510,7 +1515,7 @@ function core:Initialize()
 			self:SecureHook(M, "SkinBubble", function(_, frame)
 				createShadow(nil, shadow_db, frame)
 				if chatBubbles == "backdrop_noborder" then
-					frame.globalShadow:SetOutside(frame)
+					frame.globalShadow:SetOutside(frame.backdrop, size, size)
 				elseif frame.globalShadow and chatBubbles == "nobackdrop" then
 					frame.globalShadow:Hide()
 				end
