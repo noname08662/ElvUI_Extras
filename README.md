@@ -18,6 +18,7 @@ What's inside:
 		global shadow for all of the skinned frames:
 		combat state alert frame;
 		arbitrary tooltip notes for most of the in-game tooltips;
+		internal cds at trinket tooltips;
 [Blizzard]:
 	(Automation) - auto-gossip;
 			auto-fill "DELETE";
