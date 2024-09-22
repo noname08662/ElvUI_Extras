@@ -987,7 +987,7 @@ function mod:ConstructHighlight(frame)
 		constructAnimation(castbar, colorFilter.Castbar)
 		colorFilter.Castbar.flashTexture:Hide()
 
-		colorFilter.Castbar:Hide()
+		--colorFilter.Castbar:Hide()
 		if castbar.Icon then
 			colorFilter.CastbarIcon = CreateFrame("Frame", nil, castbar.Icon.bg)
 			colorFilter.CastbarIcon:CreateShadow(nil, true)
@@ -995,7 +995,7 @@ function mod:ConstructHighlight(frame)
 
 			colorFilter.CastbarIcon.shadow:SetFrameLevel(colorFilter.CastbarIcon:GetFrameLevel()+15)
 
-			colorFilter.CastbarIcon:Hide()
+			--colorFilter.CastbarIcon:Hide()
 		end
 	end
 
@@ -1135,16 +1135,16 @@ function mod:UpdateGlow(frame, colors, statusbar, unit, showGlow, highlight)
 		local targetBar = (detached or statusbar == 'Castbar') and statusbar or 'Health'
 		colorFilter[targetBar]:SetScale(glowSize)
 		colorFilter[targetBar].shadow:SetBackdropBorderColor(r, g, b, a or 1)
-		colorFilter[targetBar]:Show()
+		colorFilter[targetBar].shadow:Show()
 
 		if statusbar == 'Castbar' then
 			local castbarIcon = colorFilter.CastbarIcon
 			if glow.castbarIcon then
-				castbarIcon:Show()
 				castbarIcon:SetScale(glow.castbarIconSize)
 				castbarIcon.shadow:SetBackdropBorderColor(unpack(glow.castbarIconColors))
+				castbarIcon.shadow:Show()
 			elseif castbarIcon:IsShown() then
-				castbarIcon:Hide()
+				castbarIcon.shadow:Hide()
 			end
 		end
 
@@ -1154,7 +1154,7 @@ function mod:UpdateGlow(frame, colors, statusbar, unit, showGlow, highlight)
 
 		if statusbar == 'Castbar' then
 			local castbarIcon = colorFilter.CastbarIcon
-			if castbarIcon then castbarIcon:Hide() end
+			if castbarIcon then castbarIcon.shadow:Hide() end
 		end
 
 		if not detached and statusbar ~= 'Castbar' then
@@ -1163,7 +1163,7 @@ function mod:UpdateGlow(frame, colors, statusbar, unit, showGlow, highlight)
 				local health = frame.colorFilter.Health
 				health:SetScale(appliedGlowColors.Power.highlight.glow.size)
 				health.shadow:SetBackdropBorderColor(r, g, b, a or 1)
-				health:Show()
+				health.shadow:Show()
 			elseif statusbar == 'Power' and not appliedGlowColors.Health.applied and colorFilter.Health:IsShown() then
 				colorFilter.Health.shadow:Hide()
 			end
