@@ -523,9 +523,19 @@ P["Extras"]["unitframes"][modName] = {
 }
 
 function mod:LoadConfig()
-	local function selectedUnit() return E.db.Extras.unitframes[modName].selectedUnit end
-	local function selectedType() return E.db.Extras.unitframes[modName].selectedType end
-	local function selectedSpell() return tonumber(E.db.Extras.unitframes[modName][selectedType()].selectedSpell) end
+	local db = E.db.Extras.unitframes[modName]
+	local function selectedUnit() return db.selectedUnit end
+	local function selectedType() return db.selectedType end
+	local function selectedSpell() return selectedType() and tonumber(db[selectedType()].selectedSpell) or "" end
+	local function selectedTypeData()
+		return core:getSelected("unitframes", modName, format("[%s]", selectedType() or ""), "FRIENDLY_PLAYER")
+	end
+	local function selectedUnitData()
+		return core:getSelected("unitframes", modName, format("%s.units[%s]", selectedType(), selectedUnit() or ""), "target")
+	end
+	local function highlightedSpellsData()
+		return core:getSelected("unitframes", modName, format("%s.highlightedSpells[%s]", selectedType(), selectedSpell()), "")
+	end
 	core.unitframes.args[modName] = {
 		type = "group",
 		name = L["Cooldowns"],
@@ -535,7 +545,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Cooldowns"],
 				guiInline = true,
-				disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()].enabled end,
+				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					enabled = {
 						order = 0,
@@ -543,8 +553,8 @@ function mod:LoadConfig()
 						disabled = false,
 						name = core.pluginColor..L["Enable"],
 						desc = L["Draws player cooldowns."],
-						get = function(info) return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] end,
-						set = function(info, value) E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] = value self:Toggle() end,
+						get = function(info) return selectedUnitData()[info[#info]] end,
+						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 					},
 					testMode = {
 						order = 1,
@@ -559,9 +569,9 @@ function mod:LoadConfig()
 						disabled = false,
 						name = L["Select Unit"],
 						desc = "",
-						values = function() return core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName][selectedType()].units) end,
-						get = function(info) return E.db.Extras.unitframes[modName][info[#info]] end,
-						set = function(info, value) E.db.Extras.unitframes[modName][info[#info]] = value if testing then testMode() else self:Toggle() end end,
+						values = function() return core:GetUnitDropdownOptions(db[selectedType()].units) end,
+						get = function(info) return db[info[#info]] end,
+						set = function(info, value) db[info[#info]] = value if testing then testMode() else self:Toggle() end end,
 					},
 					selectedType = {
 						order = 4,
@@ -570,13 +580,13 @@ function mod:LoadConfig()
 						desc = "",
 						values = function()
 							local list = {}
-							for type in pairs(E.db.Extras.unitframes[modName]) do
+							for type in pairs(db) do
 								if upper(type) == type then list[type] = L[type] end
 							end
 							return list
 						end,
-						get = function(info) return E.db.Extras.unitframes[modName][info[#info]] end,
-						set = function(info, value) E.db.Extras.unitframes[modName][info[#info]] = value if testing then testMode() else self:Toggle() end end,
+						get = function(info) return db[info[#info]] end,
+						set = function(info, value) db[info[#info]] = value if testing then testMode() else self:Toggle() end end,
 						disabled = function() return not find(selectedUnit(), 'target') and selectedUnit() ~= 'focus' end,
 					},
 					showAll = {
@@ -584,53 +594,53 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Show Everywhere"],
 						desc = "",
-						get = function(info) return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] end,
-						set = function(info, value) E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] = value self:Toggle() end,
+						get = function(info) return selectedUnitData()[info[#info]] end,
+						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 					},
 					showCity = {
 						order = 5,
 						type = "toggle",
 						name = L["Show in Cities"],
 						desc = "",
-						hidden = function() return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()].showAll end,
-						get = function(info) return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] end,
-						set = function(info, value) E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] = value self:Toggle() end,
+						hidden = function() return selectedUnitData().showAll end,
+						get = function(info) return selectedUnitData()[info[#info]] end,
+						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 					},
 					showBG = {
 						order = 6,
 						type = "toggle",
 						name = L["Show in Battlegrounds"],
 						desc = "",
-						hidden = function() return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()].showAll end,
-						get = function(info) return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] end,
-						set = function(info, value) E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] = value self:Toggle() end,
+						hidden = function() return selectedUnitData().showAll end,
+						get = function(info) return selectedUnitData()[info[#info]] end,
+						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 					},
 					showArena = {
 						order = 7,
 						type = "toggle",
 						name = L["Show in Arenas"],
 						desc = "",
-						hidden = function() return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()].showAll end,
-						get = function(info) return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] end,
-						set = function(info, value) E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] = value self:Toggle() end,
+						hidden = function() return selectedUnitData().showAll end,
+						get = function(info) return selectedUnitData()[info[#info]] end,
+						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 					},
 					showInstance = {
 						order = 7,
 						type = "toggle",
 						name = L["Show in Instances"],
 						desc = "",
-						hidden = function() return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()].showAll end,
-						get = function(info) return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] end,
-						set = function(info, value) E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] = value self:Toggle() end,
+						hidden = function() return selectedUnitData().showAll end,
+						get = function(info) return selectedUnitData()[info[#info]] end,
+						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 					},
 					showWorld = {
 						order = 7,
 						type = "toggle",
 						name = L["Show in the World"],
 						desc = "",
-						hidden = function() return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()].showAll end,
-						get = function(info) return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] end,
-						set = function(info, value) E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info]] = value self:Toggle() end,
+						hidden = function() return selectedUnitData().showAll end,
+						get = function(info) return selectedUnitData()[info[#info]] end,
+						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 					},
 				},
 			},
@@ -638,9 +648,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Header"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info-1]][info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info-1]][info[#info]] = value self:Toggle() end,
-				disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()].enabled end,
+				get = function(info) return selectedUnitData()[info[#info-1]][info[#info]] end,
+				set = function(info, value) selectedUnitData()[info[#info-1]][info[#info]] = value self:Toggle() end,
+				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					level = {
 						order = 0,
@@ -695,9 +705,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Icons"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info-1]][info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info-1]][info[#info]] = value self:Toggle() end,
-				disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()].enabled end,
+				get = function(info) return selectedUnitData()[info[#info-1]][info[#info]] end,
+				set = function(info, value) selectedUnitData()[info[#info-1]][info[#info]] = value self:Toggle() end,
+				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					throttle = {
 						order = 0,
@@ -728,8 +738,8 @@ function mod:LoadConfig()
 						type = "color",
 						name = L["Border Color"],
 						desc = L["Any value apart from black (0,0,0) would override borders by time left."],
-						get = function(info) return unpack(E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info-1]].borderCustomColor) end,
-						set = function(info, r, g, b) E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info-1]].borderCustomColor = { r, g, b } self:Toggle() end,
+						get = function(info) return unpack(selectedUnitData()[info[#info-1]].borderCustomColor) end,
+						set = function(info, r, g, b) selectedUnitData()[info[#info-1]].borderCustomColor = {r, g, b} self:Toggle() end,
 					},
 					borderColor = {
 						order = 5,
@@ -797,9 +807,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["CD Text"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info-1]][info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info-1]][info[#info]] = value self:Toggle() end,
-				disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()].enabled end,
+				get = function(info) return selectedUnitData()[info[#info-1]][info[#info]] end,
+				set = function(info, value) selectedUnitData()[info[#info-1]][info[#info]] = value self:Toggle() end,
+				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					enabled = {
 						order = 1,
@@ -854,9 +864,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Cooldown Fill"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info-1]][info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()][info[#info-1]][info[#info]] = value self:Toggle() end,
-				disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()].enabled end,
+				get = function(info) return selectedUnitData()[info[#info-1]][info[#info]] end,
+				set = function(info, value) selectedUnitData()[info[#info-1]][info[#info]] = value self:Toggle() end,
+				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					enabled = {
 						order = 0,
@@ -894,7 +904,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Spells"],
 				guiInline = true,
-				disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].units[selectedUnit()].enabled end,
+				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					addSpell = {
 						order = 1,
@@ -907,7 +917,7 @@ function mod:LoadConfig()
 							if spellID and GetSpellInfo(spellID) then
 								cooldownTime = cooldownTime or LAI.spellDuration[spellID]
 								if not cooldownTime then return end
-								E.db.Extras.unitframes[modName][selectedType()].spellList[tonumber(spellID)] = cooldownTime
+								selectedTypeData().spellList[tonumber(spellID)] = cooldownTime
 								local _, _, icon = GetSpellInfo(spellID)
 								local link = GetSpellLink(spellID)
 								icon = gsub(icon, '\124', '\124\124')
@@ -923,14 +933,14 @@ function mod:LoadConfig()
 						desc = "",
 						func = function()
 							local spellID = selectedSpell()
-							E.db.Extras.unitframes[modName][selectedType()].spellList[spellID] = nil
+							selectedTypeData().spellList[spellID] = nil
 							local _, _, icon = GetSpellInfo(spellID)
 							local link = GetSpellLink(spellID)
 							icon = gsub(icon, '\124', '\124\124')
 							local string = '\124T' .. icon .. ':16:16\124t' .. link
 							core:print('REMOVED', string)
 						end,
-						disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].spellList[selectedSpell()] end,
+						disabled = function() return not selectedTypeData().spellList[selectedSpell()] end,
 					},
 					selectedSpell = {
 						order = 3,
@@ -938,16 +948,16 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Select Spell"],
 						desc = "",
-						get = function(info) return E.db.Extras.unitframes[modName][selectedType()][info[#info]] end,
+						get = function(info) return selectedTypeData()[info[#info]] end,
 						set = function(info, value)
-							E.db.Extras.unitframes[modName][selectedType()][info[#info]] = value
-							if not E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] then
-								E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] = { ["enabled"] = false, ["size"] = 1, ["color"] = {0,0,0,1} }
+							selectedTypeData()[info[#info]] = value
+							if not selectedTypeData().highlightedSpells[selectedSpell()] then
+								selectedTypeData().highlightedSpells[selectedSpell()] = { ["enabled"] = false, ["size"] = 1, ["color"] = {0,0,0,1} }
 							end
 						end,
 						values = function()
 							local values = {}
-							for id in pairs(E.db.Extras.unitframes[modName][selectedType()].spellList) do
+							for id in pairs(db[selectedType()].spellList) do
 								local name = GetSpellInfo(id) or ""
 								local icon = select(3, GetSpellInfo(id))
 								icon = icon and "|T"..icon..":0|t" or ""
@@ -957,7 +967,7 @@ function mod:LoadConfig()
 						end,
 						sorting = function()
 							local sortedKeys = {}
-							for id in pairs(E.db.Extras.unitframes[modName][selectedType()].spellList) do
+							for id in pairs(db[selectedType()].spellList) do
 								tinsert(sortedKeys, id)
 							end
 							tsort(sortedKeys, function(a, b)
@@ -973,18 +983,18 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Shadow"],
 						desc = L["For the important stuff."],
-						get = function() return E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] and E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].enabled or false end,
-						set = function(_, value) E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].enabled = value self:Toggle() end,
-						disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].selectedSpell end,
+						get = function() return #highlightedSpells > 0 and highlightedSpellsData().enabled end,
+						set = function(_, value) highlightedSpellsData().enabled = value self:Toggle() end,
+						disabled = function() return not db[selectedType()].selectedSpell end,
 					},
 					petSpell = {
 						order = 5,
 						type = "toggle",
 						name = L["Pet Ability"],
 						desc = L["Pet casts require some special treatment."],
-						get = function() return E.db.Extras.unitframes[modName].petSpells[selectedSpell()] end,
-						set = function(_, value) E.db.Extras.unitframes[modName].petSpells[selectedSpell()]= value and value or nil self:Toggle() end,
-						disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].selectedSpell end,
+						get = function() return db.petSpells[selectedSpell()] end,
+						set = function(_, value) db.petSpells[selectedSpell()] = value and value or nil self:Toggle() end,
+						disabled = function() return not selectedTypeData().selectedSpell end,
 					},
 					shadowSize = {
 						order = 6,
@@ -992,9 +1002,9 @@ function mod:LoadConfig()
 						name = L["Shadow Size"],
 						desc = "",
 						min = 1, max = 12, step = 1,
-						get = function() return E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] and E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].size or 0 end,
-						set = function(_, value) E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].size = value self:Toggle() end,
-						disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] or not E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].enabled end,
+						get = function() return #highlightedSpells > 0 and highlightedSpellsData().size or 0 end,
+						set = function(_, value) highlightedSpellsData().size = value self:Toggle() end,
+						disabled = function() return #highlightedSpells == 0 or not highlightedSpellsData().enabled end,
 					},
 					shadowColor = {
 						order = 7,
@@ -1002,21 +1012,21 @@ function mod:LoadConfig()
 						hasAlpha = true,
 						name = L["Shadow Color"],
 						desc = "",
-						get = function() return unpack(E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] and E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].color or {}) end,
-						set = function(_, r, g, b, a) E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].color = { r, g, b, a } self:Toggle() end,
-						disabled = function() return not E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()] or not E.db.Extras.unitframes[modName][selectedType()].highlightedSpells[selectedSpell()].enabled end,
+						get = function() return unpack(#highlightedSpells > 0 and highlightedSpellsData().color or {}) end,
+						set = function(_, r, g, b, a) highlightedSpellsData().color = {r, g, b, a} self:Toggle() end,
+						disabled = function() return #highlightedSpells == 0 or not highlightedSpellsData().enabled end,
 					},
 				},
 			},
 		},
 	}
-	if not E.db.Extras.unitframes[modName]['FRIENDLY_PLAYER'].units.player then
+	if not db['FRIENDLY_PLAYER'].units.player then
 		for _, unitframeType in ipairs({'player', 'focus', 'raid', 'raid40', 'party', 'arena'}) do
-			E.db.Extras.unitframes[modName]['FRIENDLY_PLAYER'].units[unitframeType] = CopyTable(E.db.Extras.unitframes[modName]['FRIENDLY_PLAYER'].units.target)
+			db['FRIENDLY_PLAYER'].units[unitframeType] = CopyTable(db['FRIENDLY_PLAYER'].units.target)
 		end
 	end
-	if not E.db.Extras.unitframes[modName]['ENEMY_PLAYER'] then
-		E.db.Extras.unitframes[modName]['ENEMY_PLAYER'] = CopyTable(E.db.Extras.unitframes[modName]['FRIENDLY_PLAYER'])
+	if not db['ENEMY_PLAYER'] then
+		db['ENEMY_PLAYER'] = CopyTable(db['FRIENDLY_PLAYER'])
 	end
 end
 

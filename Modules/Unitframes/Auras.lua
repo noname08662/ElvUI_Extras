@@ -63,10 +63,11 @@ P["Extras"]["unitframes"][modName] = {
 }
 
 function mod:LoadConfig()
-	local function selectedType() return E.db.Extras.unitframes[modName].Highlights.selectedType end
-	local function selectedSpellorFilter() return E.db.Extras.unitframes[modName].Highlights.types[selectedType()].selected end
+	local db = E.db.Extras.unitframes[modName]
+	local function selectedType() return db.Highlights.selectedType or "FRIENDLY" end
+	local function selectedSpellorFilter() return db.Highlights.types[selectedType()].selected or "GLOBAL" end
 	local function getHighlightSettings(selectedType, spellOrFilter)
-		local db = E.db.Extras.unitframes[modName].Highlights.types[selectedType]
+		local db = db.Highlights.types[selectedType]
 		if spellOrFilter == "GLOBAL" then
 			return db.global
 		elseif spellOrFilter == "CURABLE" or spellOrFilter == "STEALABLE" then
@@ -81,8 +82,8 @@ function mod:LoadConfig()
 	core.unitframes.args[modName] = {
 		type = "group",
 		name = L["Auras"],
-		get = function(info) return E.db.Extras.unitframes[modName][info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
-		set = function(info, value) E.db.Extras.unitframes[modName][info[#info-1]][gsub(info[#info], info[#info-1], '')] = value self:Toggle() UF:Update_AllFrames() end,
+		get = function(info) return db[info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
+		set = function(info, value) db[info[#info-1]][gsub(info[#info], info[#info-1], '')] = value self:Toggle() UF:Update_AllFrames() end,
 		args = {
 			Highlights = {
 				order = 1,
@@ -95,17 +96,17 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Highlights auras."],
-						get = function() return E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
-						set = function(_, value) E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled = value self:UpdatePostUpdateAura(value) UF:Update_AllFrames() end,
+						get = function() return db.Highlights.types[selectedType()].enabled end,
+						set = function(_, value) db.Highlights.types[selectedType()].enabled = value self:UpdatePostUpdateAura(value) UF:Update_AllFrames() end,
 					},
 					typeDropdown = {
 						order = 2,
 						type = "select",
 						name = L["Select Type"],
 						desc = "",
-						get = function() return E.db.Extras.unitframes[modName].Highlights.selectedType end,
-						set = function(_, value) E.db.Extras.unitframes[modName].Highlights.selectedType = value end,
-						values = function() return core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].Highlights.types) end,
+						get = function() return db.Highlights.selectedType end,
+						set = function(_, value) db.Highlights.selectedType = value end,
+						values = function() return core:GetUnitDropdownOptions(db.Highlights.types) end,
 					},
 				},
 			},
@@ -114,8 +115,8 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Highlights Settings"],
 				guiInline = true,
-				disabled = function() return not E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
-				hidden = function() return not E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
+				disabled = function() return not db.Highlights.types[selectedType()].enabled end,
+				hidden = function() return not db.Highlights.types[selectedType()].enabled end,
 				args = {
 					addSpell = {
 						order = 1,
@@ -126,7 +127,7 @@ function mod:LoadConfig()
 						set = function(_, value)
 							local spellID = match(value, '%D*(%d+)%D*')
 							if spellID and GetSpellInfo(spellID) then
-								E.db.Extras.unitframes[modName].Highlights.types[selectedType()].spellList[tonumber(spellID)] = {
+								db.Highlights.types[selectedType()].spellList[tonumber(spellID)] = {
 									["border"] = false,
 									["shadow"] = false,
 									["useGlobal"] = false,
@@ -159,7 +160,7 @@ function mod:LoadConfig()
 						end,
 						get = function() return "" end,
 						set = function(_, value)
-							E.db.Extras.unitframes[modName].Highlights.types[selectedType()].filterList[value] = {
+							db.Highlights.types[selectedType()].filterList[value] = {
 								["border"] = false,
 								["shadow"] = false,
 								["useGlobal"] = false,
@@ -178,7 +179,7 @@ function mod:LoadConfig()
 						desc = "",
 						func = function()
 							local selected = selectedSpellorFilter()
-							local db = E.db.Extras.unitframes[modName].Highlights.types[selectedType()]
+							local db = db.Highlights.types[selectedType()]
 							if type(selected) == 'number' then
 								db.spellList[selected] = nil
 								local _, _, icon = GetSpellInfo(selected)
@@ -203,7 +204,7 @@ function mod:LoadConfig()
 						get = function() return selectedSpellorFilter() end,
 						set = function(_, value)
 							if (value == '--filters--' or value == '--spells--') then value = 'GLOBAL' end
-							E.db.Extras.unitframes[modName].Highlights.types[selectedType()].selected = value
+							db.Highlights.types[selectedType()].selected = value
 						end,
 						values = function()
 							local effectType = selectedType() == 'FRIENDLY' and "CURABLE" or "STEALABLE"
@@ -212,11 +213,11 @@ function mod:LoadConfig()
 								[effectType] = L[effectType],
 								["--filters--"] = L["--Filters--"],
 							}
-							for filter in pairs(E.db.Extras.unitframes[modName].Highlights.types[selectedType()].filterList) do
+							for filter in pairs(db.Highlights.types[selectedType()].filterList) do
 								values[filter] = filter
 							end
 							values["--spells--"] = L["--Spells--"]
-							for spellID in pairs(E.db.Extras.unitframes[modName].Highlights.types[selectedType()].spellList) do
+							for spellID in pairs(db.Highlights.types[selectedType()].spellList) do
 								local name, _, icon = GetSpellInfo(spellID)
 								icon = icon and "|T"..icon..":0|t" or ""
 								values[spellID] = format("%s %s (%s)", icon, name or "", spellID)
@@ -225,11 +226,11 @@ function mod:LoadConfig()
 						end,
 						sorting = function()
 							local sortedKeys = {"GLOBAL", selectedType() == 'FRIENDLY' and "CURABLE" or "STEALABLE", "--filters--"}
-							for filter in pairs(E.db.Extras.unitframes[modName].Highlights.types[selectedType()].filterList) do
+							for filter in pairs(db.Highlights.types[selectedType()].filterList) do
 								tinsert(sortedKeys, filter)
 							end
 							tinsert(sortedKeys, "--spells--")
-							for spellID in pairs(E.db.Extras.unitframes[modName].Highlights.types[selectedType()].spellList) do
+							for spellID in pairs(db.Highlights.types[selectedType()].spellList) do
 								tinsert(sortedKeys, spellID)
 							end
 							return sortedKeys
@@ -242,13 +243,13 @@ function mod:LoadConfig()
 						desc = L["If toggled, the GLOBAL Spell or Filter entry values would be used."],
 						get = function()
 							local selected = selectedSpellorFilter()
-							local db = E.db.Extras.unitframes[modName].Highlights.types[selectedType()]
+							local db = db.Highlights.types[selectedType()]
 							local target = type(selected) == 'number' and db.spellList[selected] or db.filterList[selected]
 							return selected == 'GLOBAL' or selected == 'CURABLE' or selected == 'STEALABLE' or target.useGlobal
 						end,
 						set = function(_, value)
 							local selected = selectedSpellorFilter()
-							local db = E.db.Extras.unitframes[modName].Highlights.types[selectedType()]
+							local db = db.Highlights.types[selectedType()]
 							local target = type(selected) == 'number' and db.spellList[selected] or db.filterList[selected]
 							target.useGlobal = value
 							UF:Update_AllFrames()
@@ -263,8 +264,8 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Selected Spell or Filter Values"],
 				inline = true,
-				disabled = function() return not E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
-				hidden = function() return not E.db.Extras.unitframes[modName].Highlights.types[selectedType()].enabled end,
+				disabled = function() return not db.Highlights.types[selectedType()].enabled end,
+				hidden = function() return not db.Highlights.types[selectedType()].enabled end,
 				get = function(info) return getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] end,
 				set = function(info, value)
 					getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] = value
@@ -369,8 +370,8 @@ function mod:LoadConfig()
 			},
 		},
 	}
-	if not E.db.Extras.unitframes[modName].Highlights.types['ENEMY'] then
-		E.db.Extras.unitframes[modName].Highlights.types['ENEMY'] = CopyTable(E.db.Extras.unitframes[modName].Highlights.types['FRIENDLY'])
+	if not db.Highlights.types['ENEMY'] then
+		db.Highlights.types['ENEMY'] = CopyTable(db.Highlights.types['FRIENDLY'])
 	end
 end
 

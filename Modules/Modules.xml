@@ -1,4 +1,5 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<Include file="General\Misc_data.lua"/>>
 	<Include file="General\Misc.lua"/>>
 	<Include file="General\QuestBar.lua"/>>
 	<Include file="General\Bags.lua"/>>
@@ -13,6 +14,7 @@
 	<Include file="Nameplates\Auras.lua"/>>
 	<Include file="Nameplates\NameLevel.lua"/>>
 	<Include file="Nameplates\QuestIcons.lua"/>>
+	<Include file="Nameplates\GuildsTitles_data.lua"/>>
 	<Include file="Nameplates\GuildsTitles.lua"/>>
 	<Include file="Nameplates\ClassificationIcons.lua"/>>
 	<Include file="Nameplates\Cooldowns.lua"/>>

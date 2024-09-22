@@ -4,17 +4,10 @@ local mod = core:NewModule("ClassificationIcons", "AceHook-3.0")
 local NP = E:GetModule("NamePlates")
 
 local modName = mod:GetName()
-local hooked = {}
 local isAwesome = C_NamePlate
-local healthEnabled = {["FRIENDLY_PLAYER"] = false, ["ENEMY_PLAYER"] = false,}
-
-mod:SecureHook(NP, "UpdateAllFrame", function()
-	healthEnabled["FRIENDLY_PLAYER"] = NP.db.units["FRIENDLY_PLAYER"].health.enable
-	healthEnabled["ENEMY_PLAYER"] = NP.db.units["ENEMY_PLAYER"].health.enable
-end)
 
 local pairs, print, select = pairs, print, select
-local upper, gsub = string.upper, string.gsub
+local upper, gsub, format = string.upper, string.gsub, string.format
 local CopyTable, UnitClass = CopyTable, UnitClass
 
 local classMap = {}
@@ -22,6 +15,7 @@ local classMap = {}
 
 P["Extras"]["nameplates"][modName] = {
 	["selectedSubSection"] = 'NPCs',
+	["classList"] = {},
 	["NPCs"] = {
 		["enabled"] = false,
 		["desc"] = L["Additional settings for the Elite Icon."],
@@ -47,6 +41,7 @@ P["Extras"]["nameplates"][modName] = {
 		["desc"] = L["Player class icons."],
 		["selectedClass"] = 'DEATHKNIGHT',
 		["selectedAffiliation"] = 'FRIENDLY_PLAYER',
+		["selectedTexList"] = 'CLASS',
 		["affiliations"] = {
 			["FRIENDLY_PLAYER"] = {
 				["classes"] = {
@@ -71,19 +66,16 @@ P["Extras"]["nameplates"][modName] = {
 }
 
 function mod:LoadConfig()
+	local db = E.db.Extras.nameplates[modName]
 	local function populateClassMap()
-		if isAwesome then return end
-		if E.db.Extras.nameplates[modName].classList then
-			for player, texture in pairs(E.db.Extras.nameplates[modName].classList) do
+		if not isAwesome then
+			for player, texture in pairs(db.classList) do
 				classMap[player] = texture
 			end
-		else
-			E.db.Extras.nameplates[modName].classList = {}
 		end
 	end
-
-	local function getTexList(type)
-		if type == 'NPCs' then
+	local function getTexList(npcs)
+		if npcs then
 			return {
 				["CLASSIFICATION"] = L["Classification Textures"],
 				["GENERAL"] = L["General"],
@@ -98,14 +90,20 @@ function mod:LoadConfig()
 		end
 	end
 
-	local function selectedSubSection() return E.db.Extras.nameplates[modName].selectedSubSection end
-	local function selectedNPCs() return E.db.Extras.nameplates[modName].NPCs.selected end
-	local function selectedPlayers() return E.db.Extras.nameplates[modName].Players.selectedAffiliation end
+	local function selectedSubSection() return db.selectedSubSection or "NPCs" end
+	local function selectedNPCs() return db.NPCs.selected end
+    local function selectedNPCsData()
+		return core:getSelected("nameplates", modName, format("NPCs.types[%s]", selectedNPCs() or ""), "Boss")
+	end
+	local function selectedPlayers() return db.Players.selectedAffiliation end
+    local function selectedPlayersData()
+		return core:getSelected("nameplates", modName, format("Players.affiliations[%s]", selectedPlayers() or ""), "FRIENDLY_PLAYER")
+	end
 	core.nameplates.args[modName] = {
 		type = "group",
 		name = L[modName],
-		get = function(info) return E.db.Extras.nameplates[modName][selectedSubSection()][info[#info]] end,
-		set = function(info, value) E.db.Extras.nameplates[modName][selectedSubSection()][info[#info]] = value mod:Toggle() end,
+		get = function(info) return db[selectedSubSection()][info[#info]] end,
+		set = function(info, value) db[selectedSubSection()][info[#info]] = value self:Toggle(db) end,
 		args = {
 			SubSection = {
 				order = 1,
@@ -117,20 +115,20 @@ function mod:LoadConfig()
 						order = 1,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
-						desc = function() return E.db.Extras.nameplates[modName][selectedSubSection()].desc end,
-						get = function() return E.db.Extras.nameplates[modName][selectedSubSection()].enabled end,
-						set = function(_, value) E.db.Extras.nameplates[modName][selectedSubSection()].enabled = value mod:Toggle() end,
+						desc = function() return db[selectedSubSection()].desc end,
+						get = function() return db[selectedSubSection()].enabled end,
+						set = function(_, value) db[selectedSubSection()].enabled = value self:Toggle(db) end,
 					},
 					selectedSubSection = {
 						order = 2,
 						type = "select",
 						name = L["Select"],
 						desc = "",
-						get = function() return E.db.Extras.nameplates[modName].selectedSubSection end,
-						set = function(_, value) E.db.Extras.nameplates[modName].selectedSubSection = value end,
+						get = function() return db.selectedSubSection end,
+						set = function(_, value) db.selectedSubSection = value end,
 						values = function()
 							local dropdownValues = {}
-							for section in pairs(E.db.Extras.nameplates[modName]) do
+							for section in pairs(db) do
 								if section == 'NPCs' or section == 'Players' then
 									dropdownValues[section] = L[section]
 								end
@@ -145,7 +143,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Settings"],
 				guiInline = true,
-				disabled = function() return not E.db.Extras.nameplates[modName].NPCs.enabled end,
+				disabled = function() return not db.NPCs.enabled end,
 				hidden = function() return selectedSubSection() ~= 'NPCs' end,
 				args = {
 					colorByType = {
@@ -153,50 +151,50 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Color by Type"],
 						desc = L["Colors the icon based on the unit type."],
-						get = function() return E.db.Extras.nameplates[modName].NPCs.types[selectedNPCs()].colorByType end,
-						set = function(_, value) E.db.Extras.nameplates[modName].NPCs.types[selectedNPCs()].colorByType = value NP:ConfigureAll() end,
+						get = function() return selectedNPCsData().colorByType end,
+						set = function(_, value) selectedNPCsData().colorByType = value NP:ConfigureAll() end,
 					},
 					flipIcon = {
 						order = 2,
 						type = "toggle",
 						name = L["Flip Icon"],
 						desc = L["Flits the icon horizontally. Not compatible with Texture Coordinates."],
-						get = function() return E.db.Extras.nameplates[modName].NPCs.types[selectedNPCs()].flipIcon end,
-						set = function(_, value) E.db.Extras.nameplates[modName].NPCs.types[selectedNPCs()].flipIcon = value NP:ConfigureAll() end,
+						get = function() return selectedNPCsData().flipIcon end,
+						set = function(_, value) selectedNPCsData().flipIcon = value NP:ConfigureAll() end,
 					},
 					selected = {
 						order = 3,
 						type = "select",
 						name = L["Select Type"],
 						desc = "",
-						values = core:GetUnitDropdownOptions(E.db.Extras.nameplates[modName].NPCs.types),
+						values = core:GetUnitDropdownOptions(db.NPCs.types),
 					},
 					selectedTexList = {
 						order = 4,
 						type = "select",
 						name = L["Texture List"],
 						desc = "",
-						values = function() return getTexList('NPCs') end,
-						hidden = function() return selectedSubSection() ~= 'NPCs' or E.db.Extras.nameplates[modName].NPCs.types[selectedNPCs()].keepOrigTex end,
+						values = function() return getTexList(true) end,
+						hidden = function() return selectedSubSection() ~= 'NPCs' or selectedNPCsData().keepOrigTex end,
 					},
 					keepOrigTex = {
 						order = 5,
 						type = "toggle",
 						name = L["Keep Icon"],
 						desc = L["Keep the original icon texture."],
-						get = function() return E.db.Extras.nameplates[modName].NPCs.types[selectedNPCs()].keepOrigTex end,
-						set = function(_, value) E.db.Extras.nameplates[modName].NPCs.types[selectedNPCs()].keepOrigTex = value NP:ConfigureAll() end,
+						get = function() return selectedNPCsData().keepOrigTex end,
+						set = function(_, value) selectedNPCsData().keepOrigTex = value NP:ConfigureAll() end,
 					},
 					texture = {
 						order = 6,
 						type = "select",
 						name = L["Texture"],
 						desc = "",
-						get = function() return E.db.Extras.nameplates[modName].NPCs.types[selectedNPCs()].texture end,
-						set = function(_, value) E.db.Extras.nameplates[modName].NPCs.types[selectedNPCs()].texture = value NP:ConfigureAll() end,
-						hidden = function() return selectedSubSection() ~= 'NPCs' or E.db.Extras.nameplates[modName].NPCs.types[selectedNPCs()].keepOrigTex end,
+						get = function() return selectedNPCsData().texture end,
+						set = function(_, value) selectedNPCsData().texture = value NP:ConfigureAll() end,
+						hidden = function() return selectedSubSection() ~= 'NPCs' or selectedNPCsData().keepOrigTex end,
 						values = function(info)
-							local type = E.db.Extras.nameplates[modName][info[#info-1]].selectedTexList
+							local type = db.NPCs.selectedTexList
 							local list = type == 'CLASSIFICATION' and 'texClassificaion' or 'texGeneral'
 							return core:GetIconList(E.db.Extras[list])
 						end,
@@ -208,10 +206,10 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Texture Coordinates"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.nameplates[modName].NPCs.types[selectedNPCs()].texCoords[info[#info]] end,
-				set = function(info, value) E.db.Extras.nameplates[modName].NPCs.types[selectedNPCs()].texCoords[info[#info]] = value NP:ConfigureAll() end,
-				disabled = function() return not E.db.Extras.nameplates[modName].NPCs.enabled end,
-				hidden = function() return selectedSubSection() ~= 'NPCs' or E.db.Extras.nameplates[modName].NPCs.types[selectedNPCs()].keepOrigTex end,
+				get = function(info) return selectedNPCsData().texCoords[info[#info]] end,
+				set = function(info, value) selectedNPCsData().texCoords[info[#info]] = value NP:ConfigureAll() end,
+				disabled = function() return not db.NPCs.enabled end,
+				hidden = function() return selectedSubSection() ~= 'NPCs' or selectedNPCsData().keepOrigTex end,
 				args = {
 					left = {
 						order = 1,
@@ -248,15 +246,18 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Settings"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.nameplates[modName].Players.affiliations[selectedPlayers()][info[#info]] end,
-				set = function(info, value) E.db.Extras.nameplates[modName].Players.affiliations[selectedPlayers()][info[#info]] = value mod:UpdateAllClassIcons() end,
-				disabled = function() return not E.db.Extras.nameplates[modName].Players.enabled end,
+				get = function(info) return selectedPlayersData()[info[#info]] end,
+				set = function(info, value) selectedPlayersData()[info[#info]] = value mod:UpdateAllClassIcons(db) end,
+				disabled = function() return not db.Players.enabled end,
 				hidden = function() return selectedSubSection() ~= 'Players' end,
 				args = {
 					selectedAffiliation = {
 						order = 0,
 						type = "select",
 						name = L["Select Affiliation"],
+						desc = "",
+						get = function() return db.Players.selectedAffiliation end,
+						set = function(_, value) db.Players.selectedAffiliation = value end,
 						values = {
 							["FRIENDLY_PLAYER"] = L["FRIENDLY"],
 							["ENEMY_PLAYER"] = L["ENEMY"],
@@ -294,6 +295,8 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select Class"],
 						desc = "",
+						get = function() return db.Players.selectedClass end,
+						set = function(_, value) db.Players.selectedClass = value end,
 						values = E.db.Extras.classList,
 					},
 					selectedTexList = {
@@ -301,6 +304,8 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Texture List"],
 						desc = "",
+						get = function() return db.Players.selectedTexList end,
+						set = function(_, value) db.Players.selectedTexList = value end,
 						values = function() return getTexList() end,
 					},
 					texture = {
@@ -308,11 +313,15 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Texture"],
 						desc = "",
-						get = function() return E.db.Extras.nameplates[modName].Players.affiliations[selectedPlayers()].classes[E.db.Extras.nameplates[modName].Players.selectedClass].texture end,
-						set = function(_, value) E.db.Extras.nameplates[modName].Players.affiliations[selectedPlayers()].classes[E.db.Extras.nameplates[modName].Players.selectedClass].texture = value NP:ConfigureAll() end,
+						get = function() return selectedPlayersData().classes[db.Players.selectedClass].texture end,
+						set = function(_, value) selectedPlayersData().classes[db.Players.selectedClass].texture = value NP:ConfigureAll() end,
 						values = function(info)
-							local type = E.db.Extras.nameplates[modName][info[#info-1]].selectedTexList
-							local list = type == 'CLASS' and 'texClass' or type == 'VECTOR' and 'texClassVector' or type == 'CREST' and 'texClassCrest' or type == 'SPEC'  and 'texSpec' or 'texGeneral'
+							local type = db.Players.selectedTexList
+							local list = (type == 'CLASS' and 'texClass')
+										or (type == 'VECTOR' and 'texClassVector')
+										or (type == 'CREST' and 'texClassCrest')
+										or (type == 'SPEC'  and 'texSpec')
+										or 'texGeneral'
 							return core:GetIconList(E.db.Extras[list])
 						end,
 					},
@@ -322,7 +331,7 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Purge Cache"],
 						desc = "",
-						func = function() E.db.Extras.nameplates[modName].classList = {} print(core.customColorBeta .. L["Cache purged."]) end,
+						func = function() db.classList = {} print(core.customColorBeta .. L["Cache purged."]) end,
 					},
 				},
 			},
@@ -331,9 +340,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Points"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.nameplates[modName].Players.affiliations[selectedPlayers()].points[info[#info]] end,
-				set = function(info, value) E.db.Extras.nameplates[modName].Players.affiliations[selectedPlayers()].points[info[#info]] = value mod:UpdateAllClassIcons() end,
-				disabled = function() return not E.db.Extras.nameplates[modName].Players.enabled end,
+				get = function(info) return selectedPlayersData().points[info[#info]] end,
+				set = function(info, value) selectedPlayersData().points[info[#info]] = value mod:UpdateAllClassIcons(db) end,
+				disabled = function() return not db.Players.enabled end,
 				hidden = function() return selectedSubSection() ~= 'Players' end,
 				args = {
 					point = {
@@ -368,21 +377,20 @@ function mod:LoadConfig()
 			},
 		},
 	}
-	if not E.db.Extras.nameplates[modName].Players.affiliations[E.db.Extras.nameplates[modName].Players.selectedAffiliation].classes.SHAMAN then
-		local db = E.db.Extras.nameplates[modName].Players.affiliations[E.db.Extras.nameplates[modName].Players.selectedAffiliation].classes
+	if not db.Players.affiliations[db.Players.selectedAffiliation].classes.SHAMAN then
+		local classes = db.Players.affiliations[db.Players.selectedAffiliation].classes
 		for class in pairs(E.db.Extras.classList) do
 			if class ~= 'DEATHKNIGHT' then
-				db[class] = CopyTable(db.DEATHKNIGHT)
+				classes[class] = CopyTable(classes.DEATHKNIGHT)
 				for _, info in pairs(E.db.Extras.texClass) do
 					if upper(gsub(info.label, '%A+', '')) == class then
-						db[class].texture = info.icon
+						classes[class].texture = info.icon
 					end
 				end
 			end
 		end
-		E.db.Extras.nameplates[modName].Players.affiliations.ENEMY_PLAYER = CopyTable(E.db.Extras.nameplates[modName].Players.affiliations.FRIENDLY_PLAYER)
+		db.Players.affiliations.ENEMY_PLAYER = CopyTable(db.Players.affiliations.FRIENDLY_PLAYER)
 	end
-
 	populateClassMap()
 end
 
@@ -392,7 +400,6 @@ function mod:Update_Elite(frame)
 	if not db then return end
 
 	local icon = frame.Elite
-
 	if db.enable then
 		local elite, boss = frame.EliteIcon:IsShown(), frame.BossIcon:IsShown()
 		local r, g, b, tex, texCoords
@@ -403,18 +410,21 @@ function mod:Update_Elite(frame)
 			r, g, b = 1, 0.5, 1
 			icon:Show()
 			tex = not db.keepOrigTex and db.texture
-			texCoords = not db.keepOrigTex and db.texCoords or (db.flipIcon and {left = 0.15, right = 0, top = 0.62, bottom = 0.94} or {left = 0, right = 0.15, top = 0.62, bottom = 0.94})
+			texCoords = not db.keepOrigTex and db.texCoords
+						or (db.flipIcon and {left = 0.15, right = 0, top = 0.62, bottom = 0.94}
+										or {left = 0, right = 0.15, top = 0.62, bottom = 0.94})
 		elseif elite then
 			db = db.types.Elite
 			r, g, b = 1, 1, 0
 			icon:Show()
 			tex = not db.keepOrigTex and db.texture
-			texCoords = not db.keepOrigTex and db.texCoords or (db.flipIcon and {left = 0.15, right = 0, top = 0.35, bottom = 0.63} or {left = 0, right = 0.15, top = 0.35, bottom = 0.63})
+			texCoords = not db.keepOrigTex and db.texCoords
+						or (db.flipIcon and {left = 0.15, right = 0, top = 0.35, bottom = 0.63}
+										or {left = 0, right = 0.15, top = 0.35, bottom = 0.63})
 		else
 			icon:Hide()
 			return
 		end
-
 		icon:SetTexture(tex and tex or E.Media.Textures.Nameplates)
 
 		if icon:IsShown() then
@@ -448,17 +458,17 @@ local function manageClassIcon(frame, unitType, db)
 	frame.ClassIcon:Hide()
 end
 
-local function showIcon(frame, texture, db, healthEnabled)
+local function showIcon(frame, texture, db)
 	local classIcon = frame.ClassIcon
-	local classIconTex = classIcon.texture
-	local classIconBackdrop = classIcon.backdrop
 
-	if texture then classIconTex:SetTexture(texture) end
+	if texture then
+		classIcon.texture:SetTexture(texture)
+	end
 
 	if db.backdrop then
-		classIconBackdrop:Show()
+		classIcon.backdrop:Show()
 	else
-		classIconBackdrop:Hide()
+		classIcon.backdrop:Hide()
 	end
 
 	classIcon:SetFrameLevel(db.frameLevel)
@@ -466,68 +476,63 @@ local function showIcon(frame, texture, db, healthEnabled)
 
 	db = db.points
 	classIcon:ClearAllPoints()
-	classIcon:Point(db.point, healthEnabled and frame.Health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
-
-	if not healthEnabled and not hooked[frame] then
-		frame.Health:HookScript("OnShow", function()
-			local classIcon = frame.ClassIcon
-			if classIcon then
-				classIcon:ClearAllPoints()
-				classIcon:Point(db.point, frame.Health, db.relativeTo, db.xOffset, db.yOffset)
-			end
-		end)
-		hooked[frame] = true
-	end
+	classIcon:Point(db.point, frame.Health:IsVisible() and frame.Health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
 	classIcon:Show()
 end
 
-function mod:UpdateClassIcon(frame, unitType)
+function mod:UpdateClassIcon(frame, db, classList)
 	local unitName = frame.UnitName
 	if unitName == 'Empty' then return end
-
-	local db = E.db.Extras.nameplates[modName].Players.affiliations[unitType]
 
 	local unitClass = frame.UnitClass
 	if not unitClass then
 		if classMap[unitName] then
-			showIcon(frame, classMap[unitName], db, healthEnabled[unitType])
+			showIcon(frame, classMap[unitName], db)
 		end
 		return
 	end
 
 	local classIconPath = db.classes[unitClass] and db.classes[unitClass].texture
 	if classIconPath then
-		showIcon(frame, classIconPath, db, healthEnabled[unitType])
-		if not classMap[unitName] or E.db.Extras.nameplates[modName].classList[unitName] ~= db.classes[unitClass].texture then
-			E.db.Extras.nameplates[modName].classList[unitName] = classIconPath
+		showIcon(frame, classIconPath, db)
+		if not classMap[unitName] or classList[unitName] ~= db.classes[unitClass].texture then
+			classList[unitName] = classIconPath
 			classMap[unitName] = classIconPath
 		end
 	end
 end
 
-function mod:AwesomeUpdateClassIcon(frame, unitType, unit)
-	local db = E.db.Extras.nameplates[modName].Players.affiliations[unitType]
+function mod:AwesomeUpdateClassIcon(frame, db, unit)
 	local classFile = select(2,UnitClass(unit))
 	local classIconPath = db.classes[classFile] and db.classes[classFile].texture
 	if classIconPath then
-		showIcon(frame, classIconPath, db, healthEnabled[unitType])
+		showIcon(frame, classIconPath, db)
 	end
 end
 
-function mod:UpdateAllClassIcons()
+function mod:UpdateAllClassIcons(db)
 	for plate in pairs(NP.CreatedPlates) do
 		local frame = plate.UnitFrame
-		if frame.ClassIcon and (frame.UnitType == "FRIENDLY_PLAYER" or frame.UnitType == "ENEMY_PLAYER") then
-			local db = E.db.Extras.nameplates[modName].Players.affiliations[frame.UnitType]
-			showIcon(frame, nil, db, NP.db.units[frame.UnitType].health.enable)
+		local unitType = frame.UnitType
+		if frame.ClassIcon and (unitType == "FRIENDLY_PLAYER" or unitType == "ENEMY_PLAYER") then
+			showIcon(frame, nil, db.Players.affiliations[unitType], NP.db.units[unitType].health.enable)
 		end
 	end
 end
 
 
-function mod:Toggle()
-	local db = E.db.Extras.nameplates[modName]
-
+function mod:Toggle(db)
+	if db.NPCs.enabled or db.Players.enabled then
+		core.plateAnchoring["ClassIcon"] = function(unitType)
+			if unitType == "ENEMY_NPC" or unitType == "FRIENDLY_NPC" then
+				return db.NPC
+			elseif unitType == "ENEMY_PLAYER" or unitType == "FRIENDLY_PLAYER" then
+				return db.Players.affiliations[unitType].points
+			end
+		end
+	else
+		core.plateAnchoring["ClassIcon"] = nil
+	end
 	if db.NPCs.enabled then
 		if not self:IsHooked(NP, "Update_Elite") then self:SecureHook(NP, "Update_Elite", self.Update_Elite) end
 	elseif self:IsHooked(NP, "Update_Elite") then
@@ -535,7 +540,6 @@ function mod:Toggle()
 		db.NPCs.types.Boss.keepOrigTex = true
 		self:Unhook(NP, "Update_Elite")
 	end
-
 	if db.Players.enabled then
 		if isAwesome then
 			if not self:IsHooked(NP, "OnShow") then
@@ -545,7 +549,7 @@ function mod:Toggle()
 					local unitType = frame.UnitType
 					manageClassIcon(frame, unitType)
 					if unitType == "FRIENDLY_PLAYER" or unitType == "ENEMY_PLAYER" then
-						mod:AwesomeUpdateClassIcon(frame, unitType, self.unit)
+						mod:AwesomeUpdateClassIcon(frame, db.Players.affiliations[unitType], self.unit)
 					end
 				end)
 			end
@@ -555,7 +559,7 @@ function mod:Toggle()
 				local unitType = frame.UnitType
 				manageClassIcon(frame, unitType)
 				if unitType == "FRIENDLY_PLAYER" or unitType == "ENEMY_PLAYER" then
-					mod:UpdateClassIcon(frame, unitType)
+					mod:UpdateClassIcon(frame, db.Players.affiliations[unitType], db.classList)
 				end
 			end)
 		end
@@ -571,7 +575,6 @@ function mod:Toggle()
 			end
 		end
 	end
-
 	NP:ConfigureAll()
 end
 
@@ -579,7 +582,7 @@ function mod:InitializeCallback()
 	if not E.private.nameplates.enable then return end
 
 	mod:LoadConfig()
-	mod:Toggle()
+	mod:Toggle(E.db.Extras.nameplates[modName])
 end
 
 core.modules[modName] = mod.InitializeCallback

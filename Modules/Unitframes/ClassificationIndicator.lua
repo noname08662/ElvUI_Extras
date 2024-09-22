@@ -7,11 +7,11 @@ local modName = mod:GetName()
 local pairs, ipairs = pairs, ipairs
 local rad = math.rad
 local tinsert = table.insert
-local lower, gsub, upper, find = string.lower, string.gsub, string.upper, string.find
+local lower, gsub, upper, find, format = string.lower, string.gsub, string.upper, string.find, string.format
 local UnitClass, UnitIsPlayer, UnitClassification = UnitClass, UnitIsPlayer, UnitClassification
 
 local function tagFunc(frame, unit)
-	mod:UpdateElement(frame, unit)
+	mod:UpdateElement(frame, unit, E.db.Extras.unitframes[modName].units[frame.unitframeType])
 end
 
 
@@ -53,15 +53,19 @@ P["Extras"]["unitframes"][modName] = {
 }
 
 function mod:LoadConfig()
-	local function selectedUnit() return E.db.Extras.unitframes[modName].selectedUnit end
-	local function selectedUnitData() return E.db.Extras.unitframes[modName].units[selectedUnit()] end
-	local function selectedEnemyType() return E.db.Extras.unitframes[modName].units[selectedUnit()].selectedEnemyType end
-	local function selectedEnemyData() return E.db.Extras.unitframes[modName].units[selectedUnit()][selectedEnemyType()] end
+	local db = E.db.Extras.unitframes[modName]
+	local function selectedUnit() return db.selectedUnit end
+    local function selectedUnitData()
+		return core:getSelected("unitframes", modName, format("units[%s]", selectedUnit() or ""), "target")
+	end
+	local function selectedEnemyData()
+		return core:getSelected("unitframes", modName, format("units.%s.[%s]", selectedUnit(), selectedUnitData().selectedEnemyType or ""), "elite")
+	end
 	local function updateAllElements()
 		local units = core:AggregateUnitFrames()
 		for _, frame in ipairs(units) do
 			local unitframeType = frame.unitframeType
-			if frame.classificationIndicator and E.db.Extras.unitframes[modName].units[unitframeType] and E.db.Extras.unitframes[modName].units[unitframeType].enabled then
+			if frame.classificationIndicator and db.units[unitframeType] and db.units[unitframeType].enabled then
 				frame:UpdateAllElements('ForceUpdate')
 			end
 		end
@@ -77,7 +81,7 @@ function mod:LoadConfig()
 				guiInline = true,
 				get = function(info) return selectedEnemyData()[info[#info]] end,
 				set = function(info, value) selectedEnemyData()[info[#info]] = value updateAllElements() end,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled end,
+				disabled = function() return not db.units[selectedUnit()].enabled end,
 				args = {
 					enabled = {
 						order = 0,
@@ -85,8 +89,8 @@ function mod:LoadConfig()
 						disabled = false,
 						name = core.pluginColor..L["Enable"],
 						desc = L["Enables classification indicator for the selected unit."],
-						get = function() return E.db.Extras.unitframes[modName].units[selectedUnit()].enabled end,
-						set = function(_, value) E.db.Extras.unitframes[modName].units[selectedUnit()].enabled = value self:Toggle() end,
+						get = function() return selectedUnitData().enabled end,
+						set = function(_, value) selectedUnitData().enabled = value self:Toggle() end,
 					},
 					backdrop = {
 						order = 1,
@@ -102,9 +106,9 @@ function mod:LoadConfig()
 						disabled = false,
 						name = L["Select Unit"],
 						desc = "",
-						get = function() return E.db.Extras.unitframes[modName].selectedUnit end,
-						set = function(_, value) E.db.Extras.unitframes[modName].selectedUnit = value end,
-						values = function() return core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].units) end,
+						get = function() return db.selectedUnit end,
+						set = function(_, value) db.selectedUnit = value end,
+						values = function() return core:GetUnitDropdownOptions(db.units) end,
 					},
 					copyUnitSettings = {
 						order = 3,
@@ -118,7 +122,7 @@ function mod:LoadConfig()
 								local values = info.option.values()
 								for index, entry in pairs(values) do
 									if index == value then
-										E.db.Extras.unitframes[modName].units[selectedUnit()] = CopyTable(E.db.Extras.unitframes[modName].units[entry])
+										db.units[selectedUnit()] = CopyTable(db.units[entry])
 										break
 									end
 								end
@@ -126,7 +130,7 @@ function mod:LoadConfig()
 						end,
 						values = function()
 							local list = {}
-							for unit in pairs(E.db.Extras.unitframes[modName].units) do
+							for unit in pairs(db.units) do
 								if unit ~= selectedUnit() then tinsert(list, L[unit]) end
 							end
 							return list
@@ -138,8 +142,8 @@ function mod:LoadConfig()
 						width = "full",
 						name = L["Enable Player Class Icons"],
 						desc = "",
-						get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] end,
-						set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] = value updateAllElements() end,
+						get = function(info) return selectedUnitData()[info[#info]] end,
+						set = function(info, value) selectedUnitData()[info[#info]] = value updateAllElements() end,
 						hidden = function() return not (find(selectedUnit(), 'target') or find(selectedUnit(), 'focus')) end,
 					},
 					enableNPCs = {
@@ -148,8 +152,8 @@ function mod:LoadConfig()
 						width = "full",
 						name = L["Enable NPC Classification Icons"],
 						desc = "",
-						get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] end,
-						set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] = value updateAllElements() end,
+						get = function(info) return selectedUnitData()[info[#info]] end,
+						set = function(info, value) selectedUnitData()[info[#info]] = value updateAllElements() end,
 						hidden = function() return not (find(selectedUnit(), 'target') or find(selectedUnit(), 'focus')) end,
 					},
 					unitTypeDropdown = {
@@ -158,15 +162,15 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Type"],
 						desc = L["Select unit type."],
-						get = function() return selectedEnemyType() end,
-						set = function(_, value) E.db.Extras.unitframes[modName].units[selectedUnit()].selectedEnemyType = value end,
+						get = function() return selectedUnitData().selectedEnemyType end,
+						set = function(_, value) selectedUnitData().selectedEnemyType = value end,
 						values = function()
 							local list = {}
 							if find(selectedUnit(), 'target') or find(selectedUnit(), 'focus') then
-								if E.db.Extras.unitframes[modName].units[selectedUnit()].enableClasses then
+								if selectedUnitData().enableClasses then
 									list = CopyTable(E.db.Extras.classList)
 								end
-								if E.db.Extras.unitframes[modName].units[selectedUnit()].enableNPCs then
+								if selectedUnitData().enableNPCs then
 									list.worldboss = L["World Boss"]
 									list.elite = L["Elite"]
 									list.rare = L["Rare"]
@@ -188,22 +192,22 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Use Nameplates' Icons"],
 						desc = "",
-						hidden = function() local type = selectedEnemyType() return type ~= lower(type) end,
+						hidden = function() local type = selectedUnitData().selectedEnemyType return type ~= lower(type) end,
 					},
 					colorByType = {
 						order = 9,
 						type = "toggle",
 						name = L["Color by Type"],
 						desc = L["Color enemy npc icon based on the unit type."],
-						hidden = function() local type = selectedEnemyType() return type ~= lower(type) end,
+						hidden = function() local type = selectedUnitData().selectedEnemyType return type ~= lower(type) end,
 					},
 					texListSelector = {
 						order = 10,
 						type = "select",
 						name = L["Texture List"],
 						desc = "",
-						get = function() return E.db.Extras.unitframes[modName].selectedTexList end,
-						set = function(_, value) E.db.Extras.unitframes[modName].selectedTexList = value end,
+						get = function() return db.selectedTexList end,
+						set = function(_, value) db.selectedTexList = value end,
 						hidden = function() return selectedEnemyData().NPIcon end,
 						values = {
 							["CLASS"] = L["Class Icons"],
@@ -220,8 +224,13 @@ function mod:LoadConfig()
 						name = L["Texture"],
 						hidden = function() return selectedEnemyData().NPIcon end,
 						values = function()
-							local type = E.db.Extras.unitframes[modName].selectedTexList
-							local list = type == 'CLASS' and 'texClass' or type == 'VECTOR' and 'texClassVector' or type == 'CREST' and 'texClassCrest' or type == 'SPEC'  and 'texSpec' or type == 'CLASSIFICATION' and 'texClassificaion' or 'texGeneral'
+							local type = db.selectedTexList
+							local list = (type == 'CLASS' and 'texClass')
+										or (type == 'VECTOR' and 'texClassVector')
+										or (type == 'CREST' and 'texClassCrest')
+										or (type == 'SPEC'  and 'texSpec')
+										or (type == 'CLASSIFICATION' and 'texClassificaion')
+										or 'texGeneral'
 							return core:GetIconList(E.db.Extras[list])
 						end,
 					},
@@ -234,7 +243,7 @@ function mod:LoadConfig()
 				guiInline = true,
 				get = function(info) return selectedEnemyData().texCoords[info[#info]] end,
 				set = function(info, value) selectedEnemyData().texCoords[info[#info]] = value updateAllElements() end,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or selectedEnemyData().NPIcon end,
+				disabled = function() return not selectedUnitData().enabled or selectedEnemyData().NPIcon end,
 				args = {
 					left = {
 						order = 1,
@@ -371,57 +380,63 @@ function mod:LoadConfig()
 			},
 		},
 	}
-	if not E.db.Extras.unitframes[modName].units.target.worldboss then
-		for _, unitType in ipairs({'rare', 'rareelite', 'worldboss', 'WARRIOR', 'WARLOCK', 'PRIEST', 'PALADIN', 'DRUID', 'ROGUE', 'MAGE', 'HUNTER', 'SHAMAN', 'DEATHKNIGHT'}) do
-			E.db.Extras.unitframes[modName].units.target[unitType] = CopyTable(E.db.Extras.unitframes[modName].units.target.elite)
+	if not db.units.target.worldboss then
+		for _, unitType in ipairs({'rare', 'rareelite', 'worldboss',
+									'WARRIOR', 'WARLOCK', 'PRIEST', 'PALADIN', 'DRUID',
+									'ROGUE', 'MAGE', 'HUNTER', 'SHAMAN', 'DEATHKNIGHT'}) do
+			db.units.target[unitType] = CopyTable(db.units.target.elite)
 			if upper(unitType) == unitType then
 				for _, info in pairs(E.db.Extras.texClass) do
 					if upper(gsub(info.label, "%s+", "")) == unitType then
-						E.db.Extras.unitframes[modName].units.target[unitType].texture = info.icon
+						db.units.target[unitType].texture = info.icon
 						break
 					end
 				end
 			elseif unitType == 'rare' then
-				E.db.Extras.unitframes[modName].units.target[unitType].texture = "Interface\\WorldMap\\Skull_64Grey"
+				db.units.target[unitType].texture = "Interface\\WorldMap\\Skull_64Grey"
 			elseif unitType == 'rareelite' then
-				E.db.Extras.unitframes[modName].units.target[unitType].texture = "Interface\\WorldMap\\Skull_64Purple"
+				db.units.target[unitType].texture = "Interface\\WorldMap\\Skull_64Purple"
 			elseif unitType == 'worldboss' then
-				E.db.Extras.unitframes[modName].units.target[unitType].texture = "Interface\\WorldMap\\Skull_64Red"
+				db.units.target[unitType].texture = "Interface\\WorldMap\\Skull_64Red"
 			end
 		end
-		E.db.Extras.unitframes[modName].units.target['elite'].texCoords.right = 0.5
-		E.db.Extras.unitframes[modName].units.target['elite'].texCoords.top = 0.5
+		db.units.target['elite'].texCoords.right = 0.5
+		db.units.target['elite'].texCoords.top = 0.5
 		local units = core:getAllFrameTypes()
 		for _, unit in ipairs({'target', 'pet', 'raidpet', 'partypet'}) do
 			units[unit] = nil
 		end
 		for unitframeType in pairs(units) do
-			E.db.Extras.unitframes[modName].units[unitframeType] = CopyTable(E.db.Extras.unitframes[modName].units.target)
+			db.units[unitframeType] = CopyTable(db.units.target)
 		end
 	end
 end
 
 
-function mod:UpdateElement(frame, unit)
-	if not unit then return end
-	local unitframeType = frame.unitframeType
-	local db = E.db.Extras.unitframes[modName].units[unitframeType]
-	if not db or not db.enabled then return end
+function mod:UpdateElement(frame, unit, db)
+	if not unit or not db or not db.enabled then return end
 
 	local classificationIndicator = frame.classificationIndicator
 	local unitClassification = UnitClassification(unit)
 	local enemyType, colorByType, texture, r, g, b
+	local unitframeType = frame.unitframeType
 
 	if UnitIsPlayer(unit) then
-		if (find(unitframeType, 'target') or find(unitframeType, 'focus')) and not db.enableClasses then classificationIndicator:Hide() return end
+		if (find(unitframeType, 'target') or find(unitframeType, 'focus')) and not db.enableClasses then
+			classificationIndicator:Hide()
+			return
+		end
 		local _, class = UnitClass(unit)
 		if class then
 			enemyType = db[class]
 			texture = db[class].texture
 		end
 	else
-		if not (find(unitframeType, 'target') or find(unitframeType, 'focus')) or not db.enableNPCs then classificationIndicator:Hide() return end
-		for type, color in pairs({worldboss = {1, 0.5, 1}, elite = {1, 1, 0}, rare = {1, 1, 1}, rareelite = {0.5, 1, 1}}) do
+		if not (find(unitframeType, 'target') or find(unitframeType, 'focus')) or not db.enableNPCs then
+			classificationIndicator:Hide()
+			return
+		end
+		for type, color in pairs({worldboss = {1,0.5,1}, elite = {1,1,0}, rare = {1,1,1}, rareelite = {0.5,1,1}}) do
 			if unitClassification == type then
 				enemyType = db[type]
 				if enemyType and enemyType.NPIcon then
@@ -511,7 +526,7 @@ local function manageIndicators()
 		local unitframeType = frame.unitframeType
 		if db[unitframeType] and db[unitframeType].enabled then
 			manageClassificationIndicator(frame, unitframeType)
-			mod:UpdateElement(frame, frame.unit)
+			mod:UpdateElement(frame, frame.unit, db[unitframeType])
 		elseif frame.classificationIndicator then
 			frame.classificationIndicator:Hide()
 			frame.classificationIndicator = nil

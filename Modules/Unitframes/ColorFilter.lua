@@ -6,14 +6,15 @@ local UF = E:GetModule("UnitFrames")
 local modName = mod:GetName()
 local metaFrame = CreateFrame("Frame")
 local metaTable = { units = {}, statusbars = {}, events = {} }
+local updatePending = false
 
 local _G, pairs, ipairs, tonumber, tostring, unpack, loadstring, type, pcall = _G, pairs, ipairs, tonumber, tostring, unpack, loadstring, type, pcall
-local find, gsub, match, sub, upper, lower = string.find, string.gsub, string.match, string.sub, string.upper, string.lower
+local find, gsub, match, sub, upper, lower, format = string.find, string.gsub, string.match, string.sub, string.upper, string.lower, string.format
 local tinsert, twipe, tremove = table.insert, table.wipe, table.remove
 local GetNumPartyMembers, GetNumRaidMembers = GetNumPartyMembers, GetNumRaidMembers
-local GetThreatStatusColor = GetThreatStatusColor
-local GetTime = GetTime
+local InCombatLockdown, GetTime = GetTime, InCombatLockdown
 
+local E_Delay = E.Delay
 
 local function compare(value, operator, target)
 	if operator == '>' then
@@ -33,22 +34,22 @@ local function compare(value, operator, target)
 	end
 end
 
-local function updateHooks(frame, hook, statusbar)
-	local function ToggleHook(target, extension)
-		if hook then
-			if not mod:IsHooked(UF, target) then
-				mod:SecureHook(UF, target, extension)
-			end
-		else
-			if mod:IsHooked(UF, target) then
-				mod:Unhook(UF, target, extension)
-			end
+local function toggleHook(target, hook, extension)
+	if hook then
+		if not mod:IsHooked(UF, target) then
+			mod:SecureHook(UF, target, extension)
+		end
+	else
+		if mod:IsHooked(UF, target) then
+			mod:Unhook(UF, target, extension)
 		end
 	end
+end
 
+local function updateHooks(frame, hook, statusbar)
 	if statusbar == 'Castbar' then
-		ToggleHook("PostCastStart", mod.PostCastStart)
-		ToggleHook("PostCastStop", mod.PostCastStop)
+		toggleHook("PostCastStart", hook, mod.PostCastStart)
+		toggleHook("PostCastStop", hook, mod.PostCastStop)
 
 		frame[statusbar].PostCastStart = UF.PostCastStart
 		frame[statusbar].PostCastStop = UF.PostCastStop
@@ -73,7 +74,7 @@ local function updateHooks(frame, hook, statusbar)
 			mod:Unhook(frame[statusbar], "OnUpdate")
 		end
 	else
-		ToggleHook("PostUpdate"..statusbar.."Color", statusbar == 'Health' and mod.PostUpdateHealthColor or mod.PostUpdatePowerColor)
+		toggleHook("PostUpdate"..statusbar.."Color", hook, statusbar == 'Health' and mod.PostUpdateHealthColor or mod.PostUpdatePowerColor)
 
 		frame[statusbar]['PostUpdateColor'] = UF['PostUpdate'..statusbar..'Color']
 	end
@@ -98,6 +99,68 @@ local function constructAnimation(bar, colorFilter)
 	colorFilter.flashTexture.anim.fadeout:SetOrder(1)
 
 	colorFilter.flashTexture.anim:SetScript("OnFinished", function(self) self:Play() end)
+end
+
+local function calculateWeight(overrideH, overrideP, bordersPriority, threatBorders)
+    local result = {
+        Health = 2,
+        Power = 2
+    }
+
+    if bordersPriority == 'Health' then
+        result.Health = 4
+        result.Power = 3
+    elseif bordersPriority == 'Power' then
+        result.Health = 3
+        result.Power = 4
+    else
+        result.Health = 3
+        result.Power = 3
+    end
+
+    if threatBorders == 'BORDERS' then
+        if not overrideH then
+            result.Health = 0
+        end
+        if not overrideP then
+            result.Power = 0
+        end
+    elseif threatBorders == 'HEALTHBORDER' then
+        if not overrideH then
+            result.Health = 1
+        end
+    end
+
+    return result
+end
+
+local function calculateAdaptWeight(overrideH, overrideP, adaptPriority, threatBorders, isInfoPanel)
+    local result = {
+        Health = 2,
+        Power = 2
+    }
+
+    if adaptPriority == 'Health' then
+        result.Health = 4
+        result.Power = 3
+    elseif adaptPriority == 'Power' then
+        result.Health = 3
+        result.Power = 4
+    else
+        result.Health = 3
+        result.Power = 3
+    end
+
+    if threatBorders == 'BORDERS' or (isInfoPanel and threatBorders == 'INFOPANELBORDER') then
+        if not overrideH then
+            result.Health = 0
+        end
+        if not overrideP then
+            result.Power = 0
+        end
+    end
+
+    return result
 end
 
 
@@ -161,13 +224,34 @@ P["Extras"]["unitframes"][modName] = {
 function mod:LoadConfig()
 	local customFrames = { ['tanktarget'] = true, ['assisttarget'] = true }
 	local db = E.db.Extras.unitframes[modName]
+	local units = E.db.unitframe.units
 	local function selectedUnit() return db.selectedUnit end
-	local function selectedBar() return db.units[selectedUnit()].selectedBar end
+	local function selectedUnitData()
+		return core:getSelected("unitframes", modName, format("units[%s]", selectedUnit() or ""), "player")
+	end
+	local function selectedBar() return selectedUnitData().selectedBar end
+	local function selectedBarData()
+		return core:getSelected("unitframes", modName, format("units.%s.statusbars[%s]", selectedUnit(), selectedBar() or ""), "Health")
+	end
 	local function selectedTab() return db.units[selectedUnit()].statusbars[selectedBar()].selectedTab end
-	local function unitEnabled() return db.units[selectedUnit()].enabled end
-	local function barEnabled() return db.units[selectedUnit()].statusbars[selectedBar()].enabled end
-	local function tabEnabled() return db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].enabled end
-	local function UFUnitEnabled() return not customFrames[E.db.unitframe.units[selectedUnit()]] and (E.db.unitframe.units[selectedUnit()] and E.db.unitframe.units[selectedUnit()].enable) or (E.db.unitframe.units[gsub(selectedUnit(), 'target', '')] and E.db.unitframe.units[gsub(selectedUnit(), 'target', '')].enable) end
+	local function selectedTabData()
+		return core:getSelected("unitframes", modName,
+								format("units.%s.statusbars.%s.tabs[%s]", selectedUnit(), selectedBar(), selectedTab() or ""), 1)
+	end
+	local function selectedUFData() return units[selectedUnit()] end
+	local function unitEnabled() return selectedUnitData().enabled end
+	local function barEnabled() return selectedBarData().enabled end
+	local function UFUnitEnabled()
+		return not customFrames[selectedUnit()]
+				and (selectedUFData() and selectedUFData().enable)
+				or (units[gsub(selectedUnit(),'target','')] and units[gsub(selectedUnit(),'target','')].enable)
+	end
+	local function greyed()
+		return not selectedUnitData().enabled
+				or not selectedBarData().enabled
+				or not selectedTabData().enabled
+				or not UFUnitEnabled()
+	end
 	core.unitframes.args[modName] = {
 		type = "group",
 		name = L[modName],
@@ -177,7 +261,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Color Filter"],
 				guiInline = true,
-				disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() end,
+				disabled = function() return greyed() end,
 				args = {
 					enabled = {
 						order = 1,
@@ -185,8 +269,8 @@ function mod:LoadConfig()
 						name = core.pluginColor..L["Enable"],
 						desc = L["Enables color filter for the selected unit."],
 						disabled = function() return not UFUnitEnabled() end,
-						get = function(info) return db.units[selectedUnit()][info[#info]] end,
-						set = function(info, value) db.units[selectedUnit()][info[#info]] = value self:Toggle() end,
+						get = function(info) return selectedUnitData()[info[#info]] end,
+						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 					},
 					enabledBar = {
 						order = 2,
@@ -194,20 +278,20 @@ function mod:LoadConfig()
 						name = core.pluginColor..L["Enable"],
 						desc = L["Toggle for the currently selected statusbar."],
 						disabled = function() return not unitEnabled() or not UFUnitEnabled() end,
-						get = function() return db.units[selectedUnit()].statusbars[selectedBar()].enabled end,
-						set = function(_, value) db.units[selectedUnit()].statusbars[selectedBar()].enabled = value self:Toggle() end,
+						get = function() return selectedBarData().enabled end,
+						set = function(_, value) selectedBarData().enabled = value self:Toggle() end,
 					},
 					unitDropdown = {
 						order = 3,
 						type = "select",
 						name = L["Select Unit"],
 						desc = "",
-						disabled = function() return not UFUnitEnabled() end,
+						disabled = false,
 						get = function() return selectedUnit() end,
 						set = function(_, value)
 							db.selectedUnit = value
-							if (find(value, 'tank') or find(value, 'assist')) then db.units[selectedUnit()].selectedBar = 'Health' end
-							db.units[selectedUnit()].statusbars[selectedBar()].selectedTab = 1
+							if (find(value, 'tank') or find(value, 'assist')) then selectedUnitData().selectedBar = 'Health' end
+							selectedBarData().selectedTab = 1
 						end,
 						values = function() return core:GetUnitDropdownOptions(db.units) end,
 					},
@@ -219,12 +303,12 @@ function mod:LoadConfig()
 						disabled = function() return not unitEnabled() or not UFUnitEnabled() end,
 						get = function() return selectedBar() end,
 						set = function(_, value)
-							db.units[selectedUnit()].selectedBar = value
-							db.units[selectedUnit()].statusbars[selectedBar()].selectedTab = 1
+							selectedUnitData().selectedBar = value
+							selectedBarData().selectedTab = 1
 						end,
 						values = function()
 							local dropdownValues = {}
-							for statusbar in pairs(db.units[selectedUnit()].statusbars) do
+							for statusbar in pairs(selectedUnitData().statusbars) do
 								dropdownValues[tostring(statusbar)] = L[statusbar]
 							end
 							return dropdownValues
@@ -235,10 +319,10 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Frequent Updates"],
 						desc = "",
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or selectedBar() == 'Castbar' end,
+						disabled = function() return greyed() or selectedBar() == 'Castbar' end,
 						hidden = function() return selectedBar() == 'Castbar' end,
-						get = function(info) return db.units[selectedUnit()].statusbars[selectedBar()][info[#info]] end,
-						set = function(info, value) db.units[selectedUnit()].statusbars[selectedBar()][info[#info]] = value self:Toggle() end,
+						get = function(info) return selectedBarData()[info[#info]] end,
+						set = function(info, value) selectedBarData()[info[#info]] = value self:Toggle() end,
 					},
 					updateThrottle = {
 						order = 6,
@@ -246,10 +330,10 @@ function mod:LoadConfig()
 						min = 0, max = 10, step = 0.1,
 						name = L["Throttle Time"],
 						desc = "",
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or not db.units[selectedUnit()].statusbars[selectedBar()].frequentUpdates end,
+						disabled = function() return greyed() or not selectedBarData().frequentUpdates end,
 						hidden = function() return selectedBar() == 'Castbar' end,
-						get = function(info) return db.units[selectedUnit()].statusbars[selectedBar()][info[#info]] end,
-						set = function(info, value) db.units[selectedUnit()].statusbars[selectedBar()][info[#info]] = value self:Toggle() end,
+						get = function(info) return selectedBarData()[info[#info]] end,
+						set = function(info, value) selectedBarData()[info[#info]] = value self:Toggle() end,
 					},
 					events = {
 						order = 7,
@@ -259,9 +343,8 @@ function mod:LoadConfig()
 						name = L["Events (optional)"],
 						desc = L["UNIT_AURA CHAT_MSG_WHISPER etc."],
 						hidden = function() return selectedBar() == 'Castbar' end,
-						get = function() return db.units[selectedUnit()].statusbars[selectedBar()].events and db.units[selectedUnit()].statusbars[selectedBar()].events or "" end,
-						set = function(_, value) db.units[selectedUnit()].statusbars[selectedBar()].events = value self:Toggle() end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() end,
+						get = function() return selectedBarData().events or "" end,
+						set = function(_, value) selectedBarData().events = value self:Toggle() end,
 					},
 				},
 			},
@@ -270,9 +353,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Tab Section"],
 				guiInline = true,
-				get = function(info) return db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()][info[#info]] end,
-				set = function(info, value) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()][info[#info]] = value self:Toggle() end,
-				disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() end,
+				get = function(info) return selectedTabData()[info[#info]] end,
+				set = function(info, value) selectedTabData()[info[#info]] = value self:Toggle() end,
+				disabled = function() return greyed() end,
 				args = {
 					enabled = {
 						order = 0,
@@ -288,10 +371,10 @@ function mod:LoadConfig()
 						name = L["Select Tab"],
 						desc = "",
 						get = function() return tostring(selectedTab()) end,
-						set = function(_, value) db.units[selectedUnit()].statusbars[selectedBar()].selectedTab = tonumber(value) end,
+						set = function(_, value) selectedBarData().selectedTab = tonumber(value) end,
 						values = function()
 							local dropdownValues = {}
-							for i, tab in ipairs(db.units[selectedUnit()].statusbars[selectedBar()].tabs) do
+							for i, tab in ipairs(selectedBarData().tabs) do
 								dropdownValues[tostring(i)] = tab.name
 							end
 							return dropdownValues
@@ -305,22 +388,21 @@ function mod:LoadConfig()
 						desc = L["On meeting multiple conditions, colors from the tab with the highest priority will be applied."],
 						get = function() return tostring(selectedTab()) end,
 						set = function(_, value)
-							local colorFilter = db
-							local tabCount = #colorFilter.units[selectedUnit()].statusbars[selectedBar()].tabs
+							local tabCount = #selectedBarData().tabs
 							local targetTab = tonumber(value)
 
 							if targetTab and targetTab >= 1 and targetTab <= tabCount and targetTab ~= selectedTab() then
-								local tempHolder = colorFilter.units[selectedUnit()].statusbars[selectedBar()].tabs[targetTab]
-								colorFilter.units[selectedUnit()].statusbars[selectedBar()].tabs[targetTab] = colorFilter.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()]
-								colorFilter.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()] = tempHolder
-								db.units[selectedUnit()].statusbars[selectedBar()].selectedTab = targetTab
+								local tempHolder = selectedBarData().tabs[targetTab]
+								selectedBarData().tabs[targetTab] = selectedTabData()
+								selectedBarData().tabs[selectedTab()] = tempHolder
+								selectedBarData().selectedTab = targetTab
 							elseif targetTab and targetTab > tabCount then
 								-- If the target tab is higher than the number of tabs, switch with the highest tab
 								local highestTab = tabCount
-								local tempHolder = colorFilter.units[selectedUnit()].statusbars[selectedBar()].tabs[highestTab]
-								colorFilter.units[selectedUnit()].statusbars[selectedBar()].tabs[highestTab] = colorFilter.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()]
-								colorFilter.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()] = tempHolder
-								db.units[selectedUnit()].statusbars[selectedBar()].selectedTab = highestTab
+								local tempHolder = selectedBarData().tabs[highestTab]
+								selectedBarData().tabs[highestTab] = selectedTabData()
+								selectedBarData().tabs[selectedTab()] = tempHolder
+								selectedBarData().selectedTab = highestTab
 							end
 							self:Toggle()
 						end,
@@ -333,17 +415,16 @@ function mod:LoadConfig()
 						desc = L["Select a tab to copy its settings onto the current tab."],
 						get = function() return "" end,
 						set = function(info, value)
-							if value then
-								local values = info.option.values()
-								for index, entry in pairs(values) do
-									if index == value then
-										local unitName, barName, tabIndex = match(entry, "^[^:]+:%s*(.+),%s*%[%]:%s*(.+),%s*#:%s*(%d+)$")
-										db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()] = CopyTable(db.units[unitName].statusbars[barName].tabs[tonumber(tabIndex)])
-										break
-									end
+							if not value then return end
+							local values = info.option.values()
+							for index, entry in pairs(values) do
+								if index == value then
+									local unitName, barName, tabIndex = match(entry, "^[^:]+:%s*(.+),%s*%[%]:%s*(.+),%s*#:%s*(%d+)$")
+									selectedBarData().tabs[selectedTab()] = CopyTable(db.units[unitName].statusbars[barName].tabs[tonumber(tabIndex)])
+									break
 								end
-								self:Toggle()
 							end
+							self:Toggle()
 						end,
 						values = function()
 							local tabValues = {}
@@ -351,7 +432,7 @@ function mod:LoadConfig()
 								if unitTable.statusbars then
 									for statusbar, bar in pairs(unitTable.statusbars) do
 										for tabIndex, tab in ipairs(bar.tabs) do
-											if tab.conditions ~= '' and tab ~= db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()] then
+											if tab.conditions ~= '' and tab ~= selectedTabData() then
 												tinsert(tabValues, tabIndex, 'id: '..unitName..', []: '..statusbar..', #: '..tabIndex)
 											end
 										end
@@ -370,7 +451,7 @@ function mod:LoadConfig()
 						get = function() return "" end,
 						set = function(_, value)
 							if value and value ~= "" then
-								db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].name = value
+								selectedTabData().name = value
 							end
 						end,
 					},
@@ -413,8 +494,8 @@ function mod:LoadConfig()
 									},
 								},
 							}
-							tinsert(db.units[selectedUnit()].statusbars[selectedBar()].tabs, newTab)
-							db.units[selectedUnit()].statusbars[selectedBar()].selectedTab = #db.units[selectedUnit()].statusbars[selectedBar()].tabs
+							tinsert(selectedBarData().tabs, newTab)
+							selectedBarData().selectedTab = #selectedBarData().tabs
 						end,
 						disabled = function() return not unitEnabled() or not barEnabled() or not UFUnitEnabled() end,
 					},
@@ -424,10 +505,11 @@ function mod:LoadConfig()
 						name = L["Delete Tab"],
 						desc = "",
 						func = function()
-							tremove(db.units[selectedUnit()].statusbars[selectedBar()].tabs, selectedTab())
-							db.units[selectedUnit()].statusbars[selectedBar()].selectedTab = selectedTab() > 1 and selectedTab() - 1 or 1
+							tremove(selectedBarData().tabs, selectedTab())
+							selectedBarData().selectedTab = selectedTab() > 1 and selectedTab() - 1 or 1
 						end,
-						disabled = function() return #db.units[selectedUnit()].statusbars[selectedBar()].tabs == 1 or not unitEnabled() or not barEnabled() or not UFUnitEnabled() end,
+						disabled = function() return #selectedBarData().tabs == 1
+													or not unitEnabled() or not barEnabled() or not UFUnitEnabled() end,
 					},
 				},
 			},
@@ -436,14 +518,14 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Flash"],
 				guiInline = true,
-				get = function(info) return db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].flash[info[#info]] end,
-				set = function(info, value) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].flash[info[#info]] = value self:Toggle() end,
+				get = function(info) return selectedTabData().flash[info[#info]] end,
+				set = function(info, value) selectedTabData().flash[info[#info]] = value self:Toggle() end,
 				args = {
 					enabled = {
 						order = 1,
 						type = "toggle",
 						width = "double",
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() end,
+						disabled = function() return greyed() end,
 						name = core.pluginColor..L["Enable"],
 						desc = L["Toggle color flash for the current tab."],
 					},
@@ -452,9 +534,9 @@ function mod:LoadConfig()
 						type = "color",
 						name = L["Color"],
 						desc = "",
-						get = function() return unpack(db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].flash.colors) end,
-						set = function(_, r, g, b) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].flash.colors = { r, g, b } self:Toggle() end,
-						hidden = function() return not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].flash.enabled end,
+						get = function() return unpack(selectedTabData().flash.colors) end,
+						set = function(_, r, g, b) selectedTabData().flash.colors = { r, g, b } self:Toggle() end,
+						hidden = function() return not selectedTabData().flash.enabled end,
 					},
 					speed = {
 						order = 3,
@@ -462,7 +544,7 @@ function mod:LoadConfig()
 						min = 0.1, max = 5, step = 0.1,
 						name = L["Speed"],
 						desc = "",
-						hidden = function() return not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].flash.enabled end,
+						hidden = function() return not selectedTabData().flash.enabled end,
 					},
 				},
 			},
@@ -471,14 +553,14 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Glow"],
 				guiInline = true,
-				get = function(info) return db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow[info[#info]] end,
-				set = function(info, value) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow[info[#info]] = value self:Toggle() end,
+				get = function(info) return selectedTabData().highlight.glow[info[#info]] end,
+				set = function(info, value) selectedTabData().highlight.glow[info[#info]] = value self:Toggle() end,
 				args = {
 					enabled = {
 						order = 1,
 						type = "toggle",
 						hidden = false,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() end,
+						disabled = function() greyed() end,
 						name = core.pluginColor..L["Enable"],
 						desc = "",
 					},
@@ -487,14 +569,18 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Priority"],
 						desc = L["Determines which glow to apply when statusbars are not detached from frame."],
-						get = function() return db.units[selectedUnit()].glowPriority end,
-						set = function(_, value) db.units[selectedUnit()].glowPriority = value self:Toggle() end,
+						get = function() return selectedUnitData().glowPriority end,
+						set = function(_, value) selectedUnitData().glowPriority = value self:Toggle() end,
 						values = {
 							["Health"] = L["Health"],
 							["Power"] = L["Power"],
 						},
-						hidden = function() return customFrames[selectedUnit()] or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow.enabled end,
-						disabled = function() return not unitEnabled() or not tabEnabled() or not barEnabled() or selectedBar() == 'Castbar' or find(selectedUnit(),'assist') or find(selectedUnit(),'tank') or (E.db.unitframe.units[selectedUnit()].power and E.db.unitframe.units[selectedUnit()].power.detachFromFrame) or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow.enabled end,
+						hidden = function() return customFrames[selectedUnit()] or not selectedTabData().highlight.glow.enabled end,
+						disabled = function()
+							return greyed() or selectedBar() == 'Castbar'
+								or find(selectedUnit(),'assist') or find(selectedUnit(),'tank')
+								or (selectedUFData().power and selectedUFData().power.detachFromFrame)
+								or not selectedTabData().highlight.glow.enabled end,
 					},
 					colors = {
 						order = 3,
@@ -502,9 +588,9 @@ function mod:LoadConfig()
 						hasAlpha = true,
 						name = L["Color"],
 						desc = "",
-						get = function() return unpack(db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow.colors) end,
-						set = function(_, r, g, b, a) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow.colors = { r, g, b, a } self:Toggle() end,
-						hidden = function() return not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow.enabled end,
+						get = function() return unpack(selectedTabData().highlight.glow.colors) end,
+						set = function(_, r, g, b, a) selectedTabData().highlight.glow.colors = { r, g, b, a } self:Toggle() end,
+						hidden = function() return not selectedTabData().highlight.glow.enabled end,
 					},
 					size = {
 						order = 4,
@@ -512,7 +598,7 @@ function mod:LoadConfig()
 						min = 1, max = 20, step = 1,
 						name = L["Size"],
 						desc = "",
-						hidden = function() return not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow.enabled end,
+						hidden = function() return not selectedTabData().highlight.glow.enabled end,
 					},
 					castbarIcon = {
 						order = 5,
@@ -520,7 +606,7 @@ function mod:LoadConfig()
 						width = "full",
 						name = L["Enable"],
 						desc = L["When handling castbar, also manage its icon."],
-						hidden = function() return selectedBar() ~= 'Castbar' or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow.enabled end,
+						hidden = function() return selectedBar() ~= 'Castbar' or not selectedTabData().highlight.glow.enabled end,
 					},
 					castbarIconColors = {
 						order = 6,
@@ -528,10 +614,10 @@ function mod:LoadConfig()
 						hasAlpha = true,
 						name = L["CastBar Icon Glow Color"],
 						desc = "",
-						get = function() return unpack(db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow.castbarIconColors) end,
-						set = function(_, r, g, b, a) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow.castbarIconColors = { r, g, b, a } self:Toggle() end,
-						hidden = function() return selectedBar() ~= 'Castbar' or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow.enabled end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow.castbarIcon end,
+						get = function() return unpack(selectedTabData().highlight.glow.castbarIconColors) end,
+						set = function(_, r, g, b, a) selectedTabData().highlight.glow.castbarIconColors = {r, g, b, a} self:Toggle() end,
+						hidden = function() return selectedBar() ~= 'Castbar' or not selectedTabData().highlight.glow.enabled end,
+						disabled = function() return greyed() or not selectedTabData().highlight.glow.castbarIcon end,
 					},
 					castbarIconSize = {
 						order = 7,
@@ -539,8 +625,8 @@ function mod:LoadConfig()
 						min = 1, max = 20, step = 1,
 						name = L["CastBar Icon Glow Size"],
 						desc = "",
-						hidden = function() return selectedBar() ~= 'Castbar' or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow.enabled end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.glow.castbarIcon end,
+						hidden = function() return selectedBar() ~= 'Castbar' or not selectedTabData().highlight.glow.enabled end,
+						disabled = function() return greyed() or not selectedTabData().highlight.glow.castbarIcon end,
 					},
 				},
 			},
@@ -549,13 +635,13 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Borders"],
 				guiInline = true,
-				get = function(info) return db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders[info[#info]] end,
-				set = function(info, value) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders[info[#info]] = value self:Toggle() end,
+				get = function(info) return selectedTabData().highlight.borders[info[#info]] end,
+				set = function(info, value) selectedTabData().highlight.borders[info[#info]] = value self:Toggle() end,
+				disabled = function() return greyed() end,
 				args = {
 					enabled = {
 						order = 1,
 						type = "toggle",
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() end,
 						name = core.pluginColor..L["Enable"],
 						desc = "",
 					},
@@ -564,93 +650,114 @@ function mod:LoadConfig()
 						type = "color",
 						name = L["Color"],
 						desc = "",
-						get = function() return unpack(db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.colors) end,
-						set = function(_, r, g, b) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.colors = { r, g, b } self:Toggle() end,
-						hidden = function() return not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.enabled end,
+						get = function() return unpack(selectedTabData().highlight.borders.colors) end,
+						set = function(_, r, g, b) selectedTabData().highlight.borders.colors = {r, g, b} self:Toggle() end,
+						hidden = function() return not selectedTabData().highlight.borders.enabled end,
 					},
 					castbarIcon = {
 						order = 3,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["When handling castbar, also manage its icon."],
-						hidden = function() return selectedBar() ~= 'Castbar' or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.enabled end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() end,
+						hidden = function() return selectedBar() ~= 'Castbar' or not selectedTabData().highlight.borders.enabled end,
 					},
 					castbarIconColors = {
 						order = 4,
 						type = "color",
 						name = L["CastBar Icon Color"],
 						desc = "",
-						get = function() return unpack(db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.castbarIconColors) end,
-						set = function(_, r, g, b) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.castbarIconColors = { r, g, b } self:Toggle() end,
-						hidden = function() return selectedBar() ~= 'Castbar' or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.enabled end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.castbarIcon end,
+						get = function() return unpack(selectedTabData().highlight.borders.castbarIconColors) end,
+						set = function(_, r, g, b) selectedTabData().highlight.borders.castbarIconColors = {r, g, b} self:Toggle() end,
+						hidden = function() return selectedBar() ~= 'Castbar' or not selectedTabData().highlight.borders.enabled end,
+						disabled = function() return greyed() or not selectedTabData().highlight.borders.castbarIcon end,
 					},
 					classBarBorderEnabled = {
 						order = 4,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Toggle classbar borders."],
-						hidden = function() return customFrames[selectedUnit()] or not (E.db.unitframe.units[selectedUnit()].classbar and E.db.unitframe.units[selectedUnit()].classbar.enable) or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.enabled end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or not (E.db.unitframe.units[selectedUnit()].classbar and E.db.unitframe.units[selectedUnit()].classbar.enable) end,
+						hidden = function()
+							return customFrames[selectedUnit()]
+									or not (selectedUFData().classbar and selectedUFData().classbar.enable)
+									or not selectedTabData().highlight.borders.enabled end,
+						disabled = function() return greyed() or not selectedUFData().classbar.enable end,
 					},
 					infoPanelBorderEnabled = {
 						order = 5,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Toggle infopanel borders."],
-						hidden = function() return customFrames[selectedUnit()] or not (E.db.unitframe.units[selectedUnit()].infoPanel and E.db.unitframe.units[selectedUnit()].infoPanel.enable) or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.enabled end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or not (E.db.unitframe.units[selectedUnit()].infoPanel and E.db.unitframe.units[selectedUnit()].infoPanel.enable) end,
+						hidden = function()
+							return customFrames[selectedUnit()]
+									or not (selectedUFData().infoPanel and selectedUFData().infoPanel.enable)
+									or not selectedTabData().highlight.borders.enabled end,
+						disabled = function()
+							return greyed() or not (selectedUFData().infoPanel and selectedUFData().infoPanel.enable) end,
 					},
 					classBarBorderColors = {
 						order = 5,
 						type = "color",
 						name = L["ClassBar Color"],
 						desc = L["Disabled unless classbar is enabled."],
-						get = function() return unpack(db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.classBarBorderColors) end,
-						set = function(_, r, g, b) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.classBarBorderColors = { r, g, b } self:Toggle() end,
-						hidden = function() return customFrames[selectedUnit()] or not (E.db.unitframe.units[selectedUnit()].classbar and E.db.unitframe.units[selectedUnit()].classbar.enable) or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.enabled end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or not (E.db.unitframe.units[selectedUnit()].classbar and E.db.unitframe.units[selectedUnit()].classbar.enable) or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.classBarBorderEnabled end,
+						get = function() return unpack(selectedTabData().highlight.borders.classBarBorderColors) end,
+						set = function(_, r, g, b) selectedTabData().highlight.borders.classBarBorderColors = {r, g, b} self:Toggle() end,
+						hidden = function()
+							return customFrames[selectedUnit()]
+								or not (selectedUFData().classbar and selectedUFData().classbar.enable)
+								or not selectedTabData().highlight.borders.enabled end,
+						disabled = function()
+							return greyed() or not (selectedUFData().classbar and selectedUFData().classbar.enable)
+							or not selectedTabData().highlight.borders.classBarBorderEnabled end,
 					},
 					bordersInfoPanelColors = {
 						order = 6,
 						type = "color",
 						name = L["InfoPanel Color"],
 						desc = L["Disabled unless infopanel is enabled."],
-						get = function() return unpack(db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.infoPanelBorderColors) end,
-						set = function(_, r, g, b) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.infoPanelBorderColors = { r, g, b } self:Toggle() end,
-						hidden = function() return customFrames[selectedUnit()] or not (E.db.unitframe.units[selectedUnit()].infoPanel and E.db.unitframe.units[selectedUnit()].infoPanel.enable) or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.enabled end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or not (E.db.unitframe.units[selectedUnit()].infoPanel and E.db.unitframe.units[selectedUnit()].infoPanel.enable) or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.infoPanelBorderEnabled end,
+						get = function() return unpack(selectedTabData().highlight.borders.infoPanelBorderColors) end,
+						set = function(_, r, g, b) selectedTabData().highlight.borders.infoPanelBorderColors = {r, g, b} self:Toggle() end,
+						hidden = function()
+							return customFrames[selectedUnit()]
+								or not (selectedUFData().infoPanel and selectedUFData().infoPanel.enable)
+								or not selectedTabData().highlight.borders.enabled end,
+						disabled = function()
+							return greyed()
+								or not (selectedUFData().infoPanel and selectedUFData().infoPanel.enable)
+								or not selectedTabData().highlight.borders.infoPanelBorderEnabled end,
 					},
 					classBarBorderAdapt = {
 						order = 7,
 						type = "select",
 						name = L["ClassBar Adapt To"],
 						desc = L["Copies color of the selected bar."],
-						get = function() return db.units[selectedUnit()].classBarBorderAdapt end,
-						set = function(_, value) db.units[selectedUnit()].classBarBorderAdapt = value self:Toggle() end,
+						get = function() return selectedUnitData().classBarBorderAdapt end,
+						set = function(_, value) selectedUnitData().classBarBorderAdapt = value self:Toggle() end,
 						values = {
 							["Health"] = L["Health"],
 							["Power"] = L["Power"],
 							["NONE"] = L["None"],
 						},
-						hidden = function() return not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.enabled end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or not (E.db.unitframe.units[selectedUnit()].infoPanel and E.db.unitframe.units[selectedUnit()].infoPanel.enable) end,
+						hidden = function() return not selectedTabData().highlight.borders.enabled end,
+						disabled = function()
+							return greyed()
+								or not (selectedUFData().classbar and selectedUFData().classbar.enable) end,
 					},
 					infoPanelBorderAdapt = {
 						order = 8,
 						type = "select",
 						name = L["InfoPanel Adapt To"],
 						desc = L["Copies color of the selected bar."],
-						get = function() return db.units[selectedUnit()].infoPanelBorderAdapt end,
-						set = function(_, value) db.units[selectedUnit()].infoPanelBorderAdapt = value self:Toggle() end,
+						get = function() return selectedUnitData().infoPanelBorderAdapt end,
+						set = function(_, value) selectedUnitData().infoPanelBorderAdapt = value self:Toggle() end,
 						values = {
 							["Health"] = L["Health"],
 							["Power"] = L["Power"],
 							["NONE"] = L["None"],
 						},
-						hidden = function() return customFrames[selectedUnit()] or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.enabled end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or not (E.db.unitframe.units[selectedUnit()].infoPanel and E.db.unitframe.units[selectedUnit()].infoPanel.enable) end,
+						hidden = function()
+							return customFrames[selectedUnit()] or not selectedTabData().highlight.borders.enabled end,
+						disabled = function()
+							return greyed() or not (selectedUFData().infoPanel and selectedUFData().infoPanel.enable) end,
 					},
 					overrideMode = {
 						order = 10,
@@ -662,23 +769,27 @@ function mod:LoadConfig()
 							["NONE"] = L["None"],
 							["THREAT"] = L["Threat"],
 						},
-						hidden = function() return customFrames[selectedUnit()] or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.enabled end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() end,
+						hidden = function()
+							return customFrames[selectedUnit()] or not selectedTabData().highlight.borders.enabled end,
 					},
 					bordersPriority = {
 						order = 11,
 						type = "select",
 						name = L["Priority"],
 						desc = L["Determines which borders to apply when statusbars are not detached from frame."],
-						get = function() return db.units[selectedUnit()].bordersPriority end,
-						set = function(_, value) db.units[selectedUnit()].bordersPriority = value self:Toggle() end,
+						get = function() return selectedUnitData().bordersPriority end,
+						set = function(_, value) selectedUnitData().bordersPriority = value self:Toggle() end,
 						values = {
 							["Health"] = L["Health"],
 							["Power"] = L["Power"],
 							["NONE"] = L["Bar-specific"],
 						},
-						hidden = function() return customFrames[selectedUnit()] or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].highlight.borders.enabled end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or selectedBar() == 'Castbar' or find(selectedUnit(),'assist') or find(selectedUnit(),'tank') or (E.db.unitframe.units[selectedUnit()].power and E.db.unitframe.units[selectedUnit()].power.detachFromFrame) end,
+						hidden = function()
+							return customFrames[selectedUnit()] or not selectedTabData().highlight.borders.enabled end,
+						disabled = function()
+							return greyed() or selectedBar() == 'Castbar'
+								or find(selectedUnit(),'assist') or find(selectedUnit(),'tank')
+								or (selectedUFData().power and selectedUFData().power.detachFromFrame) end,
 					},
 				},
 			},
@@ -687,26 +798,26 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Colors"],
 				guiInline = true,
-				get = function(info) return db.units[selectedUnit()][info[#info]] end,
-				set = function(info, value) db.units[selectedUnit()][info[#info]] = value self:Toggle() end,
-				disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() end,
+				get = function(info) return selectedUnitData()[info[#info]] end,
+				set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
+				disabled = function() return greyed() end,
 				args = {
 					enableColors = {
 						order = 1,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Toggle bar coloring."],
-						get = function(info) return db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()][info[#info]] end,
-						set = function(info, value) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()][info[#info]] = value self:Toggle() end,
+						get = function(info) return selectedTabData()[info[#info]] end,
+						set = function(info, value) selectedTabData()[info[#info]] = value self:Toggle() end,
 					},
 					colors = {
 						order = 2,
 						type = "color",
 						name = L["Color"],
 						desc = "",
-						get = function() return unpack(db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].colors) end,
-						set = function(_, r, g, b) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].colors = { r, g, b } self:Toggle() end,
-						disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() or not db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].enableColors end,
+						get = function() return unpack(selectedTabData().colors) end,
+						set = function(_, r, g, b) selectedTabData().colors = {r, g, b} self:Toggle() end,
+						disabled = function() return greyed() or not selectedTabData().enableColors end,
 					},
 				},
 			},
@@ -715,9 +826,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Lua Section"],
 				guiInline = true,
-				get = function(info) return db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()][info[#info]] and db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()][info[#info]] or "" end,
-				set = function(info, value) db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()][info[#info]] = value self:Toggle() end,
-				disabled = function() return not unitEnabled() or not barEnabled() or not tabEnabled() or not UFUnitEnabled() end,
+				get = function(info) return selectedTabData()[info[#info]] or "" end,
+				set = function(info, value) selectedTabData()[info[#info]] = value self:Toggle() end,
+				disabled = function() return greyed() end,
 				args = 	{
 					openEditFrame = {
 						order = 1,
@@ -726,7 +837,14 @@ function mod:LoadConfig()
 						name = L["Open Edit Frame"],
 						desc = "",
 						func = function()
-							core:OpenEditor(L["Color Filter"], db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].conditions or "", function() db.units[selectedUnit()].statusbars[selectedBar()].tabs[selectedTab()].conditions = core.EditFrame.editBox:GetText() mod:InitAndUpdateColorFilter() end)
+							core:OpenEditor(
+								L["Color Filter"],
+								selectedTabData().conditions or "",
+								function()
+									selectedTabData().conditions = core.EditFrame.editBox:GetText()
+									mod:InitAndUpdateColorFilter()
+								end
+							)
 						end,
 					},
 					conditions = {
@@ -826,7 +944,7 @@ function mod:ConstructHighlight(frame)
 		colorFilter.Health.shadow:SetFrameLevel(colorFilter.Health:GetFrameLevel()+15)
 
 		colorFilter.appliedGlowColors.Health = { applied = false }
-		colorFilter.appliedBordersColors.Health = { applied = false }
+		colorFilter.appliedBordersColors.Health = { applied = false, override = false }
 
 		constructAnimation(frame.Health, colorFilter.Health)
 		colorFilter.Health.flashTexture:Hide()
@@ -846,7 +964,7 @@ function mod:ConstructHighlight(frame)
 		colorFilter.Power.shadow:SetFrameLevel(colorFilter.Power:GetFrameLevel()+15)
 
 		colorFilter.appliedGlowColors.Power = { applied = false }
-		colorFilter.appliedBordersColors.Power = { applied = false }
+		colorFilter.appliedBordersColors.Power = { applied = false, override = false }
 
 		constructAnimation(power, colorFilter.Power)
 		colorFilter.Power.flashTexture:Hide()
@@ -901,7 +1019,8 @@ function mod:SortEvents(bar, statusbar, unit)
 		if not eventStart then break end
 
 		metaFrame[unit]:RegisterEvent(sub(eventsString, eventStart, eventEnd))
-		metaTable.events[unit] = {[statusbar] = bar}
+		metaTable.events[unit] = metaTable.events[unit] or {}
+		metaTable.events[unit][statusbar] = bar
 
 		startIndex = eventEnd + 1
 	end
@@ -991,64 +1110,11 @@ function mod:SortMentions(db, frame, conditions, mentionedByUnit, statusbarToUpd
 end
 
 
-function mod:HandleExtraBars(frame, statusbar, unit, threatBorders, mode, hideBorders)
-	local db = E.db.Extras.unitframes[modName].units[unit]
-	local borderColor
-	local colorFilter = frame.colorFilter
-	local appliedBorders = colorFilter.appliedBordersColors[statusbar]
-	local infoPanel = frame.InfoPanel
-	local threatColors = colorFilter.threatBordersColors and {GetThreatStatusColor(colorFilter.threatBordersColors)}
-	if infoPanel and mode ~= 'CLASSBAR' then
-		local appliedBordersAdapt = colorFilter.appliedBordersColors[db.infoPanelBorderAdapt]
-		if appliedBorders.highlight.borders.infoPanelBorderEnabled or (appliedBordersAdapt and db.statusbars[db.infoPanelBorderAdapt].infoPanelBorderEnabled) then
-			if db.infoPanelBorderAdapt ~= 'NONE' and (appliedBordersAdapt and appliedBordersAdapt.applied) then
-				borderColor = (threatBorders and threatBorders ~= 'HEALTHBORDER' and not appliedBordersAdapt.override) and threatColors or appliedBordersAdapt.highlight.borders.colors
-			else
-				borderColor = (threatBorders and threatBorders ~= 'HEALTHBORDER' and not appliedBorders.override) and threatColors or appliedBorders.highlight.borders.infoPanelBorderColors
-			end
-
-			borderColor = (hideBorders and (not threatBorders or threatBorders == 'HEALTHBORDER')) and E.media.unitframeBorderColor or (db.infoPanelBorderAdapt ~= 'NONE' and (not appliedBordersAdapt.applied and appliedBordersAdapt.override) and threatBorders == 'INFOPANELBORDER') and threatColors or borderColor
-
-			if borderColor then infoPanel.backdrop:SetBackdropBorderColor(unpack(borderColor)) end
-		elseif threatBorders and threatBorders ~= 'HEALTHBORDER' then
-			infoPanel.backdrop:SetBackdropBorderColor(unpack(threatColors))
-		else
-			local statusbars, skipRevert = frame.USE_POWERBAR and {'Health', 'Power'} or {'Health'}
-			for _, statusbar in ipairs(statusbars) do
-				local appliedBorders = colorFilter.appliedBordersColors[statusbar]
-				if appliedBorders and appliedBorders.applied then skipRevert = true break end
-			end
-			if not skipRevert then
-				infoPanel.backdrop:SetBackdropBorderColor(unpack(E.media.unitframeBorderColor))
-			end
-		end
-	end
-
-	if frame.CLASSBAR_SHOWN and mode ~= 'INFOPANEL' then
-		local classBar = frame[frame.ClassBar]
-		if appliedBorders.highlight.borders.classBarBorderEnabled then
-			local appliedBordersAdapt = colorFilter.appliedBordersColors[db.classBarBorderAdapt]
-			if db.classBarBorderAdapt ~= 'NONE' and (appliedBordersAdapt and appliedBordersAdapt.applied) then
-				borderColor = (threatBorders and not appliedBordersAdapt.override) and threatColors or appliedBordersAdapt.highlight.borders.colors
-			else
-				borderColor = (threatBorders and not appliedBorders.override) and threatColors or appliedBorders.highlight.borders.classBarBorderColors
-			end
-
-			borderColor = (hideBorders and not threatBorders) and E.media.unitframeBorderColor or borderColor
-
-			if borderColor then classBar.backdrop:SetBackdropBorderColor(unpack(borderColor)) end
-		elseif threatBorders then
-			classBar.backdrop:SetBackdropBorderColor(unpack(threatColors))
-		else
-			classBar.backdrop:SetBackdropBorderColor(unpack(E.media.unitframeBorderColor))
-		end
-	end
-end
-
 function mod:UpdateGlow(frame, colors, statusbar, unit, showGlow, highlight)
 	local detached = frame.USE_POWERBAR and frame.POWERBAR_DETACHED
 	local colorFilter = frame.colorFilter
 	local appliedGlowColors = colorFilter.appliedGlowColors
+
 	if showGlow and (not colors or colors.g ~= false) then
 		local glow = highlight.glow
 		local glowSize = highlight.glow.size
@@ -1108,111 +1174,297 @@ function mod:UpdateGlow(frame, colors, statusbar, unit, showGlow, highlight)
 end
 
 function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highlight)
-	local detached = frame.USE_POWERBAR and frame.POWERBAR_DETACHED
-	local colorFilter = frame.colorFilter
-	local appliedBorders = colorFilter.appliedBordersColors[statusbar]
-	local threatBorders = colorFilter.threatBordersActive
-	local power = frame.Power
-	local health = frame.Health
-	local db = E.db.Extras.unitframes[modName].units[unit]
-	if showBorders and (not colors or colors.b ~= false) then
-		local borders = highlight.borders
-		-- in case no borders have been applied prior to the threat borders
-		if not appliedBorders.override then
-			colorFilter.appliedBordersColors[statusbar].override = borders.overrideMode == 'THREAT'
-		end
+    local detached = frame.USE_POWERBAR and frame.POWERBAR_DETACHED
+    local colorFilter = frame.colorFilter
+    local appliedBorders = colorFilter.appliedBordersColors
+    local threatBorders = colorFilter.threatBordersActive
+    local power = frame.USE_POWERBAR and frame.Power
+    local health = frame.Health
+    local db = E.db.Extras.unitframes[modName].units[unit]
 
-		if statusbar ~= 'Castbar' and ((threatBorders == 'BORDERS' or (threatBorders == 'HEALTHBORDER' and statusbar == 'Health')) and not appliedBorders.override) then
-			frame[statusbar].backdrop:SetBackdropBorderColor(GetThreatStatusColor(colorFilter.threatBordersColors))
-			self:HandleExtraBars(frame, statusbar, unit, threatBorders, nil)
-			return
-		end
+    if showBorders and (not colors or colors.b ~= false) then
+        local borders = highlight.borders
+        local borderColors = borders.colors
+        local r, g, b = borderColors[1], borderColors[2], borderColors[3]
 
-		local borderColors = borders.colors
-		local r, g, b = borderColors[1], borderColors[2], borderColors[3]
-		if colors then
-			r, g, b = colors.bR and colors.bR or r, colors.bG and colors.bG or g, colors.bB and colors.bB or b
-		end
+        if colors then
+            r, g, b = colors.bR or r, colors.bG or g, colors.bB or b
+        end
 
-		colorFilter.appliedBordersColors[statusbar] = { applied = true, color = {r, g, b}, highlight = highlight }
-		colorFilter.appliedBordersColors[statusbar].override = borders.overrideMode == 'THREAT'
+        -- handle Castbar separately
+        if statusbar == 'Castbar' then
+            frame.Castbar.backdrop:SetBackdropBorderColor(r, g, b)
+            if borders.castbarIcon then
+                frame.Castbar.Icon.bg.backdrop:SetBackdropBorderColor(r, g, b)
+            end
+            return
+        end
 
-		-- apply whatever if detached or bar-specific
+		appliedBorders[statusbar].override = borders.overrideMode == 'THREAT'
+
+		local weights = calculateWeight(appliedBorders.Health.override,
+										power and appliedBorders.Power.override,
+										db.bordersPriority, threatBorders)
+
+        appliedBorders[statusbar].applied = true
+        appliedBorders[statusbar].color = {r, g, b}
+        appliedBorders[statusbar].highlight = highlight
+        appliedBorders[statusbar].weight = weights[statusbar]
+
+        if detached or db.bordersPriority == 'NONE' then
+			if weights[statusbar] < 2 then
+				frame[statusbar].backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+			else
+				frame[statusbar].backdrop:SetBackdropBorderColor(r, g, b)
+			end
+        else
+			local otherStatusbar = statusbar == 'Health' and 'Power' or 'Health'
+			if not appliedBorders[otherStatusbar].applied then
+				if weights[statusbar] < 2 then
+					if power then
+						if weights[statusbar] == 1 then
+							power.backdrop:SetBackdropBorderColor(r, g, b)
+						else
+							power.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+						end
+					end
+					health.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+				else
+					if power then
+						power.backdrop:SetBackdropBorderColor(r, g, b)
+					end
+					health.backdrop:SetBackdropBorderColor(r, g, b)
+				end
+			elseif weights[statusbar] > weights[otherStatusbar] then
+				if power then
+					power.backdrop:SetBackdropBorderColor(r, g, b)
+				end
+				if weights[statusbar] == 1 then
+					health.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+				else
+					health.backdrop:SetBackdropBorderColor(r, g, b)
+				end
+			elseif weights[statusbar] < weights[otherStatusbar] then
+				local otherAppliedBorders = appliedBorders[otherStatusbar]
+				if weights[statusbar] == 1 then
+					if power then
+						if db.bordersPriority == statusbar then
+							power.backdrop:SetBackdropBorderColor(r, g, b)
+						else
+							power.backdrop:SetBackdropBorderColor(unpack(otherAppliedBorders.color))
+						end
+					end
+					health.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+				else
+					if power then
+						power.backdrop:SetBackdropBorderColor(unpack(otherAppliedBorders.color))
+					end
+					health.backdrop:SetBackdropBorderColor(unpack(otherAppliedBorders.color))
+				end
+			elseif weights[statusbar] == 0 then
+				if power then
+					power.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+				end
+				health.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+			end
+        end
+    elseif appliedBorders[statusbar].applied then
+		appliedBorders[statusbar].applied = false
+		appliedBorders[statusbar].override = false
+		appliedBorders[statusbar].weight = 2
+
 		if statusbar == 'Castbar' then
+			local r, g, b = unpack(E.media.unitframeBorderColor)
 			frame.Castbar.backdrop:SetBackdropBorderColor(r, g, b)
-			if borders.castbarIcon then
-				frame.Castbar.Icon.bg:SetBackdropBorderColor(r, g, b)
+			if highlight.borders.castbarIcon then
+				frame.Castbar.Icon.bg.backdrop:SetBackdropBorderColor(r, g, b)
 			end
-			return
-		elseif detached or db.bordersPriority == 'NONE' then
-			frame[statusbar].backdrop:SetBackdropBorderColor(r, g, b)
 		else
-			-- color all with priority
-			appliedBorders = colorFilter.appliedBordersColors[db.bordersPriority]
-			if appliedBorders and appliedBorders.applied then
-				r, g, b = unpack(appliedBorders.color)
-				colorFilter.appliedBordersColors[db.bordersPriority ~= 'Health' and 'Power' or 'Health'].applied = true
-			end
+			local weights = calculateWeight(appliedBorders.Health.override,
+											power and appliedBorders.Power.override,
+											db.bordersPriority, threatBorders)
 
-			if power then
-				power.backdrop:SetBackdropBorderColor(r, g, b)
-			end
+			if not detached and db.bordersPriority ~= 'NONE' then
+				local otherbar = statusbar == 'Health' and 'Power' or 'Health'
+				local otherAppliedBorders = appliedBorders[otherbar]
 
-			if threatBorders ~= 'HEALTHBORDER' or borders.overrideMode == 'THREAT' then
-				health.backdrop:SetBackdropBorderColor(r, g, b)
-			end
-		end
-
-		self:HandleExtraBars(frame, statusbar, unit, threatBorders, nil)
-	elseif appliedBorders.applied then
-		local r, g, b
-
-		if (threatBorders and (threatBorders == 'BORDERS' or (threatBorders == 'HEALTHBORDER' and statusbar == 'Health'))) then
-			r, g ,b = GetThreatStatusColor(colorFilter.threatBordersColors)
-		else
-			r, g, b = unpack(E.media.unitframeBorderColor)
-		end
-
-		colorFilter.appliedBordersColors[statusbar].applied = false
-		colorFilter.appliedBordersColors[statusbar].override = false
-
-		if statusbar == 'Castbar' then
-			frame.Castbar.backdrop:SetBackdropBorderColor(r, g, b)
-			frame.Castbar.Icon.bg:SetBackdropBorderColor(r, g, b)
-		elseif not detached and db.bordersPriority ~= 'NONE' then
-			local statusbars = frame.USE_POWERBAR and {'Health', 'Power'} or {'Health'}
-			for _, statusbar in ipairs(statusbars) do
-				local appliedBorders = colorFilter.appliedBordersColors[statusbar]
-				if appliedBorders and appliedBorders.applied and (not threatBorders or appliedBorders.override) then
-					r, g, b = unpack(appliedBorders.highlight.borders.colors)
+				if otherAppliedBorders.applied then
+					if weights[otherbar] < 2 then
+						if power then
+							if weights[otherbar] == 1 then
+								power.backdrop:SetBackdropBorderColor(unpack(otherAppliedBorders.color))
+							else
+								power.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+							end
+						end
+						health.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+					else
+						if power then
+							power.backdrop:SetBackdropBorderColor(unpack(otherAppliedBorders.color))
+						end
+						if weights[statusbar] == 1 and not appliedBorders.Power.override then
+							health.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+						else
+							health.backdrop:SetBackdropBorderColor(unpack(otherAppliedBorders.color))
+						end
+					end
+				else
+					if power then
+						if weights.Power < 1 then
+							power.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+						else
+							power.backdrop:SetBackdropBorderColor(unpack(E.media.unitframeBorderColor))
+						end
+					end
+					if weights.Health < 2 then
+						health.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+					else
+						health.backdrop:SetBackdropBorderColor(unpack(E.media.unitframeBorderColor))
+					end
+				end
+			else
+				if weights[statusbar] < 2 then
+					frame[statusbar].backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+				else
+					frame[statusbar].backdrop:SetBackdropBorderColor(unpack(E.media.unitframeBorderColor))
 				end
 			end
+        end
+    end
 
-			health.backdrop:SetBackdropBorderColor(r, g, b)
-			if power then
-				r, g, b = threatBorders == 'HEALTHBORDER' and statusbar == 'Health' and unpack(E.media.unitframeBorderColor) or r, g, b
-				power.backdrop:SetBackdropBorderColor(r, g, b)
-			end
+	if statusbar == 'Castbar' then return end
+
+    -- Handle InfoPanel border
+    if frame.USE_INFO_PANEL then
+		local adapt = db.infoPanelBorderAdapt
+        local infoPanel = frame.InfoPanel
+		local finalColor = E.media.unitframeBorderColor
+		local weights = calculateAdaptWeight(appliedBorders.Health.override,
+											power and appliedBorders.Power.override,
+											adapt, threatBorders, true)
+
+        --if highlight and highlight.borders.infoPanelBorderEnabled then
+        if showBorders then
+			if adapt ~= 'NONE' then
+				local appliedBordersAdapt = appliedBorders[adapt]
+
+				if appliedBordersAdapt.applied and weights[adapt] ~= 0 then
+					finalColor = appliedBordersAdapt.color
+				elseif adapt == statusbar then
+					local otherbar = statusbar == 'Health' and 'Power' or 'Health'
+					if appliedBorders[otherbar].applied and weights[otherbar] ~= 0 then
+						finalColor = appliedBorders[otherbar].highlight.borders.infoPanelBorderColors
+					else
+						finalColor = colorFilter.threatBordersColor
+					end
+				elseif weights[statusbar] == 0 then
+					finalColor = colorFilter.threatBordersColor
+				else
+					finalColor = highlight.borders.infoPanelBorderColors
+				end
+            elseif weights[statusbar] == 0 then
+				local otherbar = statusbar == 'Health' and 'Power' or 'Health'
+				if appliedBorders[otherbar].applied and weights[otherbar] ~= 0 then
+					finalColor = appliedBorders[otherbar].highlight.borders.infoPanelBorderColors
+				else
+					finalColor = colorFilter.threatBordersColor
+				end
+			else
+				finalColor = highlight.borders.infoPanelBorderColors
+            end
 		else
-			frame[statusbar].backdrop:SetBackdropBorderColor(r, g, b)
+			local otherbar = statusbar == 'Health' and 'Power' or 'Health'
+			local otherBorders = appliedBorders[otherbar]
+			if otherBorders.applied and otherBorders.highlight.borders.infoPanelBorderEnabled then
+				if weights[otherbar] == 0 then
+					finalColor = colorFilter.threatBordersColor
+				elseif adapt == otherbar then
+					finalColor = otherBorders.color
+				else
+					finalColor = otherBorders.highlight.borders.infoPanelBorderColors
+				end
+			elseif weights[statusbar] == 0 then
+				finalColor = colorFilter.threatBordersColor
+			end
 		end
 
-		self:HandleExtraBars(frame, statusbar, unit, threatBorders, nil, true)
-	end
+		infoPanel.backdrop:SetBackdropBorderColor(unpack(finalColor))
+		infoPanel.lastColor = finalColor
+    end
+
+    -- Handle ClassBar border
+	if frame.CLASSBAR_SHOWN then
+		local adapt = db.classBarBorderAdapt
+        local classBar = frame[frame.ClassBar]
+        local finalColor = E.media.unitframeBorderColor
+		local weights = calculateAdaptWeight(appliedBorders.Health.override,
+											power and appliedBorders.Power.override,
+											adapt, threatBorders)
+
+        --if highlight and highlight.borders.classBarBorderEnabled then
+        if showBorders then
+            if adapt ~= 'NONE' then
+                local appliedBordersAdapt = appliedBorders[adapt]
+                if appliedBordersAdapt.applied and weights[adapt] ~= 0 then
+					finalColor = appliedBordersAdapt.color
+				elseif adapt == statusbar then
+					local otherbar = statusbar == 'Health' and 'Power' or 'Health'
+					if appliedBorders[otherbar].applied and weights[otherbar] ~= 0 then
+						finalColor = appliedBorders[otherbar].highlight.borders.classBarBorderColors
+					else
+						finalColor = colorFilter.threatBordersColor
+					end
+				elseif weights[statusbar] == 0 then
+					finalColor = colorFilter.threatBordersColor
+				else
+                    finalColor = highlight.borders.classBarBorderColors
+                end
+            elseif weights[statusbar] == 0 then
+				local otherbar = statusbar == 'Health' and 'Power' or 'Health'
+				if appliedBorders[otherbar].applied and weights[otherbar] ~= 0 then
+					finalColor = appliedBorders[otherbar].highlight.borders.classBarBorderColors
+				else
+					finalColor = colorFilter.threatBordersColor
+				end
+			else
+                finalColor = highlight.borders.classBarBorderColors
+            end
+		else
+			local otherbar = statusbar == 'Health' and 'Power' or 'Health'
+			local otherBorders = appliedBorders[otherbar]
+			if otherBorders.applied and otherBorders.highlight.borders.classBarBorderEnabled then
+				if weights[otherbar] == 0 then
+					finalColor = colorFilter.threatBordersColor
+				elseif adapt == otherbar then
+					finalColor = otherBorders.color
+				else
+					finalColor = otherBorders.highlight.borders.classBarBorderColors
+				end
+			elseif weights[statusbar] == 0 then
+				finalColor = colorFilter.threatBordersColor
+			end
+        end
+
+		if frame.ClassBar == 'Runes' then
+			-- it's never colored with threat, though
+			for _, rune in ipairs(frame.Runes) do
+				rune.backdrop:SetBackdropBorderColor(unpack(finalColor))
+			end
+		else
+			classBar.backdrop:SetBackdropBorderColor(unpack(finalColor))
+		end
+    end
 end
 
 function mod:UpdateMentions(bar)
 	for _, mentionInfo in pairs(bar.mentions) do
-		local frame, statusbar, unit, tabs, tabIndex = _G[mentionInfo.frame], mentionInfo.statusbar, mentionInfo.unit, mentionInfo.tabs, mentionInfo.tabIndex
+		local frame, statusbar, unit =  _G[mentionInfo.frame], mentionInfo.statusbar, mentionInfo.unit
+		local tabs, tabIndex = mentionInfo.tabs, mentionInfo.tabIndex
 		local targetBar = frame.colorFilter[statusbar]
 		if (bar.appliedColorTabIndex == tabIndex
 		 or (bar.appliedColorTabIndex ~= tabIndex and targetBar.appliedColorTabIndex == tabIndex)
 		  or not targetBar.appliedColorTabIndex) then
-			local result, colors, tab = self:ParseTabs(frame, statusbar, unit, tabs)
-
-			local highlight = tab and tab.highlight
-			self:UpdateGlow(frame, colors, statusbar, unit, result and highlight.glow.enabled, highlight)
-			self:UpdateBorders(frame, colors, statusbar, unit, result and highlight.borders.enabled, highlight)
+			self:ParseTabs(frame, statusbar, unit, tabs, nil, true)
 
 			if not targetBar.colorApplied then
 				frame[statusbar]:ForceUpdate()
@@ -1227,32 +1479,39 @@ function mod:UpdateMentions(bar)
 end
 
 function mod:UpdateThreat(unit, status)
-	local parent = self:GetParent()
+	local frame = self:GetParent()
 
-	if (parent.unit ~= unit) or not unit then return end
+	if (frame.unit ~= unit) or not unit then return end
 
-	local db = parent.db
+	local db = frame.db
 	if not db then return end
 
-	local colorFilter = parent.colorFilter
+	local colorFilter = frame.colorFilter
 	if not colorFilter then return end
 
-	local unitframeType, threatStyle = parent.unitframeType, db.threatStyle
+	local unitframeType, threatStyle = frame.unitframeType, db.threatStyle
 	if threatStyle == 'BORDERS' or threatStyle == 'HEALTHBORDER' or threatStyle == 'INFOPANELBORDER' then
 		if status then
-			colorFilter.threatBordersActive = threatStyle == 'BORDERS' and 'BORDERS' or threatStyle == 'HEALTHBORDER' and 'HEALTHBORDER' or threatStyle == 'INFOPANELBORDER' and 'INFOPANELBORDER'
-			colorFilter.threatBordersColors = status
+			colorFilter.threatBordersColor = {1}
+			colorFilter.threatBordersActive = threatStyle
 
 			-- revert to the filter colors
-			for statusbar, tabInfo in pairs(colorFilter.appliedBordersColors) do
-				if threatStyle == 'INFOPANELBORDER' and tabInfo.applied then
-					mod:HandleExtraBars(parent, statusbar, parent.unit, colorFilter.threatBordersActive, 'INFOPANEL')
-					return
+			if threatStyle == 'INFOPANELBORDER' then
+				if frame.USE_INFO_PANEL then
+					for _, tabInfo in pairs(colorFilter.appliedBordersColors) do
+						if tabInfo.applied then
+							frame.InfoPanel.backdrop:SetBackdropBorderColor(unpack(frame.InfoPanel.lastColor))
+							return
+						end
+					end
 				end
-
-				if tabInfo.override and statusbar ~= 'Castbar' and (threatStyle ~= 'HEALTHBORDER' or statusbar == 'Health') then
-					colorFilter.appliedBordersColors[statusbar].applied = false
-					mod:UpdateBorders(parent, tabInfo.color, statusbar, parent.unit, true, tabInfo.highlight)
+				return
+			else
+				for statusbar, tabInfo in pairs(colorFilter.appliedBordersColors) do
+					if tabInfo.override and statusbar ~= 'Castbar' then
+						colorFilter.appliedBordersColors[statusbar].applied = false
+						mod:UpdateBorders(frame, tabInfo.color, statusbar, unit, true, tabInfo.highlight)
+					end
 				end
 			end
 		else
@@ -1261,13 +1520,9 @@ function mod:UpdateThreat(unit, status)
 			if metaTable.statusbars[unitframeType] then
 				for statusbar, bar in pairs(metaTable.statusbars[unitframeType]) do
 					local targetBar = colorFilter[statusbar]
-					local parentBar = parent[statusbar]
+					local parentBar = frame[statusbar]
 					if parentBar and parentBar:IsShown() then
-						local result, colors, tab = mod:ParseTabs(parent, statusbar, parent.unit, bar.tabs)
-
-						local highlight = tab and tab.highlight
-						mod:UpdateGlow(parent, colors, statusbar, unitframeType, result and highlight.glow.enabled, highlight)
-						mod:UpdateBorders(parent, colors, statusbar, unitframeType, result and highlight.borders.enabled, highlight)
+						mod:ParseTabs(frame, statusbar, unit, bar.tabs)
 
 						if not targetBar.colorApplied then
 							parentBar:ForceUpdate()
@@ -1278,10 +1533,6 @@ function mod:UpdateThreat(unit, status)
 							end
 						end
 					end
-
-					if targetBar and targetBar.mentions then
-						mod:UpdateMentions(targetBar)
-					end
 				end
 			end
 		end
@@ -1290,8 +1541,6 @@ end
 
 
 function mod:LoadConditions(frame, statusbar, unit, tab)
-    if not tab then return end
-
     local conditions = tab.conditions or tab
     conditions = conditions:gsub('@unit', "'"..unit.."'")
 
@@ -1321,17 +1570,14 @@ function mod:LoadConditions(frame, statusbar, unit, tab)
     return result, colors
 end
 
-function mod:ParseTabs(frame, statusbar, unit, tabs, isPostUpdate, isEvent, event, ...)
+function mod:ParseTabs(frame, statusbar, unit, tabs, isPostUpdate, skipMentions)
 	local targetBar = frame.colorFilter[statusbar]
-	local appliedColorTabIndex = targetBar.appliedColorTabIndex
-
 	for tabIndex, tab in ipairs(tabs) do
 		-- if colored already, do not check tabs with lower priority
-		if appliedColorTabIndex and tabIndex > appliedColorTabIndex then break end
+		if targetBar.appliedColorTabIndex and tabIndex > targetBar.appliedColorTabIndex then break end
 
 		if tab.enabled then
 			local result, colors = self:LoadConditions(frame, statusbar, unit, tab)
-
 			if result then
 				-- no retriggering please
 				local flash = tab.flash
@@ -1347,7 +1593,7 @@ function mod:ParseTabs(frame, statusbar, unit, tabs, isPostUpdate, isEvent, even
 
 					local anim = flashTexture.anim
 					local IsPlaying = anim and anim:IsPlaying()
-					if (not anim or not IsPlaying) or (not appliedColorTabIndex or tabIndex < appliedColorTabIndex) then
+					if (not anim or not IsPlaying) then
 						if IsPlaying then anim:Stop() end
 						anim.fadein:SetDuration(flash.speed)
 						anim.fadeout:SetDuration(flash.speed)
@@ -1377,23 +1623,44 @@ function mod:ParseTabs(frame, statusbar, unit, tabs, isPostUpdate, isEvent, even
 				-- store the current tab index
 				targetBar.colorApplied = true
 				targetBar.appliedColorTabIndex = tabIndex
+				targetBar.lastUpdate = GetTime()
 
-				metaFrame[unit][statusbar].lastUpdate = GetTime()
+				local highlight = tab.highlight
+				if highlight.glow.enabled then
+					self:UpdateGlow(frame, colors, statusbar, unit, true, highlight)
+				end
+				if highlight.borders.enabled then
+					self:UpdateBorders(frame, colors, statusbar, unit, true, highlight)
+				end
 
-				return result, colors, tab
-			elseif appliedColorTabIndex and tabIndex == appliedColorTabIndex then
+				if not skipMentions and targetBar.mentions then
+					self:UpdateMentions(targetBar)
+				end
+			elseif targetBar.appliedColorTabIndex and tabIndex == targetBar.appliedColorTabIndex then
 				-- conditions from the tab currently coloring the bar are no longer true, revert
 				targetBar.colorApplied = false
 				targetBar.appliedColorTabIndex = nil
+
+				local highlight = tab.highlight
+				if highlight.glow.enabled then
+					self:UpdateGlow(frame, nil, statusbar, unit, false)
+				end
+				if highlight.borders.enabled then
+					self:UpdateBorders(frame, nil, statusbar, unit, false)
+				end
+
+				if not skipMentions and targetBar.mentions then
+					self:UpdateMentions(targetBar)
+				end
 			end
 		end
 	end
-	metaFrame[unit][statusbar].lastUpdate = GetTime()
+	targetBar.lastUpdate = GetTime()
 end
 
 
 function mod:Configure_Castbar()
-	-- for the icon
+	-- updating ALL of it for the icon, hurray
 	mod:InitAndUpdateColorFilter()
 end
 
@@ -1406,15 +1673,7 @@ function mod:PostUpdateHealthColor()
 
 	local unitInfo = metaTable.statusbars[unit]
 	if unitInfo and unitInfo.Health and frame:IsShown() then
-		local result, colors, tab = mod:ParseTabs(frame, 'Health', frame.unit, unitInfo.Health.tabs, true)
-
-		local highlight = tab and tab.highlight
-		mod:UpdateGlow(frame, colors, 'Health', unit, result and highlight.glow.enabled, highlight)
-		mod:UpdateBorders(frame, colors, 'Health', unit, result and highlight.borders.enabled, highlight)
-
-		if colorFilter.Health.mentions then
-			mod:UpdateMentions(colorFilter.Health)
-		end
+		mod:ParseTabs(frame, 'Health', frame.unit, unitInfo.Health.tabs, true)
 
 		local targetBar = colorFilter['Health']
 		if not targetBar.colorApplied then
@@ -1437,15 +1696,7 @@ function mod:PostUpdatePowerColor()
 
 	local unitInfo = metaTable.statusbars[unit]
 	if unitInfo and unitInfo.Power and frame:IsShown() then
-		local result, colors, tab = mod:ParseTabs(frame, 'Power', frame.unit, unitInfo.Power.tabs, true)
-
-		local highlight = tab and tab.highlight
-		mod:UpdateGlow(frame, colors, 'Power', unit, result and highlight.glow.enabled, highlight)
-		mod:UpdateBorders(frame, colors, 'Power', unit, result and highlight.borders.enabled, highlight)
-
-		if colorFilter.Power.mentions then
-			mod:UpdateMentions(colorFilter.Power)
-		end
+		mod:ParseTabs(frame, 'Power', frame.unit, unitInfo.Power.tabs, true)
 
 		local targetBar = colorFilter['Power']
 		if not targetBar.colorApplied then
@@ -1467,15 +1718,7 @@ function mod:CastOnupdate()
 
 	local unitInfo = metaTable.statusbars[unit]
 	if unitInfo and unitInfo.Castbar and frame:IsShown() then
-		local result, colors, tab = mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs, true)
-
-		local highlight = tab and tab.highlight
-		mod:UpdateGlow(frame, colors, 'Castbar', unit, result and highlight.glow.enabled, highlight)
-		mod:UpdateBorders(frame, colors, 'Castbar', unit, result and highlight.borders.enabled, highlight)
-
-		if colorFilter.Castbar.mentions then
-			mod:UpdateMentions(colorFilter.Castbar)
-		end
+		mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs, true)
 
 		local targetBar = colorFilter['Castbar']
 		if not targetBar.colorApplied then
@@ -1498,15 +1741,7 @@ function mod:PostCastStart()
 
 	local unitInfo = metaTable.statusbars[unit]
 	if unitInfo and unitInfo.Castbar and frame:IsShown() then
-		local result, colors, tab = mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs, true)
-
-		local highlight = tab and tab.highlight
-		mod:UpdateGlow(frame, colors, 'Castbar', unit, result and highlight.glow.enabled, highlight)
-		mod:UpdateBorders(frame, colors, 'Castbar', unit, result and highlight.borders.enabled, highlight)
-
-		if colorFilter.Castbar.mentions then
-			mod:UpdateMentions(colorFilter.Castbar)
-		end
+		mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs, true)
 
 		local targetBar = colorFilter['Castbar']
 		if not targetBar.colorApplied then
@@ -1546,100 +1781,119 @@ end
 
 
 function mod:InitAndUpdateColorFilter()
-	local db = E.db.Extras.unitframes[modName]
+	if not updatePending then
+		updatePending = true
+		E_Delay(nil, 0.1, function()
+			local db = E.db.Extras.unitframes[modName]
 
-	self:SetupUnits()
+			self:SetupUnits()
 
-	for _, unitsCluster in pairs(metaTable.units) do
-		for _, frame in ipairs(unitsCluster) do
-			self:ConstructHighlight(frame)
-		end
-	end
-
-	for unit, unitsCluster in pairs(metaTable.units) do
-		if not metaFrame[unit] then
-			metaFrame[unit] = CreateFrame("Frame")
-		end
-
-		for _, frame in ipairs(unitsCluster) do
-			for statusbar, bar in pairs(db.units[unit].statusbars) do
-				metaFrame[unit][statusbar] = metaFrame[unit][statusbar] or CreateFrame("Frame")
-
-				local targetBar = frame.colorFilter[statusbar]
-				local unitInfo = metaTable.statusbars[unit][statusbar]
-				if bar.enabled and targetBar then
-					if not unitInfo then
-						metaTable.statusbars[unit][statusbar] = bar
-
-						if find(bar.events, '%S+') then
-							self:SortEvents(bar, statusbar, unit)
-						end
-					end
-
-					frame[statusbar]:ForceUpdate()
-
-					updateHooks(frame, bar.enabled, statusbar)
-				elseif unitInfo then
-					metaTable.statusbars[unit][statusbar] = nil
+			for _, unitsCluster in pairs(metaTable.units) do
+				for _, frame in ipairs(unitsCluster) do
+					self:ConstructHighlight(frame)
 				end
 			end
-		end
-	end
 
-	for unit, unitsCluster in pairs(metaTable.units) do
-		for _, frame in ipairs(unitsCluster) do
-			for statusbar in pairs(metaTable.statusbars[unit]) do
-				local tabs = metaTable.statusbars[unit][statusbar].tabs
-				for i = 1, #tabs do
-					local tab = tabs[i]
-					if tab.enabled and find(tab.conditions, '%S+') then
-						local tabsStateBlock = match(tab.conditions, '@@%[.-%]@@')
+			for unit, unitsCluster in pairs(metaTable.units) do
+				if not metaFrame[unit] then
+					metaFrame[unit] = CreateFrame("Frame")
+				end
+				for _, frame in ipairs(unitsCluster) do
+					for statusbar, bar in pairs(db.units[unit].statusbars) do
+						local targetBar = frame.colorFilter[statusbar]
+						local unitInfo = metaTable.statusbars[unit][statusbar]
+						if bar.enabled and targetBar then
+							if not unitInfo then
+								metaTable.statusbars[unit][statusbar] = bar
 
-						if tabsStateBlock then
-							self:SortMentions(db, frame, tab.conditions, unit, statusbar, i)
+								if find(bar.events, '%S+') then
+									self:SortEvents(bar, statusbar, unit)
+								end
+							end
+
+							frame[statusbar]:ForceUpdate()
+
+							updateHooks(frame, bar.enabled, statusbar)
+						elseif unitInfo then
+							metaTable.statusbars[unit][statusbar] = nil
 						end
 					end
 				end
+			end
 
-				local eventsInfo = metaTable.events[unit]
-				local unitInfo = metaTable.units[unit]
-				if eventsInfo and not metaFrame[unit]:GetScript('OnEvent') then
-					metaFrame[unit]:SetScript('OnEvent', function(_, event, ...)
-						for _, frame in ipairs(unitInfo) do
-							if frame:IsShown() and (not frame.id or (frame.isForced or (GetNumPartyMembers() >= 1 or GetNumRaidMembers() >= 1))) then
-								for statusbar in pairs(eventsInfo) do
-									local frameBar = frame[statusbar]
-									if frameBar:IsShown() then
-										frameBar:ForceUpdate()
+			for unit, unitsCluster in pairs(metaTable.units) do
+				for _, frame in ipairs(unitsCluster) do
+					for statusbar in pairs(metaTable.statusbars[unit]) do
+						local tabs = metaTable.statusbars[unit][statusbar].tabs
+						for i = 1, #tabs do
+							local tab = tabs[i]
+							if tab.enabled and find(tab.conditions, '%S+') then
+								local tabsStateBlock = match(tab.conditions, '@@%[.-%]@@')
+
+								if tabsStateBlock then
+									self:SortMentions(db, frame, tab.conditions, unit, statusbar, i)
+								end
+							end
+						end
+
+						if InCombatLockdown() then
+							local db = E.db.unitframe.units[frame.unitframeType]
+							if db and (db.threatStyle == 'BORDERS' or db.threatStyle == 'HEALTHBORDER'
+										or db.threatStyle == 'INFOPANELBORDER') then
+								local colorFilter = frame.colorFilter
+								colorFilter.threatBordersColor = {1}
+								colorFilter.threatBordersActive = db.threatStyle
+								frame[statusbar]:ForceUpdate()
+							end
+						end
+
+						local eventsInfo = metaTable.events[unit]
+						local unitInfo = metaTable.units[unit]
+						if eventsInfo and not metaFrame[unit]:GetScript('OnEvent') then
+							metaFrame[unit]:SetScript('OnEvent', function()
+								for _, frame in ipairs(unitInfo) do
+									if frame:IsShown() and (not frame.id
+															or (frame.isForced
+																or (GetNumPartyMembers() >= 1 or GetNumRaidMembers() >= 1))) then
+										for statusbar in pairs(eventsInfo) do
+											local frameBar = frame[statusbar]
+											if frameBar:IsShown() then
+												frameBar:ForceUpdate()
+											end
+										end
 									end
 								end
-							end
+							end)
 						end
-					end)
-				end
 
-				local barInfo = metaTable.statusbars[unit][statusbar]
-				if barInfo and barInfo.frequentUpdates and statusbar ~= 'Castbar' then
-					local updateThrottle = barInfo.updateThrottle or 0
+						local barInfo = metaTable.statusbars[unit][statusbar]
+						local targetBar = frame.colorFilter[statusbar]
+						if barInfo and barInfo.frequentUpdates and statusbar ~= 'Castbar' then
+							local updateThrottle = barInfo.updateThrottle or 0
 
-					metaFrame[unit][statusbar].lastUpdate = GetTime()
-					metaFrame[unit][statusbar]:SetScript('OnUpdate', function(self)
-						if GetTime() - self.lastUpdate < updateThrottle then return end
+							targetBar.lastUpdate = GetTime()
+							targetBar:SetScript('OnUpdate', function(self)
+								if GetTime() - self.lastUpdate < updateThrottle then return end
 
-						for _, frame in ipairs(unitInfo) do
-							if frame:IsShown() and (not frame.id or (frame.isForced or (GetNumPartyMembers() >= 1 or GetNumRaidMembers() >= 1))) then
-								local frameBar = frame[statusbar]
-								if frameBar:IsShown() then
-									frameBar:ForceUpdate()
+								for _, frame in ipairs(unitInfo) do
+									if frame:IsShown() and (not frame.id
+																or (frame.isForced
+																	or (GetNumPartyMembers() >= 1 or GetNumRaidMembers() >= 1))) then
+										local frameBar = frame[statusbar]
+										if frameBar:IsShown() then
+											frameBar:ForceUpdate()
+										end
+									end
 								end
-							end
+							end)
+						else
+							targetBar:SetScript('OnUpdate', nil)
 						end
-					end)
-				else
-					metaFrame[unit][statusbar]:SetScript('OnUpdate', nil)
+					end
 				end
 			end
-		end
+			updatePending = false
+		end)
 	end
 end
 

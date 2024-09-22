@@ -9,20 +9,24 @@ local ElvUF = E.oUF
 
 local AddOnName = ...
 local isAwesome = C_NamePlate and E.private.nameplates.enable
+local healthEnabled = {["FRIENDLY_NPC"] = false, ["ENEMY_NPC"] = false}
 local taggedFrames, tags = {}, {}
+local printing = false
 
 core.modules = {}
 core.nameUpdates = {}
 core.frameUpdates = {}
+core.plateAnchoring = {}
 
 local CreateFrame, UIParent, UIDropDownMenu_Refresh = CreateFrame, UIParent, UIDropDownMenu_Refresh
 local _G, unpack, pairs, ipairs, select, tonumber, print = _G, unpack, pairs, ipairs, select, tonumber, print
-local gsub, find, sub, lower, upper, format = string.gsub, string.find, string.sub, string.lower, string.upper, string.format
+local gsub, find, sub, lower, upper = string.gsub, string.find, string.sub, string.lower, string.upper
+local format, match, gmatch = string.format, string.match, string.gmatch
 local max, ceil, floor = math.max, math.ceil, math.floor
 local tinsert, tremove, twipe, tsort = table.insert, table.remove, table.wipe, table.sort
 local UnitGUID, UnitClass, UnitExists = UnitGUID, UnitClass, UnitExists
 local UnitThreatSituation, GetThreatStatusColor = UnitThreatSituation, GetThreatStatusColor
-local UnitReaction, UnitIsPlayer, UnitFactionGroup = UnitReaction, UnitIsPlayer, UnitFactionGroup
+local UnitReaction, UnitIsPlayer = UnitReaction, UnitIsPlayer
 local GetNumMacroIcons, GetMacroIconInfo, GameTooltip = GetNumMacroIcons, GetMacroIconInfo, GameTooltip
 local UnitPopupMenus, UnitPopupShown = UnitPopupMenus, UnitPopupShown
 local GetRaidRosterInfo, IsPartyLeader, IsRaidOfficer = GetRaidRosterInfo, IsPartyLeader, IsRaidOfficer
@@ -207,14 +211,64 @@ function core:print(type, ...)
 					core.customColorBeta.." %s "..core.customColorBad..LUA_ERROR..core.customColorAlpha..":|r %s", ...))
 	elseif type == 'FORMATTING' then
 		print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
-					core.customColorBeta.." %s "..core.customColorBad.." "..FORMATTING.." "..ERROR_CAPS, ...))
+					core.customColorBeta.." %s"..core.customColorAlpha..":|r "..core.customColorBad..FORMATTING.." "..ERROR_CAPS, ...))
 	elseif type == 'FAIL' then
 		print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
-					core.customColorBeta.." %s "..core.customColorAlpha..":|r %s", ...))
+					core.customColorBeta.." %s"..core.customColorAlpha..":|r %s", ...))
 	elseif type == 'ADDED' then
 		print(format(core.customColorAlpha.."%s"..core.customColorBeta..(select(2,...) and "%s" or L[" added."]), ...))
 	elseif type == 'REMOVED' then
 		print(format(core.customColorAlpha.."%s"..core.customColorBeta..(select(2,...) and "%s" or L[" removed."]), ...))
+	end
+end
+
+local function getEntry(tbl, path)
+    for key in gmatch(path, "[^%.]+") do
+		local index = tonumber(key)
+        if type(tbl) ~= "table" or (tbl[index] == nil and tbl[key] == nil) then
+            return nil
+        end
+        tbl = tbl[index or key]
+    end
+    return tbl
+end
+
+function core:getSelected(cat, modName, path, fallback)
+    local base, selected = match(path, "(.-)%[(.-)%]")
+    local baseTable = getEntry(E.db.Extras[cat][modName], base)
+
+    if not baseTable then
+        E.db.Extras[cat][modName] = E:CopyTable({}, P.Extras[cat][modName])
+        if not printing then
+            printing = true
+            E:Delay(0.1, function()
+                printing = false
+                print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
+                            core.customColorBeta.." %s"..core.customColorAlpha..":|r %s", modName, core.customColorBad..ERROR_CAPS))
+                print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
+                            core.customColorBeta.." %s"..core.customColorAlpha..":|r ??? -> %s.%s.%s", modName, cat, modName, path))
+            end)
+        end
+        return
+    end
+
+    if baseTable[tonumber(selected) or selected] then
+        return baseTable[tonumber(selected) or selected]
+    else
+		if not printing then
+			printing = true
+			E:Delay(0.1, function()
+				printing = false
+				print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
+							core.customColorBeta.." %s"..core.customColorAlpha..":|r %s", modName, core.customColorBad..ERROR_CAPS))
+				print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
+							core.customColorBeta.." %s"..core.customColorAlpha..":|r ??? -> %s.%s.%s", modName, cat, modName, path))
+			end)
+		end
+		if not baseTable[fallback] then
+			baseTable[fallback] = E:CopyTable({}, getEntry(P.Extras[cat][modName], base)[fallback])
+		end
+		return baseTable[fallback]
 	end
 end
 
@@ -326,6 +380,8 @@ if isAwesome then
 	core:RegisterEvent('NAME_PLATE_CREATED', function(_, plate)
 		local onShow, onHide = plate:GetScript("OnShow"), plate:GetScript("OnHide")
 		NP:OnCreated(plate)
+		plate.UnitFrame.Name:FontTemplate()
+		plate.UnitFrame.Level:FontTemplate()
 		plate:SetScript("OnShow", onShow)
 		plate:SetScript("OnHide", onHide)
 	end)
@@ -424,16 +480,27 @@ if isAwesome then
 
 	function core:GetUnitInfo(self, frame)
 		local plate = frame:GetParent()
-		if plate.unit then
-			local reaction = UnitReaction("player", plate.unit)
-			local isPlayer = UnitIsPlayer(plate.unit)
+		local unit = plate.unit
+
+		if unit then
+			local reaction = UnitReaction(unit, "player")
+			local isPlayer = UnitIsPlayer(unit)
 			local unitType
 
-			if isPlayer and reaction and reaction >= 5 then
-				unitType = "FRIENDLY_PLAYER"
-			elseif not isPlayer and (reaction and reaction >= 5) or UnitFactionGroup(plate.unit) == "Neutral" then
-				unitType = "FRIENDLY_NPC"
-			elseif not isPlayer and (reaction and reaction <= 4) then
+			if reaction and reaction >= 5 then
+				if isPlayer then
+					unitType = "FRIENDLY_PLAYER"
+				else
+					unitType = "FRIENDLY_NPC"
+				end
+				reaction = 5
+			elseif reaction == 4 then
+				if UnitCanAttack('player', unit) then
+					unitType = "ENEMY_NPC"
+				else
+					unitType = "FRIENDLY_NPC"
+				end
+			elseif not isPlayer then
 				unitType = "ENEMY_NPC"
 			else
 				unitType = "ENEMY_PLAYER"
@@ -441,6 +508,12 @@ if isAwesome then
 			return reaction, unitType
 		end
 		return core.hooks[NP].GetUnitInfo(self, frame)
+	end
+
+	function core:OnShow(self, isConfig, dontHideHighlight)
+		if self.unit then
+			core.hooks[NP].OnShow(self, isConfig, dontHideHighlight)
+		end
 	end
 
 	function core:UnitDetailedThreatSituation(self, frame)
@@ -464,8 +537,8 @@ if isAwesome then
 			frame.Debuffs:SetFrameLevel(level+1)
 			frame.LevelHandled = true
 
-			local target = GetNamePlateForUnit('target')
-			local plate = target and target.UnitFrame
+			local targetPlate = GetNamePlateForUnit('target')
+			local plate = targetPlate and targetPlate.UnitFrame
 
 			if plate and plate:IsShown() and frame ~= plate then
 				if level > plate:GetFrameLevel() then
@@ -488,6 +561,67 @@ if isAwesome then
 	end
 end
 --
+
+function core:OnShowHide(frame, health)
+	local unitType = frame.UnitType or select(2,NP:GetUnitInfo(frame))
+
+	if not healthEnabled[unitType] then
+		local name = frame.Name
+		for e, func in pairs(core.plateAnchoring) do
+			local element = frame[e]
+			local caller = func(unitType, frame)
+			if element then
+				local point, relativeTo, x, y
+				if caller then
+					point, relativeTo, x, y = caller.point, caller.relativeTo, caller.xOffset, caller.yOffset
+				else
+					point, _, relativeTo, x, y = frame:GetPoint()
+				end
+				element:ClearAllPoints()
+				element:Point(point, health or name, relativeTo, x, y)
+			end
+		end
+		if unitType == "ENEMY_NPC" or unitType == "FRIENDLY_NPC" then
+			local elite = frame.Elite
+			if elite then
+				local db = NP.db.units[unitType].eliteIcon
+				elite:ClearAllPoints()
+				elite:Point(db.position, health or name, db.xOffset, db.yOffset)
+			end
+		end
+	end
+end
+
+core:SecureHook(NP, "OnCreated", function(self, plate)
+	local frame = plate.UnitFrame
+	local frameHealth = frame and frame.Health
+
+	if frame and frameHealth then
+		if not core:IsHooked(frameHealth, "OnShow") then
+			core:SecureHookScript(frameHealth, "OnShow", function(self)
+				core:OnShowHide(frame, self)
+			end)
+		end
+		if not core:IsHooked(frameHealth, "OnHide") then
+			core:SecureHookScript(frameHealth, "OnHide", function()
+				if frame:IsVisible() then
+					core:OnShowHide(frame)
+				end
+			end)
+		end
+	end
+end)
+
+core:SecureHook(NP, "Configure_Elite", function(self, frame)
+	local unitType = frame.UnitType
+	local db = NP.db.units[unitType].eliteIcon
+
+	if db then
+		local icon = frame.Elite
+		icon:ClearAllPoints()
+		icon:Point(db.position, healthEnabled[unitType] and frame.Health or frame.Name, db.xOffset, db.yOffset)
+	end
+end)
 
 
 function core:AggregateUnitFrames()
@@ -517,7 +651,7 @@ function core:GetIconList(texList)
         return a.label < b.label
     end)
     for _, item in ipairs(sortedKeys) do
-        list[item.path] = item.label .. ' |T' .. item.icon .. ':16:16|t'
+        list[item.path] = item.label..' |T'..item.icon..':16:16|t'
     end
     return list
 end
@@ -1376,10 +1510,14 @@ function core:GetOptions()
 				args = {
 					colors = {
 						type = "group",
-						name = L["Version: "].."1.03",
+						name = L["Version: "].."1.05",
 						guiInline = true,
 						get = function(info) return colorConvert(E.db.Extras[info[#info]]) end,
-						set = function(info, r, g, b) local color = colorConvert(r, g, b) E.db.Extras[info[#info]] = color core[info[#info]] = color E:RefreshGUI() end,
+						set = function(info, r, g, b)
+							local color = colorConvert(r, g, b)
+							E.db.Extras[info[#info]] = color core[info[#info]] = color
+							E:RefreshGUI()
+						end,
 						args = {
 							customColorAlpha = {
 								order = 1,
@@ -1464,6 +1602,19 @@ function core:Initialize()
 	self.customColorAlpha = E.db.Extras.customColorAlpha
 	self.customColorBeta = E.db.Extras.customColorBeta
 
+	core:SecureHook(NP, "UpdateAllFrame", function()
+		local FRIENDLY_NPC = healthEnabled["FRIENDLY_NPC"]
+		local ENEMY_NPC = healthEnabled["ENEMY_NPC"]
+		healthEnabled["FRIENDLY_NPC"] = NP.db.units["FRIENDLY_NPC"].health.enable
+		healthEnabled["ENEMY_NPC"] = NP.db.units["ENEMY_NPC"].health.enable
+
+		if FRIENDLY_NPC ~= healthEnabled["FRIENDLY_NPC"] or ENEMY_NPC ~= healthEnabled["ENEMY_NPC"] then
+			for frame in pairs(NP.VisiblePlates) do
+				core:OnShowHide(frame, frame.Health and frame.Health:IsVisible())
+			end
+		end
+	end)
+
 	if isAwesome then
 		NP:UnregisterEvent("PLAYER_TARGET_CHANGED")
 		NP:UnregisterEvent("PLAYER_FOCUS_CHANGED")
@@ -1473,7 +1624,8 @@ function core:Initialize()
 		NP:UnregisterEvent("RAID_ROSTER_UPDATE")
 		NP:UnregisterEvent("UNIT_NAME_UPDATE")
 
-		for _, func in pairs({'UnitClass', 'GetUnitInfo', 'GetUnitByName', 'SetTargetFrame', 'ResetNameplateFrameLevel', 'UnitDetailedThreatSituation'}) do
+		for _, func in pairs({'UnitClass', 'GetUnitInfo', 'GetUnitByName', 'SetTargetFrame',
+								'OnShow', 'ResetNameplateFrameLevel', 'UnitDetailedThreatSituation'}) do
 			if not self:IsHooked(NP, func) then self:RawHook(NP, func) end
 		end
 	end

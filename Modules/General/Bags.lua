@@ -16,21 +16,25 @@ local disenchantingSpellID = 13262
 local millingSpellID = 51005
 local lockpickingSpellID = 1804
 
-local _G, unpack, pairs, ipairs, select, print, tonumber, tostring, loadstring, pcall, type = _G, unpack, pairs, ipairs, select, print, tonumber, tostring, loadstring, pcall, type
+local _G, unpack, pairs, ipairs, select, print = _G, unpack, pairs, ipairs, select, print
+local tonumber, tostring, loadstring, pcall, type = tonumber, tostring, loadstring, pcall, type
 local tinsert, tremove, tsort = table.insert, table.remove, table.sort
 local min, max, floor, ceil, huge = min, max, floor, ceil, math.huge
 local find, format, lower, match, gsub = string.find, string.format, string.lower, string.match, string.gsub
 local UIParent, GameTooltip_Hide, InCombatLockdown, UnitFactionGroup = UIParent, GameTooltip_Hide, InCombatLockdown, UnitFactionGroup
-local GetItemInfo, GetInventoryItemTexture, BankButtonIDToInvSlotID, GetBagName = GetItemInfo, GetInventoryItemTexture, BankButtonIDToInvSlotID, GetBagName
-local ContainerIDToInventoryID, GetContainerNumSlots, GetContainerNumFreeSlots = ContainerIDToInventoryID, GetContainerNumSlots, GetContainerNumFreeSlots
+local GetItemInfo, GetInventoryItemTexture, GetBagName = GetItemInfo, GetInventoryItemTexture, GetBagName
+local BankButtonIDToInvSlotID, ContainerIDToInventoryID, GetContainerItemID = BankButtonIDToInvSlotID, ContainerIDToInventoryID, GetContainerItemID
+local GetContainerNumSlots, GetContainerNumFreeSlots = GetContainerNumSlots, GetContainerNumFreeSlots
 local GetCurrencyListInfo, GetCurrencyListSize, GetItemQualityColor = GetCurrencyListInfo, GetCurrencyListSize, GetItemQualityColor
-local StackSplitFrame, StackSplitOkayButton, StackSplitRightButton, StackSplitLeftButton = StackSplitFrame, StackSplitOkayButton, StackSplitRightButton, StackSplitLeftButton
-local MerchantFrame, BuyMerchantItem, GetAuctionItemClasses, GetSpellLink, ClearCursor = MerchantFrame, BuyMerchantItem, GetAuctionItemClasses, GetSpellLink, ClearCursor
-local IsModifierKeyDown, GetContainerItemID, GetSpellInfo, GetKeyRingSize = IsModifierKeyDown, GetContainerItemID, GetSpellInfo, GetKeyRingSize
+local StackSplitFrame, StackSplitOkayButton = StackSplitFrame, StackSplitOkayButton
+local StackSplitRightButton, StackSplitLeftButton = StackSplitRightButton, StackSplitLeftButton
+local BuyMerchantItem, GetAuctionItemClasses, ClearCursor = BuyMerchantItem, GetAuctionItemClasses, ClearCursor
+local IsModifierKeyDown, GetSpellInfo, GetSpellLink, GetKeyRingSize = IsModifierKeyDown, GetSpellInfo, GetSpellLink, GetKeyRingSize
 local ERR_NOT_IN_COMBAT, ERR_INVALID_ITEM_TARGET, ERR_SPLIT_FAILED = ERR_NOT_IN_COMBAT, ERR_INVALID_ITEM_TARGET, ERR_SPLIT_FAILED
 local CURRENCY, NUM_BAG_SLOTS, EMPTY = CURRENCY, NUM_BAG_SLOTS, EMPTY
 
-local B_PickupItem, B_GetItemID, B_GetItemInfo, B_GetContainerFrame, B_SplitItem = B.PickupItem, B.GetItemID, B.GetItemInfo, B.GetContainerFrame, B.SplitItem
+local B_PickupItem, B_GetItemID, B_GetItemInfo = B.PickupItem, B.GetItemID, B.GetItemInfo
+local B_GetContainerFrame, B_SplitItem = B.GetContainerFrame, B.SplitItem
 local E_Delay, E_Flash, E_StopFlash = E.Delay, E.Flash, E.StopFlash
 local updatePending = false
 
@@ -436,13 +440,20 @@ P["Extras"]["general"][modName] = {
 }
 
 function mod:LoadConfig()
-    local function selectedContainer() return E.db.Extras.general[modName].BagsExtended.selectedContainer end
-    local function selectedSection() return E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection end
+	local db = E.db.Extras.general[modName]
+    local function selectedContainer() return db.BagsExtended.selectedContainer end
+    local function selectedContainerData()
+		return core:getSelected("general", modName, format("BagsExtended.containers[%s]", selectedContainer() or ""), "bags")
+	end
+    local function selectedSection() return selectedContainerData().selectedSection or 1 end
+	local function selectedSectionData()
+		return core:getSelected("general", modName, format("BagsExtended.containers.%s.sections[%s]", selectedContainer() or "bags", selectedSection() or ""), 1)
+	end
     core.general.args[modName] = {
         type = "group",
         name = L[modName],
-		get = function(info) return E.db.Extras.general[modName][info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
-		set = function(info, value) E.db.Extras.general[modName][info[#info-1]][gsub(info[#info], info[#info-1], '')] = value mod:Toggle() end,
+		get = function(info) return db[info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
+		set = function(info, value) db[info[#info-1]][gsub(info[#info], info[#info-1], '')] = value mod:Toggle(db) end,
 		disabled = function() return not E.private.bags.enable end,
         args = {
 			EasierProcessing = {
@@ -463,7 +474,7 @@ function mod:LoadConfig()
 						name = L["Modifier"],
 						desc = "",
 						values = E.db.Extras.modifiers,
-						disabled = function() return not E.db.Extras.general[modName].EasierProcessing.enabled end,
+						disabled = function() return not db.EasierProcessing.enabled end,
 					},
 				},
 			},
@@ -478,7 +489,7 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = format(L["Holding %s while left-clicking a stack splits it in two; to combine available copies, right-click instead."..
-								"\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."], E.db.Extras.general[modName].SplitStack.modifier),
+								"\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."], db.SplitStack.modifier),
 					},
 					modifierSplitStack = {
 						order = 2,
@@ -486,7 +497,7 @@ function mod:LoadConfig()
 						name = L["Modifier"],
 						desc = "",
 						values = E.db.Extras.modifiers,
-						disabled = function() return not E.db.Extras.general[modName].SplitStack.enabled end,
+						disabled = function() return not db.SplitStack.enabled end,
 					},
 				},
 			},
@@ -501,21 +512,21 @@ function mod:LoadConfig()
                         type = "toggle",
                         name = core.pluginColor..L["Enable"],
                         desc = L["Extends the bags functionality."],
-						get = function() return E.db.Extras.general[modName].BagsExtended.enabled end,
-						set = function(_, value) E.db.Extras.general[modName].BagsExtended.enabled = value self:Toggle() end,
+						get = function() return db.BagsExtended.enabled end,
+						set = function(_, value) db.BagsExtended.enabled = value self:Toggle(db) end,
                     },
 					selectedContainer = {
 						order = 2,
 						type = "select",
 						name = L["Select Container Type"],
 						desc = "",
-						get = function() return E.db.Extras.general[modName].BagsExtended.selectedContainer end,
-						set = function(_, value) E.db.Extras.general[modName].BagsExtended.selectedContainer = value end,
+						get = function() return db.BagsExtended.selectedContainer end,
+						set = function(_, value) db.BagsExtended.selectedContainer = value end,
 						values = {
 							['bags'] = L['Bags'],
 							['bank'] = L['Bank'],
 						},
-						disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled end,
+						disabled = function() return not db.BagsExtended.enabled end,
 					},
 				},
 			},
@@ -524,10 +535,10 @@ function mod:LoadConfig()
                 type = "group",
                 name = L["Settings"],
                 guiInline = true,
-				get = function(info) return E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()][info[#info]] end,
-				set = function(info, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()][info[#info]] = value self:UpdateAll() end,
-                disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled end,
-				hidden = function() return not E.db.Extras.general[modName].BagsExtended.enabled end,
+				get = function(info) return selectedSectionData()[info[#info]] end,
+				set = function(info, value) selectedSectionData()[info[#info]] = value self:UpdateAll() end,
+                disabled = function() return not db.BagsExtended.enabled end,
+				hidden = function() return not db.BagsExtended.enabled end,
                 args = {
 					addSection = {
 						order = 1,
@@ -569,9 +580,8 @@ function mod:LoadConfig()
 									["lineColor"] = { 1, 1, 1, 0.5 },
 								},
 							}
-							local sections = E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections
-							tinsert(sections, #sections - 1, newSection)
-							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection = #sections - 1
+							tinsert(selectedContainerData().sections, 1, newSection)
+							selectedContainerData().selectedSection = 1
 							self:UpdateAll()
 						end,
 					},
@@ -581,11 +591,15 @@ function mod:LoadConfig()
 						name = L["Delete Section"],
 						desc = "",
 						func = function()
-							tremove(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections, selectedSection())
-							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection = 1
+							tremove(selectedContainerData().sections, selectedSection())
+							selectedContainerData().selectedSection = 1
 							self:UpdateAll()
 						end,
-						disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled or selectedSection() == #E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections or E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].isSpecialBag end,
+						disabled = function()
+							return not db.BagsExtended.enabled
+									or selectedSection() == #selectedContainerData().sections
+									or selectedSectionData().isSpecialBag
+						end,
 					},
 					length = {
 						order = 3,
@@ -594,21 +608,25 @@ function mod:LoadConfig()
 						desc = "",
 						min = 1, max = 28, step = 1,
 						set = function(info, value)
-							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()][info[#info]] = value
+							selectedSectionData()[info[#info]] = value
 							self:UpdateAll()
 						end,
-						disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled or selectedSection() == #E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections or E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].isSpecialBag end,
+						disabled = function()
+							return not db.BagsExtended.enabled
+									or selectedSection() == #selectedContainerData().sections
+									or selectedSectionData().isSpecialBag
+						end,
 					},
                     selectedSection = {
 						order = 4,
 						type = "select",
 						name = L["Select Section"],
 						desc = "",
-						get = function() return tostring(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection) end,
-						set = function(_, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection = tonumber(value) end,
+						get = function() return tostring(selectedSection()) end,
+						set = function(_, value) selectedContainerData().selectedSection = tonumber(value) end,
 						values = function()
 							local dropdownValues = {}
-							for i, section in ipairs(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections) do
+							for i, section in ipairs(selectedContainerData().sections) do
 								dropdownValues[tostring(i)] = section.title.text
 							end
 							return dropdownValues
@@ -619,10 +637,10 @@ function mod:LoadConfig()
 						type = "input",
 						name = L["Section Priority"],
 						desc = "",
-						get = function() return tostring(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection) end,
+						get = function() return tostring(selectedContainerData().selectedSection) end,
 						set = function(_, value)
-							local sections = E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections
-							local currentIndex = E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection
+							local sections = selectedContainerData().sections
+							local currentIndex = selectedContainerData().selectedSection
 							local targetIndex = tonumber(value)
 							local sectionCount = #sections - 1
 
@@ -630,22 +648,25 @@ function mod:LoadConfig()
 								local tempHolder = sections[targetIndex]
 								sections[targetIndex] = sections[currentIndex]
 								sections[currentIndex] = tempHolder
-								E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection = targetIndex
+								selectedContainerData().selectedSection = targetIndex
 							elseif targetIndex and targetIndex > sectionCount then
 								local bottomIndex = sectionCount
 								local tempHolder = sections[bottomIndex]
 								sections[bottomIndex] = sections[currentIndex]
 								sections[currentIndex] = tempHolder
-								E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection = bottomIndex
+								selectedContainerData().selectedSection = bottomIndex
 							elseif targetIndex and targetIndex < 1 then
 								local tempHolder = sections[1]
 								sections[1] = sections[currentIndex]
 								sections[currentIndex] = tempHolder
-								E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].selectedSection = 1
+								selectedContainerData().selectedSection = 1
 							end
 							self:UpdateAll()
 						end,
-						disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled or selectedSection() == #E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections end,
+						disabled = function()
+							return not db.BagsExtended.enabled
+									or selectedSection() == #selectedContainerData().sections
+						end,
 					},
                     sectionSpacing = {
                         order = 6,
@@ -653,9 +674,12 @@ function mod:LoadConfig()
                         name = L["Section Spacing"],
 						desc = "",
                         min = 0, max = 40, step = 1,
-                        get = function() return E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sectionSpacing end,
-                        set = function(_, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sectionSpacing = value self:UpdateAll() end,
-						disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled or selectedSection() == #E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections end,
+                        get = function() return selectedContainerData().sectionSpacing end,
+                        set = function(_, value) selectedContainerData().sectionSpacing = value self:UpdateAll() end,
+						disabled = function()
+							return not db.BagsExtended.enabled
+									or selectedSection() == #selectedContainerData().sections
+						end,
                     },
 					collectionMethod = {
 						order = 7,
@@ -688,7 +712,8 @@ function mod:LoadConfig()
 								"icon = gsub(icon, '\\124', '\\124\\124')\n"..
 								"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
 								"print('Item received: ' .. string)"],
-						set = function(info, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()][info[#info]] = value
+						set = function(info, value)
+							selectedSectionData()[info[#info]] = value
 							self:UpdateAll()
 						end,
 					},
@@ -704,7 +729,8 @@ function mod:LoadConfig()
 								"--your sorting logic here\n"..
 								"end\n\n"..
 								"Leave blank to go default."],
-						set = function(info, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()][info[#info]] = value
+						set = function(info, value)
+							selectedSectionData()[info[#info]] = value
 							self:UpdateAll()
 						end,
 					},
@@ -718,7 +744,7 @@ function mod:LoadConfig()
 						set = function(_, value)
 							local itemID = match(value, '%D*(%d+)%D*')
 							if itemID and GetItemInfo(itemID) then
-								E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].ignoreList[tonumber(itemID)] = true
+								selectedSectionData().ignoreList[tonumber(itemID)] = true
 								local _, link, _, _, _, _, _, _, _, texture = GetItemInfo(itemID)
 								texture = gsub(texture, '\124', '\124\124')
 								local string = '\124T' .. texture .. ':16:16\124t' .. link
@@ -734,7 +760,7 @@ function mod:LoadConfig()
 						desc = "",
 						get = function() return "" end,
 						set = function(_, value)
-							local ignoreList = E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].ignoreList
+							local ignoreList = selectedSectionData().ignoreList
 							for itemID in pairs(ignoreList) do
 								if itemID == value then
 									ignoreList[itemID] = nil
@@ -749,7 +775,7 @@ function mod:LoadConfig()
 						end,
 						values = function()
 							local values = {}
-							for itemID in pairs(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].ignoreList) do
+							for itemID in pairs(selectedSectionData().ignoreList) do
 								local itemName = GetItemInfo(itemID)
 								local itemIcon = select(10, GetItemInfo(itemID))
 								itemIcon = itemIcon and "|T"..itemIcon..":0|t" or ""
@@ -764,16 +790,18 @@ function mod:LoadConfig()
                 type = "group",
                 name = L["Minimize"],
                 guiInline = true,
-				disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled end,
-				hidden = function() return not E.db.Extras.general[modName].BagsExtended.enabled or selectedSection() == #E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections end,
+				disabled = function() return not db.BagsExtended.enabled end,
+				hidden = function() return not db.BagsExtended.enabled
+											or selectedSection() == #selectedContainerData().sections
+				end,
 				args = {
 					enabled = {
 						order = 1,
 						type = "toggle",
                         name = core.pluginColor..L["Enable"],
 						desc = L["Double-click the title text to minimize the section."],
-						get = function(info) return E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].minimize[info[#info]] end,
-						set = function(info, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].minimize[info[#info]] = value self:UpdateAll() end,
+						get = function(info) return selectedSectionData().minimize[info[#info]] end,
+						set = function(info, value) selectedSectionData().minimize[info[#info]] = value self:UpdateAll() end,
 					},
 					lineColor = {
 						order = 2,
@@ -781,9 +809,9 @@ function mod:LoadConfig()
 						hasAlpha = true,
 						name = L["Line Color"],
 						desc = L["Minimized section's line color."],
-						get = function(info) return unpack(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].minimize[info[#info]]) end,
-						set = function(info, r, g, b, a) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].minimize[info[#info]] = { r, g, b, a } self:UpdateAll() end,
-						disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled or not E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].minimize.enabled end,
+						get = function(info) return unpack(selectedSectionData().minimize[info[#info]]) end,
+						set = function(info, r, g, b, a) selectedSectionData().minimize[info[#info]] = { r, g, b, a } self:UpdateAll() end,
+						disabled = function() return not db.BagsExtended.enabled or not selectedSectionData().minimize.enabled end,
 					},
 				},
 			},
@@ -791,30 +819,32 @@ function mod:LoadConfig()
                 type = "group",
                 name = L["Title"],
                 guiInline = true,
-				get = function(info) return E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].title[info[#info]] end,
-				set = function(info, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].title[info[#info]] = value self:UpdateAll() end,
-                disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled end,
-				hidden = function() return not E.db.Extras.general[modName].BagsExtended.enabled or selectedSection() == #E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections end,
+				get = function(info) return selectedSectionData().title[info[#info]] end,
+				set = function(info, value) selectedSectionData().title[info[#info]] = value self:UpdateAll() end,
+                disabled = function() return not db.BagsExtended.enabled end,
+				hidden = function() return not db.BagsExtended.enabled
+											or selectedSection() == #selectedContainerData().sections
+				end,
 				args = {
 					color = {
 						order = 0,
 						type = "color",
 						name = L["Color"],
 						desc = "",
-						get = function() return unpack(E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].title.color) end,
-						set = function(_, r, g, b) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].title.color = { r, g, b } self:UpdateAll() end,
+						get = function() return unpack(selectedSectionData().title.color) end,
+						set = function(_, r, g, b) selectedSectionData().title.color = { r, g, b } self:UpdateAll() end,
 					},
 					toIcon = {
 						order = 1,
 						type = "toggle",
 						name = L["Attach to Icon"],
 						set = function(info, value)
-							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].title[info[#info]] = value
-							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].icon.toText = not value
+							selectedSectionData().title[info[#info]] = value
+							selectedSectionData().icon.toText = not value
 							self:UpdateAll()
 						end,
 						desc = "",
-						disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled or not E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].icon.enabled end,
+						disabled = function() return not db.BagsExtended.enabled or not selectedSectionData().icon.enabled end,
 					},
 					text = {
 						order = 2,
@@ -884,10 +914,12 @@ function mod:LoadConfig()
                 type = "group",
                 name = L["Icon"],
                 guiInline = true,
-				get = function(info) return E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].icon[info[#info]] end,
-				set = function(info, value) E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].icon[info[#info]] = value self:UpdateAll() end,
-                disabled = function() return not E.db.Extras.general[modName].BagsExtended.enabled end,
-				hidden = function() return not E.db.Extras.general[modName].BagsExtended.enabled or not E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].icon.enabled or selectedSection() == #E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections end,
+				get = function(info) return selectedSectionData().icon[info[#info]] end,
+				set = function(info, value) selectedSectionData().icon[info[#info]] = value self:UpdateAll() end,
+                disabled = function() return not db.BagsExtended.enabled end,
+				hidden = function() return not db.BagsExtended.enabled
+											or selectedSection() == #selectedContainerData().sections
+				end,
 				args = {
 					enabled = {
 						order = 1,
@@ -901,16 +933,18 @@ function mod:LoadConfig()
 						name = L["Attach to Text"],
 						desc = "",
 						set = function(info, value)
-							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].icon[info[#info]] = value
-							E.db.Extras.general[modName].BagsExtended.containers[selectedContainer()].sections[selectedSection()].title.toIcon = not value
+							selectedSectionData().icon[info[#info]] = value
+							selectedSectionData().title.toIcon = not value
 							self:UpdateAll()
 						end,
+						hidden = function() return not selectedSectionData().icon.enabled end,
 					},
 					texture = {
 						order = 3,
 						type = "input",
 						name = L["Texture"],
 						desc = L["E.g. Interface\\Icons\\INV_Misc_QuestionMark"],
+						hidden = function() return not selectedSectionData().icon.enabled end,
 					},
 					size = {
 						order = 4,
@@ -918,6 +952,7 @@ function mod:LoadConfig()
 						name = L["Size"],
 						desc = "",
 						min = 8, max = 32, step = 1,
+						hidden = function() return not selectedSectionData().icon.enabled end,
 					},
 					point = {
 						order = 5,
@@ -925,6 +960,7 @@ function mod:LoadConfig()
 						name = L["Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
+						hidden = function() return not selectedSectionData().icon.enabled end,
 					},
 					relativeTo = {
 						order = 6,
@@ -932,6 +968,7 @@ function mod:LoadConfig()
 						name = L["Relative Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
+						hidden = function() return not selectedSectionData().icon.enabled end,
 					},
 					xOffset = {
 						order = 7,
@@ -939,6 +976,7 @@ function mod:LoadConfig()
 						name = L["X Offset"],
 						desc = "",
 						min = -40, max = 40, step = 1,
+						hidden = function() return not selectedSectionData().icon.enabled end,
 					},
 					yOffset = {
 						order = 8,
@@ -946,13 +984,14 @@ function mod:LoadConfig()
 						name = L["Y Offset"],
 						desc = "",
 						min = -40, max = 40, step = 1,
+						hidden = function() return not selectedSectionData().icon.enabled end,
 					},
 				},
 			},
         },
     }
-	if not E.db.Extras.general[modName].BagsExtended.containers['bank'] then
-		E.db.Extras.general[modName].BagsExtended.containers['bank'] = CopyTable(E.db.Extras.general[modName].BagsExtended.containers['bags'])
+	if not db.BagsExtended.containers['bank'] then
+		db.BagsExtended.containers['bank'] = CopyTable(db.BagsExtended.containers['bags'])
 	end
 end
 
@@ -1096,27 +1135,28 @@ function mod:HandleControls(f, section, buttonSize)
 end
 
 function mod:ToggleMinimizeSection(f, section, buttonSize, isInCombat, updatedSections)
-    if not section.frame.minimized then
-        section.frame.concatenateButton:Show()
-        section.frame.expandButton:Show()
-		if section.frame.minimizedLine then
-			section.frame.minimizedLine:Hide()
+	local sectionFrame = section.frame
+    if not sectionFrame.minimized then
+        sectionFrame.concatenateButton:Show()
+        sectionFrame.expandButton:Show()
+		if sectionFrame.minimizedLine then
+			sectionFrame.minimizedLine:Hide()
 		end
-		if section.frame.title then
-			section.frame.minimizedCount = nil
-			section.frame.title:SetText(section.db.title.text)
+		if sectionFrame.title then
+			sectionFrame.minimizedCount = nil
+			sectionFrame.title:SetText(section.db.title.text)
 		end
 	else
 		for _, button in ipairs(section.buttons) do button:Hide() button.isHidden = true end
-        section.frame.concatenateButton:Hide()
-        section.frame.expandButton:Hide()
-		if section.frame.minimizedLine then
-			section.frame.minimizedLine:Show()
+        sectionFrame.concatenateButton:Hide()
+        sectionFrame.expandButton:Hide()
+		if sectionFrame.minimizedLine then
+			sectionFrame.minimizedLine:Show()
 		end
     end
 	if not updatedSections or not updatedSections[section] then
-		mod:UpdateSection(f, section, buttonSize, isInCombat)
-		mod:ResizeFrame(f, buttonSize)
+		self:UpdateSection(f, section, buttonSize, isInCombat)
+		self:ResizeFrame(f, buttonSize)
 	end
 end
 
@@ -1187,12 +1227,21 @@ function mod:ConfigureContainer(f, isBank, maxSectionWidth, numContainerColumns,
 		specialButtons[bagID] = {}
         local _, bagType = GetContainerNumFreeSlots(bagID)
 		if f.Bags[bagID] and f.Bags[bagID].numSlots > 0 then
-			if bagType and bagType ~= 0 and (not db.specialBags[bagID] or db.specialBags[bagID] ~= GetBagName(bagID)) then
-                specialBags[bagID] = {
-                    numSlots = GetContainerNumSlots(bagID),
-					buttons = {},
-					bagType = bagType,
-                }
+			if bagType and bagType ~= 0 then
+				local exists = false
+				for _, section in ipairs(sections) do
+					if section.isSpecialBag and section.bagID == bagID then
+						exists = true
+						break
+					end
+				end
+				if not exists or (not db.specialBags[bagID] or db.specialBags[bagID] ~= GetBagName(bagID)) then
+					specialBags[bagID] = {
+						numSlots = GetContainerNumSlots(bagID),
+						buttons = {},
+						bagType = bagType,
+					}
+				end
             end
 			for slotID = 1, f.Bags[bagID].numSlots do
 				local button = f.Bags[bagID][slotID]
@@ -1527,12 +1576,14 @@ function mod:ResizeFrame(f, buttonSize, combatUpd)
 
     for i, section in ipairs(layout.sections) do
 		local sectionFrame = section.frame
+        local sectionHeight = 0
 		if not combatUpd then
 			sectionFrame:ClearAllPoints()
 			sectionFrame:Point("TOPLEFT", f.holderFrame, "TOPLEFT", 0, yOffset)
+			sectionHeight = sectionFrame:GetHeight()
+		else
+			sectionHeight = sectionFrame.height
 		end
-
-        local sectionHeight = sectionFrame.height or sectionFrame:GetHeight()
 
         yOffset = yOffset - sectionHeight
 		if i == #layout.sections then
@@ -1876,8 +1927,8 @@ function mod:ResetSlotAlphaForBags(self, f)
 	end
 end
 
-function mod:BagsExtended(enable)
-	if enable then
+function mod:BagsExtended(db)
+	if db.BagsExtended.enabled then
 		E.db.bags.reverseSlots = false
 		for _, func in pairs({'Layout', 'UpdateSlot', 'UpdateBagSlots', 'SetSlotAlphaForBag', 'ResetSlotAlphaForBags'}) do
 			if not self:IsHooked(B, func) then self:SecureHook(B, func) end
@@ -2192,19 +2243,18 @@ function mod:ModifyStackSplitFrame(enable)
 	end
 end
 
-function mod:EasierProcessing(enable)
-	if enable then
+function mod:EasierProcessing(db)
+	if db.EasierProcessing.enabled then
 		if not self:IsHooked(B, 'Layout') then self:SecureHook(B, 'Layout') end
 
 		self.ProcessButton = self.ProcessButton and self.ProcessButton or self:CreateProcessingButton()
 		self.localhooks.EasierProcessing = {
-			["OnClick"] = function(self) mod:Process(self, E.db.Extras.general[modName].EasierProcessing.modifier) end,
-			["OnHide"] = function() if mod.ProcessButton:IsShown() then mod.ProcessButton:Hide() end end
+			["OnClick"] = function(self) mod:Process(self, db.EasierProcessing.modifier) end,
+			["OnHide"] = function() if self.ProcessButton:IsShown() then self.ProcessButton:Hide() end end
 		}
 
 		initialized.EasierProcessing = true
 	elseif initialized.EasierProcessing then
-		local db = E.db.Extras.general[modName]
 		if self:IsHooked(B, 'Layout') and not (db.BagsExtended.enabled or db.SplitStack.enabled) then self:Unhook(B, 'Layout') end
 		self.localhooks.EasierProcessing["OnClick"] = false
 		self.localhooks.EasierProcessing["OnHide"] = false
@@ -2214,8 +2264,8 @@ function mod:EasierProcessing(enable)
 	end
 end
 
-function mod:SplitStack(enable)
-	if enable then
+function mod:SplitStack(db)
+	if db.SplitStack.enabled then
 		if not self:IsHooked(B, 'Layout') then self:SecureHook(B, 'Layout') end
 
 		self.localhooks.SplitStack = {
@@ -2225,7 +2275,6 @@ function mod:SplitStack(enable)
 		self:ModifyStackSplitFrame(true)
 		initialized.SplitStack = true
 	elseif initialized.SplitStack then
-		local db = E.db.Extras.general[modName]
 		if self:IsHooked(B, 'Layout') and not (db.BagsExtended.enabled or db.EasierProcessing.enabled) then self:Unhook(B, 'Layout') end
 		self.localhooks.SplitStack["OnClick"] = false
 		self:ModifyStackSplitFrame(false)
@@ -2234,18 +2283,17 @@ function mod:SplitStack(enable)
 end
 
 
-function mod:Toggle()
-	local db = E.db.Extras.general[modName]
-	self:EasierProcessing(db.EasierProcessing.enabled)
-	self:SplitStack(db.SplitStack.enabled)
-	self:BagsExtended(db.BagsExtended.enabled)
+function mod:Toggle(db)
+	self:EasierProcessing(db)
+	self:SplitStack(db)
+	self:BagsExtended(db)
 end
 
 function mod:InitializeCallback()
 	mod:LoadConfig()
 
 	if not E.private.bags.enable then return end
-	mod:Toggle(E.db.Extras.general[modName].BagsExtended.enabled)
+	mod:Toggle(E.db.Extras.general[modName])
 end
 
 core.modules[modName] = mod.InitializeCallback

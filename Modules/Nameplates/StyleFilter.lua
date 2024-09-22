@@ -25,7 +25,11 @@ P["Extras"]["nameplates"][modName] = {
 }
 
 function mod:LoadConfig()
-	local function selectedLink() return E.db.Extras.nameplates[modName].selectedLink end
+	local db = E.db.Extras.nameplates[modName]
+	local function selectedLink() return db.selectedLink end
+	local function selectedLinkData()
+		return core:getSelected("nameplates", modName, format("links[%s]", selectedLink() or ""), 1)
+	end
 	core.nameplates.args[modName] = {
 		type = "group",
 		name = L[modName],
@@ -42,8 +46,8 @@ function mod:LoadConfig()
 						disabled = false,
 						name = core.pluginColor..L["Enable"],
 						desc = "",
-						get = function(info) return E.db.Extras.nameplates[modName][info[#info]] end,
-						set = function(info, value) E.db.Extras.nameplates[modName][info[#info]] = value self:Toggle(value) end,
+						get = function(info) return db[info[#info]] end,
+						set = function(info, value) db[info[#info]] = value self:Toggle(value) end,
 					},
                     selectLink = {
                         order = 1,
@@ -52,14 +56,14 @@ function mod:LoadConfig()
 						desc = "",
                         values = function()
                             local values = {}
-                            for i, link in ipairs(E.db.Extras.nameplates[modName].links) do
+                            for i, link in ipairs(db.links) do
                                 values[i] = format("%s -> %s", link.target, link.apply)
                             end
                             return values
                         end,
                         get = function() return selectedLink() end,
-                        set = function(_, value) E.db.Extras.nameplates[modName].selectedLink = value end,
-						disabled = function() return not E.db.Extras.nameplates[modName].enabled or #E.db.Extras.nameplates[modName].links == 0 end,
+                        set = function(_, value) db.selectedLink = value end,
+						disabled = function() return not db.enabled or #db.links == 0 end,
                     },
 				},
 			},
@@ -67,9 +71,9 @@ function mod:LoadConfig()
 				type = "group",
 				guiInline = true,
 				name = L["Settings"],
-				get = function(info) return E.db.Extras.nameplates[modName][info[#info]] end,
-				set = function(info, value) E.db.Extras.nameplates[modName][info[#info]] = value self:Toggle(true) end,
-				disabled = function() return not E.db.Extras.nameplates[modName].enabled end,
+				get = function(info) return db[info[#info]] end,
+				set = function(info, value) db[info[#info]] = value self:Toggle(true) end,
+				disabled = function() return not db.enabled end,
 				args = {
 					newLink = {
 						order = 1,
@@ -77,9 +81,9 @@ function mod:LoadConfig()
 						name = L["New Link"],
 						desc = "",
 						func = function()
-							local id = #E.db.Extras.nameplates[modName].links + 1
-							E.db.Extras.nameplates[modName].links[id] = {target = '', apply = ''}
-							E.db.Extras.nameplates[modName].selectedLink = id
+							local id = #db.links + 1
+							db.links[id] = {target = '', apply = ''}
+							db.selectedLink = id
 						end,
 					},
                     deleteLink = {
@@ -88,11 +92,11 @@ function mod:LoadConfig()
                         name = L["Delete Link"],
 						desc = "",
                         func = function()
-                            tremove(E.db.Extras.nameplates[modName].links, selectedLink())
-                            E.db.Extras.nameplates[modName].selectedLink = 1
+                            tremove(db.links, selectedLink())
+                            db.selectedLink = 1
                             self:Toggle(true)
                         end,
-						disabled = function() return not E.db.Extras.nameplates[modName].enabled or #E.db.Extras.nameplates[modName].links == 0 end,
+						disabled = function() return not db.enabled or #db.links == 0 end,
                     },
                     targetFilter = {
                         order = 3,
@@ -102,7 +106,7 @@ function mod:LoadConfig()
 						values = function()
 							local allFilters = core:GetUnitDropdownOptions(E.global.nameplates.filters)
 							local usedTargets = {}
-							for i, link in pairs(E.db.Extras.nameplates[modName].links) do
+							for i, link in pairs(db.links) do
 								if i ~= selectedLink() then
 									usedTargets[link.target] = true
 								end
@@ -117,16 +121,16 @@ function mod:LoadConfig()
 							return availableFilters
 						end,
                         get = function()
-							if not E.db.Extras.nameplates[modName].links[selectedLink()] then
-								E.db.Extras.nameplates[modName].selectedLink = #E.db.Extras.nameplates[modName].links
+							if not db.links[selectedLink()] then
+								db.selectedLink = #db.links
 							end
-							return E.db.Extras.nameplates[modName].links[selectedLink()] and E.db.Extras.nameplates[modName].links[selectedLink()].target or ""
+							return db.links[selectedLink()] and db.links[selectedLink()].target or ""
 						end,
                         set = function(_, value)
-                            E.db.Extras.nameplates[modName].links[selectedLink()].target = value
+                            db.links[selectedLink()].target = value
                             self:Toggle(true)
                         end,
-						hidden = function() return #E.db.Extras.nameplates[modName].links == 0 end,
+						hidden = function() return #db.links == 0 end,
                     },
                     applyFilter = {
                         order = 4,
@@ -136,7 +140,7 @@ function mod:LoadConfig()
 						values = function()
 							local allFilters = core:GetUnitDropdownOptions(E.global.nameplates.filters)
 							local usedTargets = {}
-							for _, link in pairs(E.db.Extras.nameplates[modName].links) do
+							for _, link in pairs(db.links) do
 								usedTargets[link.target] = true
 							end
 							local availableFilters = {}
@@ -148,16 +152,16 @@ function mod:LoadConfig()
 							return availableFilters
 						end,
                         get = function()
-							if not E.db.Extras.nameplates[modName].links[selectedLink()] then
-								E.db.Extras.nameplates[modName].selectedLink = #E.db.Extras.nameplates[modName].links
+							if not db.links[selectedLink()] then
+								db.selectedLink = #db.links
 							end
-							return E.db.Extras.nameplates[modName].links[selectedLink()] and E.db.Extras.nameplates[modName].links[selectedLink()].apply or ""
+							return db.links[selectedLink()] and db.links[selectedLink()].apply or ""
 						end,
                         set = function(_, value)
-                            E.db.Extras.nameplates[modName].links[selectedLink()].apply = value
+                            db.links[selectedLink()].apply = value
                             self:Toggle(true)
                         end,
-						hidden = function() return #E.db.Extras.nameplates[modName].links == 0 end,
+						hidden = function() return #db.links == 0 end,
                     },
 				},
 			},

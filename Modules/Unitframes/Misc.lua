@@ -6,6 +6,7 @@ local UF = E:GetModule("UnitFrames")
 local modName = mod:GetName()
 
 local pairs, ipairs = pairs, ipairs
+local format = string.format
 
 
 P["Extras"]["unitframes"][modName] = {
@@ -40,12 +41,22 @@ P["Extras"]["unitframes"][modName] = {
 }
 
 function mod:LoadConfig()
+	local db = E.db.Extras.unitframes[modName]
+	local uf_units = E.db.unitframe.units
+	local function selectedDetachUnit() return db.DetachPower.selectedUnit end
+	local function selectedShortenUnit() return db.NameAutoShorten.selectedUnit end
+	local function selectedDetachData()
+		return core:getSelected("unitframes", modName, format("DetachPower.units[%s]", selectedDetachUnit() or ""), "party")
+	end
+	local function selectedShortenData()
+		return core:getSelected("unitframes", modName, format("NameAutoShorten.units[%s]", selectedShortenUnit() or ""), "player")
+	end
 	local function updateConfigMode(mode)
 		local units = core:AggregateUnitFrames()
 		local update = false
 		for _, frame in ipairs(units) do
-			if mode == 'DP' and E.db.Extras.unitframes[modName].DetachPower.units[frame.unitframeType] then
-				frame.POWERBAR_DETACHED = E.db.Extras.unitframes[modName].DetachPower.units[frame.unitframeType].enabled
+			if mode == 'DP' and db.DetachPower.units[frame.unitframeType] then
+				frame.POWERBAR_DETACHED = db.DetachPower.units[frame.unitframeType].enabled
 				update = true
 			else
 				local db = frame.db
@@ -58,7 +69,7 @@ function mod:LoadConfig()
 		end
 		if update then UF:Update_AllFrames() end
 	end
-	local function selectedSubSection() return E.db.Extras.unitframes[modName].selectedSubSection end
+	local function selectedSubSection() return db.selectedSubSection end
 	core.unitframes.args[modName] = {
 		type = "group",
 		name = L["Misc."],
@@ -74,22 +85,24 @@ function mod:LoadConfig()
 						order = 1,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
-						desc = function() return E.db.Extras.unitframes[modName][selectedSubSection()].desc end,
+						desc = function() return db[selectedSubSection()].desc end,
 						get = function()
 							if selectedSubSection() == 'DetachPower' then
-								return E.db.unitframe.units[E.db.Extras.unitframes[modName].DetachPower.selectedUnit].power.detachFromFrame
+								return uf_units[selectedDetachUnit()] and uf_units[selectedDetachUnit()].power.detachFromFrame
 							elseif selectedSubSection() == 'NameAutoShorten' then
-								return E.db.Extras.unitframes[modName].NameAutoShorten.enabled
+								return db.NameAutoShorten.enabled
 							end
 						end,
 						set = function(_, value)
 							if selectedSubSection() == 'DetachPower' then
-								E.db.unitframe.units[E.db.Extras.unitframes[modName].DetachPower.selectedUnit].power.detachFromFrame = value
-								E.db.Extras.unitframes[modName].DetachPower.units[E.db.Extras.unitframes[modName].DetachPower.selectedUnit].enabled = value
+								if uf_units[selectedDetachUnit()] then
+									uf_units[selectedDetachUnit()].power.detachFromFrame = value
+								end
+								selectedDetachData().enabled = value
 								self:Toggle()
 								updateConfigMode('DP')
 							elseif selectedSubSection() == 'NameAutoShorten' then
-								E.db.Extras.unitframes[modName].NameAutoShorten.enabled = value
+								db.NameAutoShorten.enabled = value
 								updateConfigMode()
 								if value then UF:Update_AllFrames() end
 							end
@@ -100,11 +113,11 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select"],
 						desc = "",
-						get = function() return E.db.Extras.unitframes[modName].selectedSubSection end,
-						set = function(_, value) E.db.Extras.unitframes[modName].selectedSubSection = value end,
+						get = function() return db.selectedSubSection end,
+						set = function(_, value) db.selectedSubSection = value end,
 						values = function()
 							local dropdownValues = {}
-							for section in pairs(E.db.Extras.unitframes[modName]) do
+							for section in pairs(db) do
 								if section ~= 'selectedSubSection' then
 									dropdownValues[section] = L[section]
 								end
@@ -118,9 +131,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Detach Power"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.unitframes[modName].DetachPower.units[E.db.Extras.unitframes[modName].DetachPower.selectedUnit][info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName].DetachPower.units[E.db.Extras.unitframes[modName].DetachPower.selectedUnit][info[#info]] = value updateConfigMode('DP') end,
-				disabled = function() return not E.db.unitframe.units[E.db.Extras.unitframes[modName].DetachPower.selectedUnit].power.detachFromFrame end,
+				get = function(info) return selectedDetachData()[info[#info]] end,
+				set = function(info, value) selectedDetachData()[info[#info]] = value updateConfigMode('DP') end,
+				disabled = function() return not uf_units[selectedDetachUnit()] and uf_units[selectedDetachUnit()].power.detachFromFrame end,
 				hidden = function() return selectedSubSection() ~= 'DetachPower' end,
 				args = {
 					detachAll = {
@@ -130,13 +143,15 @@ function mod:LoadConfig()
 						disabled = false,
 						name = L["Detach All"],
 						desc = "",
-						get = function() return E.db.Extras.unitframes[modName].DetachPower.detachAll end,
+						get = function() return db.DetachPower.detachAll end,
 						set = function(_, value)
-							for groupName in pairs(E.db.Extras.unitframes[modName].DetachPower.units) do
-								E.db.unitframe.units[groupName].power.detachFromFrame = value
-								E.db.Extras.unitframes[modName].DetachPower.units[groupName].enabled = value
+							for groupName in pairs(db.DetachPower.units) do
+								if uf_units[groupName] then
+									uf_units[groupName].power.detachFromFrame = value
+								end
+								db.DetachPower.units[groupName].enabled = value
 							end
-							E.db.Extras.unitframes[modName].DetachPower.detachAll = value
+							db.DetachPower.detachAll = value
 							self:Toggle()
 							updateConfigMode('DP')
 						end,
@@ -147,9 +162,9 @@ function mod:LoadConfig()
 						disabled = false,
 						name = L["Select Unit"],
 						desc = "",
-						get = function() return E.db.Extras.unitframes[modName].DetachPower.selectedUnit end,
-						set = function(_, value) E.db.Extras.unitframes[modName].DetachPower.selectedUnit = value end,
-						values = function() return core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].DetachPower.units) end,
+						get = function() return db.DetachPower.selectedUnit end,
+						set = function(_, value) db.DetachPower.selectedUnit = value end,
+						values = function() return core:GetUnitDropdownOptions(db.DetachPower.units) end,
 					},
 					width = {
 						order = 3,
@@ -192,9 +207,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Name Auto-Shorten"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.unitframes[modName].NameAutoShorten.units[E.db.Extras.unitframes[modName].NameAutoShorten.selectedUnit][info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName].NameAutoShorten.units[E.db.Extras.unitframes[modName].NameAutoShorten.selectedUnit][info[#info]] = value UF:Update_AllFrames() end,
-				disabled = function() return not E.db.Extras.unitframes[modName].NameAutoShorten.enabled end,
+				get = function(info) return selectedShortenData()[info[#info]] end,
+				set = function(info, value) selectedShortenData()[info[#info]] = value UF:Update_AllFrames() end,
+				disabled = function() return not db.NameAutoShorten.enabled end,
 				hidden = function() return selectedSubSection() ~= 'NameAutoShorten' end,
 				args = {
 					unitDropdown = {
@@ -202,9 +217,9 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select Unit"],
 						desc = "",
-						get = function() return E.db.Extras.unitframes[modName].NameAutoShorten.selectedUnit end,
-						set = function(_, value) E.db.Extras.unitframes[modName].NameAutoShorten.selectedUnit = value end,
-						values = function() return core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].NameAutoShorten.units) end,
+						get = function() return db.NameAutoShorten.selectedUnit end,
+						set = function(_, value) db.NameAutoShorten.selectedUnit = value end,
+						values = function() return core:GetUnitDropdownOptions(db.NameAutoShorten.units) end,
 					},
 					xOffset = {
 						order = 2,
@@ -223,16 +238,16 @@ function mod:LoadConfig()
 			},
 		},
 	}
-	if not E.db.Extras.unitframes[modName].DetachPower.units.raid then
+	if not db.DetachPower.units.raid then
 		for _, type in ipairs({'raid', 'raid40', 'arena', 'boss'}) do
-			E.db.Extras.unitframes[modName].DetachPower.units[type] = CopyTable(E.db.Extras.unitframes[modName].DetachPower.units.party)
+			db.DetachPower.units[type] = CopyTable(db.DetachPower.units.party)
 		end
 	end
-	if not E.db.Extras.unitframes[modName].NameAutoShorten.units.target then
+	if not db.NameAutoShorten.units.target then
 		local units = core:getAllFrameTypes()
 		units['player'] = nil
 		for unitframeType in pairs(units) do
-			E.db.Extras.unitframes[modName].NameAutoShorten.units[unitframeType] = CopyTable(E.db.Extras.unitframes[modName].NameAutoShorten.units.player)
+			db.NameAutoShorten.units[unitframeType] = CopyTable(db.NameAutoShorten.units.player)
 		end
 	end
 end

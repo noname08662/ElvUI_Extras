@@ -189,7 +189,7 @@ function mod:Automations()
 
 	if E.db.Extras.blizzard[modName].ConfirmRolls.enabled then
 		self:RegisterEvent('CONFIRM_LOOT_ROLL', function(...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
-		self:RegisterEvent('CONFIRM_DISENCHANT_ROLL', function(...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
+		self:RegisterEvent('CONFIRM_DISENCHANT_ROLL', function(_, ...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
 		self:RegisterEvent('LOOT_BIND_CONFIRM', function(...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
 	else
 		self:UnregisterEvent('CONFIRM_LOOT_ROLL')

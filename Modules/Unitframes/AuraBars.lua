@@ -35,11 +35,16 @@ P["Extras"]["unitframes"][modName] = {
 }
 
 function mod:LoadConfig()
+	local db = E.db.Extras.unitframes[modName]
+	local function selectedUnit() return db.selectedUnit end
+    local function selectedUnitData()
+		return core:getSelected("unitframes", modName, format("units[%s]", selectedUnit() or ""), "player")
+	end
 	core.unitframes.args[modName] = {
 		type = "group",
 		name = L[modName],
-		get = function(info) return E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit][info[#info]] end,
-		set = function(info, value) E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit][info[#info]] = value self:Toggle() end,
+		get = function(info) return selectedUnitData()[info[#info]] end,
+		set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 		args = {
 			AuraBars = {
 				order = 1,
@@ -58,9 +63,9 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select Unit"],
 						desc = "",
-						get = function() return E.db.Extras.unitframes[modName].selectedUnit end,
-						set = function(_, value) E.db.Extras.unitframes[modName].selectedUnit = value end,
-						values = function() return core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].units) end,
+						get = function() return db.selectedUnit end,
+						set = function(_, value) db.selectedUnit = value end,
+						values = function() return core:GetUnitDropdownOptions(db.units) end,
 					},
 				},
 			},
@@ -69,7 +74,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Spell Time"],
 				guiInline = true,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].enabled end,
+				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					spelltimeHide = {
 						order = 1,
@@ -84,7 +89,7 @@ function mod:LoadConfig()
 						name = L["Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
-						hidden = function() return E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].spelltimeHide end,
+						hidden = function() return selectedUnitData().spelltimeHide end,
 					},
 					spelltimeRelativeTo = {
 						order = 3,
@@ -92,7 +97,7 @@ function mod:LoadConfig()
 						name = L["Relative Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
-						hidden = function() return E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].spelltimeHide end,
+						hidden = function() return selectedUnitData().spelltimeHide end,
 					},
 					spelltimeXOffset = {
 						order = 4,
@@ -100,7 +105,7 @@ function mod:LoadConfig()
 						min = -60, max = 60, step = 1,
 						name = L["X Offset"],
 						desc = "",
-						hidden = function() return E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].spelltimeHide end,
+						hidden = function() return selectedUnitData().spelltimeHide end,
 					},
 					spelltimeYOffset = {
 						order = 5,
@@ -108,7 +113,7 @@ function mod:LoadConfig()
 						min = -60, max = 60, step = 1,
 						name = L["Y Offset"],
 						desc = "",
-						hidden = function() return E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].spelltimeHide end,
+						hidden = function() return selectedUnitData().spelltimeHide end,
 					},
 				},
 			},
@@ -117,7 +122,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Spell Name"],
 				guiInline = true,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].enabled end,
+				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					spellnameHide = {
 						order = 1,
@@ -132,7 +137,7 @@ function mod:LoadConfig()
 						name = L["Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
-						hidden = function() return E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].spellnameHide end,
+						hidden = function() return selectedUnitData().spellnameHide end,
 					},
 					spellnameRelativeTo = {
 						order = 3,
@@ -140,7 +145,7 @@ function mod:LoadConfig()
 						name = L["Relative Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
-						hidden = function() return E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].spellnameHide end,
+						hidden = function() return selectedUnitData().spellnameHide end,
 					},
 					spellnameXOffset = {
 						order = 4,
@@ -148,7 +153,7 @@ function mod:LoadConfig()
 						min = -60, max = 60, step = 1,
 						name = L["X Offset"],
 						desc = "",
-						hidden = function() return E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].spellnameHide end,
+						hidden = function() return selectedUnitData().spellnameHide end,
 					},
 					spellnameYOffset = {
 						order = 5,
@@ -156,7 +161,7 @@ function mod:LoadConfig()
 						min = -60, max = 60, step = 1,
 						name = L["Y Offset"],
 						desc = "",
-						hidden = function() return E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].spellnameHide end,
+						hidden = function() return selectedUnitData().spellnameHide end,
 					},
 				},
 			},
@@ -165,7 +170,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Icon"],
 				guiInline = true,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].enabled end,
+				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					bounce = {
 						order = 1,
@@ -178,7 +183,7 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Flip Starting Position"],
 						desc = "",
-						disabled = function() return not E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].enabled or not E.db.Extras.unitframes[modName].units[E.db.Extras.unitframes[modName].selectedUnit].bounce end,
+						disabled = function() return not selectedUnitData().enabled or not selectedUnitData().bounce end,
 					},
 					iconSize = {
 						order = 3,
@@ -198,9 +203,9 @@ function mod:LoadConfig()
 			},
 		},
 	}
-	if not E.db.Extras.unitframes[modName].units.target then
+	if not db.units.target then
 		for _, type in pairs({'target', 'focus', 'pet'}) do
-			E.db.Extras.unitframes[modName].units[type] = CopyTable(E.db.Extras.unitframes[modName].units.player)
+			db.units[type] = CopyTable(db.units.player)
 		end
 	end
 end

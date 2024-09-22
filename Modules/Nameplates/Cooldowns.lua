@@ -6,7 +6,6 @@ local LSM = E.Libs.LSM
 local LAI = E.Libs.LAI
 
 local modName = mod:GetName()
-local hooked, healthEnabled = {}, {["FRIENDLY_PLAYER"] = false, ["ENEMY_PLAYER"] = false,}
 local activeCooldowns, petSpells, highlightedSpells, testSpells, testing = {}, {}, {}, {}, false
 local edgeFile = LSM:Fetch("border", "ElvUI GlowBorder")
 
@@ -20,23 +19,6 @@ local IsInInstance, IsResting = IsInInstance, IsResting
 local COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_CONTROL_PLAYER = COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_CONTROL_PLAYER
 local UNITNAME_SUMMON_TITLES = {gsub(format(UNITNAME_SUMMON_TITLE1, 1), '[%d%p%s]+', ''), gsub(format(UNITNAME_SUMMON_TITLE3, 1), '[%d%p%s]+', ''), gsub(format(UNITNAME_SUMMON_TITLE5, 1), '[%d%p%s]+', '')}
 
-mod:SecureHook(NP, "UpdateAllFrame", function()
-	healthEnabled["FRIENDLY_PLAYER"] = NP.db.units["FRIENDLY_PLAYER"].health.enable
-	healthEnabled["ENEMY_PLAYER"] = NP.db.units["ENEMY_PLAYER"].health.enable
-
-	for plate in ipairs(NP.CreatedPlates) do
-		if plate:GetName() ~= "ElvNP_Test" then
-			local frame = plate.UnitFrame
-			local CDTracker = frame and frame.CDTracker
-			if CDTracker then
-				CDTracker:Hide()
-				frame.CDTracker = nil
-
-				mod:AttachCooldownsToPlate(plate, activeCooldowns[plate.UnitName])
-			end
-		end
-	end
-end)
 
 local scanTool = CreateFrame("GameTooltip", "ScanTooltipNP", nil, "GameTooltipTemplate")
 scanTool:SetOwner(WorldFrame, "ANCHOR_NONE")
@@ -1144,19 +1126,10 @@ function mod:AttachCooldownsToPlate(plate, cooldowns, testMode)
         plate.CDTracker = CreateFrame("Frame", '$parentCDTracker', plate)
         plate.CDTracker.cooldowns = {}
 
-		local healthEnabled = healthEnabled[unitType]
+		local health = plate.Health
 		plate.CDTracker:ClearAllPoints()
-		plate.CDTracker:Point(db_header.point, healthEnabled and plate.Health or plate.Name, db_header.relativeTo, db_header.xOffset, db_header.yOffset)
-
-		if not healthEnabled and not hooked[plate] then
-			plate.Health:HookScript("OnShow", function()
-				if plate.CDTracker then
-					plate.CDTracker:ClearAllPoints()
-					plate.CDTracker:Point(db_header.point, plate.Health, db_header.relativeTo, db_header.xOffset, db_header.yOffset)
-				end
-			end)
-			hooked[plate] = true
-		end
+		plate.CDTracker:Point(db_header.point, (health and health:IsShown()) and health or plate.Name,
+								db_header.relativeTo, db_header.xOffset, db_header.yOffset)
     end
 
 	local shown = db.showAll
@@ -1383,6 +1356,8 @@ function mod:Toggle()
 	twipe(petSpells)
 
 	if db['FRIENDLY_PLAYER'].enabled or db['ENEMY_PLAYER'].enabled then
+		core.plateAnchoring['CDTracker'] = function(unitType) return db[unitType].header end
+
 		if not self:IsHooked(NP, "OnShow") then
 			self:SecureHook(NP, "OnShow", function(self)
 				local plate = self.UnitFrame
@@ -1424,6 +1399,7 @@ function mod:Toggle()
 			end
 		end
 	elseif not db['FRIENDLY_PLAYER'].enabled and not db['ENEMY_PLAYER'].enabled then
+		core.plateAnchoring['CDTracker'] = nil
 		if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
 		self:UnregisterAllEvents()
 		twipe(activeCooldowns)

@@ -51,11 +51,13 @@ AB["barDefaults"]["bar"..modName] = {
 }
 
 function mod:LoadConfig()
+	local db = E.db.Extras.general[modName]
+	local actionbar_db = E.db.actionbar["bar"..modName]
 	core.general.args[modName] = {
 		type = "group",
 		name = L[modName],
-		get = function(info) return E.db.Extras.general[modName][info[#info]] end,
-		set = function(info, value) E.db.Extras.general[modName][info[#info]] = value E.db.actionbar["bar"..modName][info[#info]] = value AB:PositionAndSizeBar("bar"..modName) end,
+		get = function(info) return db[info[#info]] end,
+		set = function(info, value) db[info[#info]] = value actionbar_db[info[#info]] = value AB:PositionAndSizeBar("bar"..modName) end,
 		disabled = function() return not E.private.actionbar.enable end,
 		args = {
 			QuestBar = {
@@ -68,7 +70,7 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["A new action bar that collects usable quest items from your bag.\n\nDue to state actions limit, this module overrides bar10 created by ElvUI Extra Action Bars."],
-						set = function(info, value) E.db.Extras.general[modName][info[#info]] = value mod:Toggle(value) end,
+						set = function(info, value) db[info[#info]] = value mod:Toggle(value) end,
 					},
 				},
 			},
@@ -77,7 +79,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Settings"],
 				guiInline = true,
-				disabled = function() return not E.db.Extras.general[modName].enabled end,
+				disabled = function() return not db.enabled end,
 				args = {
 					backdrop = {
 						order = 1,
@@ -93,7 +95,11 @@ function mod:LoadConfig()
 
 							hidden = function() return true end,
 
-						set = function(info, value) E.db.Extras.general[modName][info[#info]] = value E.db.actionbar["bar"..modName][info[#info]] = value AB:UpdateButtonSettingsForBar("bar" .. modName) end,
+						set = function(info, value)
+							db[info[#info]] = value
+							actionbar_db[info[#info]] = value
+							AB:UpdateButtonSettingsForBar("bar" .. modName)
+						end,
 					},
 					mouseover = {
 						order = 3,
@@ -191,7 +197,11 @@ function mod:LoadConfig()
 						desc = L["This works like a macro, you can run different situations to get the actionbar to show/hide differently.\n Example: '[combat] showhide'"],
 						width = "double",
 						multiline = true,
-						set = function(info, value) E.db.Extras.general[modName][info[#info]] = value E.db.actionbar["bar"..modName][info[#info]] = value AB:UpdateButtonSettings() end,
+						set = function(info, value)
+							db[info[#info]] = value
+							actionbar_db[info[#info]] = value
+							AB:UpdateButtonSettings()
+						end,
 					},
 				},
 			},

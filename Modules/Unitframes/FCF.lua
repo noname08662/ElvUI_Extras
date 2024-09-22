@@ -103,9 +103,20 @@ P["Extras"]["unitframes"][modName] = {
 }
 
 function mod:LoadConfig()
-	local function selectedUnit() return E.db.Extras.unitframes[modName].selectedUnit end
-	local function selectedEvent() return E.db.Extras.unitframes[modName].selectedEvent end
-	local function selectedFlag() return E.db.Extras.unitframes[modName].selectedFlag end
+	local db = E.db.Extras.unitframes[modName]
+	local function selectedUnit() return db.selectedUnit end
+	local function selectedEvent() return db.selectedEvent end
+	local function selectedFlag() return db.selectedFlag end
+	local function selectedSchool() return db.selectedSchool end
+	local function selectedUnitData()
+		return core:getSelected("unitframes", modName, format("units[%s]", selectedUnit() or ""), "player")
+	end
+	local function selectedEventData()
+		return core:getSelected("unitframes", modName, format("units.%s.events[%s]", selectedUnit(), selectedEvent() or ""), "WOUND")
+	end
+	local function selectedFlagData()
+		return core:getSelected("unitframes", modName, format("units.%s.flags[%s]", selectedUnit(), selectedFlag() or ""), "CRITICAL")
+	end
 	core.unitframes.args[modName] = {
 		type = "group",
 		name = modName,
@@ -122,26 +133,30 @@ function mod:LoadConfig()
 						width = "full",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Appends floating combat feedback fontstrings to frames."],
-						get = function() return E.db.Extras.unitframes[modName].units[selectedUnit()].enabled end,
-						set = function(_, value) E.db.Extras.unitframes[modName].units[selectedUnit()].enabled = value self:Toggle() end,
+						get = function() return selectedUnitData().enabled end,
+						set = function(_, value) selectedUnitData().enabled = value self:Toggle() end,
 					},
 					unitDropdown = {
 						order = 2,
 						type = "select",
 						name = L["Select Unit"],
 						desc = "",
-						get = function() return E.db.Extras.unitframes[modName].selectedUnit end,
-						set = function(_, value) E.db.Extras.unitframes[modName].selectedUnit = value end,
-						values = function() return core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].units) end,
+						get = function() return db.selectedUnit end,
+						set = function(_, value) db.selectedUnit = value end,
+						values = function() return core:GetUnitDropdownOptions(db.units) end,
 					},
 					playerOnly = {
 						order = 3,
 						type = "toggle",
 						name = L["Player Only"],
 						desc = L["Handle only player combat log events."],
-						get = function() return E.db.Extras.unitframes[modName].units[selectedUnit()].playerOnly end,
-						set = function(_, value) E.db.Extras.unitframes[modName].units[selectedUnit()].playerOnly = value self:Toggle() end,
-						hidden = function() local unit = selectedUnit() return find(unit, 'pet') and not find(unit, 'target') or unit == 'boss' or unit == 'arena' end,
+						get = function() return selectedUnitData().playerOnly end,
+						set = function(_, value) selectedUnitData().playerOnly = value self:Toggle() end,
+						hidden = function()
+							local unit = selectedUnit()
+							return find(unit, 'pet') and not find(unit, 'target')
+								or unit == 'boss' or unit == 'arena'
+						end,
 					},
 				},
 			},
@@ -150,9 +165,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Font Settings"],
 				inline = true,
-				get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] = value self:Toggle() end,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled end,
+				get = function(info) return selectedUnitData()[info[#info]] end,
+				set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
+				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					font = {
 						order = 1,
@@ -247,9 +262,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Event Settings"],
 				inline = true,
-				get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()][info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()][info[#info]] = value self:Toggle() end,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()].disabled end,
+				get = function(info) return selectedEventData()[info[#info]] end,
+				set = function(info, value) selectedEventData()[info[#info]] = value self:Toggle() end,
+				disabled = function() return not selectedUnitData().enabled or selectedEventData().disabled end,
 				args = {
 					event = {
 						order = 1,
@@ -258,7 +273,7 @@ function mod:LoadConfig()
 						desc = "",
 						disabled = false,
 						get = function() return selectedEvent() end,
-						set = function(_, value) E.db.Extras.unitframes[modName].selectedEvent = value end,
+						set = function(_, value) db.selectedEvent = value end,
 						values = {
 							["ABSORB"] = L["ABSORB"],
 							["BLOCK"] = L["BLOCK"],
@@ -290,8 +305,8 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["School"],
 						desc = "",
-						get = function() return E.db.Extras.unitframes[modName].selectedSchool end,
-						set = function(_, value) E.db.Extras.unitframes[modName].selectedSchool = value end,
+						get = function() return db.selectedSchool end,
+						set = function(_, value) db.selectedSchool = value end,
 						values = {
 							[SCHOOL_MASK_NONE] = L["None"],
 							[SCHOOL_MASK_PHYSICAL] = L["Physical"],
@@ -322,16 +337,16 @@ function mod:LoadConfig()
 						type = "color",
 						name = L["Colors"],
 						desc = "",
-						get = function() local color = E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()].colors return color[1], color[2], color[3] end,
-						set = function(_, r, g, b) E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()].colors = {r, g, b} self:Toggle() end,
+						get = function() local color = selectedEventData().colors return color[1], color[2], color[3] end,
+						set = function(_, r, g, b) selectedEventData().colors = {r, g, b} self:Toggle() end,
 					},
 					colorsSchool = {
 						order = 6,
 						type = "color",
 						name = L["Colors (School)"],
 						desc = "",
-						get = function() local color = E.db.Extras.unitframes[modName].units[selectedUnit()].school[E.db.Extras.unitframes[modName].selectedSchool] return color[1], color[2], color[3] end,
-						set = function(_, r, g, b) E.db.Extras.unitframes[modName].units[selectedUnit()].school[E.db.Extras.unitframes[modName].selectedSchool] = {r, g, b} self:Toggle() end,
+						get = function() local color = selectedUnitData().school[db.selectedSchool] return color[1], color[2], color[3] end,
+						set = function(_, r, g, b) selectedUnitData().school[db.selectedSchool] = {r, g, b} self:Toggle() end,
 					},
 					animation = {
 						order = 7,
@@ -341,7 +356,7 @@ function mod:LoadConfig()
 						desc = "",
 						values = function()
 							local animations = {}
-							for animation, info in pairs(E.db.Extras.unitframes[modName].animations) do
+							for animation, info in pairs(db.animations) do
 								animations[animation] = info.name
 							end
 							return animations
@@ -364,17 +379,17 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Flag Settings"],
 				inline = true,
-				get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()].flags[selectedFlag()][info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()].flags[selectedFlag()][info[#info]] = value self:Toggle() end,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()].disabled end,
+				get = function(info) return selectedFlagData()[info[#info]] end,
+				set = function(info, value) selectedFlagData()[info[#info]] = value self:Toggle() end,
+				disabled = function() return not selectedUnitData().enabled or selectedEventData().disabled end,
 				args = {
 					flag = {
 						order = 1,
 						type = "select",
 						name = L["Flag"],
 						desc = "",
-						get = function() return E.db.Extras.unitframes[modName].selectedFlag end,
-						set = function(_, value) E.db.Extras.unitframes[modName].selectedFlag = value end,
+						get = function() return db.selectedFlag end,
+						set = function(_, value) db.selectedFlag = value end,
 						values = {
 							["ABSORB"  ] = L["ABSORB"],
 							["BLOCK"   ] = L["BLOCK"],
@@ -404,7 +419,7 @@ function mod:LoadConfig()
 						desc = "",
 						values = function()
 							local animations = {}
-							for animation, info in pairs(E.db.Extras.unitframes[modName].animations) do
+							for animation, info in pairs(db.animations) do
 								animations[animation] = info.name
 							end
 							return animations
@@ -427,9 +442,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Icon Settings"],
 				inline = true,
-				get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] = value self:Toggle() end,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()].disabled end,
+				get = function(info) return selectedUnitData()[info[#info]] end,
+				set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
+				disabled = function() return not selectedUnitData().enabled or selectedEventData().disabled end,
 				args = {
 					showIcon = {
 						order = 1,
@@ -447,14 +462,16 @@ function mod:LoadConfig()
 							["before"] = L["Before Text"],
 							["after"] = L["After Text"],
 						},
-						disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()].disabled or not E.db.Extras.unitframes[modName].units[selectedUnit()].showIcon end,
+						disabled = function()
+							return not selectedUnitData().enabled or selectedEventData().disabled or not selectedUnitData().showIcon end,
 					},
 					iconBounce = {
 						order = 3,
 						type = "toggle",
 						name = L["Bounce"],
 						desc = L["Flip position left-right."],
-						disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or E.db.Extras.unitframes[modName].units[selectedUnit()].events[selectedEvent()].disabled or not E.db.Extras.unitframes[modName].units[selectedUnit()].showIcon end,
+						disabled = function()
+							return not selectedUnitData().enabled or selectedEventData().disabled or not selectedUnitData().showIcon end,
 					},
 				},
 			},
@@ -474,7 +491,7 @@ function mod:LoadConfig()
 						set = function(_, value)
 							local spellID = match(value, '%D*(%d+)%D*')
 							if spellID and GetSpellInfo(spellID) then
-								E.db.Extras.unitframes[modName].units[selectedUnit()].blacklist[tonumber(spellID)] = true
+								selectedUnitData().blacklist[tonumber(spellID)] = true
 								local _, _, icon = GetSpellInfo(spellID)
 								local link = GetSpellLink(spellID)
 								icon = gsub(icon, '\124', '\124\124')
@@ -492,9 +509,9 @@ function mod:LoadConfig()
 						desc = "",
 						get = function() return "" end,
 						set = function(_, value)
-							for spellID in pairs(E.db.Extras.unitframes[modName].units[selectedUnit()].blacklist) do
+							for spellID in pairs(db.units[selectedUnit()].blacklist) do
 								if spellID == value then
-									E.db.Extras.unitframes[modName].units[selectedUnit()].blacklist[spellID] = nil
+									selectedUnitData().blacklist[spellID] = nil
 									local _, _, icon = GetSpellInfo(spellID)
 									local link = GetSpellLink(spellID)
 									icon = gsub(icon, '\124', '\124\124')
@@ -507,7 +524,7 @@ function mod:LoadConfig()
 						end,
 						values = function()
 							local values = {}
-							for id in pairs(E.db.Extras.unitframes[modName].units[selectedUnit()].blacklist) do
+							for id in pairs(db.units[selectedUnit()].blacklist) do
 								local name = GetSpellInfo(id) or ""
 								local icon = select(3, GetSpellInfo(id))
 								icon = icon and "|T"..icon..":0|t" or ""
@@ -517,7 +534,7 @@ function mod:LoadConfig()
 						end,
 						sorting = function()
 							local sortedKeys = {}
-							for id in pairs(E.db.Extras.unitframes[modName].units[selectedUnit()].blacklist) do
+							for id in pairs(db.units[selectedUnit()].blacklist) do
 								tinsert(sortedKeys, id)
 							end
 							tsort(sortedKeys, function(a, b)
@@ -532,9 +549,9 @@ function mod:LoadConfig()
 			},
 		},
 	}
-	if not E.db.Extras.unitframes[modName].units.target then
+	if not db.units.target then
 		for _, unitframeType in ipairs({'target', 'focus', 'raid', 'raid40', 'party', 'arena'}) do
-			E.db.Extras.unitframes[modName].units[unitframeType] = CopyTable(E.db.Extras.unitframes[modName].units.player)
+			db.units[unitframeType] = CopyTable(db.units.player)
 		end
 	end
 end

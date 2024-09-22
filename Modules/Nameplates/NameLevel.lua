@@ -17,6 +17,8 @@ P["Extras"]["nameplates"][modName] = {
 			["yOffset"] = 0,
 			["reactionColor"] = false,
 			["customColor"] = false,
+			["toLevel"] = true,
+			["xOffsetShorten"] = 0,
 			["color"] = { 1, 1, 1 },
 		},
 		["Level"] = {
@@ -33,17 +35,22 @@ P["Extras"]["nameplates"][modName] = {
 }
 
 function mod:LoadConfig()
+	local db = E.db.Extras.nameplates[modName]
+	local function selectedType() return db.selectedType end
+    local function selectedTypeData()
+		return core:getSelected("nameplates", modName, format("[%s]", selectedType() or ""), "FRIENDLY_PLAYER")
+	end
 	core.nameplates.args[modName] = {
 		type = "group",
 		name = L["Name&Level"],
-		get = function(info) return E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]][info[#info]] end,
-		set = function(info, value) E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]][info[#info]] = value NP:ForEachVisiblePlate("Update_"..info[#info-1]) end,
+		get = function(info) return selectedTypeData()[info[#info-1]][info[#info]] end,
+		set = function(info, value) selectedTypeData()[info[#info-1]][info[#info]] = value NP:ForEachVisiblePlate("Update_"..info[#info-1]) end,
 		args = {
 			Name = {
 				type = "group",
 				name = L["Name"],
 				guiInline = true,
-				disabled = function() return not E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType].Name.enabled end,
+				disabled = function() return not selectedTypeData().Name.enabled end,
 				args = {
 					enabled = {
 						order = 0,
@@ -51,7 +58,11 @@ function mod:LoadConfig()
 						disabled = false,
 						name = core.pluginColor..L["Enable"],
 						desc = L["Handles positioning and color."],
-						set = function(info, value) E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]][info[#info]] = value self:Toggle() NP:ForEachVisiblePlate("Update_Name") end,
+						set = function(info, value)
+							selectedTypeData()[info[#info-1]][info[#info]] = value
+							self:Toggle(db)
+							NP:ForEachVisiblePlate("Update_Name")
+						end,
 					},
 					reactionColor = {
 						order = 1,
@@ -59,8 +70,8 @@ function mod:LoadConfig()
 						name = L["Reaction Color"],
 						desc = L["Reaction based coloring for non-cached characters."],
 						set = function(info, value)
-							E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]][info[#info]] = value
-							E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]].customColor = false
+							selectedTypeData()[info[#info-1]][info[#info]] = value
+							selectedTypeData()[info[#info-1]].customColor = false
 							NP:ForEachVisiblePlate("Update_"..info[#info-1])
 						end,
 					},
@@ -84,8 +95,8 @@ function mod:LoadConfig()
 						name = L["Apply Custom Color"],
 						desc = "",
 						set = function(info, value)
-							E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]][info[#info]] = value
-							E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]].reactionColor = false
+							selectedTypeData()[info[#info-1]][info[#info]] = value
+							selectedTypeData()[info[#info-1]].reactionColor = false
 							NP:ForEachVisiblePlate("Update_"..info[#info-1])
 						end,
 					},
@@ -95,15 +106,34 @@ function mod:LoadConfig()
 						name = L["Color"],
 						desc = "",
 						get = function(info)
-							local color = E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]][info[#info]]
+							local color = selectedTypeData()[info[#info-1]][info[#info]]
 							return color[1], color[2], color[3]
 						end,
 						set = function(info, r, g, b)
-							local color = E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]][info[#info]]
+							local color = selectedTypeData()[info[#info-1]][info[#info]]
 							color[1], color[2], color[3] = r, g, b
 							NP:ForEachVisiblePlate("Update_Name")
 						end,
-						disabled = function() return not E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType].Name.customColor end,
+						disabled = function() return not selectedTypeData().Name.customColor end,
+					},
+					toLevel = {
+						order = 6,
+						type = "toggle",
+						name = L["To Level"],
+						desc = L["Names will be shortened based on level text position."],
+						set = function(info, value)
+							selectedTypeData()[info[#info-1]][info[#info]] = value
+							self:Toggle(db)
+							NP:ForEachVisiblePlate("Update_Name")
+						end,
+					},
+					xOffsetShorten = {
+						order = 7,
+						type = "range",
+						min = -240, max = 80, step = 1,
+						name = L["Shortening X Offset"],
+						desc = "",
+						disabled = function() return not selectedTypeData().Name.enabled or selectedTypeData().Name.toLevel end,
 					},
 				},
 			},
@@ -111,7 +141,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Level"],
 				guiInline = true,
-				disabled = function() return not E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType].Level.enabled end,
+				disabled = function() return not selectedTypeData().Level.enabled end,
 				args = {
 					enabled = {
 						order = 0,
@@ -119,13 +149,17 @@ function mod:LoadConfig()
 						disabled = false,
 						name = core.pluginColor..L["Enable"],
 						desc = L["Handles positioning and color."],
-						set = function(info, value) E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]][info[#info]] = value self:Toggle() NP:ForEachVisiblePlate("Update_Level") end,
+						set = function(info, value)
+							selectedTypeData()[info[#info-1]][info[#info]] = value
+							self:Toggle(db)
+							NP:ForEachVisiblePlate("Update_Level")
+						end,
 					},
 					spacer = {
 						order = 1,
 						type = "description",
 						name = "",
-						hidden = function() return not find(E.db.Extras.nameplates[modName].selectedType, 'PLAYER') end,
+						hidden = function() return not find(selectedType(), 'PLAYER') end,
 					},
 					xOffset = {
 						order = 2,
@@ -147,8 +181,8 @@ function mod:LoadConfig()
 						name = L["Apply Custom Color"],
 						desc = "",
 						set = function(info, value)
-							E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]][info[#info]] = value
-							E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]].reactionColor = false
+							selectedTypeData()[info[#info-1]][info[#info]] = value
+							selectedTypeData()[info[#info-1]].reactionColor = false
 							NP:ForEachVisiblePlate("Update_"..info[#info-1])
 						end,
 					},
@@ -158,24 +192,24 @@ function mod:LoadConfig()
 						name = L["Color"],
 						desc = "",
 						get = function(info)
-							local color = E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]][info[#info]]
+							local color = selectedTypeData()[info[#info-1]][info[#info]]
 							return color[1], color[2], color[3]
 						end,
 						set = function(info, r, g, b)
-							local color = E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]][info[#info]]
+							local color = selectedTypeData()[info[#info-1]][info[#info]]
 							color[1], color[2], color[3] = r, g, b
 							NP:ForEachVisiblePlate("Update_Color")
 						end,
-						disabled = function() return not E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType].Level.customColor end,
+						disabled = function() return not selectedTypeData().Level.customColor end,
 					},
 					reactionColor = {
-						order = function() return find(E.db.Extras.nameplates[modName].selectedType, 'PLAYER') and 6 or 1 end,
+						order = function() return find(db.selectedType, 'PLAYER') and 6 or 1 end,
 						type = "toggle",
 						name = L["Reaction Color"],
 						desc = L["Reaction based coloring for non-cached characters."],
 						set = function(info, value)
-							E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]][info[#info]] = value
-							E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType][info[#info-1]].customColor = false
+							selectedTypeData()[info[#info-1]][info[#info]] = value
+							selectedTypeData()[info[#info-1]].customColor = false
 							NP:ForEachVisiblePlate("Update_"..info[#info-1])
 						end,
 					},
@@ -184,7 +218,7 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Class Color"],
 						desc = L["Use class colors."],
-						hidden = function() return not find(E.db.Extras.nameplates[modName].selectedType, 'PLAYER') end,
+						hidden = function() return not find(db.selectedType, 'PLAYER') end,
 					},
 				},
 			},
@@ -200,13 +234,13 @@ function mod:LoadConfig()
 						desc = "",
 						values = function()
 							local list = {}
-							for type in pairs(E.db.Extras.nameplates[modName]) do
+							for type in pairs(db) do
 								if upper(type) == type then list[type] = L[type] end
 							end
 							return list
 						end,
-						get = function(info) return E.db.Extras.nameplates[modName][info[#info]] end,
-						set = function(info, value) E.db.Extras.nameplates[modName][info[#info]] = value end,
+						get = function(info) return db[info[#info]] end,
+						set = function(info, value) db[info[#info]] = value end,
 					},
 				},
 			},
@@ -282,7 +316,6 @@ end
 
 function mod:Update_Name(frame, triggered)
 	local db = E.db.Extras.nameplates[modName][frame.UnitType].Name
-
 	if not db.enabled then return end
 
 	local unitType = frame.UnitType
@@ -298,7 +331,19 @@ function mod:Update_Name(frame, triggered)
 		else
 			name:SetJustifyH("LEFT")
 			name:Point("BOTTOMLEFT", frame.Health, "TOPLEFT", db.xOffset ~= 0 and db.xOffset or 0, db.yOffset ~= 0 and db.yOffset or E.Border*2)
-			name:Point("BOTTOMRIGHT", frame.Level, "BOTTOMLEFT", 0, 0)
+			if db.toLevel then
+				name:Point("BOTTOMRIGHT", frame.Level, "BOTTOMLEFT", 0, 0)
+			else
+				local nameShortener = frame.nameShortener
+				if not nameShortener then
+					nameShortener = CreateFrame("Frame", nil, frame)
+					nameShortener:Size(1)
+					frame.nameShortener = nameShortener
+				end
+				nameShortener:ClearAllPoints()
+				nameShortener:Point("BOTTOMRIGHT", frame.Health, "TOPRIGHT", db.xOffsetShorten, 0)
+				name:Point("BOTTOMRIGHT", frame.nameShortener, "BOTTOMLEFT", 0, 0)
+			end
 		end
 	else
 		name:SetJustifyH("CENTER")
@@ -365,19 +410,37 @@ function mod:Update_Name(frame, triggered)
 end
 
 
-function mod:Toggle()
-	for _, type in pairs({'FRIENDLY_NPC', 'ENEMY_PLAYER', 'ENEMY_NPC'}) do
-		if not E.db.Extras.nameplates[modName][type] then
-			E.db.Extras.nameplates[modName][type]  = CopyTable(E.db.Extras.nameplates[modName]['FRIENDLY_PLAYER'])
+function mod:Toggle(db)
+	local enabled = {}
+	for _, type in ipairs({'FRIENDLY_NPC', 'ENEMY_PLAYER', 'ENEMY_NPC'}) do
+		if not db[type] then
+			db[type]  = CopyTable(db['FRIENDLY_PLAYER'])
 		end
-		for _, element in pairs({'Name', 'Level'}) do
-			if E.db.Extras.nameplates[modName][type][element].enabled then _G['enable'..element] = true end
+		for i, element in ipairs({'Name', 'Level'}) do
+			if db[type][element].enabled then
+				enabled[element] = true
+				if i == 1 and not db[type][element].toLevel then
+					enabled['nameshorten'] = true
+				end
+			end
 		end
 	end
-	for _, element in pairs({'Name', 'Level'}) do
-		if _G['enable'..element] then
+	for type, element in ipairs({'Name', 'Level'}) do
+		if enabled[element] then
 			if not self:IsHooked(NP, "Update_"..element) then
-				self:SecureHook(NP, "Update_"..element, self["Update_"..element], true)
+				if type == 'Name' then
+					if enabled['nameshorten'] then
+						for plate in pairs(NP.CreatedPlates) do
+							local frame = plate.UnitFrame
+							frame.nameShortener = frame.nameShortener or CreateFrame("Frame", nil, frame)
+						end
+					else
+						for plate in pairs(NP.CreatedPlates) do
+							plate.UnitFrame.nameShortener = nil
+						end
+					end
+				end
+				self:SecureHook(NP, "Update_"..element, self["Update_"..element])
 			end
 		elseif self:IsHooked(NP, "Update_"..element) then
 			self:Unhook(NP, "Update_"..element)
@@ -389,7 +452,7 @@ function mod:InitializeCallback()
 	if not E.private.nameplates.enable then return end
 
 	mod:LoadConfig()
-	mod:Toggle()
+	mod:Toggle(E.db.Extras.nameplates[modName])
 end
 
 core.modules[modName] = mod.InitializeCallback

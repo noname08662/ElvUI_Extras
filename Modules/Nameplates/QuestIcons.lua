@@ -17,13 +17,6 @@ local GetQuestLink, GetQuestLogLeaderBoard, GetQuestLogTitle = GetQuestLink, Get
 local GetNumQuestLogEntries, GetNumQuestLeaderBoards = GetNumQuestLogEntries, GetNumQuestLeaderBoards
 local THREAT_TOOLTIP = gsub(THREAT_TOOLTIP, '%%d', '%%d-')
 
-local healthEnabled = {["FRIENDLY_NPC"] = false, ["ENEMY_NPC"] = false,}
-
-mod:SecureHook(NP, "UpdateAllFrame", function()
-	healthEnabled["FRIENDLY_NPC"] = NP.db.units["FRIENDLY_NPC"].health.enable
-	healthEnabled["ENEMY_NPC"] = NP.db.units["ENEMY_NPC"].health.enable
-end)
-
 
 local typesLocalized = {
 	enUS = {
@@ -122,7 +115,6 @@ P["Extras"]["nameplates"][modName] = {
 
 function mod:LoadConfig()
 	local db = E.db.Extras.nameplates[modName]
-
 	local function populateModifierValues(othervala, othervalb)
 		local modsList = {}
 		for mod, val in pairs(E.db.Extras.modifiers) do
@@ -154,7 +146,7 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"],
-						set = function(info, value) db[info[#info]] = value self:Toggle(value) end,
+						set = function(info, value) db[info[#info]] = value self:Toggle(db) end,
 						disabled = false,
 					},
 					automatic = {
@@ -162,7 +154,7 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Automatic Onset"],
 						desc = L["Scans tooltip texts and sets icons automatically."],
-						set = function(info, value) db[info[#info]] = value self:Toggle(true) end,
+						set = function(info, value) db[info[#info]] = value self:Toggle(db) end,
 					},
 				},
 			},
@@ -424,7 +416,7 @@ local function getQuests(unit, unitName, unitType)
     return quests[unitName..unitType]
 end
 
-local function createIcon(frame)
+local function createIcon(frame, db)
 	if not frame or frame.questIcon then return end
 
 	local questIcon = CreateFrame("Frame", "$parentQuestIcon", frame)
@@ -440,40 +432,12 @@ local function createIcon(frame)
 	questIcon:SetParent(frame)
 	questIcon:Hide()
 
-	local db = E.db.Extras.nameplates[modName]
-	local frameHealth = frame.Health
-
-	if not healthEnabled[frame.UnitType] then
-		if not mod:IsHooked(frameHealth, "OnShow") then
-			mod:SecureHookScript(frameHealth, "OnShow", function(self)
-				local questIcon = frame.questIcon
-				if questIcon then
-					questIcon:ClearAllPoints()
-					questIcon:Point(db.point, self, db.relativeTo, db.xOffset, db.yOffset)
-				end
-			end)
-		end
-
-		if not mod:IsHooked(frameHealth, "OnHide") then
-			mod:SecureHookScript(frameHealth, "OnHide", function(self)
-				local questIcon = frame.questIcon
-				if questIcon then
-					questIcon:ClearAllPoints()
-					questIcon:Point(db.point, frame.Name, db.relativeTo, db.xOffset, db.yOffset)
-				end
-			end)
-		end
-	else
-		if mod:IsHooked(frameHealth, "OnShow") then mod:Unhook(frameHealth, "OnShow") end
-		if mod:IsHooked(frameHealth, "OnHide") then mod:Unhook(frameHealth, "OnHide") end
-	end
-
     local countText = questIcon:CreateFontString(nil, "OVERLAY")
 	countText:FontTemplate()
 
     questIcon.countText = countText
 
-	mod:UpdateQuestIcon(frame, questIcon, db)
+	mod:UpdateQuestIcon(frame, questIcon, db or E.db.Extras.nameplates[modName])
 
 	return questIcon
 end
@@ -540,10 +504,11 @@ function mod:UpdateQuestIcon(frame, questIcon, db)
 		questIcon.backdrop:Hide()
 	end
 
+	local _, unitType = NP:GetUnitInfo(frame)
 	questIcon:ClearAllPoints()
 	questIcon:SetFrameStrata(db.strata)
 	questIcon:Size(db.iconSize)
-	questIcon:Point(db.point, healthEnabled[frame.UnitType] and frame.Health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
+	questIcon:Point(db.point, NP.db.units[unitType].health.enable and frame.Health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
 	questIcon.texture:SetTexture(db.iconDEFAULT)
 
 	if db.showText then
@@ -557,14 +522,12 @@ function mod:UpdateQuestIcon(frame, questIcon, db)
 	end
 end
 
-function mod:UpdateAllPlates()
-    local db = E.db.Extras.nameplates[modName]
-
+function mod:UpdateAllPlates(db)
     for plate in pairs(NP.CreatedPlates) do
         local frame = plate.UnitFrame
 
         if frame then
-            frame.questIcon = frame.questIcon or createIcon(frame)
+            frame.questIcon = frame.questIcon or createIcon(frame, db)
             local questIcon = frame.questIcon
             local unitType, unitName = frame.UnitType, frame.UnitName
 
@@ -611,10 +574,10 @@ function mod:UpdateIconSettings(db)
 		local frame = plate.UnitFrame
 
 		if frame then
-			frame.questIcon = frame.questIcon or createIcon(frame)
+			frame.questIcon = frame.questIcon or createIcon(frame, db)
 
 			self:UpdateQuestIcon(frame, frame.questIcon, db)
-			self:UpdateAllPlates()
+			self:UpdateAllPlates(db)
 		end
 	end
 end
@@ -629,8 +592,8 @@ end
 
 function mod:SlashCommandHandler(msg)
 	local modifier = msg
+	local db = E.db.Extras.nameplates[modName]
 	if not find(modifier, '%S+') then
-		local db = E.db.Extras.nameplates[modName]
 
 		for _, toggle in ipairs({"mark", "unmark", "unmarkall"}) do
 			if db.modifiers[toggle] == 'NONE' or _G['Is'..db.modifiers[toggle]..'KeyDown']() then
@@ -643,7 +606,7 @@ function mod:SlashCommandHandler(msg)
 
 	if modifier == "unmarkall" then
 		twipe(markedUnits)
-		self:UpdateAllPlates()
+		self:UpdateAllPlates(db)
 		return
 	else
 		for _, unit in ipairs({'mouseover', 'target'}) do
@@ -652,7 +615,7 @@ function mod:SlashCommandHandler(msg)
 				local unitType = NP:GetUnitTypeFromUnit(unit)
 				if modifier == "mark" or modifier == "unmark" then
 					self:MarkUnmark(modifier == "mark" and true or false, unitType, name)
-					self:UpdateAllPlates()
+					self:UpdateAllPlates(db)
 				end
 				return
 			end
@@ -722,7 +685,7 @@ function mod:QUEST_ACCEPTED(_, questIndex)
 			end
 		end
 		if isAwesome then
-			self:UpdateAllPlates()
+			self:UpdateAllPlates(E.db.Extras.nameplates[modName])
 		end
 	end)
 end
@@ -741,19 +704,19 @@ function mod:QUEST_REMOVED()
 			end
 		end
 		if isAwesome then
-			self:UpdateAllPlates()
+			self:UpdateAllPlates(E.db.Extras.nameplates[modName])
 		end
 	end)
 end
 
 
-function mod:Toggle(enable)
+function mod:Toggle(db)
 	if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
 	self:UnregisterAllEvents()
 	twipe(markedUnits)
 
-    if enable then
-		local db = E.db.Extras.nameplates[modName]
+    if db.enabled then
+		core.plateAnchoring['questIcon'] = function() return db end
 
 		SLASH_QMARK1 = "/qmark"
 		SlashCmdList["QMARK"] = function(msg) self:SlashCommandHandler(msg) end
@@ -765,7 +728,6 @@ function mod:Toggle(enable)
 				self:SecureHook(NP, "OnShow")
 			end
 		end
-
 		local function parseTip(unit)
 			local name = UnitName(unit)
 			local unitType = NP:GetUnitTypeFromUnit(unit)
@@ -784,7 +746,6 @@ function mod:Toggle(enable)
 
 		self:RegisterEvent("QUEST_ACCEPTED")
 		self:RegisterEvent("QUEST_REMOVED")
-
 		self:RegisterEvent("QUEST_LOG_UPDATE", function()
 			self:QUEST_REMOVED()
 			self:UnregisterEvent("QUEST_LOG_UPDATE")
@@ -813,9 +774,9 @@ function mod:Toggle(enable)
 				frame.questIcon = frame.questIcon or createIcon(frame)
 			end
 		end
-
 		self:UpdateIconSettings(db)
 	else
+		core.plateAnchoring['questIcon'] = nil
 		SLASH_QMARK1 = nil
 		SlashCmdList["QMARK"] = nil
 		hash_SlashCmdList["/QMARK"] = nil
@@ -835,7 +796,7 @@ function mod:InitializeCallback()
 	if not E.private.nameplates.enable then return end
 
 	mod:LoadConfig()
-	mod:Toggle(E.db.Extras.nameplates[modName].enabled)
+	mod:Toggle(E.db.Extras.nameplates[modName])
 end
 
 core.modules[modName] = mod.InitializeCallback

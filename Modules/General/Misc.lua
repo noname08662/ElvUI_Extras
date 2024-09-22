@@ -8,12 +8,24 @@ local chatTypeIndexToName = {}
 
 local max = math.max
 local _G, unpack, pairs, ipairs, tonumber, print, pcall, loadstring, tostring = _G, unpack, pairs, ipairs, tonumber, print, pcall, loadstring, tostring
-local lower, find, match, gsub, sub = string.lower, string.find, string.match, string.gsub, string.sub
+local lower, find, match, gsub, sub, format = string.lower, string.find, string.match, string.gsub, string.sub, string.format
 local twipe, tinsert = table.wipe, table.insert
 local ChatFrame_AddMessageEventFilter, ChatFrame_RemoveMessageEventFilter = ChatFrame_AddMessageEventFilter, ChatFrame_RemoveMessageEventFilter
-local UIParent = UIParent
 local GetSpellLink, GetSpellTexture = GetSpellLink, GetSpellTexture
 local UnitExists, GetItemIcon = UnitExists, GetItemIcon
+local ITEM_SPELL_TRIGGER_ONEQUIP = "^"..ITEM_SPELL_TRIGGER_ONEQUIP
+local ITEM_SPELL_TRIGGER_ONUSE = "^"..ITEM_SPELL_TRIGGER_ONUSE
+local ITEM_COOLDOWN_TOTAL = format(gsub(ITEM_COOLDOWN_TOTAL, "[%(%)]", ""), SECONDS_ABBR)
+local ITEM_SET_BONUS = gsub(format(ITEM_SET_BONUS, 1), "[1%p]+", "")
+
+local procStats = core.Misc_data and core.Misc_data[GetLocale()] or {}
+local allTipScrits = {}
+
+local function runAllScripts(tt)
+	for _, script in pairs(allTipScrits) do
+		script(tt)
+	end
+end
 
 local chatMsgEvents = {
 	"CHAT_MSG_CHANNEL",
@@ -52,6 +64,10 @@ end
 
 P["Extras"]["general"][modName] = {
 	["selectedSubSection"] = 'ItemIcons',
+	["InternalCooldowns"] = {
+		["enabled"] = false,
+		["desc"] = L["Displays internal cooldowns on trinket tooltips."],
+	},
 	["ItemIcons"] = {
 		["enabled"] = false,
 		["desc"] = L["Adds an icon next to chat hyperlinks."],
@@ -106,12 +122,13 @@ P["Extras"]["general"][modName] = {
 }
 
 function mod:LoadConfig()
-	local function selectedSubSection() return E.db.Extras.general[modName].selectedSubSection end
+	local db = E.db.Extras.general[modName]
+	local function selectedSubSection() return db.selectedSubSection end
 	core.general.args[modName] = {
 		type = "group",
 		name = L["Misc."],
-		get = function(info) return E.db.Extras.general[modName][selectedSubSection()][info[#info]] end,
-		set = function(info, value) E.db.Extras.general[modName][selectedSubSection()][info[#info]] = value self:Toggle() end,
+		get = function(info) return db[selectedSubSection()][info[#info]] end,
+		set = function(info, value) db[selectedSubSection()][info[#info]] = value self:Toggle() end,
 		args = {
 			SubSection = {
 				order = 1,
@@ -124,9 +141,9 @@ function mod:LoadConfig()
 						order = 1,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
-						desc = function() return L[E.db.Extras.general[modName][selectedSubSection()].desc] end,
-						get = function() return E.db.Extras.general[modName][selectedSubSection()].enabled end,
-						set = function(_, value) E.db.Extras.general[modName][selectedSubSection()].enabled = value self:Toggle()
+						desc = function() return L[db[selectedSubSection()].desc] end,
+						get = function() return db[selectedSubSection()].enabled end,
+						set = function(_, value) db[selectedSubSection()].enabled = value self:Toggle()
 							if selectedSubSection() == 'GlobalShadow' then E:StaticPopup_Show("PRIVATE_RL") end
 						end,
 					},
@@ -136,10 +153,10 @@ function mod:LoadConfig()
 						name = L["Select"],
 						desc = "",
 						get = function() return selectedSubSection() end,
-						set = function(_, value) E.db.Extras.general[modName].selectedSubSection = value end,
+						set = function(_, value) db.selectedSubSection = value end,
 						values = function()
 							local dropdownValues = {}
-							for section in pairs(E.db.Extras.general[modName]) do
+							for section in pairs(db) do
 								if section ~= 'selectedSubSection' then
 									dropdownValues[section] = L[section]
 								end
@@ -153,7 +170,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Settings"],
 				guiInline = true,
-				disabled = function(info) return not E.db.Extras.general[modName][info[#info-1]].enabled end,
+				disabled = function(info) return not db[info[#info-1]].enabled end,
 				hidden = function() return selectedSubSection() ~= 'GlobalShadow' end,
 				args = {
 					color = {
@@ -161,15 +178,15 @@ function mod:LoadConfig()
 						hasAlpha = true,
 						name = L["Color"],
 						desc = L["REQUIRES RELOAD."],
-						get = function(info) return unpack(E.db.Extras.general[modName][selectedSubSection()][info[#info]]) end,
-						set = function(info, r, g, b, a) E.db.Extras.general[modName][selectedSubSection()][info[#info]] = {r,g,b,a} E:StaticPopup_Show("PRIVATE_RL") end,
+						get = function(info) return unpack(db[selectedSubSection()][info[#info]]) end,
+						set = function(info, r, g, b, a) db[selectedSubSection()][info[#info]] = {r,g,b,a} E:StaticPopup_Show("PRIVATE_RL") end,
 					},
 					size = {
 						type = "range",
 						min = 1, max = 8, step = 1,
 						name = L["Size"],
 						desc = L["REQUIRES RELOAD."],
-						set = function(info, value) E.db.Extras.general[modName][selectedSubSection()][info[#info]] = value E:StaticPopup_Show("PRIVATE_RL") end,
+						set = function(info, value) db[selectedSubSection()][info[#info]] = value E:StaticPopup_Show("PRIVATE_RL") end,
 					},
 				},
 			},
@@ -177,7 +194,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Settings"],
 				guiInline = true,
-				disabled = function(info) return not E.db.Extras.general[modName][info[#info-1]].enabled end,
+				disabled = function(info) return not db[info[#info-1]].enabled end,
 				hidden = function() return selectedSubSection() ~= 'ItemIcons' end,
 				args = {
 					orientation = {
@@ -203,7 +220,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Settings"],
 				guiInline = true,
-				disabled = function(info) return not E.db.Extras.general[modName][info[#info-1]].enabled end,
+				disabled = function(info) return not db[info[#info-1]].enabled end,
 				hidden = function() return selectedSubSection() ~= 'EnterCombatAlert' end,
 				args = {
 					textColor = {
@@ -212,8 +229,8 @@ function mod:LoadConfig()
 						width = "full",
 						name = L["Text Color"],
 						desc = L["255, 210, 0 - Blizzard's yellow."],
-						get = function() return unpack(E.db.Extras.general[modName].EnterCombatAlert.textColor) end,
-						set = function(_, r, g, b) E.db.Extras.general[modName].EnterCombatAlert.textColor = { r, g, b } self:EnterCombatAlert(true) end,
+						get = function() return unpack(db.EnterCombatAlert.textColor) end,
+						set = function(_, r, g, b) db.EnterCombatAlert.textColor = { r, g, b } self:EnterCombatAlert(true) end,
 					},
 					customTextEnter = {
 						order = 2,
@@ -282,6 +299,70 @@ function mod:LoadConfig()
 end
 
 
+function mod:InternalCooldowns(enable)
+	if enable then
+		local function appendICD(tt)
+			local _, itemLink = tt:GetItem()
+			if not itemLink then return end
+
+			local itemID = match(itemLink, "item:(%d+)")
+			if not itemID then return end
+
+			local data = procStats[itemID]
+			if not data then return end
+
+			local greentexts = 1
+			for i = 1, tt:NumLines() do
+				local leftLine = _G[tt:GetName().."TextLeft"..i]
+				if leftLine then
+					local lineText = leftLine:GetText()
+					if lineText and (find(lineText, ITEM_SPELL_TRIGGER_ONEQUIP) or find(lineText, ITEM_SPELL_TRIGGER_ONUSE)
+								or find(lineText, ITEM_SET_BONUS)) then
+						if greentexts == data.pos then
+							leftLine:SetText(lineText.." "..format(data.text, format(ITEM_COOLDOWN_TOTAL, data.cooldown)))
+							tt:Show()
+							break
+						end
+						greentexts = greentexts + 1
+					end
+				end
+			end
+		end
+
+		if not self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
+			self:SecureHookScript(GameTooltip, 'OnTooltipSetItem', runAllScripts)
+		end
+		if not self:IsHooked(ItemRefTooltip, 'OnTooltipSetItem') then
+			self:SecureHookScript(ItemRefTooltip, 'OnTooltipSetItem', runAllScripts)
+		end
+		if not self:IsHooked(ShoppingTooltip1, 'OnTooltipSetItem') then
+			self:SecureHookScript(ShoppingTooltip1, 'OnTooltipSetItem', runAllScripts)
+		end
+		if not self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
+			self:SecureHookScript(ShoppingTooltip2, 'OnTooltipSetItem', runAllScripts)
+		end
+		allTipScrits['icd'] = appendICD
+		initialized.InternalCooldowns = true
+	elseif initialized.InternalCooldowns then
+		allTipScrits['icd'] = nil
+		if not E.db.Extras.general[modName].TooltipNotes.enabled then
+			if self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
+				self:Unhook(GameTooltip, 'OnTooltipSetItem')
+			end
+			if self:IsHooked(ItemRefTooltip, 'OnTooltipSetItem') then
+				self:Unhook(ItemRefTooltip, 'OnTooltipSetItem')
+			end
+			if self:IsHooked(ShoppingTooltip1, 'OnTooltipSetItem') then
+				self:Unhook(ShoppingTooltip1, 'OnTooltipSetItem')
+			end
+			if self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
+				self:Unhook(ShoppingTooltip2, 'OnTooltipSetItem')
+			end
+		end
+	end
+end
+
+
 function mod:TooltipNotes(enable)
 	if enable then
 		local notes = E.db.Extras.general[modName].TooltipNotes.notes
@@ -304,7 +385,7 @@ function mod:TooltipNotes(enable)
 				end
 			else
 				for _, noteData in pairs(notes) do
-					local luaFunction, errorMsg = loadstring(noteData.text)
+					local luaFunction = loadstring(noteData.text)
 					if luaFunction then
 						local success, func = pcall(luaFunction)
 						if not success then
@@ -313,8 +394,6 @@ function mod:TooltipNotes(enable)
 						else
 							noteData.func = luaFunction
 						end
-					else
-						core:print('LUA', L["TooltipNotes"], errorMsg)
 					end
 				end
 			end
@@ -599,16 +678,44 @@ function mod:TooltipNotes(enable)
 			end)
 		end
 
-		for _, func in pairs({'OnTooltipSetUnit', 'OnTooltipSetSpell', 'OnTooltipSetItem'}) do
+		for _, func in pairs({'OnTooltipSetUnit', 'OnTooltipSetSpell'}) do
 			if not self:IsHooked(GameTooltip, func) then self:SecureHookScript(GameTooltip, func, handler) end
 		end
+		if not self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
+			self:SecureHookScript(GameTooltip, 'OnTooltipSetItem', runAllScripts)
+		end
+		if not self:IsHooked(ItemRefTooltip, 'OnTooltipSetItem') then
+			self:SecureHookScript(ItemRefTooltip, 'OnTooltipSetItem', runAllScripts)
+		end
+		if not self:IsHooked(ShoppingTooltip1, 'OnTooltipSetItem') then
+			self:SecureHookScript(ShoppingTooltip1, 'OnTooltipSetItem', runAllScripts)
+		end
+		if not self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
+			self:SecureHookScript(ShoppingTooltip2, 'OnTooltipSetItem', runAllScripts)
+		end
+		allTipScrits['notes'] = handler
 		initialized.TooltipNotes = true
 	elseif initialized.TooltipNotes then
+		allTipScrits['notes'] = nil
 		SLASH_TOOLTIPNOTES1 = nil
 		SlashCmdList["TOOLTIPNOTES"] = nil
 		hash_SlashCmdList["/TOOLTIPNOTES"] = nil
-		for _, func in pairs({'OnShow', 'OnTooltipSetUnit', 'OnTooltipSetSpell', 'OnTooltipSetItem'}) do
+		for _, func in pairs({'OnShow', 'OnTooltipSetUnit', 'OnTooltipSetSpell'}) do
 			if self:IsHooked(GameTooltip, func) then self:Unhook(GameTooltip, func) end
+		end
+		if not E.db.Extras.general[modName].InternalCooldowns.enabled then
+			if self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
+				self:Unhook(GameTooltip, 'OnTooltipSetItem')
+			end
+			if self:IsHooked(ItemRefTooltip, 'OnTooltipSetItem') then
+				self:Unhook(ItemRefTooltip, 'OnTooltipSetItem')
+			end
+			if self:IsHooked(ShoppingTooltip1, 'OnTooltipSetItem') then
+				self:Unhook(ShoppingTooltip1, 'OnTooltipSetItem')
+			end
+			if self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
+				self:Unhook(ShoppingTooltip2, 'OnTooltipSetItem')
+			end
 		end
 	end
 end
@@ -619,9 +726,9 @@ function mod:ItemIcons(enable)
 	if enable then
 		if not initialized.ItemIcons then
 			-- credit: ElvUI_ChatTweaks
+			local db = E.db.Extras.general[modName].ItemIcons
 			function mod:ItemIconsFilter(_, msg, ...)
 				msg = gsub(msg, "(\124%x%x%x%x%x%x%x%x%x\124[Hh]item:.-\124[hH]\124[rR])", function(link)
-					local db = E.db.Extras.general[modName].ItemIcons
 					local texture = GetItemIcon(link)
 					return (db.orientation == "left") and "\124T" .. texture .. ":" .. db.size .. "\124t" .. link or link .. "\124T" .. texture .. ":" .. db.size .. "\124t"
 				end)
@@ -651,9 +758,9 @@ function mod:ItemIcons(enable)
 					local msg = info.msg
 					frame:AddMessage(gsub(msg, "(\124c%x+\124Hitem:.-\124h\124r)",
 						function(link)
-							local db = E.db.Extras.general[modName].ItemIcons
 							local texture = GetItemIcon(link)
-							return (db.orientation == "left") and "\124T" .. texture .. ":" .. db.size .. "\124t" .. link or link .. "\124T" .. texture .. ":" .. db.size .. "\124t"
+							return (db.orientation == "left") and "\124T"..(texture or "")..":"..db.size.."\124t"..link
+																or link.."\124T"..(texture or "")..":"..db.size.."\124t"
 						end),
 						info.r, info.g, info.b)
 				end

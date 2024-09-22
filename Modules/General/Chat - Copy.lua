@@ -75,9 +75,6 @@ for chatType in pairs(ChatTypeInfo) do
 	chatTypeIndexToName[GetChatTypeIndex(chatType)] = chatType
 end
 
-for _, frameName in ipairs(CHAT_FRAMES) do
-	lastHisoryMsgIndex[_G[frameName]] = 1
-end
 
 local function colorLine(msg, origColor)
 	if lower(origColor) == "|cffffffff" then return msg end
@@ -778,6 +775,8 @@ local function setupCompactChat(db)
 		local emb_db = EMB and E.db.addOnSkins.embed
 
 		local function updateChatVisibility(selectedRightTab)
+			local rightChatLevel = RightChatPanel:GetFrameLevel()
+
 			for i = 1, NUM_CHAT_WINDOWS do
 				local chatFrame = _G["ChatFrame"..i]
 				if db.rightSideChats[i] then
@@ -785,7 +784,10 @@ local function setupCompactChat(db)
 					local searchButton = chatFrame.searchButton
 					local embedded = EMB and EMB.mainFrame and EMB.mainFrame:IsShown() and emb_db.rightChatPanel
 
-					chatFrame:SetParent((isSelected and not embedded) and RightChatPanel or E.HiddenFrame)
+					chatFrame:SetAlpha((isSelected and not embedded) and 1 or 0)
+					chatFrame:SetFrameLevel(rightChatLevel + ((isSelected  and not embedded) and 1 or -1))
+
+					FCF_SetUninteractable(chatFrame, not isSelected)
 
 					if searchButton then
 						if isSelected then
@@ -795,6 +797,9 @@ local function setupCompactChat(db)
 						end
 					end
 				elseif chatFrame:IsShown() then
+					chatFrame:SetAlpha(1)
+					FCF_SelectDockFrame(chatFrame)
+					FCF_SetUninteractable(chatFrame, false)
 					db.selectedLeftTab = i
 				end
 			end
@@ -847,8 +852,7 @@ local function setupCompactChat(db)
 			else
 				FCF_DockFrame(chatFrame)
 				FCF_SelectDockFrame(chatFrame)
-
-			chatFrame:SetParent(LeftChatPanel)
+				chatFrame:SetAlpha(1)
 				for id, val in pairs(db.rightSideChats) do
 					if val then
 						db.selectedRightTab = id
@@ -1175,20 +1179,10 @@ local function setupCompactChat(db)
 			end
 		end
 
-		if EMB then
-			if not mod:IsHooked(EMB, "UpdateSwitchButton") then
-				mod:SecureHook(EMB, "UpdateSwitchButton", function()
-					EMB.switchButton:Hide()
-				end)
-			end
-			if EMB.mainFrame then
-				if not mod:IsHooked(EMB.mainFrame, "OnShow") then
-					mod:SecureHookScript(EMB.mainFrame, "OnShow", function() updateChatVisibility(db.selectedRightTab) end)
-				end
-				if not mod:IsHooked(EMB.mainFrame, "OnHide") then
-					mod:SecureHookScript(EMB.mainFrame, "OnHide", function() updateChatVisibility(db.selectedRightTab) end)
-				end
-			end
+		if EMB and not mod:IsHooked(EMB, "UpdateSwitchButton") then
+			mod:SecureHook(EMB, "UpdateSwitchButton", function()
+				EMB.switchButton:Hide()
+			end)
 		end
 
 		if not mod:IsHooked(CH, "PositionChat") then
@@ -1221,7 +1215,6 @@ local function setupCompactChat(db)
 						end
 					end
 				end
-				updateChatVisibility(db.selectedRightTab)
 			end)
 		end
 
@@ -1255,6 +1248,7 @@ local function setupCompactChat(db)
 					local chatFrame = _G["ChatFrame"..i]
 					if chatFrame.isDocked and db.rightSideChats[i] then
 						db.rightSideChats[i] = nil
+						chatFrame:SetAlpha(1)
 					end
 				end
 			end)
@@ -1336,7 +1330,8 @@ local function setupCompactChat(db)
 			if db.rightSideChats[i] then
 				if not mod:IsHooked(chatFrame, "OnUpdate") then
 					mod:SecureHookScript(chatFrame, "OnUpdate", function(self)
-						local _, anchor = self:GetPoint()
+						local _, anchor = self:GetParent()
+
 						if anchor ~= RightChatPanel then
 							moveChatFrame(self, i, "right")
 						else
@@ -1353,11 +1348,7 @@ local function setupCompactChat(db)
 		selectChatTab(_G["ChatFrame"..db.selectedRightTab], db.selectedRightTab, true)
 	elseif initialized.compactChat then
 		if MessageEventHandlerPostHooks['compactChat'] then MessageEventHandlerPostHooks['compactChat'] = nil end
-		if EMB then
-			if mod:IsHooked(EMB, "UpdateSwitchButton") then mod:Unhook(EMB, "UpdateSwitchButton") end
-			if EMB.mainFrame and mod:IsHooked(EMB.mainFrame, "OnShow") then mod:Unhook(EMB.mainFrame, "OnShow") end
-			if EMB.mainFrame and mod:IsHooked(EMB.mainFrame, "OnHide") then mod:Unhook(EMB.mainFrame, "OnHide") end
-		end
+		if EMB and mod:IsHooked(EMB, "UpdateSwitchButton") then mod:Unhook(EMB, "UpdateSwitchButton") end
 		if mod:IsHooked(CH, "PositionChat") then mod:Unhook(CH, "PositionChat") end
 		if mod:IsHooked(CH, "StyleChat") then mod:Unhook(CH, "StyleChat") end
 
@@ -1483,41 +1474,42 @@ P["Extras"]["general"][modName] = {
 
 function mod:LoadConfig()
 	local db = E.db.Extras.general[modName]
-	local function selectedFrame() return db.SearchFilter.frames.selectedFrame or 1 end
-    local function selectedRule()
-		return core:getSelected("general", modName, format("SearchFilter.frames[%s]", selectedFrame() or ""), 1).selectedRule or 1
-	end
-	local function selectedRuleData()
-		return core:getSelected("general", modName, format("SearchFilter.frames.%s.rules[%s]", selectedFrame(), selectedRule() or ""), 1)
-	end
+
+	local function selectedFrame() return db.SearchFilter.frames.selectedFrame end
+    local function selectedRule() return db.SearchFilter.frames[selectedFrame()].selectedRule end
+
     local function createChatTypeToggle(key, order)
+		local db = db.SearchFilter
+
         return {
             order = order,
             type = "toggle",
             width = key == "ALL" and "double" or "normal",
             name = localizedTypes[key] or L["All"],
             desc = "",
-            get = function() return selectedRuleData().types[key] end,
+            get = function()
+                return db.frames[selectedFrame()].rules[selectedRule()] and db.frames[selectedFrame()].rules[selectedRule()].types[key]
+            end,
             set = function(_, value)
-				local ruleData = selectedRuleData()
-				if ruleData.terms == "" then
+				local frameRules = db.frames[selectedFrame()].rules
+				if frameRules[selectedRule()].terms == "" then
 					for type in pairs(localizedTypes) do
-						ruleData.types[type] = false
+						frameRules[selectedRule()].types[type] = false
 					end
 				else
-					ruleData.types[key] = value
+					frameRules[selectedRule()].types[key] = value
 					if key == "ALL" then
 						for type in pairs(localizedTypes) do
-							ruleData.types[type] = not value
+							frameRules[selectedRule()].types[type] = not value
 						end
 					elseif key ~= "ALL" and value then
-						ruleData.types["ALL"] = false
+						frameRules[selectedRule()].types["ALL"] = false
 					end
 				end
             end,
             hidden = function()
                 if key == "ALL" then return false end
-                return selectedRuleData().types["ALL"]
+                return db.frames[selectedFrame()].rules[selectedRule()] and db.frames[selectedFrame()].rules[selectedRule()].types["ALL"]
             end,
         }
     end
@@ -1620,10 +1612,19 @@ function mod:LoadConfig()
 							[true] = L["Blacklist"],
 							[false] = L["Whitelist"],
 						},
-						get = function() return selectedRuleData().blacklist end,
+						get = function()
+							local frameRules = db.SearchFilter.frames[selectedFrame()].rules
+							if frameRules[selectedRule()] then
+								return frameRules[selectedRule()].blacklist
+							end
+							return true
+						end,
 						set = function(_, value)
-							selectedRuleData().blacklist = value
-							self:Toggle(db)
+							local frameRules = db.SearchFilter.frames[selectedFrame()].rules
+							if frameRules[selectedRule()] then
+								frameRules[selectedRule()].blacklist = value
+								self:Toggle(db)
+							end
 						end,
 					},
 					terms = {
@@ -1631,16 +1632,24 @@ function mod:LoadConfig()
 						type = "input",
 						name = L["Rule Terms"],
 						desc = L["Same logic as with the search."],
-						get = function() return selectedRuleData().terms end,
-						set = function(_, value)
-							local ruleData = selectedRuleData()
-							if value == "" then
-								for type in pairs(localizedTypes) do
-									ruleData.types[type] = false
-								end
+						get = function()
+							local frameRules = db.SearchFilter.frames[selectedFrame()].rules
+							if frameRules[selectedRule()] then
+								return frameRules[selectedRule()].terms
 							end
-							ruleData.terms = value
-							self:Toggle(db)
+							return ""
+						end,
+						set = function(_, value)
+							local frameRules = db.SearchFilter.frames[selectedFrame()].rules
+							if frameRules[selectedRule()] then
+								if value == "" then
+									for type in pairs(localizedTypes) do
+										frameRules[selectedRule()].types[type] = false
+									end
+								end
+								frameRules[selectedRule()].terms = value
+								self:Toggle(db)
+							end
 						end,
 					},
 					description = {

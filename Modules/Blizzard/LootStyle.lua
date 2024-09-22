@@ -308,13 +308,15 @@ P["Extras"]["blizzard"][modName] = {
 }
 
 function mod:LoadConfig()
-	local function selected() return E.db.Extras.blizzard[modName].StyledMsgs.selected end
+	local db = E.db.Extras.blizzard[modName]
+	local function selected() return db.StyledMsgs.selected end
+	local function selectedData() return core:getSelected("blizzard", modName, format("StyledMsgs[%s]", selected() or ""), "friend") end
 	core.blizzard.args[modName] = {
 		type = "group",
 		name = L["Loot&Style"],
-		get = function(info) return E.db.Extras.blizzard[modName][info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
-		set = function(info, value) E.db.Extras.blizzard[modName][info[#info-1]][gsub(info[#info], info[#info-1], '')] = value mod:Toggle() end,
-		disabled = function(info) return info[#info] ~= modName and not match(info[#info], '^enabled') and not E.db.Extras.blizzard[modName][info[#info-1]].enabled end,
+		get = function(info) return db[info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
+		set = function(info, value) db[info[#info-1]][gsub(info[#info], info[#info-1], '')] = value self:Toggle() end,
+		disabled = function(info) return info[#info] ~= modName and not match(info[#info], '^enabled') and not db[info[#info-1]].enabled end,
 		args = {
 			LootInfo = {
 				type = "group",
@@ -336,20 +338,20 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Styled Messages"],
 				guiInline = true,
-				get = function(info) return unpack(E.db.Extras.blizzard[modName].StyledMsgs[selected()][info[#info]]) end,
+				get = function(info) return unpack(selectedData()[info[#info]]) end,
 				set = function(info, r, g, b)
-					E.db.Extras.blizzard[modName].StyledMsgs[selected()][info[#info]] = { r, g, b }
-					self:StyledMsgs(E.db.Extras.blizzard[modName].StyledMsgs.enabled)
+					selectedData()[info[#info]] = { r, g, b }
+					self:StyledMsgs(db.StyledMsgs.enabled)
 				end,
 				args = {
-					enabled = {
+					enabledStyledMsgs = {
 						order = 1,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Colors online friends' and guildmates' names in some of the messages and styles the rolls.\nAlready handled chat bubbles will not get styled before you /reload."],
-						get = function() return E.db.Extras.blizzard[modName].StyledMsgs.enabled end,
+						get = function() return db.StyledMsgs.enabled end,
 						set = function(_, value)
-							E.db.Extras.blizzard[modName].StyledMsgs.enabled = value
+							db.StyledMsgs.enabled = value
 							self:StyledMsgs(value)
 						end,
 					},
@@ -358,16 +360,16 @@ function mod:LoadConfig()
 						type = "color",
 						name = L["Indicator Color"],
 						desc = "",
-						hidden = function() return not E.db.Extras.blizzard[modName].StyledMsgs.enabled end,
+						hidden = function() return not db.StyledMsgs.enabled end,
 					},
 					selected = {
 						order = 3,
 						type = "select",
 						name = L["Select Status"],
 						desc = "",
-						get = function() return E.db.Extras.blizzard[modName].StyledMsgs.selected end,
-						set = function(_, value) E.db.Extras.blizzard[modName].StyledMsgs.selected = value end,
-						hidden = function() return not E.db.Extras.blizzard[modName].StyledMsgs.enabled end,
+						get = function() return db.StyledMsgs.selected end,
+						set = function(_, value) db.StyledMsgs.selected = value end,
+						hidden = function() return not db.StyledMsgs.enabled end,
 						values = {
 							["self"] = L["Self"],
 							["friend"] = L["Friend"],
@@ -379,12 +381,12 @@ function mod:LoadConfig()
 						type = "select",
 						name = L["Select Indicator"],
 						desc = "",
-						get = function() return E.db.Extras.blizzard[modName].StyledMsgs[selected()].indicator end,
+						get = function() return selectedData().indicator end,
 						set = function(_, value)
-							E.db.Extras.blizzard[modName].StyledMsgs[selected()].indicator = value
-							self:StyledMsgs(E.db.Extras.blizzard[modName].StyledMsgs.enabled)
+							selectedData().indicator = value
+							self:StyledMsgs(db.StyledMsgs.enabled)
 						end,
-						hidden = function() return not E.db.Extras.blizzard[modName].StyledMsgs.enabled end,
+						hidden = function() return not db.StyledMsgs.enabled end,
 						values = {
 							["~"] = "~",
 							["!"] = "!",
@@ -421,7 +423,7 @@ function mod:LoadConfig()
 						min = 8, max = 32, step = 1,
 						name = L["Icon Size"],
 						desc = L["Loot rolls icon size."],
-						hidden = function() return not E.db.Extras.blizzard[modName].StyledLootings.enabled end,
+						hidden = function() return not db.StyledLootings.enabled end,
 					},
 				},
 			},
@@ -429,10 +431,10 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Loot Bars"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.blizzard[modName][info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
-				set = function(info, value) E.db.Extras.blizzard[modName][info[#info-1]][gsub(info[#info], info[#info-1], '')] = value simulateLootRoll() mod:Toggle() end,
+				get = function(info) return db.LootBars[info[#info]] end,
+				set = function(info, value) db.LootBars[info[#info]] = value simulateLootRoll() mod:Toggle() end,
 				args = {
-					enabledLootBars = {
+					enabled = {
 						order = 1,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
@@ -444,7 +446,7 @@ function mod:LoadConfig()
 						min = 8, max = 36, step = 1,
 						name = L["Icon Size"],
 						desc = "",
-						hidden = function() return not E.db.Extras.blizzard[modName].LootBars.enabled end,
+						hidden = function() return not db.LootBars.enabled end,
 					},
 					heightBar = {
 						order = 3,
@@ -452,7 +454,7 @@ function mod:LoadConfig()
 						min = 4, max = 24, step = 1,
 						name = L["Bar Height"],
 						desc = "",
-						hidden = function() return not E.db.Extras.blizzard[modName].LootBars.enabled end,
+						hidden = function() return not db.LootBars.enabled end,
 					},
 					widthBar = {
 						order = 4,
@@ -460,14 +462,13 @@ function mod:LoadConfig()
 						min = 40, max = 600, step = 1,
 						name = L["Bar Width"],
 						desc = "",
-						hidden = function() return not E.db.Extras.blizzard[modName].LootBars.enabled end,
+						hidden = function() return not db.LootBars.enabled end,
 					},
 				},
 			},
 		},
 	}
 end
-
 
 function mod:StyledMsgs(enable)
     if enable then

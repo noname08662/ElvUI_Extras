@@ -28,10 +28,11 @@ local band = bit.band
 local random = math.random
 local twipe, tinsert, tsort = table.wipe, table.insert, table.sort
 local match, format, gsub, lower = string.match, string.format, string.gsub, string.lower
-local GetSpellLink= GetSpellLink
+local GetSpellLink = GetSpellLink
 local CooldownFrame_SetTimer, UnitGUID = CooldownFrame_SetTimer, UnitGUID
 local GetSpellInfo, GetTime, UnitExists = GetSpellInfo, GetTime, UnitExists
-local COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_CONTROL_PLAYER, COMBATLOG_OBJECT_REACTION_NEUTRAL, COMBATLOG_OBJECT_REACTION_HOSTILE = COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_CONTROL_PLAYER, COMBATLOG_OBJECT_REACTION_NEUTRAL, COMBATLOG_OBJECT_REACTION_HOSTILE
+local COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_CONTROL_PLAYER = COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_CONTROL_PLAYER
+local COMBATLOG_OBJECT_REACTION_NEUTRAL, COMBATLOG_OBJECT_REACTION_HOSTILE = COMBATLOG_OBJECT_REACTION_NEUTRAL, COMBATLOG_OBJECT_REACTION_HOSTILE
 local ERR_NOT_IN_COMBAT, InCombatLockdown = ERR_NOT_IN_COMBAT, InCombatLockdown
 
 
@@ -101,8 +102,18 @@ P["Extras"]["unitframes"][modName] = {
 }
 
 function mod:LoadConfig()
-	local function selectedUnit() return E.db.Extras.unitframes[modName].selectedUnit end
-	local function selectedCat() return E.db.Extras.unitframes[modName].selectedCat end
+	local db = E.db.Extras.unitframes[modName]
+	local function selectedUnit() return db.selectedUnit end
+	local function selectedCat() return db.selectedCat end
+	local function selectedUnitData()
+		return core:getSelected("unitframes", modName, format("units[%s]", selectedUnit() or ""), "target")
+	end
+	local function indicatorData()
+		return selectedUnitData().strengthIndicator
+	end
+	local function ufUnitData()
+		return E.db.unitframe.units[selectedUnit()]
+	end
 	core.unitframes.args[modName] = {
 		type = "group",
 		name = L[modName],
@@ -118,18 +129,18 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Appends a diminishing returns tracker to frames."],
-						get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] end,
-						set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] = value self:Toggle() end,
-						disabled = function() return not E.db.unitframe.units[selectedUnit()].enable end,
+						get = function(info) return selectedUnitData()[info[#info]] end,
+						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle(db) end,
+						disabled = function() return not ufUnitData().enable end,
 					},
 					unitDropdown = {
 						order = 1,
 						type = "select",
 						name = L["Select Unit"],
 						desc = "",
-						get = function() return E.db.Extras.unitframes[modName].selectedUnit end,
-						set = function(_, value) E.db.Extras.unitframes[modName].selectedUnit = value end,
-						values = function() return core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].units) end,
+						get = function() return db.selectedUnit end,
+						set = function(_, value) db.selectedUnit = value end,
+						values = function() return core:GetUnitDropdownOptions(db.units) end,
 					},
 				},
 			},
@@ -138,9 +149,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Settings"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()][info[#info]] = value self:Toggle() end,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or not E.db.unitframe.units[selectedUnit()].enable end,
+				get = function(info) return selectedUnitData()[info[#info]] end,
+				set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle(db) end,
+				disabled = function() return not selectedUnitData().enabled or not ufUnitData().enable end,
 				args = {
 					DRtime = {
 						order = 2,
@@ -148,23 +159,23 @@ function mod:LoadConfig()
 						min = 16, max = 20, step = 1,
 						name = L["DR Time"],
 						desc = L["DRtime controls how long it takes for the icons to reset. Several factors can affect how DR resets. If you are experiencing constant problems with DR reset accuracy, you can change this value."],
-						get = function() return E.db.Extras.unitframes[modName].DRtime end,
-						set = function(_, value) E.db.Extras.unitframes[modName].DRtime = value self:Toggle() end,
+						get = function() return db.DRtime end,
+						set = function(_, value) db.DRtime = value self:Toggle(db) end,
 					},
 					test = {
 						order = 3,
 						type = "execute",
 						name = L["Test"],
 						desc = "",
-						func = function() mod:TDR() end,
+						func = function() mod:TDR(db) end,
 					},
 					playersOnly = {
 						order = 4,
 						type = "toggle",
 						name = L["Players Only"],
 						desc = L["Ignore NPCs when setting up icons."],
-						get = function() return E.db.Extras.unitframes[modName].playersOnly end,
-						set = function(_, value) E.db.Extras.unitframes[modName].playersOnly = value self:Toggle() end,
+						get = function() return db.playersOnly end,
+						set = function(_, value) db.playersOnly = value self:Toggle(db) end,
 						hidden = function() return selectedUnit() == 'arena' end,
 					},
 					noCdNumbers = {
@@ -249,16 +260,16 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["DR Strength Indicator: Text"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()].strengthIndicator.text[info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()].strengthIndicator.text[info[#info]] = value self:Toggle() end,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or not E.db.Extras.unitframes[modName].units[selectedUnit()].strengthIndicator.text.enabled or not E.db.unitframe.units[selectedUnit()].enable end,
+				get = function(info) return indicatorData().text[info[#info]] end,
+				set = function(info, value) indicatorData().text[info[#info]] = value self:Toggle(db) end,
+				disabled = function() return not selectedUnitData().enabled or not indicatorData().text.enabled or not ufUnitData().enable end,
 				args = {
 					enabled = {
 						order = 1,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = "",
-						disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or not E.db.unitframe.units[selectedUnit()].enable end,
+						disabled = function() return not db.units[selectedUnit()].enabled or not ufUnitData().enable end,
 					},
 					size = {
 						order = 2,
@@ -322,9 +333,9 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["DR Strength Indicator: Box"],
 				guiInline = true,
-				get = function(info) return E.db.Extras.unitframes[modName].units[selectedUnit()].strengthIndicator.box[info[#info]] end,
-				set = function(info, value) E.db.Extras.unitframes[modName].units[selectedUnit()].strengthIndicator.box[info[#info]] = value self:Toggle() end,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or not E.db.Extras.unitframes[modName].units[selectedUnit()].strengthIndicator.box.enabled or not E.db.unitframe.units[selectedUnit()].enable end,
+				get = function(info) return indicatorData().box[info[#info]] end,
+				set = function(info, value) indicatorData().box[info[#info]] = value self:Toggle(db) end,
+				disabled = function() return not selectedUnitData().enabled or not indicatorData().box.enabled or not ufUnitData().enable end,
 				args = {
 					enabled = {
 						order = 1,
@@ -332,7 +343,7 @@ function mod:LoadConfig()
 						width = "double",
 						name = core.pluginColor..L["Enable"],
 						desc = "",
-						disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or not E.db.unitframe.units[selectedUnit()].enable end,
+						disabled = function() return not selectedUnitData().enabled or not ufUnitData().enable end,
 					},
 					size = {
 						order = 2,
@@ -361,9 +372,12 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Colors"],
 				guiInline = true,
-				get = function(info) return unpack(E.db.Extras.unitframes[modName].units[selectedUnit()].strengthIndicator.colors[info[#info]]) end,
-				set = function(info, r, g, b) E.db.Extras.unitframes[modName].units[selectedUnit()].strengthIndicator.colors[info[#info]] = { r, g, b } self:Toggle() end,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or not (E.db.Extras.unitframes[modName].units[selectedUnit()].strengthIndicator.text.enabled or E.db.Extras.unitframes[modName].units[selectedUnit()].strengthIndicator.box.enabled) or not E.db.unitframe.units[selectedUnit()].enable end,
+				get = function(info) return unpack(indicatorData().colors[info[#info]]) end,
+				set = function(info, r, g, b) indicatorData().colors[info[#info]] = {r, g, b} self:Toggle(db) end,
+				disabled = function()
+					return not selectedUnitData().enabled
+						or not (indicatorData().text.enabled or indicatorData().box.enabled)
+						or not ufUnitData().enable end,
 				args = {
 					good = {
 						order = 1,
@@ -388,9 +402,9 @@ function mod:LoadConfig()
 						type = "color",
 						name = L["Category Border"],
 						desc = "",
-						get = function() return unpack(E.db.Extras.unitframes[modName].catColors[selectedCat()]) end,
-						set = function(_, r, g, b) E.db.Extras.unitframes[modName].catColors[selectedCat()] = { r, g, b } self:Toggle() end,
-						disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or not E.db.unitframe.units[selectedUnit()].enable end,
+						get = function() return unpack(db.catColors[selectedCat()]) end,
+						set = function(_, r, g, b) db.catColors[selectedCat()] = { r, g, b } self:Toggle(db) end,
+						disabled = function() return not selectedUnitData().enabled or not ufUnitData().enable end,
 					},
 					catDropdown = {
 						order = 5,
@@ -398,9 +412,9 @@ function mod:LoadConfig()
 						width = "double",
 						name = L["Select Category"],
 						desc = "",
-						get = function() return E.db.Extras.unitframes[modName].selectedCat end,
-						set = function(_, value) E.db.Extras.unitframes[modName].selectedCat = value end,
-						values = core:GetUnitDropdownOptions(E.db.Extras.unitframes[modName].catColors),
+						get = function() return db.selectedCat end,
+						set = function(_, value) db.selectedCat = value end,
+						values = core:GetUnitDropdownOptions(db.catColors),
 					},
 				},
 			},
@@ -409,7 +423,7 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Categories"],
 				guiInline = true,
-				disabled = function() return not E.db.Extras.unitframes[modName].units[selectedUnit()].enabled or not E.db.unitframe.units[selectedUnit()].enable end,
+				disabled = function() return not selectedUnitData().enabled or not ufUnitData().enable end,
 				args = {
 					addCategory = {
 						order = 1,
@@ -421,28 +435,30 @@ function mod:LoadConfig()
 						set = function(_, value)
 							local cat, spellID = match(value, '%s*(%S+)%D*(%d+)')
 							if spellID and cat and GetSpellInfo(spellID) then
-								if not E.db.Extras.unitframes[modName].catColors[cat] then print(core.customColorBad..L["Invalid category."]) return end
-								if E.db.Extras.unitframes[modName].catList[cat] then
-									for id, category in pairs(E.db.Extras.unitframes[modName].catList) do
+								if not db.catColors[cat] then print(core.customColorBad..L["Invalid category."]) return end
+								if db.catList[cat] then
+									for id, category in pairs(db.catList) do
 										if tonumber(id) then
 											if cat == category then
-												E.db.Extras.unitframes[modName].catList[id] = nil
-												for cat, spellId in pairs(E.db.Extras.unitframes[modName].catList) do
-													if id == spellId then E.db.Extras.unitframes[modName].catList[cat] = nil end
+												db.catList[id] = nil
+												for cat, spellId in pairs(db.catList) do
+													if id == spellId then db.catList[cat] = nil end
 												end
 												break
 											end
 										end
 									end
-									print(format(core.customColorAlpha..L["Category \"%s\" already exists, updating icon."], core.customColorBeta..cat..core.customColorAlpha))
+									print(format(core.customColorAlpha..L["Category \"%s\" already exists, updating icon."],
+												core.customColorBeta..cat..core.customColorAlpha))
 								else
 									local _, _, icon = GetSpellInfo(spellID)
 									local link = GetSpellLink(spellID)
 									local string = '\124T' .. gsub(icon, '\124', '\124\124') .. ':16:16\124t' .. link
-									print(format(core.customColorAlpha..L["Category \"%s\" added with %s icon."], core.customColorBeta..cat..core.customColorAlpha, string))
+									print(format(core.customColorAlpha..L["Category \"%s\" added with %s icon."],
+												core.customColorBeta..cat..core.customColorAlpha, string))
 								end
-								E.db.Extras.unitframes[modName].catList[spellID] = cat
-								E.db.Extras.unitframes[modName].catList[cat] = spellID
+								db.catList[spellID] = cat
+								db.catList[cat] = spellID
 							end
 						end,
 					},
@@ -454,20 +470,21 @@ function mod:LoadConfig()
 						desc = "",
 						get = function() return "" end,
 						set = function(_, value)
-							for id, cat in pairs(E.db.Extras.unitframes[modName].catList) do
+							for id, cat in pairs(db.catList) do
 								if id == value then
-									E.db.Extras.unitframes[modName].catList[id] = nil
-									for cat, spellId in pairs(E.db.Extras.unitframes[modName].catList) do
-										if id == spellId then E.db.Extras.unitframes[modName].catList[cat] = nil end
+									db.catList[id] = nil
+									for cat, spellId in pairs(db.catList) do
+										if id == spellId then db.catList[cat] = nil end
 									end
-									print(format(core.customColorAlpha..L["Category \"%s\" removed."], core.customColorBeta..cat..core.customColorAlpha))
+									print(format(core.customColorAlpha..L["Category \"%s\" removed."],
+												core.customColorBeta..cat..core.customColorAlpha))
 									break
 								end
 							end
 						end,
 						values = function()
 							local values = {}
-							for id, cat in pairs(E.db.Extras.unitframes[modName].catList) do
+							for id, cat in pairs(db.catList) do
 								if tonumber(id) then
 									local name = GetSpellInfo(id) or ""
 									local icon = select(3, GetSpellInfo(id))
@@ -482,10 +499,10 @@ function mod:LoadConfig()
 			},
 		},
 	}
-	if not E.db.Extras.unitframes[modName].units.focus then
-		E.db.Extras.unitframes[modName].units.player = CopyTable(E.db.Extras.unitframes[modName].units.target)
-		E.db.Extras.unitframes[modName].units.focus = CopyTable(E.db.Extras.unitframes[modName].units.target)
-		E.db.Extras.unitframes[modName].units.arena = CopyTable(E.db.Extras.unitframes[modName].units.target)
+	if not db.units.focus then
+		db.units.player = CopyTable(db.units.target)
+		db.units.focus = CopyTable(db.units.target)
+		db.units.arena = CopyTable(db.units.target)
 	end
 end
 
@@ -627,16 +644,14 @@ local function combatLogCheck(...)
         for frame, target in pairs(framelist) do
 			local targetGUID = UnitExists(target[1]) and UnitGUID(target[1])
 			if targetGUID and activeGUIDs[targetGUID] then
-				mod:DisplayDrActives(_G[frame].DrTracker)
+				mod:DisplayDrActives(_G[frame].DrTracker, db)
 			end
         end
     end
 end
 
-local function setupDRUnits()
+local function setupDRUnits(db)
 	twipe(framelist)
-	local db = E.db.Extras.unitframes[modName].units
-
 	--[FRAME NAME]	= {UNITID,SIZE,ANCHOR,ANCHORFRAME,X,Y,"ANCHORNEXT","ANCHORPREVIOUS",nextx,nexty},
 
 	if db.player.enabled then
@@ -702,10 +717,10 @@ function mod:UpdateAura(aura, targetGUID, cat, entry, db, DRtime)
     aura:Show()
 end
 
-function mod:DisplayDrActives(self)
+function mod:DisplayDrActives(self, db)
+	db = db or E.db.Extras.unitframes[modName]
     local target = self.target
     local targetGUID = UnitExists(target) and UnitGUID(target)
-    local db = E.db.Extras.unitframes[modName]
     local DRtime = db.DRtime
     db = db.units[gsub(target, '%d', '')]
 
@@ -741,9 +756,8 @@ function mod:DisplayDrActives(self)
     end
 end
 
-function mod:UpdateDRTrackerFrames()
-    local db = E.db.Extras.unitframes[modName]
-    local catColors = E.db.Extras.unitframes[modName].catColors
+function mod:UpdateDRTrackerFrames(db)
+    local catColors = db.catColors
 
     for frame, target in pairs(framelist) do
         frame = _G[frame]
@@ -778,18 +792,16 @@ function mod:UpdateDRTrackerFrames()
 			for cat, entry in pairs(activeGUIDs[targetGUID]) do
 				entry.color = catColors[cat]
 			end
-			self:DisplayDrActives(frame.DrTracker)
+			self:DisplayDrActives(frame.DrTracker, db)
 		end
     end
 end
 
-function mod:TDR()
+function mod:TDR(db)
     if InCombatLockdown() then
         print(core.customColorBad..ERR_NOT_IN_COMBAT)
         return
     end
-
-    local db = E.db.Extras.unitframes[modName]
     for frame, target in pairs(framelist) do
         if _G[frame]:IsShown() then
             local drTracker = _G[frame].DrTracker
@@ -828,13 +840,13 @@ function mod:TDR()
                 end
             end
 
-            self:DisplayDrActives(drTracker)
+            self:DisplayDrActives(drTracker, db)
         end
     end
 end
 
-function mod:Toggle()
-	setupDRUnits()
+function mod:Toggle(db)
+	setupDRUnits(db.units)
 	if next(framelist) then
 		self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", combatLogCheck)
 		self:RegisterEvent("PLAYER_TARGET_CHANGED", combatLogCheck)
@@ -842,14 +854,14 @@ function mod:Toggle()
 	else
 		self:UnregisterAllEvents()
 	end
-	self:UpdateDRTrackerFrames()
+	self:UpdateDRTrackerFrames(db)
 end
 
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
 
 	mod:LoadConfig()
-	mod:Toggle()
+	mod:Toggle(E.db.Extras.unitframes[modName])
 end
 
 core.modules[modName] = mod.InitializeCallback
