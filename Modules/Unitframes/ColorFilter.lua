@@ -12,7 +12,7 @@ local _G, pairs, ipairs, tonumber, tostring, unpack, loadstring, type, pcall = _
 local find, gsub, match, sub, upper, lower, format = string.find, string.gsub, string.match, string.sub, string.upper, string.lower, string.format
 local tinsert, twipe, tremove = table.insert, table.wipe, table.remove
 local GetNumPartyMembers, GetNumRaidMembers = GetNumPartyMembers, GetNumRaidMembers
-local InCombatLockdown, GetTime = GetTime, InCombatLockdown
+local InCombatLockdown, GetTime = InCombatLockdown, GetTime
 
 local E_Delay = E.Delay
 
@@ -949,7 +949,7 @@ function mod:ConstructHighlight(frame)
 		constructAnimation(frame.Health, colorFilter.Health)
 		colorFilter.Health.flashTexture:Hide()
 
-		colorFilter.Health:Hide()
+		--colorFilter.Health:Hide()
 
 		frame.colorFilter = colorFilter
 	end
@@ -969,7 +969,7 @@ function mod:ConstructHighlight(frame)
 		constructAnimation(power, colorFilter.Power)
 		colorFilter.Power.flashTexture:Hide()
 
-		colorFilter.Power:Hide()
+		--colorFilter.Power:Hide()
 	end
 
 	if frame.Castbar and not frame.colorFilter.Castbar then
@@ -1150,7 +1150,7 @@ function mod:UpdateGlow(frame, colors, statusbar, unit, showGlow, highlight)
 
 		colorFilter.appliedGlowColors[statusbar] = { applied = true, color = {r, g, b, a}, highlight = highlight }
 	else
-		colorFilter[statusbar]:Hide()
+		colorFilter[statusbar].shadow:Hide()
 
 		if statusbar == 'Castbar' then
 			local castbarIcon = colorFilter.CastbarIcon
@@ -1165,7 +1165,7 @@ function mod:UpdateGlow(frame, colors, statusbar, unit, showGlow, highlight)
 				health.shadow:SetBackdropBorderColor(r, g, b, a or 1)
 				health:Show()
 			elseif statusbar == 'Power' and not appliedGlowColors.Health.applied and colorFilter.Health:IsShown() then
-				colorFilter.Health:Hide()
+				colorFilter.Health.shadow:Hide()
 			end
 		end
 
@@ -1886,8 +1886,6 @@ function mod:InitAndUpdateColorFilter()
 									end
 								end
 							end)
-						else
-							targetBar:SetScript('OnUpdate', nil)
 						end
 					end
 				end
