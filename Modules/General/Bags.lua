@@ -317,9 +317,8 @@ local function updateSortMethods(section)
 end
 
 
-local function updateLayouts()
+local function updateLayouts(isInCombat)
 	E_Delay(nil, 0.1, function()
-		local isInCombat = InCombatLockdown()
 		for _, isBank in ipairs({false, true}) do
 			local f = B_GetContainerFrame(nil, isBank)
 			if f and f.currentLayout then
@@ -1945,7 +1944,7 @@ function mod:BagsExtended(db)
 				end)
 			end
 		end
-		self:RegisterEvent("PLAYER_REGEN_DISABLED", updateLayouts)
+		self:RegisterEvent("PLAYER_REGEN_DISABLED", function() updateLayouts(true) end)
 		self:RegisterEvent("PLAYER_REGEN_ENABLED", updateLayouts)
 		self:UpdateAll()
 		initialized.BagsExtended = true
