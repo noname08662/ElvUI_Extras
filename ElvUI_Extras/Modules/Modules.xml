@@ -1,0 +1,31 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<Include file="General\Misc_data.lua"/>>
+	<Include file="General\Misc.lua"/>>
+	<Include file="General\QuestBar.lua"/>>
+	<Include file="General\Bags.lua"/>>
+	<Include file="General\MoversPlus.lua"/>>
+	<Include file="General\CustomCommands.lua"/>>
+	<Include file="General\Chat.lua"/>>
+
+	<Include file="Blizzard\Automation.lua"/>>
+	<Include file="Blizzard\LootStyle.lua"/>>
+	<Include file="Blizzard\Misc.lua"/>>
+
+	<Include file="Nameplates\Auras.lua"/>>
+	<Include file="Nameplates\NameLevel.lua"/>>
+	<Include file="Nameplates\QuestIcons.lua"/>>
+	<Include file="Nameplates\GuildsTitles_data.lua"/>>
+	<Include file="Nameplates\GuildsTitles.lua"/>>
+	<Include file="Nameplates\ClassificationIcons.lua"/>>
+	<Include file="Nameplates\Cooldowns.lua"/>>
+	<Include file="Nameplates\StyleFilter.lua"/>>
+
+	<Include file="Unitframes\Auras.lua"/>>
+	<Include file="Unitframes\Misc.lua"/>>
+	<Include file="Unitframes\AuraBars.lua"/>>
+	<Include file="Unitframes\ClassificationIndicator.lua"/>>
+	<Include file="Unitframes\FCF.lua"/>>
+	<Include file="Unitframes\DRTracker.lua"/>>
+	<Include file="Unitframes\ColorFilter.lua"/>>
+	<Include file="Unitframes\Cooldowns.lua"/>>
+</Ui>
