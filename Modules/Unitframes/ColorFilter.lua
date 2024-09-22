@@ -949,7 +949,7 @@ function mod:ConstructHighlight(frame)
 		constructAnimation(frame.Health, colorFilter.Health)
 		colorFilter.Health.flashTexture:Hide()
 
-		--colorFilter.Health:Hide()
+		colorFilter.Health.shadow:Hide()
 
 		frame.colorFilter = colorFilter
 	end
@@ -969,7 +969,7 @@ function mod:ConstructHighlight(frame)
 		constructAnimation(power, colorFilter.Power)
 		colorFilter.Power.flashTexture:Hide()
 
-		--colorFilter.Power:Hide()
+		colorFilter.Power.shadow:Hide()
 	end
 
 	if frame.Castbar and not frame.colorFilter.Castbar then
@@ -987,7 +987,7 @@ function mod:ConstructHighlight(frame)
 		constructAnimation(castbar, colorFilter.Castbar)
 		colorFilter.Castbar.flashTexture:Hide()
 
-		--colorFilter.Castbar:Hide()
+		colorFilter.Castbar.shadow:Hide()
 		if castbar.Icon then
 			colorFilter.CastbarIcon = CreateFrame("Frame", nil, castbar.Icon.bg)
 			colorFilter.CastbarIcon:CreateShadow(nil, true)
@@ -995,7 +995,7 @@ function mod:ConstructHighlight(frame)
 
 			colorFilter.CastbarIcon.shadow:SetFrameLevel(colorFilter.CastbarIcon:GetFrameLevel()+15)
 
-			--colorFilter.CastbarIcon:Hide()
+			colorFilter.CastbarIcon.shadow:Hide()
 		end
 	end
 
