@@ -1155,7 +1155,7 @@ function mod:ToggleMinimizeSection(f, section, buttonSize, isInCombat, updatedSe
     end
 	if not updatedSections or not updatedSections[section] then
 		self:UpdateSection(f, section, buttonSize, isInCombat)
-		self:ResizeFrame(f, buttonSize)
+		self:ResizeFrame(f, buttonSize, isInCombat)
 	end
 end
 
