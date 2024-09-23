@@ -1693,8 +1693,8 @@ function mod:UpdateBagSlots(self, f, bagID)
 	if updatePending then return end
 	updatePending = true
 
-	if not InCombatLockdown() then
-		E_Delay(nil, 0.1, function()
+	E_Delay(nil, 0.1, function()
+		if not InCombatLockdown() then
 			mod:ApplyBagChanges(f, mod:ScanBags(f))
 			for bagID, bagName in pairs(equippedBags) do
 				if bagName ~= GetBagName(bagID) then
@@ -1704,8 +1704,8 @@ function mod:UpdateBagSlots(self, f, bagID)
 				end
 			end
 			updatePending = false
-		end)
-	end
+		end
+	end)
 end
 
 function mod:UpdateSlot(self, f, bagID, slotID)
@@ -1945,7 +1945,7 @@ function mod:BagsExtended(db)
 			end
 		end
 		self:RegisterEvent("PLAYER_REGEN_DISABLED", function() updateLayouts(true) end)
-		self:RegisterEvent("PLAYER_REGEN_ENABLED", updateLayouts)
+		self:RegisterEvent("PLAYER_REGEN_ENABLED", function() updateLayouts() end)
 		self:UpdateAll()
 		initialized.BagsExtended = true
 	elseif initialized.BagsExtended then
