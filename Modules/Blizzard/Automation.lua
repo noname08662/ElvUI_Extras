@@ -15,7 +15,6 @@ local GetGossipActiveQuests, SelectGossipOption = GetGossipActiveQuests, SelectG
 local StaticPopupDialogs, StaticPopup_Hide = StaticPopupDialogs, StaticPopup_Hide
 local IsModifierKeyDown, GetItemInfo = IsModifierKeyDown, GetItemInfo
 local localizedQuestItemString = select(12,GetAuctionItemClasses())
-local InCombatLockdown = InCombatLockdown
 local DELETE_ITEM_CONFIRM_STRING = DELETE_ITEM_CONFIRM_STRING
 
 P["Extras"]["blizzard"][modName] = {
@@ -135,8 +134,6 @@ function mod:Automations()
 
 	if E.db.Extras.blizzard[modName].PickupQuest.enabled then
 		self:RegisterEvent('LOOT_OPENED', function()
-			if InCombatLockdown() then return end
-
 			for i = 1, GetNumLootItems() do
 				local lootLink = GetLootSlotLink(i)
 				if lootLink then
@@ -188,9 +185,9 @@ function mod:Automations()
 	end
 
 	if E.db.Extras.blizzard[modName].ConfirmRolls.enabled then
-		self:RegisterEvent('CONFIRM_LOOT_ROLL', function(...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
+		self:RegisterEvent('CONFIRM_LOOT_ROLL', function(_, ...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
 		self:RegisterEvent('CONFIRM_DISENCHANT_ROLL', function(_, ...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
-		self:RegisterEvent('LOOT_BIND_CONFIRM', function(...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
+		self:RegisterEvent('LOOT_BIND_CONFIRM', function(_, ...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
 	else
 		self:UnregisterEvent('CONFIRM_LOOT_ROLL')
 		self:UnregisterEvent('CONFIRM_DISENCHANT_ROLL')
