@@ -341,7 +341,7 @@ function mod:Update_Name(frame, triggered)
 					frame.nameShortener = nameShortener
 				end
 				nameShortener:ClearAllPoints()
-				nameShortener:Point("BOTTOMRIGHT", frame.Health, "TOPRIGHT", db.xOffsetShorten, 0)
+				nameShortener:Point("BOTTOMRIGHT", frame.Health, "TOPRIGHT", db.xOffsetShorten or 0, 0)
 				name:Point("BOTTOMRIGHT", frame.nameShortener, "BOTTOMLEFT", 0, 0)
 			end
 		end
