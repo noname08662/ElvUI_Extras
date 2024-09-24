@@ -2046,7 +2046,8 @@ function mod:Process(self, modifier)
 			ProcessButton:SetAttribute("macrotext", (ProcessButton.isKey and "/use " or "/cast ")..spellName.."\n/use "..self.bagID.." "..self.slotID)
 			ProcessButton.currentSpellID = spellID
 			ProcessButton:ClearAllPoints()
-			ProcessButton:Point("TOP", self, "TOP", 0, self:GetHeight())
+			local x, y = self:GetCenter()
+			ProcessButton:Point("CENTER", UIParent, "BOTTOMLEFT", x, y + self:GetHeight())
 			ProcessButton:Show()
 		end
 	end
