@@ -27,9 +27,6 @@ P["Extras"]["nameplates"][modName] = {
 function mod:LoadConfig()
 	local db = E.db.Extras.nameplates[modName]
 	local function selectedLink() return db.selectedLink end
-	local function selectedLinkData()
-		return core:getSelected("nameplates", modName, format("links[%s]", selectedLink() or ""), 1)
-	end
 	core.nameplates.args[modName] = {
 		type = "group",
 		name = L[modName],

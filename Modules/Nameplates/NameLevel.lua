@@ -5,7 +5,7 @@ local NP = E:GetModule("NamePlates")
 
 local modName = mod:GetName()
 
-local _G, unpack, pairs = _G, unpack, pairs
+local unpack, pairs = unpack, pairs
 local upper, find = string.upper, string.find
 
 
@@ -341,7 +341,7 @@ function mod:Update_Name(frame, triggered)
 					frame.nameShortener = nameShortener
 				end
 				nameShortener:ClearAllPoints()
-				nameShortener:Point("BOTTOMRIGHT", frame.Health, "TOPRIGHT", db.xOffsetShorten or 0, 0)
+				nameShortener:Point("BOTTOMRIGHT", frame.Health, "TOPRIGHT", db.xOffsetShorten, 0)
 				name:Point("BOTTOMRIGHT", frame.nameShortener, "BOTTOMLEFT", 0, 0)
 			end
 		end

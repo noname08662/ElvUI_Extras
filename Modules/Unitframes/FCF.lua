@@ -107,7 +107,6 @@ function mod:LoadConfig()
 	local function selectedUnit() return db.selectedUnit end
 	local function selectedEvent() return db.selectedEvent end
 	local function selectedFlag() return db.selectedFlag end
-	local function selectedSchool() return db.selectedSchool end
 	local function selectedUnitData()
 		return core:getSelected("unitframes", modName, format("units[%s]", selectedUnit() or ""), "player")
 	end

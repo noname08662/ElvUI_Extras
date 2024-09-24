@@ -2192,7 +2192,7 @@ ElvUI[1]:GetModule("Extras").NPCOccupations_data = {
 		16502, -- Zalduun
 		3408, -- Zel'mak
 		20125, -- Zula Slagfury
-	},	
+	},
 	["Vendor"] = {
 		5594, -- Alchemist Pestlezugg
 		8137, -- Gikkix
