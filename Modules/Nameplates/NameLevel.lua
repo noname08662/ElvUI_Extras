@@ -296,9 +296,7 @@ function mod:Update_Level(frame)
 				r, g, b = classColor.r, classColor.g, classColor.b
 			end
 		elseif (not unitType_db.health.enable and not frame.isTarget) or ((useReactionColor and (unitType == "FRIENDLY_NPC" or unitType == "ENEMY_NPC")) or db.reactionColor) then
-			if reactionType and reactionType == 1 then
-				r, g, b = colors.reactions.tapped.r, colors.reactions.tapped.g, colors.reactions.tapped.b
-			elseif reactionType and reactionType == 4 then
+			if reactionType and reactionType == 4 then
 				r, g, b = colors.reactions.neutral.r, colors.reactions.neutral.g, colors.reactions.neutral.b
 			elseif reactionType and reactionType > 4 then
 				if unitType == "FRIENDLY_PLAYER" then
@@ -378,9 +376,7 @@ function mod:Update_Name(frame, triggered)
 					r, g, b = classColor.r, classColor.g, classColor.b
 				end
 			elseif triggered or (not frame.Health:IsShown() and not frame.isTarget) or useReactionColor then
-				if reactionType and reactionType == 1 then
-					r, g, b = colors.reactions.tapped.r, colors.reactions.tapped.g, colors.reactions.tapped.b
-				elseif reactionType and reactionType == 4 then
+				if reactionType and reactionType == 4 then
 					r, g, b = colors.reactions.neutral.r, colors.reactions.neutral.g, colors.reactions.neutral.b
 				elseif reactionType and reactionType > 4 then
 					if unitType == "FRIENDLY_PLAYER" then
