@@ -949,9 +949,15 @@ function mod:StyledLootings(enable)
 				if styledb.enabled then
 					local _, relClass, indicator, indicatorColor = mod:GetPlayerInfo(lower(playerName))
 
-					return format("%s%s|r%s%s|r%s%s|r", indicatorColor, indicator, getClassColor(relClass), playerName, indicatorColor, indicator)
+					if relClass then
+						return format("%s%s|r%s%s|r%s%s|r", indicatorColor, indicator,
+															getClassColor(relClass) or '', playerName,
+															indicatorColor, indicator)
+					else
+						return format("%s%s|r", getClassColor(playerClass) or '', playerName)
+					end
 				else
-					return format("%s%s|r", getClassColor(playerClass), playerName)
+					return format("%s%s|r", getClassColor(playerClass) or '', playerName)
 				end
 			end
 
