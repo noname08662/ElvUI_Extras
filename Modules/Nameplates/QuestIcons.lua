@@ -623,8 +623,8 @@ function mod:SlashCommandHandler(msg)
 	end
 end
 
-function mod:OnShow(self)
-    local frame = self.UnitFrame
+function mod:OnShow(plate, db)
+    local frame = plate.UnitFrame
     local unitType, unitName = frame.UnitType, frame.UnitName
     frame.questIcon = frame.questIcon or createIcon(frame)
 
@@ -645,12 +645,16 @@ function mod:OnShow(self)
             if count then
                 updateCount(questIcon, count, total, isPercent)
 
+				questIcon:ClearAllPoints()
+				questIcon:Point(db.point, NP.db.units[unitType].health.enable and frame.Health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
 				questIcon.texture:SetTexture(iconTypes[questType] or iconTypes.DEFAULT)
                 questIcon:Show()
             else
                 questIcon:Hide()
             end
         else
+			questIcon:ClearAllPoints()
+			questIcon:Point(db.point, NP.db.units[unitType].health.enable and frame.Health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
             questIcon:Show()
         end
     else
@@ -658,14 +662,17 @@ function mod:OnShow(self)
     end
 end
 
-function mod:OnShowAwesome(plate)
+function mod:OnShowAwesome(plate, db)
 	local unit = plate.unit
     if not unit then return end
 
     local frame = plate.UnitFrame
+	local unitType = frame.UnitType
 	frame.questIcon = frame.questIcon or createIcon(frame)
+	frame.questIcon:ClearAllPoints()
+	frame.questIcon:Point(db.point, NP.db.units[unitType].health.enable and frame.Health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
 
-	mod:UpdateQuestStatus(frame, unit, frame.UnitName, frame.UnitType)
+	mod:UpdateQuestStatus(frame, unit, frame.UnitName, unitType)
 end
 
 function mod:OnCreated(self, plate)
@@ -676,12 +683,11 @@ end
 
 function mod:QUEST_ACCEPTED(_, questIndex)
 	E:Delay(0.1, function()
-		local questLink = GetQuestLink(questIndex)
-
-		if questLink then
-			local _, item = GetQuestLogLeaderBoard(questIndex)
-			if item then
+		for j = 1, GetNumQuestLeaderBoards(questIndex) do
+			local _, objectiveType = GetQuestLogLeaderBoard(j, questIndex)
+			if objectiveType == "item" then
 				itemPickupQuests[GetQuestLogTitle(questIndex)] = true
+				break
 			end
 		end
 		if isAwesome then
@@ -723,9 +729,9 @@ function mod:Toggle(db)
 		if not self:IsHooked(NP, "OnCreated") then self:SecureHook(NP, "OnCreated") end
 		if not self:IsHooked(NP, "OnShow") then
 			if isAwesome and db.automatic then
-				self:SecureHook(NP, "OnShow", function(plate) self:OnShowAwesome(plate) end)
+				self:SecureHook(NP, "OnShow", function(plate) self:OnShowAwesome(plate, db) end)
 			else
-				self:SecureHook(NP, "OnShow")
+				self:SecureHook(NP, "OnShow", function(plate) self:OnShow(plate, db) end)
 			end
 		end
 		local function parseTip(unit)
