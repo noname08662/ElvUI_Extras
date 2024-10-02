@@ -24,7 +24,7 @@ local LOOT_MONEY, YOU_LOOT_MONEY, LOOT_MONEY_SPLIT = LOOT_MONEY, YOU_LOOT_MONEY,
 local GOLD_AMOUNT, SILVER_AMOUNT, COPPER_AMOUNT = GOLD_AMOUNT, SILVER_AMOUNT, COPPER_AMOUNT
 local SPELL_FAILED_TRY_AGAIN, ERR_ITEM_NOT_FOUND, HELPFRAME_ITEM_TITLE = SPELL_FAILED_TRY_AGAIN, ERR_ITEM_NOT_FOUND, HELPFRAME_ITEM_TITLE
 local KBASE_SEARCH_RESULTS, BNET_BROADCAST_SENT_TIME = KBASE_SEARCH_RESULTS, BNET_BROADCAST_SENT_TIME
-local PLAYER, OPTIONAL, SECONDS, MINUTES = PLAYER, OPTIONAL, SECONDS, MINUTES
+local YOU, PLAYER, OPTIONAL, SECONDS, MINUTES = YOU, PLAYER, OPTIONAL, SECONDS, MINUTES
 
 local function simulateLootRoll()
 	local itemID = 49623
@@ -207,7 +207,8 @@ local rollIcons = {
 	"Interface\\BUTTONS\\UI-GroupLoot-Coin-Up",
 	"Interface\\BUTTONS\\UI-GroupLoot-DE-Up",
 	"Interface\\BUTTONS\\UI-GroupLoot-Pass-Up",
-	"Interface\\BUTTONS\\UI-GROUPLOOT-PASS-HIGHLIGHT"
+	"Interface\\BUTTONS\\UI-GROUPLOOT-PASS-HIGHLIGHT",
+	"Interface\\GossipFrame\\VendorGossipIcon"
 }
 
 local rollMsgsProcessed = {}
@@ -927,7 +928,10 @@ function mod:StyledLootings(enable)
 		if not initialized.StyledLootings then
 			local moneyMsgsProcessed = {}
 			local _, moneyMsgLOOT_MONEY = split(1, format(LOOT_MONEY, 1, 1))
-			local goldProcessed, silverProcessed, copperProcessed = gsub(format(GOLD_AMOUNT, 1), 1, ""), gsub(format(SILVER_AMOUNT, 1), 1, ""), gsub(format(COPPER_AMOUNT, 1), 1, "")
+			local goldProcessed = gsub(format(GOLD_AMOUNT, 1), 1, "")
+			local silverProcessed = gsub(format(SILVER_AMOUNT, 1), 1, "")
+			local copperProcessed = gsub(format(COPPER_AMOUNT, 1), 1, "")
+			local db = E.db.Extras.blizzard[modName].StyledLootings
 			local styledb = E.db.Extras.blizzard[modName].StyledMsgs
 
 			for _, message in ipairs({YOU_LOOT_MONEY, LOOT_MONEY_SPLIT}) do
@@ -981,24 +985,38 @@ function mod:StyledLootings(enable)
 				local itemLink, quantity = match(msg, '(|cff.+|h|r)([%w-]*)')
 				local rollType, playerName = parseEventMsg(msg)
 				local playerClass = playerName and select(2,UnitClass(playerName))
-				local rollResult = match(gsub(gsub(gsub(msg, '|cff.+|h|r', ''), playerName and '%|.*%('..playerName..'%)' or '', ''), '|T.+|t', ''), '(%d+)')
+				local rollResult = match(gsub(gsub(gsub(msg, '|cff.+|h|r', ''),
+										playerName and '%|.*%('..playerName..'%)' or '', ''), '|T.+|t', ''), '(%d+)')
 
-				if rollType and rollType < 6 then
-					local iconSize = E.db.Extras.blizzard[modName].StyledLootings.iconSize
+				if rollType and rollType < 7 then
 					if playerClass then
 						local formattedName = formatPlayerName(playerName, playerClass)
 
 						if not rollResult then
-							return false, format("[\124T%s:%d\124t]|r%s%s, %s", rollIcons[rollType], iconSize, itemLink, quantity, formattedName), ...
+							return false,
+									format("[\124T%s:%d\124t]|r%s%s, %s%s",
+										rollIcons[rollType], db.iconSize,
+										itemLink, quantity, formattedName, mod.lootInfoPrints or ''),
+									...
 						end
 
 						local valuePercent = (tonumber(rollResult)) / 100
-						local r, g, b = playerName == UnitName('player') and 1 - valuePercent or valuePercent, playerName == UnitName('player') and valuePercent or 1 - valuePercent, 0
+						local r = playerName == UnitName('player') and 1 - valuePercent or valuePercent
+						local g = playerName == UnitName('player') and valuePercent or 1 - valuePercent
+						local b = 0
 						local rollColor = format("|cff%02x%02x%02x", r * 255, g * 255, b * 255)
 
-						return false, format("%s[%d\124T%s:%d\124t]|r%s%s, %s", rollColor, rollResult, rollIcons[rollType], iconSize, itemLink, quantity, formattedName), ...
+						return false,
+								format("%s[%d\124T%s:%d\124t]|r%s%s, %s%s",
+									rollColor, rollResult, rollIcons[rollType], db.iconSize,
+									itemLink, quantity, formattedName, mod.lootInfoPrints or ''),
+								...
 					else
-						return false, format("[\124T%s:%d\124t]|r%s%s", rollIcons[rollType], iconSize, itemLink, quantity), ...
+						return false,
+								format("[\124T%s:%d\124t]|r%s%s%s",
+									rollIcons[rollType], db.iconSize,
+									itemLink, quantity, mod.lootInfoPrints or ''),
+								...
 					end
 				elseif playerClass then
 					local formattedName = formatPlayerName(playerName, playerClass)
@@ -1051,7 +1069,7 @@ function mod:LootInfo(enable)
 				index = index % 256 + 1
 			end
 
-			function mod:GetLootMessages(itemName, timeLimit)
+			function mod:GetLootMessages(itemName, timeLimit, selfLoot, priorTo)
 				local lootMessagesFound = {}
 				tsort(lootMessages, function(a,b)
 					if a.isPlayer ~= b.isPlayer then
@@ -1060,16 +1078,26 @@ function mod:LootInfo(enable)
 						return a.timestamp < b.timestamp
 					end
 				end)
-				for _, lootMessage in ipairs(lootMessages) do
-					local msg = lower(gsub(lootMessage.msg, '|[hH].*%[', ''))
-					if (not tonumber(timeLimit) or (lootMessage.timestamp > GetTime() - tonumber(timeLimit))) and
-						(find(msg, itemName, 1, true) or (find(itemName, '@self', 1, true) and lootMessage.isPlayer)) then
-						tinsert(lootMessagesFound, lootMessage)
+				local currentTime = GetTime()
+				if priorTo then
+					for _, lootMessage in ipairs(lootMessages) do
+						if lootMessage.timestamp > currentTime - priorTo then
+							tinsert(lootMessagesFound, lootMessage)
+						end
+					end
+				else
+					for _, lootMessage in ipairs(lootMessages) do
+						local msg = lower(gsub(lootMessage.msg, '|[hH].*%[', ''))
+						if (not timeLimit or (lootMessage.timestamp > currentTime - timeLimit)) and
+							(find(msg, itemName, 1, true) or (selfLoot and lootMessage.isPlayer)) then
+							tinsert(lootMessagesFound, lootMessage)
+						end
 					end
 				end
 				return lootMessagesFound
 			end
 
+			local styled = E.db.Extras.blizzard[modName].StyledLootings
 			function mod:LootInfoCommand(msg)
 				if lower(msg) == '!wipe' then twipe(lootMessages) print(core.customColorBeta..L["Loot info wiped."]) return end
 				local itemName, timeLimit = match(msg, '^([^%s]+)%s*(%d*)$')
@@ -1081,16 +1109,16 @@ function mod:LootInfo(enable)
 					return
 				end
 
-				local looters = self:GetLootMessages(lower(itemName), timeLimit)
+				local selfLoot = find(itemName, '@self', 1, true)
+				local looters = self:GetLootMessages(lower(itemName), timeLimit and tonumber(timeLimit), selfLoot, tonumber(itemName))
 
-				if find(itemName, '@self', 1, true) then
+				if selfLoot then
 					itemName = UnitName('player')
 				end
 
 				if #looters == 0 then
 					print(core.customColorBeta..ERR_ITEM_NOT_FOUND)
 				else
-					local styled = E.db.Extras.blizzard[modName].StyledLootings.enabled
 					print(core.customColorBeta..KBASE_SEARCH_RESULTS..":", '"'..core.customColorAlpha..itemName.."|r"..core.customColorBeta..'"')
 					for _, lootMessage in ipairs(looters) do
 						local msg = lootMessage.msg
@@ -1106,13 +1134,17 @@ function mod:LootInfo(enable)
 							timeUnit = SECONDS
 						end
 
-						if styled then
-							self.lootInfoPrints = (timeLimit and (core.customColorAlpha..' - '..lower(format(BNET_BROADCAST_SENT_TIME, timeStamp ..' '..timeUnit))) or '')
+						if styled.enabled then
+							self.lootInfoPrints = (timeLimit and
+												(core.customColorAlpha..' - '..lower(format(BNET_BROADCAST_SENT_TIME, timeStamp..' '..timeUnit)))
+												or '')
 							ChatFrame_MessageEventHandler(DEFAULT_CHAT_FRAME, "CHAT_MSG_LOOT", msg, unpack(lootMessage.args))
 							self.lootInfoPrints = false
 						else
 							ChatFrame_MessageEventHandler(DEFAULT_CHAT_FRAME, "CHAT_MSG_LOOT",
-								msg .. (timeLimit and (lower(format(' '..core.customColorAlpha..'- '..BNET_BROADCAST_SENT_TIME, timeStamp ..' '..timeUnit))) or ''),
+								msg .. (timeLimit and
+										(lower(format(core.customColorAlpha..' - '..BNET_BROADCAST_SENT_TIME, timeStamp..' '..timeUnit)))
+										or ''),
 								unpack(lootMessage.args))
 						end
 					end
