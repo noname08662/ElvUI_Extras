@@ -57,17 +57,20 @@ local chatTypes = {
 local date = date
 local min, max = math.min, math.max
 local _G, pairs, ipairs, next, unpack, tonumber = _G, pairs, ipairs, next, unpack, tonumber
-local gsub, find, match, byte, sub, upper, lower, reverse, format, len = string.gsub, string.find, string.match, string.byte, string.sub, string.upper, string.lower, string.reverse, string.format, string.len
+local gsub, find, match, byte, sub = string.gsub, string.find, string.match, string.byte, string.sub
+local upper, lower, reverse, format, len = string.upper, string.lower, string.reverse, string.format, string.len
 local tinsert, tremove, twipe, tsort, tconcat, tcontains = table.insert, table.remove, table.wipe, table.sort, table.concat, tContains
-local UIDropDownMenu_Initialize, UIDropDownMenu_CreateInfo, UIDropDownMenu_AddButton = UIDropDownMenu_Initialize, UIDropDownMenu_CreateInfo, UIDropDownMenu_AddButton
+local UIDropDownMenu_Initialize, UIDropDownMenu_CreateInfo = UIDropDownMenu_Initialize, UIDropDownMenu_CreateInfo
+local UIDropDownMenu_AddButton = UIDropDownMenu_AddButton
 local CloseDropDownMenus, ToggleDropDownMenu = CloseDropDownMenus, ToggleDropDownMenu
 local InCombatLockdown, IsCombatLog = InCombatLockdown, IsCombatLog
 local UIParent, ShowUIPanel = UIParent, ShowUIPanel
 local UIFrameFlash, UIFrameFlashRemoveFrame = UIFrameFlash, UIFrameFlashRemoveFrame
 local PlaySoundFile, Chat_GetChatCategory = PlaySoundFile, Chat_GetChatCategory
-local IsShiftKeyDown, IsAltKeyDown, IsControlKeyDown  = IsShiftKeyDown, IsAltKeyDown, IsControlKeyDown
+local IsShiftKeyDown, IsAltKeyDown, IsControlKeyDown, IsModifierKeyDown = IsShiftKeyDown, IsAltKeyDown, IsControlKeyDown, IsModifierKeyDown
 local NUM_CHAT_WINDOWS, CHAT_FRAMES, FONT_SIZE, FONT_SIZE_TEMPLATE = NUM_CHAT_WINDOWS, CHAT_FRAMES, FONT_SIZE, FONT_SIZE_TEMPLATE
-local NEW_CHAT_WINDOW, RESET_ALL_WINDOWS, RENAME_CHAT_WINDOW, CLOSE_CHAT_WINDOW, CHAT_CONFIGURATION = NEW_CHAT_WINDOW, RESET_ALL_WINDOWS, RENAME_CHAT_WINDOW, CLOSE_CHAT_WINDOW, CHAT_CONFIGURATION
+local NEW_CHAT_WINDOW, RESET_ALL_WINDOWS, RENAME_CHAT_WINDOW = NEW_CHAT_WINDOW, RESET_ALL_WINDOWS, RENAME_CHAT_WINDOW
+local CLOSE_CHAT_WINDOW, CHAT_CONFIGURATION = CLOSE_CHAT_WINDOW, CHAT_CONFIGURATION
 
 local E_Delay, E_UIFrameFadeIn, E_UIFrameFadeOut = E.Delay, E.UIFrameFadeIn, E.UIFrameFadeOut
 
@@ -1067,8 +1070,18 @@ local function setupCompactChat(db)
 				button:RegisterForClicks("LeftButtonDown", "RightButtonDown")
 
 				button:SetScript("OnClick", function(self, clicked)
-					isRightClick = clicked == "RightButton"
-					ToggleDropDownMenu(1, nil, side == "left" and LeftChatModFrame or RightChatModFrame, self, 0, 0)
+					if IsModifierKeyDown()
+						and EMB and EMB.mainFrame
+						and (side == "right" and emb_db.rightChatPanel) or (side == "left" and not emb_db.rightChatPanel) then
+							if EMB.mainFrame:IsShown() then
+								EMB.mainFrame:Hide()
+							else
+								EMB.mainFrame:Show()
+							end
+					else
+						isRightClick = clicked == "RightButton"
+						ToggleDropDownMenu(1, nil, side == "left" and LeftChatModFrame or RightChatModFrame, self, 0, 0)
+					end
 				end)
 
 				button.flash = CreateFrame("Frame", nil, button)
