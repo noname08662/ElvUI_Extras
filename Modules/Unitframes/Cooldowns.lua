@@ -1397,7 +1397,7 @@ local function setupCooldowns()
 	twipe(petSpells)
 
 	for _, type in ipairs({'FRIENDLY_PLAYER', 'ENEMY_PLAYER'}) do
-		for spellID, info in pairs(db[type].highlightedSpells) do
+		for spellID, info in pairs(db[type].highlightedSpells or {}) do
 			highlightedSpells[spellID] = info
 		end
 	end
