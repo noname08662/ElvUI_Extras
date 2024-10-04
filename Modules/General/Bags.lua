@@ -9,6 +9,7 @@ local LibProcessable = LibStub("LibProcessable")
 local modName = mod:GetName()
 local buttonMap, lastScan, equippedBags, tooltipInfo = {}, {}, {}, {}
 local globalSort, initialized = {}, {}
+local incombat = false
 mod.localhooks = {}
 
 local prospectingSpellID = 31252
@@ -1040,7 +1041,7 @@ function mod:HandleControls(f, section, buttonSize)
 			sectionFrame.isBeingSorted = false
 		end)
 		sectionFrame.concatenateButton:SetScript("OnMouseDown", function()
-			if InCombatLockdown() or sectionFrame.isBeingSorted or sectionFrame.minimized then return end
+			if incombat or sectionFrame.isBeingSorted or sectionFrame.minimized then return end
 			sectionFrame.isBeingSorted = true
 			sectionFrame.expanded = false
 			local timeElapsed, buttons, stacked, positioned = 0, {}
@@ -1048,7 +1049,7 @@ function mod:HandleControls(f, section, buttonSize)
 			sectionFrame.concatenateButton:SetScript('OnUpdate', function(self, elapsed)
 				timeElapsed = timeElapsed + elapsed
 				if timeElapsed > 0.1 then
-					if InCombatLockdown() then
+					if incombat then
 						sectionFrame.isBeingSorted = false
 						sectionFrame.concatenateButton:SetScript('OnUpdate', nil)
 						mod:UpdateSection(f, section, buttonSize)
@@ -1095,7 +1096,7 @@ function mod:HandleControls(f, section, buttonSize)
 		sectionFrame.expandButton:SetText("+")
 		sectionFrame.expandButton:Show()
 		sectionFrame.expandButton:SetScript("OnMouseDown", function()
-			if InCombatLockdown() then return end
+			if incombat then return end
 			for i, button in ipairs(sectionButtons) do
 				if not button:IsShown() and sectionButtons[i-1] then
 					sectionButtons[i-1].Count:Hide()
@@ -1114,7 +1115,7 @@ function mod:HandleControls(f, section, buttonSize)
 			sectionFrame.minimizeHandler = CreateFrame("Button", nil, sectionFrame, "UIPanelButtonTemplate")
 			sectionFrame.minimizeHandler:SetAllPoints(sectionFrame.title)
 			sectionFrame.minimizeHandler:SetScript("OnDoubleClick", function()
-				if InCombatLockdown() then return end
+				if incombat then return end
 				section.db.minimized = not section.db.minimized
 				section.frame.minimized = section.db.minimized
 				mod:ToggleMinimizeSection(f, section, buttonSize)
@@ -1163,7 +1164,7 @@ function mod:HandleSortButton(f, enable, isBank)
 	if enable then
 		f.sortButton:SetScript("OnClick", nil)
 		f.sortButton:SetScript("OnMouseDown", function()
-			if InCombatLockdown() then return end
+			if incombat then return end
 
 			local sections = {}
 			for _, section in ipairs(f.currentLayout.sections) do
@@ -1457,7 +1458,18 @@ function mod:Layout(self, isBank)
 						local countText = count
 						local pvpCurrency = itemID == 43307 or itemID == 43308
 						local emblem = itemID == 40752 or itemID == 40753 or itemID == 45624 or itemID == 47241 or itemID == 49426
-						tinsert(lines, { emblem = emblem, pvpCurrency = pvpCurrency, quality = quality, name = name, lineL = iconString..name, lineR = countText, r = r, g = g, b = b, } )
+						tinsert(lines, {
+								emblem = emblem,
+								pvpCurrency = pvpCurrency,
+								quality = quality,
+								name = name,
+								lineL = iconString..name,
+								lineR = countText,
+								r = r,
+								g = g,
+								b = b,
+							}
+						)
 					end
 				end
 				if not hasCurrencies then
@@ -1488,12 +1500,28 @@ function mod:Layout(self, isBank)
 
 	mod:ConfigureContainer(f, isBank, maxSectionWidth, numContainerColumns, buttonSize)
 
+	if incombat then
+		mod:RegisterEvent("PLAYER_REGEN_ENABLED", function()
+			for _, section in ipairs(f.currentLayout.sections) do
+				for _, button in ipairs(section.buttons) do
+					RegisterStateDriver(button, "visibility", "[combat] show")
+				end
+			end
+			incombat = false
+			updateLayouts()
+			mod:RegisterEvent("PLAYER_REGEN_ENABLED", function() incombat = false updateLayouts() end)
+		end)
+	end
+
 	local minIconLeft = huge
 	for _, section in ipairs(f.currentLayout.sections) do
 		local prevButton
         for i, button in ipairs(section.buttons) do
             buttonMap[button.bagID][button.slotID] = section
-            RegisterStateDriver(button, "visibility", "[combat] show")
+
+			if not incombat then
+				RegisterStateDriver(button, "visibility", "[combat] show")
+			end
 
 			local col = (i - 1) % section.numColumns
 			local row = floor((i - 1) / section.numColumns)
@@ -1613,7 +1641,9 @@ function mod:ScanBags(f, updateLast)
                     end
                     tinsert(inventory[itemID].positions, {bagID = bagID, slotID = slotID})
                     inventory[itemID].count = inventory[itemID].count + button.count/inventory[itemID].maxStack
-                    if not tooltipInfo[itemID] then tooltipInfo[itemID] = lower(gsub(gsub(getItemTooltipText(bagID, slotID), '%s+', ''), '%p+', '')) end
+                    if not tooltipInfo[itemID] then
+						tooltipInfo[itemID] = lower(gsub(gsub(getItemTooltipText(bagID, slotID), '%s+', ''), '%p+', ''))
+					end
                 end
             end
         end
@@ -1694,7 +1724,7 @@ function mod:UpdateBagSlots(self, f, bagID)
 	updatePending = true
 
 	E_Delay(nil, 0.1, function()
-		if not InCombatLockdown() then
+		if not incombat then
 			mod:ApplyBagChanges(f, mod:ScanBags(f))
 			for bagID, bagName in pairs(equippedBags) do
 				if bagName ~= GetBagName(bagID) then
@@ -1709,17 +1739,19 @@ function mod:UpdateBagSlots(self, f, bagID)
 end
 
 function mod:UpdateSlot(self, f, bagID, slotID)
-	if not f.currentLayout or (f.Bags[bagID] and f.Bags[bagID].numSlots ~= GetContainerNumSlots(bagID)) or not f.Bags[bagID] or not f.Bags[bagID][slotID] then return end
+	if not f.currentLayout
+		or (f.Bags[bagID] and f.Bags[bagID].numSlots ~= GetContainerNumSlots(bagID))
+		or not f.Bags[bagID] or not f.Bags[bagID][slotID] then return end
 
     local button = f.Bags[bagID][slotID]
-	if not InCombatLockdown() and button.isHidden then button:Hide() end
+	if not incombat and button.isHidden then button:Hide() end
 end
 
 function mod:UpdateSection(f, section, buttonSize, combatUpd)
     local sectionFrame = section.frame
 	local buttons = section.buttons
 
-	if InCombatLockdown() and not combatUpd then
+	if incombat and not combatUpd then
 		if f:IsShown() then
 			sectionFrame.newUnshown = sectionFrame.newUnshown or {}
 			for i in ipairs(buttons) do
@@ -1944,8 +1976,8 @@ function mod:BagsExtended(db)
 				end)
 			end
 		end
-		self:RegisterEvent("PLAYER_REGEN_DISABLED", function() updateLayouts(true) end)
-		self:RegisterEvent("PLAYER_REGEN_ENABLED", function() updateLayouts() end)
+		self:RegisterEvent("PLAYER_REGEN_DISABLED", function() incombat = true updateLayouts(true) end)
+		self:RegisterEvent("PLAYER_REGEN_ENABLED", function() incombat = false updateLayouts() end)
 		self:UpdateAll()
 		initialized.BagsExtended = true
 	elseif initialized.BagsExtended then
@@ -1978,15 +2010,15 @@ function mod:CreateProcessingButton()
 	ProcessButton:SetFrameStrata(E.db.bags.strata or "DIALOG")
 	ProcessButton:SetFrameLevel(10000)
 	local size = (B.db.bagSize) * (3/4)
-	ProcessButton:Size(size, size)
+	ProcessButton:Size(size)
 
 	ProcessButton:SetScript("OnEnter", function(self)
-		GameTooltip:SetOwner(ProcessButton)
-		GameTooltip:SetHyperlink(ProcessButton.isKey and ProcessButton.currentSpellID or GetSpellLink(ProcessButton.currentSpellID) or "")
+		GameTooltip:SetOwner(self)
+		GameTooltip:SetHyperlink(self.isKey and self.currentSpellID or GetSpellLink(self.currentSpellID) or "")
 		GameTooltip:Show()
 	end)
 
-	ProcessButton:SetScript("OnLeave", function(self)
+	ProcessButton:SetScript("OnLeave", function()
 		GameTooltip:Hide()
 	end)
 
@@ -2247,11 +2279,25 @@ function mod:EasierProcessing(db)
 	if db.EasierProcessing.enabled then
 		if not self:IsHooked(B, 'Layout') then self:SecureHook(B, 'Layout') end
 
-		self.ProcessButton = self.ProcessButton and self.ProcessButton or self:CreateProcessingButton()
-		self.localhooks.EasierProcessing = {
-			["OnClick"] = function(self) mod:Process(self, db.EasierProcessing.modifier) end,
-			["OnHide"] = function() if self.ProcessButton:IsShown() then self.ProcessButton:Hide() end end
-		}
+		if InCombatLockdown() then
+			local f = CreateFrame()
+			f:RegisterEvent("PLAYER_REGEN_ENABLED")
+			f:SetScript("OnEvent", function(self)
+				self.ProcessButton = self.ProcessButton and self.ProcessButton or self:CreateProcessingButton()
+				self.localhooks.EasierProcessing = {
+					["OnClick"] = function(self) mod:Process(self, db.EasierProcessing.modifier) end,
+					["OnHide"] = function() if self.ProcessButton:IsShown() then self.ProcessButton:Hide() end end
+				}
+				self:Hide()
+				self = nil
+			end)
+		else
+			self.ProcessButton = self.ProcessButton and self.ProcessButton or self:CreateProcessingButton()
+			self.localhooks.EasierProcessing = {
+				["OnClick"] = function(self) mod:Process(self, db.EasierProcessing.modifier) end,
+				["OnHide"] = function() if self.ProcessButton:IsShown() then self.ProcessButton:Hide() end end
+			}
+		end
 
 		initialized.EasierProcessing = true
 	elseif initialized.EasierProcessing then
