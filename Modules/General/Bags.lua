@@ -318,24 +318,24 @@ local function updateSortMethods(section)
 end
 
 
-local function updateLayouts(isInCombat)
+local function updateLayouts()
 	E_Delay(nil, 0.1, function()
 		for _, isBank in ipairs({false, true}) do
 			local f = B_GetContainerFrame(nil, isBank)
 			if f and f.currentLayout then
 				local updatedSections = {}
-				if not isInCombat and updatePending then
+				if not incombat and updatePending then
 					updatedSections = mod:ApplyBagChanges(f, mod:ScanBags(f))
 					updatePending = false
 				end
 				local buttonSize = isBank and B.db.bankSize or B.db.bagSize
 				for _, section in ipairs(f.currentLayout.sections) do
-					if isInCombat then
+					if incombat then
 						section.frame.minimized = false
 					else
 						section.frame.minimized = section.db.minimized
 					end
-					mod:ToggleMinimizeSection(f, section, buttonSize, isInCombat, updatedSections)
+					mod:ToggleMinimizeSection(f, section, buttonSize, incombat, updatedSections)
 				end
 			end
 		end
@@ -1134,7 +1134,7 @@ function mod:HandleControls(f, section, buttonSize)
 	end
 end
 
-function mod:ToggleMinimizeSection(f, section, buttonSize, isInCombat, updatedSections)
+function mod:ToggleMinimizeSection(f, section, buttonSize, combatUpd, updatedSections)
 	local sectionFrame = section.frame
     if not sectionFrame.minimized then
         sectionFrame.concatenateButton:Show()
@@ -1155,8 +1155,8 @@ function mod:ToggleMinimizeSection(f, section, buttonSize, isInCombat, updatedSe
 		end
     end
 	if not updatedSections or not updatedSections[section] then
-		self:UpdateSection(f, section, buttonSize, isInCombat)
-		self:ResizeFrame(f, buttonSize, isInCombat)
+		self:UpdateSection(f, section, buttonSize, combatUpd)
+		self:ResizeFrame(f, buttonSize)
 	end
 end
 
@@ -1183,7 +1183,7 @@ function mod:HandleSortButton(f, enable, isBank)
 				timeElapsed = timeElapsed + elapsed
 				if timeElapsed > 0.1 then
 					if index == #sections then
-						if not section.frame.isBeingSorted then
+						if not section.frame or not section.frame.isBeingSorted then
 							f.sortButton:SetScript("OnUpdate", nil)
 							mod:ScanBags(f, true)
 							E:StopSpinnerFrame(f)
@@ -1212,9 +1212,7 @@ function mod:HandleSortButton(f, enable, isBank)
 	end
 end
 
-function mod:ConfigureContainer(f, isBank, maxSectionWidth, numContainerColumns, buttonSize)
-    local db = E.db.Extras.general[modName].BagsExtended.containers[isBank and 'bank' or 'bags']
-
+function mod:ConfigureContainer(f, db, maxSectionWidth, numContainerColumns, buttonSize)
     wipeLayout(f.currentLayout)
 
     local sections = db.sections
@@ -1498,9 +1496,18 @@ function mod:Layout(self, isBank)
 		end
 	end
 
-	mod:ConfigureContainer(f, isBank, maxSectionWidth, numContainerColumns, buttonSize)
+	mod:ConfigureContainer(f, db.BagsExtended.containers[isBank and 'bank' or 'bags'], maxSectionWidth, numContainerColumns, buttonSize)
 
 	if incombat then
+		for _, section in ipairs(f.currentLayout.sections) do
+			local sectionFrame = section.frame
+			local button = section.buttons[#section.buttons]
+			sectionFrame.concatenateButton:ClearAllPoints()
+			sectionFrame.concatenateButton:Point("TOPLEFT", button, "TOPRIGHT", buttonSpacing, 0)
+			sectionFrame.expandButton:ClearAllPoints()
+			sectionFrame.expandButton:Point("BOTTOMLEFT", button, "BOTTOMRIGHT", buttonSpacing, 0)
+			mod:UpdateEmptySlotCount(button, 0)
+		end
 		mod:RegisterEvent("PLAYER_REGEN_ENABLED", function()
 			for _, section in ipairs(f.currentLayout.sections) do
 				for _, button in ipairs(section.buttons) do
@@ -1596,7 +1603,7 @@ function mod:Layout(self, isBank)
     mod:ScanBags(f, true)
 end
 
-function mod:ResizeFrame(f, buttonSize, combatUpd)
+function mod:ResizeFrame(f, buttonSize)
     local yOffset = -buttonSize/4
     local totalHeight = f.topOffset + f.bottomOffset
 	local layout = f.currentLayout
@@ -1604,7 +1611,7 @@ function mod:ResizeFrame(f, buttonSize, combatUpd)
     for i, section in ipairs(layout.sections) do
 		local sectionFrame = section.frame
         local sectionHeight = 0
-		if not combatUpd then
+		if not incombat then
 			sectionFrame:ClearAllPoints()
 			sectionFrame:Point("TOPLEFT", f.holderFrame, "TOPLEFT", 0, yOffset)
 			sectionHeight = sectionFrame:GetHeight()
@@ -1766,7 +1773,7 @@ function mod:UpdateSection(f, section, buttonSize, combatUpd)
     local visibleButtons, lastEmpty = 0, 0
     local oldNumRows = section.numRows or 0
 
-	if sectionFrame.minimized and not combatUpd then
+	if sectionFrame.minimized and not incombat then
         sectionFrame:Height(section.sectionSpacing)
 		buttons[1]:Point("TOPLEFT", sectionFrame, "TOPLEFT", buttonSpacing, -sectionHeaderHeight/2 - buttonSpacing*2)
 		if sectionFrame.title then
@@ -1807,7 +1814,7 @@ function mod:UpdateSection(f, section, buttonSize, combatUpd)
 		end
     end
 
-	if combatUpd then
+	if incombat then
         self:UpdateEmptySlotCount(buttons[visibleButtons + 1], 0)
 		lastEmpty = #buttons
 	else
@@ -1840,12 +1847,12 @@ function mod:UpdateSection(f, section, buttonSize, combatUpd)
 	local totalSectionHeight = sectionHeaderHeight + numRows * (buttonSize + buttonSpacing) - buttonSpacing
 	sectionFrame.height = totalSectionHeight
 
-	if not combatUpd then
+	if not incombat then
 		sectionFrame:Height(totalSectionHeight)
 	end
 
     if f.currentLayout and numRows ~= oldNumRows then
-        self:ResizeFrame(f, buttonSize, combatUpd)
+        self:ResizeFrame(f, buttonSize)
     end
 
 	section.numRows = numRows
@@ -1976,7 +1983,7 @@ function mod:BagsExtended(db)
 				end)
 			end
 		end
-		self:RegisterEvent("PLAYER_REGEN_DISABLED", function() incombat = true updateLayouts(true) end)
+		self:RegisterEvent("PLAYER_REGEN_DISABLED", function() incombat = true updateLayouts() end)
 		self:RegisterEvent("PLAYER_REGEN_ENABLED", function() incombat = false updateLayouts() end)
 		self:UpdateAll()
 		initialized.BagsExtended = true
