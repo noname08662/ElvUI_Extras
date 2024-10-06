@@ -4,8 +4,9 @@ local mod = core:NewModule("Automation", "AceHook-3.0", "AceEvent-3.0")
 
 local modName = mod:GetName()
 
-local select = select
-local match, gsub = string.match, string.gsub
+local pairs, select = select, pairs
+local tinsert, tsort = table.insert, table.sort
+local match, gsub, format = string.match, string.gsub, string.format
 local ConfirmLootRoll, LootSlot, GetLootSlotInfo = ConfirmLootRoll, LootSlot, GetLootSlotInfo
 local GetNumLootItems, GetLootSlotLink =  GetNumLootItems, GetLootSlotLink
 local QuestGetAutoAccept, AcceptQuest, CloseQuest, ConfirmAcceptQuest = QuestGetAutoAccept, AcceptQuest, CloseQuest, ConfirmAcceptQuest
@@ -23,6 +24,7 @@ P["Extras"]["blizzard"][modName] = {
 	},
 	["PickupQuest"] = {
 		["enabled"] = false,
+		["itemsToPickUp"] = {},
 	},
 	["FillDelete"] = {
 		["enabled"] = false,
@@ -35,13 +37,13 @@ P["Extras"]["blizzard"][modName] = {
 	}
 }
 
-function mod:LoadConfig()
+function mod:LoadConfig(db)
 	core.blizzard.args[modName] = {
 		type = "group",
 		name = L[modName],
-		get = function(info) return E.db.Extras.blizzard[modName][info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
-		set = function(info, value) E.db.Extras.blizzard[modName][info[#info-1]][gsub(info[#info], info[#info-1], '')] = value mod:Toggle() end,
-		disabled = function(info) return info[#info] ~= modName and not match(info[#info], '^enabled') and not E.db.Extras.blizzard[modName][info[#info-1]].enabled end,
+		get = function(info) return db[info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
+		set = function(info, value) db[info[#info-1]][gsub(info[#info], info[#info-1], '')] = value mod:Toggle() end,
+		disabled = function(info) return info[#info] ~= modName and not match(info[#info], '^enabled') and not db[info[#info-1]].enabled end,
 		args = {
 			ConfirmRolls = {
 				type = "group",
@@ -61,9 +63,58 @@ function mod:LoadConfig()
 				guiInline = true,
 				args = {
 					enabledPickupQuest = {
+						order = 1,
 						type = "toggle",
+						width = "full",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Picks up quest items and money automatically."],
+					},
+					addItem = {
+						order = 2,
+						type = "input",
+						name = L["Add Item (by ID)"],
+						desc = L["More items to pick up automatically."],
+						get = function() return "" end,
+						set = function(_, value)
+							if value and GetItemInfo(value) then
+								db.PickupQuest.itemsToPickUp[value] = true
+								local _, link, _, _, _, _, _, _, _, icon = GetItemInfo(value)
+								core:print('ADDED', '\124T'..gsub(icon, '\124', '\124\124')..':16:16\124t'..link)
+							end
+						end,
+					},
+					removeItem = {
+						order = 3,
+						type = "select",
+						name = L["Remove Item"],
+						desc = "",
+						get = function() return "" end,
+						set = function(_, value)
+							db.PickupQuest.itemsToPickUp[value] = nil
+							local _, link, _, _, _, _, _, _, _, icon = GetItemInfo(value)
+							core:print('REMOVED', '\124T'..gsub(icon, '\124', '\124\124')..':16:16\124t'..link)
+						end,
+						values = function()
+							local values = {}
+							for id in pairs(db.PickupQuest.itemsToPickUp or {}) do
+								local name, _, _, _, _, _, _, _, _, icon = GetItemInfo(id)
+								icon = icon and "|T"..icon..":0|t" or ""
+								values[id] = format("%s %s (%s)", icon, name or "", id)
+							end
+							return values
+						end,
+						sorting = function()
+							local sortedKeys = {}
+							for id in pairs(db.PickupQuest.itemsToPickUp or {}) do
+								tinsert(sortedKeys, id)
+							end
+							tsort(sortedKeys, function(a, b)
+								local nameA = GetItemInfo(a) or ""
+								local nameB = GetItemInfo(b) or ""
+								return nameA < nameB
+							end)
+							return sortedKeys
+						end,
 					},
 				},
 			},
@@ -108,9 +159,9 @@ function mod:LoadConfig()
 end
 
 
-function mod:Automations()
+function mod:Automations(db)
 	-- some of these have been stolen from LeatrixPlus
-	if E.db.Extras.blizzard[modName].FillDelete.enabled then
+	if db.FillDelete.enabled then
 		if not self:IsHooked(StaticPopupDialogs["DELETE_GOOD_ITEM"], 'OnShow') then
 			self:SecureHook(StaticPopupDialogs["DELETE_GOOD_ITEM"], 'OnShow', function(self)
 				self.editBox:SetText(DELETE_ITEM_CONFIRM_STRING)
@@ -120,7 +171,7 @@ function mod:Automations()
 		self:Unhook(StaticPopupDialogs["DELETE_GOOD_ITEM"], 'OnShow')
 	end
 
-	if E.db.Extras.blizzard[modName].Gossip.enabled then
+	if db.Gossip.enabled then
 		if not self:IsHooked(GossipFrame, 'OnShow') then
 			self:SecureHookScript(GossipFrame, 'OnShow', function()
 				if (GetNumGossipOptions() == 1) and not (GetGossipAvailableQuests() or GetGossipActiveQuests()) and not IsModifierKeyDown() then
@@ -132,14 +183,15 @@ function mod:Automations()
 		self:Unhook(GossipFrame, 'OnShow')
 	end
 
-	if E.db.Extras.blizzard[modName].PickupQuest.enabled then
+	if db.PickupQuest.enabled then
+		local itemsToPickUp = db.PickupQuest.itemsToPickUp or {}
 		self:RegisterEvent('LOOT_OPENED', function()
 			for i = 1, GetNumLootItems() do
 				local lootLink = GetLootSlotLink(i)
 				if lootLink then
 					local itemID = match(lootLink, 'item:(%d+)')
 					local itemType = select(6,GetItemInfo(itemID))
-					if itemType and itemType == localizedQuestItemString then
+					if (itemType and itemType == localizedQuestItemString) or itemsToPickUp[itemID] then
 						LootSlot(i)
 					end
 				elseif i == 1 and select(4,GetLootSlotInfo(i)) == 0 then
@@ -151,7 +203,7 @@ function mod:Automations()
 		self:UnregisterEvent('LOOT_OPENED')
 	end
 
-	if E.db.Extras.blizzard[modName].AcceptQuest.enabled then
+	if db.AcceptQuest.enabled then
 		self:RegisterEvent('QUEST_DETAIL', function()
 			if IsModifierKeyDown() then
 				if not QuestGetAutoAccept() then
@@ -184,7 +236,7 @@ function mod:Automations()
 		self:UnregisterEvent('QUEST_COMPLETE')
 	end
 
-	if E.db.Extras.blizzard[modName].ConfirmRolls.enabled then
+	if db.ConfirmRolls.enabled then
 		self:RegisterEvent('CONFIRM_LOOT_ROLL', function(_, ...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
 		self:RegisterEvent('CONFIRM_DISENCHANT_ROLL', function(_, ...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
 		self:RegisterEvent('LOOT_BIND_CONFIRM', function(_, ...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
@@ -196,13 +248,14 @@ function mod:Automations()
 end
 
 
-function mod:Toggle()
-	self:Automations()
+function mod:Toggle(db)
+	self:Automations(db)
 end
 
 function mod:InitializeCallback()
-	mod:LoadConfig()
-	mod:Toggle()
+	local db = E.db.Extras.blizzard[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback
