@@ -947,3 +947,5 @@ L["Displays internal cooldowns on trinket tooltips."] = "장신구 툴팁에 내
 L["Shortening X Offset"] = "X 오프셋 축소"
 L["To Level"] = "레벨까지"
 L["Names will be shortened based on level text position."] = "레벨 텍스트 위치에 따라 이름이 축소됩니다."
+L["Add Item (by ID)"] = "아이템 추가 (ID로)"
+L["Remove Item"] = "아이템 제거"

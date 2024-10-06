@@ -791,3 +791,5 @@ L["Displays internal cooldowns on trinket tooltips."] = true
 L["Shortening X Offset"] = true
 L["To Level"] = true
 L["Names will be shortened based on level text position."] = true
+L["Add Item (by ID)"] = true
+L["Remove Item"] = true

@@ -944,3 +944,5 @@ L["Displays internal cooldowns on trinket tooltips."] = "在飾品提示上顯�
 L["Shortening X Offset"] = "縮短 X 偏移"
 L["To Level"] = "至等級"
 L["Names will be shortened based on level text position."] = "名稱將根據等級文字的位置縮短。"
+L["Add Item (by ID)"] = "添加物品 (通過ID)"
+L["Remove Item"] = "移除物品"

@@ -944,3 +944,5 @@ L["Displays internal cooldowns on trinket tooltips."] = "Exibe as recargas inter
 L["Shortening X Offset"] = "Redução do Deslocamento X"
 L["To Level"] = "Para Nível"
 L["Names will be shortened based on level text position."] = "Os nomes serão encurtados com base na posição do texto de nível."
+L["Add Item (by ID)"] = "Adicionar item (por ID)"
+L["Remove Item"] = "Remover item"
