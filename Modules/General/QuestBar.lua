@@ -4,6 +4,7 @@ local core = E:GetModule("Extras")
 local mod = core:NewModule("Quest Bar", "AceHook-3.0", "AceEvent-3.0")
 
 local modName = mod:GetName()
+local incombat = false
 local initialized
 
 local _G = _G
@@ -11,9 +12,8 @@ local tinsert, twipe = table.insert, table.wipe
 local pairs, ipairs, select = pairs, ipairs, select
 local GetContainerItemQuestInfo, GetContainerNumSlots, GetContainerItemID = GetContainerItemQuestInfo, GetContainerNumSlots, GetContainerItemID
 local PickupContainerItem, PlaceAction, ClearCursor = PickupContainerItem, PlaceAction, ClearCursor
-local InCombatLockdown, GetItemInfo, GetAuctionItemClasses = InCombatLockdown, GetItemInfo, GetAuctionItemClasses
+local GetItemInfo, GetAuctionItemClasses = GetItemInfo, GetAuctionItemClasses
 local GetActionInfo, PickupAction, IsModifierKeyDown = GetActionInfo, PickupAction, IsModifierKeyDown
-local GetCursorInfo, GetMouseFocus = GetCursorInfo, GetMouseFocus
 local GetItemSpell, NUM_ACTIONBAR_BUTTONS = GetItemSpell, NUM_ACTIONBAR_BUTTONS
 local RegisterStateDriver, UnregisterStateDriver = RegisterStateDriver, UnregisterStateDriver
 local NUM_BAG_SLOTS = NUM_BAG_SLOTS
@@ -50,8 +50,7 @@ AB["barDefaults"]["bar"..modName] = {
 	["position"] = "BOTTOM,ElvUI_Bar1,TOP,0,82"
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.general[modName]
+function mod:LoadConfig(db)
 	local actionbar_db = E.db.actionbar["bar"..modName]
 	core.general.args[modName] = {
 		type = "group",
@@ -210,7 +209,7 @@ function mod:LoadConfig()
 end
 
 
-function mod:CreateQuestBar()
+function mod:CreateQuestBar(db)
     if AB.handledBars["bar"..modName] then return end
 
     local bar = AB:CreateBar(modName)
@@ -221,41 +220,31 @@ function mod:CreateQuestBar()
 
 	local localizedQuestItemType = select(12,GetAuctionItemClasses())
 	local function BlockAction(self, button)
+		if incombat then return end
 		local _, itemID = GetActionInfo(self._state_action)
 		if not itemID then return end
 		if select(6,GetItemInfo(itemID)) ~= localizedQuestItemType then
 			PickupAction(self._state_action)
-		elseif button == 'RightButton' and IsModifierKeyDown() and (E.db.Extras.general[modName].modifier == 'ANY' or _G['Is'..E.db.Extras.general[modName].modifier..'KeyDown']()) then
-			E.db.Extras.general[modName].blacklist[itemID] = true
-			mod:CheckQuestItems()
+		elseif button == 'RightButton' and IsModifierKeyDown() and (db.modifier == 'ANY' or _G['Is'..db.modifier..'KeyDown']()) then
+			db.blacklist[itemID] = true
+			mod:CheckQuestItems(db)
 			self:SetAttribute("type", nil)
 		end
 	end
 
 	for _, button in pairs(bar.buttons) do
 		button:HookScript("PreClick", BlockAction)
-		button:HookScript("PostClick", function(self) self:SetAttribute("type", "action") end)
-		button:HookScript("OnReceiveDrag", BlockAction)
-		button:HookScript("OnDragStop", function(self)
-			if not GetCursorInfo() then return end
-			if GetMouseFocus():GetParent() ~= self:GetParent() then
-				PickupAction(self._state_action)
-			else
-				PickupAction(GetMouseFocus()._state_action)
-				PickupAction(self._state_action)
+		button:HookScript("PostClick", function(self)
+			if not incombat then
+				self:SetAttribute("type", "action")
 			end
 		end)
+		button:RegisterForDrag(nil)
 	end
 end
 
-function mod:CheckQuestItems()
-	if InCombatLockdown() then
-		self:RegisterEvent('PLAYER_REGEN_ENABLED', function()
-			mod:CheckQuestItems()
-			mod:UnregisterEvent('PLAYER_REGEN_ENABLED')
-		end)
-		return
-	end
+function mod:CheckQuestItems(db)
+	if incombat then return end
 
     local bar = AB.handledBars["bar"..modName]
     if not bar then return end
@@ -267,7 +256,7 @@ function mod:CheckQuestItems()
             local itemID = GetContainerItemID(bag, slot)
             if itemID then
 				local quetItem = GetContainerItemQuestInfo(bag, slot)
-				if quetItem and GetItemSpell(itemID) and not E.db.Extras.general[modName].blacklist[itemID] then
+				if quetItem and GetItemSpell(itemID) and not db.blacklist[itemID] then
 					tinsert(questItems, {bag = bag, slot = slot, itemID = itemID})
 				end
             end
@@ -297,19 +286,19 @@ function mod:CheckQuestItems()
     if actives == 0 then
         bar.db.visibility = "hide"
     else
-        bar.db.visibility = E.db.Extras.general[modName].visibility
+        bar.db.visibility = db.visibility
     end
     AB:PositionAndSizeBar("bar" .. modName)
 end
 
 
-function mod:Toggle(enable)
-    if enable then
+function mod:Toggle(db)
+    if db.enabled then
         local bar = AB.handledBars["bar"..modName]
         if bar then
 			bar.db.enabled = true
 		else
-			self:CreateQuestBar()
+			self:CreateQuestBar(db)
 		end
 		if E.Options.args.actionbar and E.Options.args.actionbar.args.bar10 then
 			E.Options.args.actionbar.args.bar10.hidden = true
@@ -327,14 +316,19 @@ function mod:Toggle(enable)
 				end)
 			end
 		end
-		self:RegisterEvent("BAG_UPDATE", function() mod:CheckQuestItems() end)
+		self:RegisterEvent("PLAYER_REGEN_DISABLED", function() incombat = true end)
+		self:RegisterEvent("PLAYER_REGEN_ENABLED", function()
+			incombat = false
+			self:CheckQuestItems(db)
+		end)
+		self:RegisterEvent("BAG_UPDATE", function() mod:CheckQuestItems(db) end)
 		E:EnableMover("ElvAB_QuestBar")
 		SLASH_QUESTBARRESTORE1 = "/questbarRestore"
-		SlashCmdList["QUESTBARRESTORE"] = function() twipe(E.db.Extras.general[modName].blacklist) mod:CheckQuestItems() end
-		mod.CheckQuestItems()
+		SlashCmdList["QUESTBARRESTORE"] = function() twipe(db.blacklist) mod:CheckQuestItems(db) end
+		self:CheckQuestItems(db)
 		initialized = true
 	elseif initialized then
-        self:UnregisterEvent("BAG_UPDATE")
+        self:UnregisterAllEvents()
         local bar = AB.handledBars["bar"..modName]
 		if E.Options.args.actionbar and E.Options.args.actionbar.args.bar10 then
 			E.Options.args.actionbar.args.bar10.hidden = false
@@ -354,10 +348,11 @@ function mod:Toggle(enable)
 end
 
 function mod:InitializeCallback()
-	mod:LoadConfig()
+	local db = E.db.Extras.general[modName]
+	mod:LoadConfig(db)
 
 	if not E.private.actionbar.enable then return end
-	mod:Toggle(E.db.Extras.general[modName].enabled)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback
