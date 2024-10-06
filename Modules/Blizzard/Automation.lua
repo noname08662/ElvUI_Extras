@@ -4,7 +4,7 @@ local mod = core:NewModule("Automation", "AceHook-3.0", "AceEvent-3.0")
 
 local modName = mod:GetName()
 
-local pairs, select = select, pairs
+local pairs, select = pairs, select
 local tinsert, tsort = table.insert, table.sort
 local match, gsub, format = string.match, string.gsub, string.format
 local ConfirmLootRoll, LootSlot, GetLootSlotInfo = ConfirmLootRoll, LootSlot, GetLootSlotInfo
