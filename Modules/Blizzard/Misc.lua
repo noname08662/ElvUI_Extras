@@ -164,7 +164,7 @@ end
 
 function mod:CreatePingFrame()
 	local PlayerPingFrame = CreateFrame("Frame", nil, Minimap)
-	PlayerPingFrame:SetParent(Minimap)
+	PlayerPingFrame:SetParent(MinimapPing)
 	PlayerPingFrame:SetClampedToScreen(true)
 
 	PlayerPingFrame:Height(12)
@@ -221,15 +221,9 @@ function mod:PlayerPings(enable)
 		self:RegisterEvent("MINIMAP_PING", function(_, _, unitTarget, x, y)
 			mod:ShowPlayerPing(UnitName(unitTarget))
 		end, x, y)
-		if not self:IsHooked(MinimapPing, "OnHide") then
-			self:SecureHookScript(MinimapPing, "OnHide", function() E:UIFrameFadeOut(mod.PlayerPingFrame.PingText, 1, 1, 0) end)
-		end
 	elseif initialized.PlayerPings then
 		mod.PlayerPingFrame.PingText:Hide()
 		self:UnregisterEvent("MINIMAP_PING")
-		if self:IsHooked(MinimapPing, "OnHide") then
-			self:Unhook(MinimapPing, "OnHide")
-		end
 	end
 end
 
