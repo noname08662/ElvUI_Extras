@@ -6,7 +6,8 @@ local LSM = E.Libs.LSM
 
 local modName = mod:GetName()
 
-local pairs, ipairs, loadstring, pcall, type, tonumber, select = pairs, ipairs, loadstring, pcall, type, tonumber, select
+local pairs, ipairs, loadstring, pcall, type, tonumber, select, unpack = pairs, ipairs, loadstring, pcall, type, tonumber, select, unpack
+local random = math.random
 local find, gsub, match, format = string.find, string.gsub, string.match, string.format
 local tsort, tinsert = table.sort, table.insert
 local GetSpellInfo, GetSpellLink, CopyTable = GetSpellInfo, GetSpellLink, CopyTable
@@ -19,6 +20,209 @@ local function tagFunc(frame)
 	if frame.FloatingCombatFeedback then
 		ElvUF.uaeHook(frame)
 	end
+end
+
+
+local testing = false
+local testindex = 1
+local playerGUID = E.myguid or UnitGUID("player")
+
+local testEvents = {
+    ["WOUND"] = {
+        "SWING_DAMAGE",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x10a48,
+        function()
+			local val = random()
+            return {
+                random(500, 2000),     				-- amount
+                random(0, 500),       				-- overkill
+                1,                     				-- school (physical)
+                val < 0.5 and random(100, 500),		-- resisted
+                val < 0.25 and random(100, 500),	-- blocked
+                val > 0.75 and random(100, 500),	-- absorbed
+                val > 0.5,							-- critical
+                val > 0.25 and val < 0.5,			-- glancing
+                val < 0.75 and val > 0.5			-- crushing
+            }
+        end
+    },
+	["ABSORB"] = {
+        "SPELL_MISSED",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x10a48,
+        48127, "Mind Blast", 0x20,
+        "ABSORB"
+    },
+	["BLOCK"] = {
+        "SPELL_MISSED",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x10a48,
+        48127, "Mind Blast", 0x20,
+        "BLOCK"
+    },
+    ["DEFLECT"] = {
+        "SPELL_MISSED",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x10a48,
+        48127, "Mind Blast", 0x20,
+        "DEFLECT"
+    },
+    ["DODGE"] = {
+        "SPELL_MISSED",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x10a48,
+        48127, "Mind Blast", 0x20,
+        "DODGE"
+    },
+    ["EVADE"] = {
+        "SPELL_MISSED",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x10a48,
+        48127, "Mind Blast", 0x20,
+        "EVADE"
+    },
+    ["IMMUNE"] = {
+        "SPELL_MISSED",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x10a48,
+        48127, "Mind Blast", 0x20,
+        "IMMUNE"
+    },
+    ["MISS"] = {
+        "SPELL_MISSED",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x10a48,
+        48127, "Mind Blast", 0x20,
+        "MISS"
+    },
+    ["PARRY"] = {
+        "SPELL_MISSED",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x10a48,
+        48127, "Mind Blast", 0x20,
+        "PARRY"
+    },
+    ["REFLECT"] = {
+        "SPELL_MISSED",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x10a48,
+        48127, "Mind Blast", 0x20,
+        "REFLECT"
+    },
+    ["RESIST"] = {
+        "SPELL_MISSED",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x10a48,
+        48127, "Mind Blast", 0x20,
+        "RESIST"
+    },
+    ["HEAL"] = {
+        "SPELL_HEAL",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x511,
+        48089, "Circle of Healing", 0x1,
+        function()
+            return {
+                random(3000, 6000),                    -- amount
+                random(0, 1000),                       -- overhealing
+                random() < 0.2 and random(100, 500),   -- absorbed
+                random() < 0.3 and 1                   -- critical
+            }
+        end
+    },
+    ["ENERGIZE"] = {
+        "SPELL_ENERGIZE",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x511,
+        57669, "Replenishment", 0x1,
+        random(1000, 2000),    -- amount
+        0,                     -- overEnergize
+        0                      -- powerType (0 = mana)
+    },
+    ["DEBUFF"] = {
+		{
+			"SPELL_AURA_APPLIED",
+			playerGUID, "Player", 0x511,
+			playerGUID, "Player", 0x10a48,
+			48300, "Devouring Plague", 0x20,
+			"DEBUFF"
+		},
+		{
+			"SPELL_AURA_REMOVED",
+			playerGUID, "Player", 0x511,
+			playerGUID, "Player", 0x10a48,
+			48300, "Devouring Plague", 0x20,
+			"DEBUFF"
+		},
+	},
+	["BUFF"] = {
+		{
+			"SPELL_AURA_APPLIED",
+			playerGUID, "Player", 0x511,
+			playerGUID, "Player", 0x511,
+			48168, "Inner Fire", 0x1,
+			"BUFF"
+		},
+		{
+			"SPELL_AURA_REMOVED",
+			playerGUID, "Player", 0x511,
+			playerGUID, "Player", 0x511,
+			48168, "Inner Fire", 0x1,
+			"BUFF"
+		},
+	},
+    ["INTERRUPT"] = {
+        "SPELL_INTERRUPT",
+        playerGUID, "Player", 0x511,
+        playerGUID, "Player", 0x10a48,
+        1766, "Kick", 1,
+        48071, "Flash Heal", 0x1
+    }
+}
+
+local function testMode(db)
+	E:Delay(db.scrollTime+0.1, function()
+		if not testing or not ElvUF.CLEUDispatcher then return end
+
+		local events = {}
+		for event, info in pairs(testEvents) do
+			if not db.events[event].disabled then
+				if event == "BUFF" or event == "DEBUFF" then
+					for _, data in ipairs(info) do
+						tinsert(events, data)
+					end
+				else
+					tinsert(events, info)
+				end
+			end
+		end
+
+		local count = #events
+		if count == 0 then testing = false return end
+
+		local eventData = events[testindex] or events[1]
+        local processedEventData = {}
+
+        for i, v in ipairs(eventData) do
+            if type(v) ~= "function" then
+                processedEventData[i] = v
+            end
+        end
+
+        for i, v in ipairs(eventData) do
+            if type(v) == "function" then
+                local dynamicValues = v()
+                for j, dv in ipairs(dynamicValues) do
+                    processedEventData[i + j - 1] = dv
+                end
+            end
+        end
+
+		ElvUF.CLEUDispatcher:GetScript("OnEvent")(ElvUF.CLEUDispatcher, nil, nil, unpack(processedEventData))
+		testindex = testindex % count + 1
+		testMode(db)
+	end)
 end
 
 
@@ -144,6 +348,31 @@ function mod:LoadConfig()
 						set = function(_, value) db.selectedUnit = value end,
 						values = function() return core:GetUnitDropdownOptions(db.units) end,
 					},
+					copySettings = {
+						order = 3,
+						type = "select",
+						name = L["Copy Unit Settings"],
+						desc = "",
+						get = function() return "" end,
+						set = function(info, value)
+							if value then
+								local values = info.option.values()
+								for index, entry in pairs(values) do
+									if index == value then
+										db.units[selectedUnit()] = CopyTable(db.units[entry])
+										break
+									end
+								end
+							end
+						end,
+						values = function()
+							local list = {}
+							for unit in pairs(db.units) do
+								if unit ~= selectedUnit() then tinsert(list, L[unit]) end
+							end
+							return list
+						end,
+					},
 					playerOnly = {
 						order = 3,
 						type = "toggle",
@@ -156,6 +385,13 @@ function mod:LoadConfig()
 							return find(unit, 'pet') and not find(unit, 'target')
 								or unit == 'boss' or unit == 'arena'
 						end,
+					},
+					testMode = {
+						order = 4,
+						type = "execute",
+						name = L["Test Mode"],
+						desc = "",
+						func = function() testMode(selectedUnitData()) testing = not testing end,
 					},
 				},
 			},
