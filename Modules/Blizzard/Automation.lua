@@ -42,7 +42,7 @@ function mod:LoadConfig(db)
 		type = "group",
 		name = L[modName],
 		get = function(info) return db[info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
-		set = function(info, value) db[info[#info-1]][gsub(info[#info], info[#info-1], '')] = value mod:Toggle() end,
+		set = function(info, value) db[info[#info-1]][gsub(info[#info], info[#info-1], '')] = value mod:Toggle(db) end,
 		disabled = function(info) return info[#info] ~= modName and not match(info[#info], '^enabled') and not db[info[#info-1]].enabled end,
 		args = {
 			ConfirmRolls = {
@@ -237,9 +237,21 @@ function mod:Automations(db)
 	end
 
 	if db.ConfirmRolls.enabled then
-		self:RegisterEvent('CONFIRM_LOOT_ROLL', function(_, ...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
-		self:RegisterEvent('CONFIRM_DISENCHANT_ROLL', function(_, ...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
-		self:RegisterEvent('LOOT_BIND_CONFIRM', function(_, ...) ConfirmLootRoll(...) StaticPopup_Hide("CONFIRM_LOOT_ROLL") end)
+		self:RegisterEvent('CONFIRM_LOOT_ROLL', function(_, id, rollType)
+			if not id or not rollType then return end
+			ConfirmLootRoll(id, rollType)
+			StaticPopup_Hide("CONFIRM_LOOT_ROLL")
+		end)
+		self:RegisterEvent('CONFIRM_DISENCHANT_ROLL', function(_, id, rollType)
+			if not id or not rollType then return end
+			ConfirmLootRoll(id, rollType)
+			StaticPopup_Hide("CONFIRM_LOOT_ROLL")
+		end)
+		self:RegisterEvent('LOOT_BIND_CONFIRM', function(_, id, rollType)
+			if not id or not rollType then return end
+			ConfirmLootRoll(id, rollType)
+			StaticPopup_Hide("CONFIRM_LOOT_ROLL")
+		end)
 	else
 		self:UnregisterEvent('CONFIRM_LOOT_ROLL')
 		self:UnregisterEvent('CONFIRM_DISENCHANT_ROLL')
