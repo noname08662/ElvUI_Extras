@@ -13,6 +13,7 @@ local m_random = _G.math.random
 local m_sin = _G.math.sin
 local next = _G.next
 local select = _G.select
+local tostring = _G.tostring
 local t_insert = _G.table.insert
 local t_remove = _G.table.remove
 local t_wipe = _G.table.wipe
@@ -20,6 +21,7 @@ local type = _G.type
 local gsub, format = string.gsub, string.format
 
 local UnitGUID = _G.UnitGUID
+local GetSpellInfo = _G.GetSpellInfo
 
 -- modified
 local function AbbreviateNumbers(value)
@@ -38,6 +40,7 @@ local function AbbreviateNumbers(value)
 
     return retString
 end
+
 -- modified
 local function BreakUpLargeNumbers(num)
     local formatted = tostring(num)
@@ -398,8 +401,8 @@ local function getEventFlag(resisted, blocked, absorbed, critical, glancing, cru
 end
 
 -- modified
-local function prep(event, enemyAura, ...)
-    local spellId, flag, amount, school, texture, _
+local function prep(event, _, ...)
+    local spellId, flag, amount, school, texture, spellName, auraType, _
 
 	if event == "SPELL_AURA_APPLIED" or event == "SPELL_AURA_REFRESH" or event == "SPELL_AURA_REMOVED" then
 		spellId, spellName, _, auraType = ...
@@ -484,7 +487,7 @@ local function filter(self, _, event, sourceGUID, _, sourceFlags, destGUID, _, _
 			for frame in next, guidToFrame[destGUID] do
 				local fcf = frame.FloatingCombatFeedback
 				if not fcf.blacklist[...] and (not fcf.playerOnly or (destGUID == playerGUID or (sourceGUID == playerGUID or hasFlag(sourceFlags, COMBATLOG_OBJECT_AFFILIATION_MINE)))) then
-					Path(frame, "COMBAT_LOG_EVENT_UNFILTERED", frame.unit, prep(event, enemyAura, ...))
+					Path(frame, "COMBAT_LOG_EVENT_UNFILTERED", frame.unit, prep(event, _, ...))
                 end
             end
         end
@@ -492,9 +495,9 @@ local function filter(self, _, event, sourceGUID, _, sourceFlags, destGUID, _, _
 end
 
 -- modified
-local CLEUDispatcher = CreateFrame("Frame")
-CLEUDispatcher:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-CLEUDispatcher:SetScript("OnEvent", function(_, ...)
+oUF.CLEUDispatcher = CreateFrame("Frame")
+oUF.CLEUDispatcher:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+oUF.CLEUDispatcher:SetScript("OnEvent", function(_, ...)
     filter(...)
 end)
 
@@ -550,7 +553,7 @@ local function EnableCLEU(element, state, force)
 		element.useCLEU = state
 		if element.useCLEU then
 			frame:UnregisterEvent("UNIT_COMBAT", Path)
-			CLEUDispatcher:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+			oUF.CLEUDispatcher:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 
 			if not hookedFrames[frame] then
 				hooksecurefunc(frame, "UpdateAllElements", oUF.uaeHook)
@@ -567,7 +570,7 @@ local function EnableCLEU(element, state, force)
 
 			cleuElements[element] = nil
 			if not next(cleuElements) then
-				CLEUDispatcher:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+				oUF.CLEUDispatcher:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 			end
 		end
 	end
@@ -644,7 +647,7 @@ local function Disable(self)
 
 		cleuElements[element] = nil
 		if not next(cleuElements) then
-			CLEUDispatcher:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+			oUF.CLEUDispatcher:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 		end
 	end
 end
