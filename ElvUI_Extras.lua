@@ -1511,7 +1511,7 @@ function core:GetOptions()
 				args = {
 					colors = {
 						type = "group",
-						name = L["Version: "].."1.05",
+						name = L["Version: "].."1.06",
 						guiInline = true,
 						get = function(info) return colorConvert(E.db.Extras[info[#info]]) end,
 						set = function(info, r, g, b)
