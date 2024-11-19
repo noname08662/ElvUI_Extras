@@ -608,8 +608,6 @@ core:SecureHook(NP, "OnCreated", function(self, plate)
 				end
 			end)
 		end
-		frame.Name:FontTemplate()
-		frame.Level:FontTemplate()
 	end
 end)
 
