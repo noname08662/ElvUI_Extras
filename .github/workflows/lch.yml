@@ -30,7 +30,7 @@ jobs:
         restore-keys: ${{ runner.os }}-lua-${{ env.LUA_VERSION }}
 
     - name: Cache LuaRocks
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       id: luarockscache
       with:
         path: .luarocks
