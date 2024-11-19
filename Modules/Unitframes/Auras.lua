@@ -66,18 +66,18 @@ function mod:LoadConfig()
 	local db = E.db.Extras.unitframes[modName]
 	local function selectedType() return db.Highlights.selectedType or "FRIENDLY" end
 	local function selectedSpellorFilter() return db.Highlights.types[selectedType()].selected or "GLOBAL" end
-	local function getHighlightSettings(selectedType, spellOrFilter)
-		local db = db.Highlights.types[selectedType]
+	local function getHighlightSettings(selected, spellOrFilter)
+		local data = db.Highlights.types[selected]
 		if spellOrFilter == "GLOBAL" then
-			return db.global
+			return data.global
 		elseif spellOrFilter == "CURABLE" or spellOrFilter == "STEALABLE" then
-			return db.special
+			return data.special
 		elseif type(spellOrFilter) == 'number' then
-			return db.spellList[spellOrFilter].useGlobal and db.global or db.spellList[spellOrFilter]
-		elseif db.filterList[spellOrFilter] then
-			return db.filterList[spellOrFilter].useGlobal and db.global or db.filterList[spellOrFilter]
+			return data.spellList[spellOrFilter].useGlobal and data.global or data.spellList[spellOrFilter]
+		elseif data.filterList[spellOrFilter] then
+			return data.filterList[spellOrFilter].useGlobal and data.global or data.filterList[spellOrFilter]
 		end
-		return db.global
+		return data.global
 	end
 	core.unitframes.args[modName] = {
 		type = "group",
@@ -148,7 +148,7 @@ function mod:LoadConfig()
 						order = 2,
 						type = "select",
 						name = L["Add Filter"],
-						desc = L["Aplies highlights to all auras passing the selected filter."],
+						desc = L["Applies highlights to all auras passing the selected filter."],
 						values = function()
 							local filters = {}
 							for filterName in pairs(E.global.unitframe.aurafilters) do
@@ -179,19 +179,19 @@ function mod:LoadConfig()
 						desc = "",
 						func = function()
 							local selected = selectedSpellorFilter()
-							local db = db.Highlights.types[selectedType()]
+							local data = db.Highlights.types[selectedType()]
 							if type(selected) == 'number' then
-								db.spellList[selected] = nil
+								data.spellList[selected] = nil
 								local _, _, icon = GetSpellInfo(selected)
 								local link = GetSpellLink(selected)
 								icon = gsub(icon, '\124', '\124\124')
 								local string = '\124T' .. icon .. ':16:16\124t' .. link
 								core:print('REMOVED', string)
 							else
-								db.filterList[selected] = nil
+								data.filterList[selected] = nil
 								core:print('REMOVED', selected, L[" filter removed."])
 							end
-							db.selected = "GLOBAL"
+							data.selected = "GLOBAL"
 							UF:Update_AllFrames()
 						end,
 						disabled = function() return selectedSpellorFilter() == "GLOBAL" or selectedSpellorFilter() == "CURABLE" or selectedSpellorFilter() == "STEALABLE" end,
@@ -243,14 +243,14 @@ function mod:LoadConfig()
 						desc = L["If toggled, the GLOBAL Spell or Filter entry values would be used."],
 						get = function()
 							local selected = selectedSpellorFilter()
-							local db = db.Highlights.types[selectedType()]
-							local target = type(selected) == 'number' and db.spellList[selected] or db.filterList[selected]
+							local data = db.Highlights.types[selectedType()]
+							local target = type(selected) == 'number' and data.spellList[selected] or data.filterList[selected]
 							return selected == 'GLOBAL' or selected == 'CURABLE' or selected == 'STEALABLE' or target.useGlobal
 						end,
 						set = function(_, value)
 							local selected = selectedSpellorFilter()
-							local db = db.Highlights.types[selectedType()]
-							local target = type(selected) == 'number' and db.spellList[selected] or db.filterList[selected]
+							local data = db.Highlights.types[selectedType()]
+							local target = type(selected) == 'number' and data.spellList[selected] or data.filterList[selected]
 							target.useGlobal = value
 							UF:Update_AllFrames()
 						end,
@@ -645,18 +645,18 @@ function mod:UpdateCenteredAuras(enable)
 	end
 
 	if enable then
-		for _, type in ipairs({'Configure_Auras', 'Configure_AuraBars', 'UpdateBuffsHeaderPosition', 'UpdateDebuffsHeaderPosition', 'UpdateBuffsPositionAndDebuffHeight', 'UpdateDebuffsPositionAndBuffHeight', 'UpdateDebuffsHeight', 'UpdateBuffsHeight'}) do
-			if not self:IsHooked(UF, type) then self:SecureHook(UF, type, self[type]) end
+		for _, func in ipairs({'Configure_Auras', 'Configure_AuraBars', 'UpdateBuffsHeaderPosition', 'UpdateDebuffsHeaderPosition', 'UpdateBuffsPositionAndDebuffHeight', 'UpdateDebuffsPositionAndBuffHeight', 'UpdateDebuffsHeight', 'UpdateBuffsHeight'}) do
+			if not self:IsHooked(UF, func) then self:SecureHook(UF, func, self[func]) end
 		end
-		for _, type in ipairs({'Update_PlayerFrame', 'Update_TargetFrame', 'Update_FocusFrame', 'Update_PetFrame'}) do
-			if not self:IsHooked(UF, type) then self:SecureHook(UF, type, self.UpdateFrame) end
+		for _, func in ipairs({'Update_PlayerFrame', 'Update_TargetFrame', 'Update_FocusFrame', 'Update_PetFrame'}) do
+			if not self:IsHooked(UF, func) then self:SecureHook(UF, func, self.UpdateFrame) end
 		end
 	else
-		for _, type in ipairs({'Configure_Auras', 'Configure_AuraBars', 'UpdateBuffsHeaderPosition', 'UpdateDebuffsHeaderPosition', 'UpdateBuffsPositionAndDebuffHeight', 'UpdateDebuffsPositionAndBuffHeight', 'UpdateDebuffsHeight', 'UpdateBuffsHeight'}) do
-			if self:IsHooked(UF, type) then self:Unhook(UF, type) end
+		for _, func in ipairs({'Configure_Auras', 'Configure_AuraBars', 'UpdateBuffsHeaderPosition', 'UpdateDebuffsHeaderPosition', 'UpdateBuffsPositionAndDebuffHeight', 'UpdateDebuffsPositionAndBuffHeight', 'UpdateDebuffsHeight', 'UpdateBuffsHeight'}) do
+			if self:IsHooked(UF, func) then self:Unhook(UF, func) end
 		end
-		for _, type in ipairs({'Update_PlayerFrame', 'Update_TargetFrame', 'Update_FocusFrame', 'Update_PetFrame'}) do
-			if self:IsHooked(UF, type) then self:Unhook(UF, type) end
+		for _, func in ipairs({'Update_PlayerFrame', 'Update_TargetFrame', 'Update_FocusFrame', 'Update_PetFrame'}) do
+			if self:IsHooked(UF, func) then self:Unhook(UF, func) end
 		end
 	end
 end
@@ -846,15 +846,17 @@ function mod:Toggle()
 	self:UpdateCenteredAuras(E.db.Extras.unitframes[modName].CenteredAuras.enabled)
 	self:UpdateClickCancel(E.db.Extras.unitframes[modName].ClickCancel.enabled)
 	local enabled = false
-	for _, type in pairs({'TypeBorders', 'SaturatedDebuffs'}) do
-		if E.db.Extras.unitframes[modName][type].enabled then
-			enabled = true
-			break
+	if not core.reload then
+		for _, subMod in pairs({'TypeBorders', 'SaturatedDebuffs'}) do
+			if E.db.Extras.unitframes[modName][subMod].enabled then
+				enabled = true
+				break
+			end
 		end
-	end
-	if not enabled then
-		for _, info in pairs(E.db.Extras.unitframes[modName].Highlights.types) do
-			if info.enabled then enabled = true break end
+		if not enabled then
+			for _, info in pairs(E.db.Extras.unitframes[modName].Highlights.types) do
+				if info.enabled then enabled = true break end
+			end
 		end
 	end
 	self:UpdatePostUpdateAura(enabled)

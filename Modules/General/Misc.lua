@@ -15,7 +15,7 @@ local GetSpellLink, GetSpellTexture = GetSpellLink, GetSpellTexture
 local UnitExists, GetItemIcon = UnitExists, GetItemIcon
 local ITEM_SPELL_TRIGGER_ONEQUIP = "^"..ITEM_SPELL_TRIGGER_ONEQUIP
 local ITEM_SPELL_TRIGGER_ONUSE = "^"..ITEM_SPELL_TRIGGER_ONUSE
-local ITEM_COOLDOWN_TOTAL = format(gsub(ITEM_COOLDOWN_TOTAL, "[%(%)]", ""), SECONDS_ABBR)
+local ITEM_COOLDOWN_TOTAL = format(gsub(ITEM_COOLDOWN_TOTAL, "[%(%)]", ""), gsub(SECONDS_ABBR, "%.$", ""))
 local ITEM_SET_BONUS = gsub(format(ITEM_SET_BONUS, 1), "[1%p]+", "")
 
 local procStats = core.Misc_data and core.Misc_data[GetLocale()] or {}
@@ -77,25 +77,25 @@ P["Extras"]["general"][modName] = {
 	["TooltipNotes"] = {
 		["enabled"] = false,
 		["desc"] = L["Usage:"..
-					"\n/tnote list - returns all eixting notes"..
-					"\n/tnote wipe - clears all existing notes"..
-					"\n/tnote 1 icon Interface\\Path\\ToYourIcon - same as set (except for the lua part)"..
-					"\n/tnote 1 get - same as set, returns existing notes"..
-					"\n/tnote 1 set YourNoteHere - adds a note to the designated index from the list "..
-					"or to a currently shown tooltip text if the second argument (1 in this case) is ommitted, "..
-					"supports functions and coloring "..
-					"(providing no text clears the note);"..
-					"\nto break the lines, use ::"..
-					"\n\nExample:"..
-					"\n\n/tnote 3 set fire pre-bis::source: Joseph Mama"..
-					"\n\n/tnote set local percentage ="..
-					"\n  UnitHealth('mouseover') / "..
-					"\n  UnitHealthMax('mouseover')"..
-					"\nreturn string.format('\124\124cffffd100(default color)'"..
-					"\n  ..UnitName('mouseover')"..
-					"\n  ..': \124\124cff%02x%02x00'"..
-					"\n  ..UnitHealth('mouseover'), "..
-					"\n  (1-percentage)*255, percentage*255)"],
+			"\n/tnote list - returns all existing notes"..
+			"\n/tnote wipe - clears all existing notes"..
+			"\n/tnote 1 icon Interface\\Path\\ToYourIcon - same as set (except for the lua part)"..
+			"\n/tnote 1 get - same as set, returns existing notes"..
+			"\n/tnote 1 set YourNoteHere - adds a note to the designated index from the list "..
+			"or to a currently shown tooltip text if the second argument (1 in this case) is ommitted, "..
+			"supports functions and coloring "..
+			"(providing no text clears the note);"..
+			"\nto break the lines, use ::"..
+			"\n\nExample:"..
+			"\n\n/tnote 3 set fire pre-bis::source: Joseph Mama"..
+			"\n\n/tnote set local percentage ="..
+			"\n  UnitHealth('mouseover') / "..
+			"\n  UnitHealthMax('mouseover')"..
+			"\nreturn string.format('\124\124cffffd100(default color)'"..
+			"\n  ..UnitName('mouseover')"..
+			"\n  ..': \124\124cff%02x%02x00'"..
+			"\n  ..UnitHealth('mouseover'), "..
+			"\n  (1-percentage)*255, percentage*255)"],
 		["notes"] = {},
 	},
 	["EnterCombatAlert"] = {
@@ -361,7 +361,6 @@ function mod:InternalCooldowns(enable)
 		end
 	end
 end
-
 
 function mod:TooltipNotes(enable)
 	if enable then
@@ -744,9 +743,9 @@ function mod:ItemIcons(enable)
 				local numMessages = frame:GetNumMessages()
 				local ChatTypeInfo = ChatTypeInfo
 
-				for i = max(1, numMessages - maxLines + 1), numMessages do
-					if numMessages - i > maxLines then break end
-					local msg, _, lineID = frame:GetMessageInfo(i)
+				for j = max(1, numMessages - maxLines + 1), numMessages do
+					if numMessages - j > maxLines then break end
+					local msg, _, lineID = frame:GetMessageInfo(j)
 					local info = ChatTypeInfo[chatTypeIndexToName[lineID]]
 					local r, g, b = info.r, info.g, info.b
 					tinsert(messages[frame], {msg = msg, r = r, g = g, b = b})
@@ -840,10 +839,11 @@ function mod:GlobalShadow(enable)
 	end
 end
 
+
 function mod:Toggle()
-	for mod, info in pairs(E.db.Extras.general[modName]) do
-		if self[mod] and info.enabled ~= nil then
-			self[mod](self, info.enabled)
+	for subMod, info in pairs(E.db.Extras.general[modName]) do
+		if self[subMod] and info.enabled ~= nil then
+			self[subMod](self, core.reload and false or info.enabled)
 		end
 	end
 end

@@ -59,11 +59,11 @@ function mod:LoadConfig()
 				frame.POWERBAR_DETACHED = db.DetachPower.units[frame.unitframeType].enabled
 				update = true
 			else
-				local db = frame.db
-				if not db.power or not db.power.enable or not db.power.hideonnpc then
-					local attachPoint, x, y = UF:GetObjectAnchorPoint(frame, db.name.attachTextTo), db.name.xOffset, db.name.yOffset
+				local fdb = frame.db
+				if not fdb.power or not fdb.power.enable or not fdb.power.hideonnpc then
+					local attachPoint, x, y = UF:GetObjectAnchorPoint(frame, fdb.name.attachTextTo), fdb.name.xOffset, fdb.name.yOffset
 					frame.Name:ClearAllPoints()
-					frame.Name:Point(db.name.position, attachPoint, db.name.position, x, y)
+					frame.Name:Point(fdb.name.position, attachPoint, fdb.name.position, x, y)
 				end
 			end
 		end
@@ -302,11 +302,11 @@ function mod:Toggle()
 			if info.enabled then enable = true break end
 		end
 	end
-	if enable then
+	if not core.reload and enable then
 		if not self:IsHooked(UF, "Configure_Power") then self:RawHook(UF, "Configure_Power", self.Configure_Power, true) end
 	elseif self:IsHooked(UF, "Configure_Power") then self:Unhook(UF, "Configure_Power") end
 
-	if E.db.Extras.unitframes[modName].NameAutoShorten.enabled then
+	if not core.reload and E.db.Extras.unitframes[modName].NameAutoShorten.enabled then
 		if not self:IsHooked(UF, "UpdateNameSettings") then self:SecureHook(UF, "UpdateNameSettings", self.UpdateNameSettings) end
 		if not self:IsHooked(UF, "Configure_HealthBar") then self:SecureHook(UF, "Configure_HealthBar", function(self, frame) UF:UpdateNameSettings(frame, frame.childType) end) end
 	else

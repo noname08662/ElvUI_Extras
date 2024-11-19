@@ -1,3482 +1,3482 @@
 ElvUI[1]:GetModule("Extras").NPCOccupations_data = {
-	["Auctioneer"] = {
-	    35594, -- Brassbolt Mechawrench
-	    35607, -- Reginald Arcfire
-	    9857, -- Auctioneer Grizzlin
-	    8720, -- Auctioneer Redmuse
-	    16627, -- Ithillan
-	    15682, -- Auctioneer Cain
-	    15684, -- Auctioneer Tricket
-	    8661, -- Auctioneer Beardo
-	    9858, -- Auctioneer Kresky
-	    15681, -- Auctioneer O'reely
-	    15675, -- Auctioneer Stockton
-	    8673, -- Auctioneer Thathung
-	    8669, -- Auctioneer Tolon
-	    15676, -- Auctioneer Yarly
-	    16629, -- Tandron
-	    8672, -- Auctioneer Leeka
-	    16707, -- Eoch
-	    15679, -- Auctioneer Cazarez
-	    8721, -- Auctioneer Epitwee
-	    9859, -- Auctioneer Lympkin
-	    15683, -- Auctioneer Naxxremis
-	    16628, -- Caidori
-	    17629, -- Feynna
-	    18349, -- Iressa
-	    8671, -- Auctioneer Buckler
-	    15677, -- Auctioneer Graves
-	    8722, -- Auctioneer Gullem
-	    15686, -- Auctioneer Rhyker
-	    15678, -- Auctioneer Silva'las
-	    8674, -- Auctioneer Stampi
-	    8724, -- Auctioneer Wabang
-	    18761, -- Darise
-	    17627, -- Jenath
-	    8719, -- Auctioneer Fitch
-	    15659, -- Auctioneer Jaxon
-	    8670, -- Auctioneer Chilton
-	    18348, -- Fanin
-	    8723, -- Auctioneer Golothas
-	    17628, -- Vynna
-	    9856, -- Auctioneer Grimful
+	[MINIMAP_TRACKING_AUCTIONEER] = {
+	    [35594] = true, -- Brassbolt Mechawrench
+	    [35607] = true, -- Reginald Arcfire
+	    [9857] = true, -- Auctioneer Grizzlin
+	    [8720] = true, -- Auctioneer Redmuse
+	    [16627] = true, -- Ithillan
+	    [15682] = true, -- Auctioneer Cain
+	    [15684] = true, -- Auctioneer Tricket
+	    [8661] = true, -- Auctioneer Beardo
+	    [9858] = true, -- Auctioneer Kresky
+	    [15681] = true, -- Auctioneer O'reely
+	    [15675] = true, -- Auctioneer Stockton
+	    [8673] = true, -- Auctioneer Thathung
+	    [8669] = true, -- Auctioneer Tolon
+	    [15676] = true, -- Auctioneer Yarly
+	    [16629] = true, -- Tandron
+	    [8672] = true, -- Auctioneer Leeka
+	    [16707] = true, -- Eoch
+	    [15679] = true, -- Auctioneer Cazarez
+	    [8721] = true, -- Auctioneer Epitwee
+	    [9859] = true, -- Auctioneer Lympkin
+	    [15683] = true, -- Auctioneer Naxxremis
+	    [16628] = true, -- Caidori
+	    [17629] = true, -- Feynna
+	    [18349] = true, -- Iressa
+	    [8671] = true, -- Auctioneer Buckler
+	    [15677] = true, -- Auctioneer Graves
+	    [8722] = true, -- Auctioneer Gullem
+	    [15686] = true, -- Auctioneer Rhyker
+	    [15678] = true, -- Auctioneer Silva'las
+	    [8674] = true, -- Auctioneer Stampi
+	    [8724] = true, -- Auctioneer Wabang
+	    [18761] = true, -- Darise
+	    [17627] = true, -- Jenath
+	    [8719] = true, -- Auctioneer Fitch
+	    [15659] = true, -- Auctioneer Jaxon
+	    [8670] = true, -- Auctioneer Chilton
+	    [18348] = true, -- Fanin
+	    [8723] = true, -- Auctioneer Golothas
+	    [17628] = true, -- Vynna
+	    [9856] = true, -- Auctioneer Grimful
 	},
-	["Banker"] = {
-	    2460, -- Barnum Stonemantle
-	    29530, -- Binzik Goldbook
-	    35642, -- Jeeves
-	    30607, -- Teller Plushner
-	    8123, -- Rickle Goldgrubber
-	    8357, -- Atepa
-	    13917, -- Izzy Coppergrab
-	    19034, -- Mendorn
-	    28677, -- Teller Hanners
-	    19246, -- Berudan Keysworn
-	    30606, -- Paymaster Chang
-	    2455, -- Olivia Burnside
-	    28679, -- Teller Duta
-	    2996, -- Torn
-	    8356, -- Chesmu
-	    4209, -- Garryeth
-	    2458, -- Randolph Montague
-	    5099, -- Soleil Stonemantle
-	    28680, -- Teller Banning
-	    16617, -- Daenice
-	    36284, -- Flint Ironstag
-	    4155, -- Idriana
-	    18350, -- Jaela
-	    2457, -- John Burnside
-	    3309, -- Karus
-	    31420, -- Karus
-	    21733, -- Karzo
-	    19338, -- L'lura Goldspun
-	    28343, -- Meeda
-	    2456, -- Newton Burnside
-	    30608, -- Paymaster Amadi
-	    29283, -- Paymaster Habert
-	    16616, -- Periel
-	    31422, -- Soran
-	    28678, -- Teller Halder
-	    28675, -- Teller Rames
-	    36352, -- Trunk Slamchest
-	    2625, -- Viznik Goldgrubber
-	    8119, -- Zikkel
-	    38920, -- [PH] Grimtotem Banker 2
-	    2461, -- Bailey Stonemantle
-	    17631, -- Ceera
-	    17632, -- Elana
-	    3496, -- Fuzruckle
-	    7799, -- Gimblethorn
-	    19318, -- Gromden
-	    17633, -- Hatheon
-	    16710, -- Kellag
-	    3318, -- Koma
-	    31421, -- Koma
-	    4208, -- Lairn
-	    2459, -- Mortimer Montague
-	    21732, -- Nandirx
-	    16615, -- Novia
-	    4550, -- Ophelia Montague
-	    17773, -- Ossco
-	    29282, -- Paymaster Alstein
-	    8124, -- Qizzik
-	    36351, -- Slab Bulkhead
-	    3320, -- Soran
-	    30604, -- Teller Almeida
-	    28676, -- Teller Althiellis
-	    30605, -- Teller Gee
-	    4549, -- William Montague
-	    5060, -- World Banker
-	    21734, -- Zixxy
-	    38919, -- [PH] Grimtotem Banker
-	    38921, -- [PH] Grimtotem Banker 3
+	[MINIMAP_TRACKING_BANKER] = {
+	    [2460] = true, -- Barnum Stonemantle
+	    [29530] = true, -- Binzik Goldbook
+	    [35642] = true, -- Jeeves
+	    [30607] = true, -- Teller Plushner
+	    [8123] = true, -- Rickle Goldgrubber
+	    [8357] = true, -- Atepa
+	    [13917] = true, -- Izzy Coppergrab
+	    [19034] = true, -- Mendorn
+	    [28677] = true, -- Teller Hanners
+	    [19246] = true, -- Berudan Keysworn
+	    [30606] = true, -- Paymaster Chang
+	    [2455] = true, -- Olivia Burnside
+	    [28679] = true, -- Teller Duta
+	    [2996] = true, -- Torn
+	    [8356] = true, -- Chesmu
+	    [4209] = true, -- Garryeth
+	    [2458] = true, -- Randolph Montague
+	    [5099] = true, -- Soleil Stonemantle
+	    [28680] = true, -- Teller Banning
+	    [16617] = true, -- Daenice
+	    [36284] = true, -- Flint Ironstag
+	    [4155] = true, -- Idriana
+	    [18350] = true, -- Jaela
+	    [2457] = true, -- John Burnside
+	    [3309] = true, -- Karus
+	    [31420] = true, -- Karus
+	    [21733] = true, -- Karzo
+	    [19338] = true, -- L'lura Goldspun
+	    [28343] = true, -- Meeda
+	    [2456] = true, -- Newton Burnside
+	    [30608] = true, -- Paymaster Amadi
+	    [29283] = true, -- Paymaster Habert
+	    [16616] = true, -- Periel
+	    [31422] = true, -- Soran
+	    [28678] = true, -- Teller Halder
+	    [28675] = true, -- Teller Rames
+	    [36352] = true, -- Trunk Slamchest
+	    [2625] = true, -- Viznik Goldgrubber
+	    [8119] = true, -- Zikkel
+	    [38920] = true, -- [PH] Grimtotem Banker [2] = true
+	    [2461] = true, -- Bailey Stonemantle
+	    [17631] = true, -- Ceera
+	    [17632] = true, -- Elana
+	    [3496] = true, -- Fuzruckle
+	    [7799] = true, -- Gimblethorn
+	    [19318] = true, -- Gromden
+	    [17633] = true, -- Hatheon
+	    [16710] = true, -- Kellag
+	    [3318] = true, -- Koma
+	    [31421] = true, -- Koma
+	    [4208] = true, -- Lairn
+	    [2459] = true, -- Mortimer Montague
+	    [21732] = true, -- Nandirx
+	    [16615] = true, -- Novia
+	    [4550] = true, -- Ophelia Montague
+	    [17773] = true, -- Ossco
+	    [29282] = true, -- Paymaster Alstein
+	    [8124] = true, -- Qizzik
+	    [36351] = true, -- Slab Bulkhead
+	    [3320] = true, -- Soran
+	    [30604] = true, -- Teller Almeida
+	    [28676] = true, -- Teller Althiellis
+	    [30605] = true, -- Teller Gee
+	    [4549] = true, -- William Montague
+	    [5060] = true, -- World Banker
+	    [21734] = true, -- Zixxy
+	    [38919] = true, -- [PH] Grimtotem Banker
+	    [38921] = true, -- [PH] Grimtotem Banker [3] = true
 	},
-	["Barber"] = {
-		29142, -- Jelinek Sharpshear
-		29141, -- Pella Brassbrush
-		29143, -- Bebri Coifcurl
-		29139, -- Naznik Sureshave
-		29145, -- Pulik Swiftsnip
-		28708, -- Kizi Copperclip
+	[BARBERSHOP] = {
+		[29142] = true, -- Jelinek Sharpshear
+		[29141] = true, -- Pella Brassbrush
+		[29143] = true, -- Bebri Coifcurl
+		[29139] = true, -- Naznik Sureshave
+		[29145] = true, -- Pulik Swiftsnip
+		[28708] = true, -- Kizi Copperclip
 	},
-	["BattleMaster"] = {
-	    7410, -- Thelman Slatefist
-	    19858, -- "Lefty" Puddemup
-	    14982, -- Lylandris
-	    20374, -- Kandaar
-	    34955, -- Karg Skullgore
-	    34983, -- Deathstalker Fane
-	    29675, -- Eye of the Storm Portal
-	    14991, -- League of Arathor Emissary
-	    34985, -- Misery
-	    29676, -- Strand of the Ancients Portal
-		34952, -- Isle of Conquest Portal
-	    34973, -- Irissa Bloodstar
-	    19908, -- Su'ura Swiftarrow
-	    22015, -- Eye of the Storm Envoy
-	    34976, -- Ruk Warstomper
-	    35008, -- Sawemba
-	    19906, -- Usha Eyegouge
-	    20276, -- Wolf-Sister Maka
-	    3890, -- Brakgul Deathbringer
-	    12198, -- Martin Lindsey
-	    15103, -- Stormpike Emissary
-	    29671, -- Strand of the Ancients Portal
-	    29674, -- Alterac Valley Portal
-	    12197, -- Glordrum Steelbeard
-	    907, -- Keras Wolfheart
-	    34988, -- Landuen Moonclaw
-	    34989, -- Rissa Shadeleaf
-	    30610, -- War-Hunter Molog
-	    20273, -- Adam Eternum
-	    40413, -- Alenjon Sunblade
-	    35002, -- Asara Dawnblaze
-	    34991, -- Borim Goldhammer
-	    29670, -- Eye of the Storm Portal
-	    20118, -- Jihi
-	    35007, -- Lixa Felflinger
-	    19925, -- Miglik Blotstrom
-	    32332, -- Ramik Slamwrench
-	    29667, -- Warsong Gulch Portal
-	    2302, -- Aethalas
-	    34998, -- Alison Devay
-	    29668, -- Arathi Basin Portal
-	    34997, -- Devin Fardale
-	    10360, -- Kergul Bloodaxe
-	    15008, -- Lady Hoteshem
-	    35000, -- Mijiri
-	    15007, -- Sir Malory Wheeler
-	    30567, -- Strand of the Ancients Envoy
-	    29568, -- "Techs" Rickard Rustbolt
-	    29669, -- Alterac Valley Portal
-	    29673, -- Arathi Basin Portal
-	    5118, -- Brogun Stoneshield
-	    857, -- Donal Osgood
-	    18895, -- Ear-Biter
-	    22013, -- Eye of the Storm Emissary
-	    15106, -- Frostwolf Emissary
-	    19910, -- Gargok
-	    347, -- Grizzle Halfmane
-	    19907, -- Grumbol Grimhammer
-	    34987, -- Hunara
-	    25991, -- Kixi the Shiv
-	    2804, -- Kurden Bloodclaw
-	    20119, -- Mahul
-	    19859, -- Max Luna
-	    34978, -- Mosha Starhorn
-	    30231, -- Radulf Leder
-	    35001, -- Saeld Brightflare
-	    29533, -- Schembari "Uncle Sal" Shearbolt
-	    30566, -- Strand of the Ancients Emissary
-	    7427, -- Taim Ragetotem
-	    19905, -- The Black Bride
-	    20120, -- Tolo
-	    15105, -- Warsong Emissary
-	    29672, -- Warsong Gulch Portal
-	    21235, -- "Backstab" Bindo Gearbomb
-	    32333, -- "Dapper" Danik Blackshaft
-	    20388, -- Althallen Brightblade
-	    20385, -- Andrissa Heartspear
-	    19911, -- Beka Zipwhistle
-	    19923, -- Bipp Glizzitor
-	    14990, -- Defilers Emissary
-	    15006, -- Deze Snowbane
-	    14981, -- Elfarran
-	    20383, -- Enlae
-	    20497, -- Fima Five-Fingers
-	    20499, -- Fizim Blastwrench
-	    16695, -- Gurak
-	    20271, -- Haelga Slatefist
-	    20362, -- Iravar
-	    34999, -- Jonru
-	    20381, -- Jovil
-	    16694, -- Karen Wentworth
-	    14942, -- Kartra Bloodsnarl
-	    20274, -- Keldor the Lost
-	    16696, -- Krukk
-	    20272, -- Lylandor
-	    20386, -- Lyrlia Blackshield
-	    19915, -- Max Xim
-	    32330, -- Minzi the Minx
-	    20269, -- Montok Redhands
-	    19909, -- Rex Pixem
-	    15102, -- Silverwing Emissary
-	    19855, -- Sir Maximus Adams
-	    20384, -- Yula the Fair
-	    19912, -- Zeggon Botsnap
+	[MINIMAP_TRACKING_BATTLEMASTER] = {
+	    [7410] = true, -- Thelman Slatefist
+	    [19858] = true, -- "Lefty" Puddemup
+	    [14982] = true, -- Lylandris
+	    [20374] = true, -- Kandaar
+	    [34955] = true, -- Karg Skullgore
+	    [34983] = true, -- Deathstalker Fane
+	    [29675] = true, -- Eye of the Storm Portal
+	    [14991] = true, -- League of Arathor Emissary
+	    [34985] = true, -- Misery
+	    [29676] = true, -- Strand of the Ancients Portal
+		[34952] = true, -- Isle of Conquest Portal
+	    [34973] = true, -- Irissa Bloodstar
+	    [19908] = true, -- Su'ura Swiftarrow
+	    [22015] = true, -- Eye of the Storm Envoy
+	    [34976] = true, -- Ruk Warstomper
+	    [35008] = true, -- Sawemba
+	    [19906] = true, -- Usha Eyegouge
+	    [20276] = true, -- Wolf-Sister Maka
+	    [3890] = true, -- Brakgul Deathbringer
+	    [12198] = true, -- Martin Lindsey
+	    [15103] = true, -- Stormpike Emissary
+	    [29671] = true, -- Strand of the Ancients Portal
+	    [29674] = true, -- Alterac Valley Portal
+	    [12197] = true, -- Glordrum Steelbeard
+	    [907] = true, -- Keras Wolfheart
+	    [34988] = true, -- Landuen Moonclaw
+	    [34989] = true, -- Rissa Shadeleaf
+	    [30610] = true, -- War-Hunter Molog
+	    [20273] = true, -- Adam Eternum
+	    [40413] = true, -- Alenjon Sunblade
+	    [35002] = true, -- Asara Dawnblaze
+	    [34991] = true, -- Borim Goldhammer
+	    [29670] = true, -- Eye of the Storm Portal
+	    [20118] = true, -- Jihi
+	    [35007] = true, -- Lixa Felflinger
+	    [19925] = true, -- Miglik Blotstrom
+	    [32332] = true, -- Ramik Slamwrench
+	    [29667] = true, -- Warsong Gulch Portal
+	    [2302] = true, -- Aethalas
+	    [34998] = true, -- Alison Devay
+	    [29668] = true, -- Arathi Basin Portal
+	    [34997] = true, -- Devin Fardale
+	    [10360] = true, -- Kergul Bloodaxe
+	    [15008] = true, -- Lady Hoteshem
+	    [35000] = true, -- Mijiri
+	    [15007] = true, -- Sir Malory Wheeler
+	    [30567] = true, -- Strand of the Ancients Envoy
+	    [29568] = true, -- "Techs" Rickard Rustbolt
+	    [29669] = true, -- Alterac Valley Portal
+	    [29673] = true, -- Arathi Basin Portal
+	    [5118] = true, -- Brogun Stoneshield
+	    [857] = true, -- Donal Osgood
+	    [18895] = true, -- Ear-Biter
+	    [22013] = true, -- Eye of the Storm Emissary
+	    [15106] = true, -- Frostwolf Emissary
+	    [19910] = true, -- Gargok
+	    [347] = true, -- Grizzle Halfmane
+	    [19907] = true, -- Grumbol Grimhammer
+	    [34987] = true, -- Hunara
+	    [25991] = true, -- Kixi the Shiv
+	    [2804] = true, -- Kurden Bloodclaw
+	    [20119] = true, -- Mahul
+	    [19859] = true, -- Max Luna
+	    [34978] = true, -- Mosha Starhorn
+	    [30231] = true, -- Radulf Leder
+	    [35001] = true, -- Saeld Brightflare
+	    [29533] = true, -- Schembari "Uncle Sal" Shearbolt
+	    [30566] = true, -- Strand of the Ancients Emissary
+	    [7427] = true, -- Taim Ragetotem
+	    [19905] = true, -- The Black Bride
+	    [20120] = true, -- Tolo
+	    [15105] = true, -- Warsong Emissary
+	    [29672] = true, -- Warsong Gulch Portal
+	    [21235] = true, -- "Backstab" Bindo Gearbomb
+	    [32333] = true, -- "Dapper" Danik Blackshaft
+	    [20388] = true, -- Althallen Brightblade
+	    [20385] = true, -- Andrissa Heartspear
+	    [19911] = true, -- Beka Zipwhistle
+	    [19923] = true, -- Bipp Glizzitor
+	    [14990] = true, -- Defilers Emissary
+	    [15006] = true, -- Deze Snowbane
+	    [14981] = true, -- Elfarran
+	    [20383] = true, -- Enlae
+	    [20497] = true, -- Fima Five-Fingers
+	    [20499] = true, -- Fizim Blastwrench
+	    [16695] = true, -- Gurak
+	    [20271] = true, -- Haelga Slatefist
+	    [20362] = true, -- Iravar
+	    [34999] = true, -- Jonru
+	    [20381] = true, -- Jovil
+	    [16694] = true, -- Karen Wentworth
+	    [14942] = true, -- Kartra Bloodsnarl
+	    [20274] = true, -- Keldor the Lost
+	    [16696] = true, -- Krukk
+	    [20272] = true, -- Lylandor
+	    [20386] = true, -- Lyrlia Blackshield
+	    [19915] = true, -- Max Xim
+	    [32330] = true, -- Minzi the Minx
+	    [20269] = true, -- Montok Redhands
+	    [19909] = true, -- Rex Pixem
+	    [15102] = true, -- Silverwing Emissary
+	    [19855] = true, -- Sir Maximus Adams
+	    [20384] = true, -- Yula the Fair
+	    [19912] = true, -- Zeggon Botsnap
 	},
-	["Class"] = {
-	    12042, -- Loganaar
-	    5885, -- Deino
-	    5497, -- Jennea Cannon
-	    29195, -- Lady Alistra
-	    29194, -- Amal'thazad
-	    5504, -- Sheldras Moontree
-	    4218, -- Denatharion
-	    4217, -- Mathrengyl Bearwalker
-	    3326, -- Zevrost
-	    4146, -- Jocaste
-	    4563, -- Kaal Soulreaper
-	    3032, -- Beram Skychaser
-	    4205, -- Dorion
-	    5515, -- Einris Brightspear
-	    3344, -- Kardris Dreamseeker
-	    16681, -- Champion Bachi
-	    4568, -- Anastasia Hartwell
-	    5149, -- Brandur Ironhammer
-	    376, -- High Priestess Laurena
-	    5491, -- Arthur the Faithful
-	    5489, -- Brother Joshua
-	    4219, -- Fylerian Nightwing
-	    928, -- Lord Grayson Shadowbreaker
-	    11401, -- Priestess Alathea
-	    3401, -- Shenthul
-	    17219, -- Sulaa
-	    6018, -- Ur'kyo
-	    4606, -- Aelthalyste
-	    17120, -- Behomat
-	    16653, -- Inethven
-	    3352, -- Ormak Grimshot
-	    5144, -- Bink
-	    5498, -- Elsharin
-	    17509, -- Jol
-	    3030, -- Siln Skychaser
-	    3354, -- Sorek
-	    5479, -- Wu Shen
-	    4595, -- Baltus Fowler
-	    5484, -- Brother Benjamin
-	    23127, -- Farseer Javad
-	    5492, -- Katherine the Pure
-	    5116, -- Olmin Burningbeard
-	    3407, -- Sian'dur
-	    4163, -- Syurna
-	    5147, -- Valgar Highforge
-	    7312, -- Dink
-	    20407, -- Farseer Umbrua
-	    3353, -- Grezz Ragefist
-	    17520, -- Gurrag
-	    23128, -- Master Pyreanor
-	    3041, -- Torm Ragetotem
-	    16651, -- Zaedana
-	    5173, -- Alexander Calder
-	    4582, -- Carolyn Ward
-	    3039, -- Holt Thunderhorn
-	    3038, -- Kary Thunderhorn
-	    3036, -- Kym Wildmane
-	    13283, -- Lord Tony Romano
-	    5166, -- Ormyr Flinteye
-	    16647, -- Talionia
-	    3033, -- Turak Runetotem
-	    16771, -- Ahonan
-	    5148, -- Beldruk Doombrow
-	    5883, -- Enyo
-	    17204, -- Farseer Nobundo
-	    5165, -- Hulfdan Blackbeard
-	    5145, -- Juli Stormkettle
-	    16679, -- Osselan
-	    5171, -- Thistleheart
-	    5516, -- Ulfir Ironbeard
-	    3048, -- Ursyn Ghull
-	    7311, -- Uthel'nay
-	    5142, -- Braenna Flintcrag
-	    5172, -- Briarthorn
-	    7315, -- Darnath Bladesinger
-	    16749, -- Edirah
-	    5167, -- Fenthwick
-	    11406, -- High Priest Rohan
-	    4566, -- Kaelystia Hatebringer
-	    4092, -- Lariia
-	    16659, -- Lotheolan
-	    4583, -- Miles Dexter
-	    3325, -- Mirket
-	    918, -- Osborne the Night Man
-	    5882, -- Pephredo
-	    5496, -- Sandahl
-	    3040, -- Urek Thunderhorn
-	    5495, -- Ursula Deline
-	    3406, -- Xor'juul
-	    16648, -- Zanien
-	    3047, -- Archmage Shymm
-	    20406, -- Champion Cyssa Dawnrose
-	    5115, -- Daera Brightspear
-	    461, -- Demisette Cloyce
-	    4608, -- Father Lazarus
-	    3327, -- Gest
-	    3324, -- Grol'dar
-	    16680, -- Ithelis
-	    4091, -- Jandria
-	    1901, -- Kelstrum Stonebreaker
-	    5113, -- Kelv Sternhammer
-	    17505, -- Killac
-	    29196, -- Lord Thorval
-	    4564, -- Luther Pickman
-	    331, -- Maginor Dumas
-	    3328, -- Ormok
-	    4567, -- Pierce Shackleton
-	    16652, -- Quithas
-	    5117, -- Regnus Thundergranite
-	    4565, -- Richard Kerwin
-	    13417, -- Sagorne Creststrider
-	    4089, -- Sildanair
-	    16672, -- Tana
-	    5505, -- Theridran
-	    3049, -- Thurston Xane
-	    3031, -- Tigor Skychaser
-	    5143, -- Toldren Deepiron
-	    6014, -- X'yera
-	    5994, -- Zayus
-	    914, -- Ander Germaine
-	    4594, -- Angela Curthas
-	    4087, -- Arias'ta Bladesinger
-	    5114, -- Bilban Tosslespanner
-	    4593, -- Christoph Walker
-	    4607, -- Father Lankester
-	    4584, -- Gregory Charles
-	    5480, -- Ilsa Corbin
-	    3043, -- Ker Ragetotem
-	    3045, -- Malakai Cross
-	    3044, -- Miles Welsh
-	    16673, -- Oninath
-	    3042, -- Sark Ragetotem
-	    3034, -- Sheal Runetotem
-	    3403, -- Sian'tsu
-	    3408, -- Zel'mak
+	[MINIMAP_TRACKING_TRAINER_CLASS] = {
+	    [12042] = true, -- Loganaar
+	    [5885] = true, -- Deino
+	    [5497] = true, -- Jennea Cannon
+	    [29195] = true, -- Lady Alistra
+	    [29194] = true, -- Amal'thazad
+	    [5504] = true, -- Sheldras Moontree
+	    [4218] = true, -- Denatharion
+	    [4217] = true, -- Mathrengyl Bearwalker
+	    [3326] = true, -- Zevrost
+	    [4146] = true, -- Jocaste
+	    [4563] = true, -- Kaal Soulreaper
+	    [3032] = true, -- Beram Skychaser
+	    [4205] = true, -- Dorion
+	    [5515] = true, -- Einris Brightspear
+	    [3344] = true, -- Kardris Dreamseeker
+	    [16681] = true, -- Champion Bachi
+	    [4568] = true, -- Anastasia Hartwell
+	    [5149] = true, -- Brandur Ironhammer
+	    [376] = true, -- High Priestess Laurena
+	    [5491] = true, -- Arthur the Faithful
+	    [5489] = true, -- Brother Joshua
+	    [4219] = true, -- Fylerian Nightwing
+	    [928] = true, -- Lord Grayson Shadowbreaker
+	    [11401] = true, -- Priestess Alathea
+	    [3401] = true, -- Shenthul
+	    [17219] = true, -- Sulaa
+	    [6018] = true, -- Ur'kyo
+	    [4606] = true, -- Aelthalyste
+	    [17120] = true, -- Behomat
+	    [16653] = true, -- Inethven
+	    [3352] = true, -- Ormak Grimshot
+	    [5144] = true, -- Bink
+	    [5498] = true, -- Elsharin
+	    [17509] = true, -- Jol
+	    [3030] = true, -- Siln Skychaser
+	    [3354] = true, -- Sorek
+	    [5479] = true, -- Wu Shen
+	    [4595] = true, -- Baltus Fowler
+	    [5484] = true, -- Brother Benjamin
+	    [23127] = true, -- Farseer Javad
+	    [5492] = true, -- Katherine the Pure
+	    [5116] = true, -- Olmin Burningbeard
+	    [3407] = true, -- Sian'dur
+	    [4163] = true, -- Syurna
+	    [5147] = true, -- Valgar Highforge
+	    [7312] = true, -- Dink
+	    [20407] = true, -- Farseer Umbrua
+	    [3353] = true, -- Grezz Ragefist
+	    [17520] = true, -- Gurrag
+	    [23128] = true, -- Master Pyreanor
+	    [3041] = true, -- Torm Ragetotem
+	    [16651] = true, -- Zaedana
+	    [5173] = true, -- Alexander Calder
+	    [4582] = true, -- Carolyn Ward
+	    [3039] = true, -- Holt Thunderhorn
+	    [3038] = true, -- Kary Thunderhorn
+	    [3036] = true, -- Kym Wildmane
+	    [13283] = true, -- Lord Tony Romano
+	    [5166] = true, -- Ormyr Flinteye
+	    [16647] = true, -- Talionia
+	    [3033] = true, -- Turak Runetotem
+	    [16771] = true, -- Ahonan
+	    [5148] = true, -- Beldruk Doombrow
+	    [5883] = true, -- Enyo
+	    [17204] = true, -- Farseer Nobundo
+	    [5165] = true, -- Hulfdan Blackbeard
+	    [5145] = true, -- Juli Stormkettle
+	    [16679] = true, -- Osselan
+	    [5171] = true, -- Thistleheart
+	    [5516] = true, -- Ulfir Ironbeard
+	    [3048] = true, -- Ursyn Ghull
+	    [7311] = true, -- Uthel'nay
+	    [5142] = true, -- Braenna Flintcrag
+	    [5172] = true, -- Briarthorn
+	    [7315] = true, -- Darnath Bladesinger
+	    [16749] = true, -- Edirah
+	    [5167] = true, -- Fenthwick
+	    [11406] = true, -- High Priest Rohan
+	    [4566] = true, -- Kaelystia Hatebringer
+	    [4092] = true, -- Lariia
+	    [16659] = true, -- Lotheolan
+	    [4583] = true, -- Miles Dexter
+	    [3325] = true, -- Mirket
+	    [918] = true, -- Osborne the Night Man
+	    [5882] = true, -- Pephredo
+	    [5496] = true, -- Sandahl
+	    [3040] = true, -- Urek Thunderhorn
+	    [5495] = true, -- Ursula Deline
+	    [3406] = true, -- Xor'juul
+	    [16648] = true, -- Zanien
+	    [3047] = true, -- Archmage Shymm
+	    [20406] = true, -- Champion Cyssa Dawnrose
+	    [5115] = true, -- Daera Brightspear
+	    [461] = true, -- Demisette Cloyce
+	    [4608] = true, -- Father Lazarus
+	    [3327] = true, -- Gest
+	    [3324] = true, -- Grol'dar
+	    [16680] = true, -- Ithelis
+	    [4091] = true, -- Jandria
+	    [1901] = true, -- Kelstrum Stonebreaker
+	    [5113] = true, -- Kelv Sternhammer
+	    [17505] = true, -- Killac
+	    [29196] = true, -- Lord Thorval
+	    [4564] = true, -- Luther Pickman
+	    [331] = true, -- Maginor Dumas
+	    [3328] = true, -- Ormok
+	    [4567] = true, -- Pierce Shackleton
+	    [16652] = true, -- Quithas
+	    [5117] = true, -- Regnus Thundergranite
+	    [4565] = true, -- Richard Kerwin
+	    [13417] = true, -- Sagorne Creststrider
+	    [4089] = true, -- Sildanair
+	    [16672] = true, -- Tana
+	    [5505] = true, -- Theridran
+	    [3049] = true, -- Thurston Xane
+	    [3031] = true, -- Tigor Skychaser
+	    [5143] = true, -- Toldren Deepiron
+	    [6014] = true, -- X'yera
+	    [5994] = true, -- Zayus
+	    [914] = true, -- Ander Germaine
+	    [4594] = true, -- Angela Curthas
+	    [4087] = true, -- Arias'ta Bladesinger
+	    [5114] = true, -- Bilban Tosslespanner
+	    [4593] = true, -- Christoph Walker
+	    [4607] = true, -- Father Lankester
+	    [4584] = true, -- Gregory Charles
+	    [5480] = true, -- Ilsa Corbin
+	    [3043] = true, -- Ker Ragetotem
+	    [3045] = true, -- Malakai Cross
+	    [3044] = true, -- Miles Welsh
+	    [16673] = true, -- Oninath
+	    [3042] = true, -- Sark Ragetotem
+	    [3034] = true, -- Sheal Runetotem
+	    [3403] = true, -- Sian'tsu
+	    [3408] = true, -- Zel'mak
 	},
-	["FlightMaster"] = {
-	    24795, -- Surristrasz
-	    28037, -- The Spirit of Gnomeregan
-	    12596, -- Bibilfaz Featherwhistle
-	    28615, -- Baneflight
-	    18788, -- Munci
-	    28574, -- Marvin Wobblesprocket
-	    33849, -- Helidan Lightwing
-	    25288, -- Turida Coldwind
-	    18789, -- Furgu
-	    29721, -- Skizzle Slickslide
-	    28618, -- Danica Saint
-	    29480, -- Grimwing
-	    11899, -- Shardi
-	    2226, -- Karos Razok
-	    8610, -- Kroum
-	    26881, -- Palena Silvercloud
-	    2861, -- Gorrik
-	    23859, -- Greer Orehammer
-	    30870, -- Herzo Safeflight
-	    32571, -- Halvdan
-	    26850, -- Numo Spiritbreeze
-	    26878, -- Rodney Wells
-	    352, -- Dungar Longdrink
-	    30271, -- Galendror Whitewing
-	    31069, -- Penumbrius
-	    8609, -- Alexandra Constantine
-	    2299, -- Borgus Stoutarm
-	    18808, -- Gursha
-	    29757, -- Kabarg Windtamer
-	    26851, -- Nethestrasz
-	    27046, -- Warmage Adami
-	    28674, -- Aludane Whitecloud
-	    28195, -- Bilko Driftspark
-	    29950, -- Breck Rockbrow
-	    3841, -- Caylais Moonfeather
-	    37888, -- Frax Bucketdrop
-	    2858, -- Gringer
-	    10583, -- Gryfe
-	    20515, -- Harpax
-	    30314, -- Morlia Doomwing
-	    26876, -- Samuel Clearbook
-	    6706, -- Baritanas Skyriver
-	    11900, -- Brakkar
-	    28196, -- Cid Flounderfix
-	    3615, -- Devrak
-	    23612, -- Dyslix Silvergrub
-	    12636, -- Georgia
-	    28623, -- Gurric
-	    4551, -- Michael Garrett
-	    29951, -- Shavalius the Fancy
-	    8020, -- Shyn
-	    30269, -- Skymaster Baeric
-	    2995, -- Tal
-	    1572, -- Thorgrum Borrelson
-	    26879, -- Tomas Riverwell
-	    12616, -- Vhulgra
-	    21766, -- Alieshor
-	    31078, -- Dreadwind
-	    29750, -- Faldorf Bitterchill
-	    22216, -- Fhyn Leafshadow
-	    18807, -- Kerna
-	    18785, -- Kuma
-	    523, -- Thor
-	    18953, -- Unoke Tenderhoof
-	    30433, -- Aedan Moran
-	    11901, -- Andruk
-	    30869, -- Arzo Safeflight
-	    7823, -- Bera Stonehammer
-	    18791, -- Du'ga
-	    8019, -- Fyldren Moonfeather
-	    24061, -- James Ormsby
-	    12577, -- Jarrodenus
-	    26602, -- Kara Thricestar
-	    23736, -- Pricilla Winterwind
-	    21107, -- Rip Pedalslam
-	    17555, -- Stephanos
-	    18937, -- Amerun Leafshade
-	    931, -- Ariena Stormfeather
-	    27344, -- Bat Handler Adeline
-	    24032, -- Celea Frozenmane
-	    2432, -- Darla Harris
-	    26877, -- Derek Rammel
-	    19317, -- Drek'Gol
-	    4314, -- Gorkas
-	    3305, -- Grisha
-	    8018, -- Guthrum Thunderfist
-	    2859, -- Gyll
-	    29762, -- Hyeyoung Parka
-	    12617, -- Khaelyn Steelwing
-	    28197, -- Kip Trawlskip
-	    18938, -- Krexcil
-	    17554, -- Laando
-	    11138, -- Maethrya
-	    18940, -- Nutral
-	    4317, -- Nyse
-	    26560, -- Ohura
-	    30569, -- Rafae
-	    15178, -- Runk Windtamer
-	    1571, -- Shellei Brondir
-	    4407, -- Teloren
-	    2851, -- Urda
-	    13177, -- Vahgruk
-	    11139, -- Yugrek
-	    4321, -- Baldruc
-	    16227, -- Bragok
-	    6026, -- Breyk
-	    18939, -- Brubeck Stormfoot
-	    7824, -- Bulkrek Ragefist
-	    15177, -- Cloud Skydancer
-	    12740, -- Faustron
-	    2409, -- Felicia Maline
-	    16822, -- Flightmaster Krill Bitterhue
-	    1573, -- Gryth Thurden
-	    26845, -- Junter Weiss
-	    26852, -- Kragh
-	    26844, -- Lilleth Radescu
-	    19581, -- Maddix
-	    12578, -- Mishellena
-	    24366, -- Nizzle
-	    26847, -- Omu Spiritbreeze
-	    10378, -- Omusa Thunderhorn
-	    22935, -- Suralais Farwind
-	    6726, -- Thalon
-	    4319, -- Thyssiana
-	    24155, -- Tobias Sarkhoff
-	    26880, -- Vana Grey
-	    3838, -- Vesprystus
-	    19558, -- Amilya Airheart
-	    18931, -- Amish Wildhammer
-	    16587, -- Barley
-	    2835, -- Cedrik Prose
-	    4267, -- Daelyshia
-	    3310, -- Doras
-	    18809, -- Furnan Skysoar
-	    22931, -- Gorrim
-	    19583, -- Grennik
-	    20762, -- Gur'zil
-	    22485, -- Halu
-	    18942, -- Innalia
-	    26848, -- Kimbiza
-	    24851, -- Kiz Coilspanner
-	    2941, -- Lanie Reed
-	    28624, -- Maaka
-	    26853, -- Makki Wintergale
-	    26566, -- Narzun Skybreaker
-	    20234, -- Runetog Wildhammer
-	    10897, -- Sindrayl
-	    22455, -- Sky-Master Maxxor
-	    16189, -- Skymaster Sunwing
-	    16192, -- Skymistress Gloaming
-	    4312, -- Tharm
-	    1387, -- Thysta
-	    37915, -- Timothy Cunningham
-	    18930, -- Vlagga Freyfeather
-	    2389, -- Zarise
+	[MINIMAP_TRACKING_FLIGHTMASTER] = {
+	    [24795] = true, -- Surristrasz
+	    [28037] = true, -- The Spirit of Gnomeregan
+	    [12596] = true, -- Bibilfaz Featherwhistle
+	    [28615] = true, -- Baneflight
+	    [18788] = true, -- Munci
+	    [28574] = true, -- Marvin Wobblesprocket
+	    [33849] = true, -- Helidan Lightwing
+	    [25288] = true, -- Turida Coldwind
+	    [18789] = true, -- Furgu
+	    [29721] = true, -- Skizzle Slickslide
+	    [28618] = true, -- Danica Saint
+	    [29480] = true, -- Grimwing
+	    [11899] = true, -- Shardi
+	    [2226] = true, -- Karos Razok
+	    [8610] = true, -- Kroum
+	    [26881] = true, -- Palena Silvercloud
+	    [2861] = true, -- Gorrik
+	    [23859] = true, -- Greer Orehammer
+	    [30870] = true, -- Herzo Safeflight
+	    [32571] = true, -- Halvdan
+	    [26850] = true, -- Numo Spiritbreeze
+	    [26878] = true, -- Rodney Wells
+	    [352] = true, -- Dungar Longdrink
+	    [30271] = true, -- Galendror Whitewing
+	    [31069] = true, -- Penumbrius
+	    [8609] = true, -- Alexandra Constantine
+	    [2299] = true, -- Borgus Stoutarm
+	    [18808] = true, -- Gursha
+	    [29757] = true, -- Kabarg Windtamer
+	    [26851] = true, -- Nethestrasz
+	    [27046] = true, -- Warmage Adami
+	    [28674] = true, -- Aludane Whitecloud
+	    [28195] = true, -- Bilko Driftspark
+	    [29950] = true, -- Breck Rockbrow
+	    [3841] = true, -- Caylais Moonfeather
+	    [37888] = true, -- Frax Bucketdrop
+	    [2858] = true, -- Gringer
+	    [10583] = true, -- Gryfe
+	    [20515] = true, -- Harpax
+	    [30314] = true, -- Morlia Doomwing
+	    [26876] = true, -- Samuel Clearbook
+	    [6706] = true, -- Baritanas Skyriver
+	    [11900] = true, -- Brakkar
+	    [28196] = true, -- Cid Flounderfix
+	    [3615] = true, -- Devrak
+	    [23612] = true, -- Dyslix Silvergrub
+	    [12636] = true, -- Georgia
+	    [28623] = true, -- Gurric
+	    [4551] = true, -- Michael Garrett
+	    [29951] = true, -- Shavalius the Fancy
+	    [8020] = true, -- Shyn
+	    [30269] = true, -- Skymaster Baeric
+	    [2995] = true, -- Tal
+	    [1572] = true, -- Thorgrum Borrelson
+	    [26879] = true, -- Tomas Riverwell
+	    [12616] = true, -- Vhulgra
+	    [21766] = true, -- Alieshor
+	    [31078] = true, -- Dreadwind
+	    [29750] = true, -- Faldorf Bitterchill
+	    [22216] = true, -- Fhyn Leafshadow
+	    [18807] = true, -- Kerna
+	    [18785] = true, -- Kuma
+	    [523] = true, -- Thor
+	    [18953] = true, -- Unoke Tenderhoof
+	    [30433] = true, -- Aedan Moran
+	    [11901] = true, -- Andruk
+	    [30869] = true, -- Arzo Safeflight
+	    [7823] = true, -- Bera Stonehammer
+	    [18791] = true, -- Du'ga
+	    [8019] = true, -- Fyldren Moonfeather
+	    [24061] = true, -- James Ormsby
+	    [12577] = true, -- Jarrodenus
+	    [26602] = true, -- Kara Thricestar
+	    [23736] = true, -- Pricilla Winterwind
+	    [21107] = true, -- Rip Pedalslam
+	    [17555] = true, -- Stephanos
+	    [18937] = true, -- Amerun Leafshade
+	    [931] = true, -- Ariena Stormfeather
+	    [27344] = true, -- Bat Handler Adeline
+	    [24032] = true, -- Celea Frozenmane
+	    [2432] = true, -- Darla Harris
+	    [26877] = true, -- Derek Rammel
+	    [19317] = true, -- Drek'Gol
+	    [4314] = true, -- Gorkas
+	    [3305] = true, -- Grisha
+	    [8018] = true, -- Guthrum Thunderfist
+	    [2859] = true, -- Gyll
+	    [29762] = true, -- Hyeyoung Parka
+	    [12617] = true, -- Khaelyn Steelwing
+	    [28197] = true, -- Kip Trawlskip
+	    [18938] = true, -- Krexcil
+	    [17554] = true, -- Laando
+	    [11138] = true, -- Maethrya
+	    [18940] = true, -- Nutral
+	    [4317] = true, -- Nyse
+	    [26560] = true, -- Ohura
+	    [30569] = true, -- Rafae
+	    [15178] = true, -- Runk Windtamer
+	    [1571] = true, -- Shellei Brondir
+	    [4407] = true, -- Teloren
+	    [2851] = true, -- Urda
+	    [13177] = true, -- Vahgruk
+	    [11139] = true, -- Yugrek
+	    [4321] = true, -- Baldruc
+	    [16227] = true, -- Bragok
+	    [6026] = true, -- Breyk
+	    [18939] = true, -- Brubeck Stormfoot
+	    [7824] = true, -- Bulkrek Ragefist
+	    [15177] = true, -- Cloud Skydancer
+	    [12740] = true, -- Faustron
+	    [2409] = true, -- Felicia Maline
+	    [16822] = true, -- Flightmaster Krill Bitterhue
+	    [1573] = true, -- Gryth Thurden
+	    [26845] = true, -- Junter Weiss
+	    [26852] = true, -- Kragh
+	    [26844] = true, -- Lilleth Radescu
+	    [19581] = true, -- Maddix
+	    [12578] = true, -- Mishellena
+	    [24366] = true, -- Nizzle
+	    [26847] = true, -- Omu Spiritbreeze
+	    [10378] = true, -- Omusa Thunderhorn
+	    [22935] = true, -- Suralais Farwind
+	    [6726] = true, -- Thalon
+	    [4319] = true, -- Thyssiana
+	    [24155] = true, -- Tobias Sarkhoff
+	    [26880] = true, -- Vana Grey
+	    [3838] = true, -- Vesprystus
+	    [19558] = true, -- Amilya Airheart
+	    [18931] = true, -- Amish Wildhammer
+	    [16587] = true, -- Barley
+	    [2835] = true, -- Cedrik Prose
+	    [4267] = true, -- Daelyshia
+	    [3310] = true, -- Doras
+	    [18809] = true, -- Furnan Skysoar
+	    [22931] = true, -- Gorrim
+	    [19583] = true, -- Grennik
+	    [20762] = true, -- Gur'zil
+	    [22485] = true, -- Halu
+	    [18942] = true, -- Innalia
+	    [26848] = true, -- Kimbiza
+	    [24851] = true, -- Kiz Coilspanner
+	    [2941] = true, -- Lanie Reed
+	    [28624] = true, -- Maaka
+	    [26853] = true, -- Makki Wintergale
+	    [26566] = true, -- Narzun Skybreaker
+	    [20234] = true, -- Runetog Wildhammer
+	    [10897] = true, -- Sindrayl
+	    [22455] = true, -- Sky-Master Maxxor
+	    [16189] = true, -- Skymaster Sunwing
+	    [16192] = true, -- Skymistress Gloaming
+	    [4312] = true, -- Tharm
+	    [1387] = true, -- Thysta
+	    [37915] = true, -- Timothy Cunningham
+	    [18930] = true, -- Vlagga Freyfeather
+	    [2389] = true, -- Zarise
 	},
-	["Innkeeper"] = {
-	    28687, -- Amisi Azuregaze
-	    32413, -- Isirami Fairwind
-	    16826, -- Sid Limbardi
-	    15174, -- Calandrath
-	    16602, -- Floyd Pinkus
-	    19296, -- Innkeeper Biribi
-	    29532, -- Ajay Green
-	    31557, -- Uda the Beast
-	    18957, -- Innkeeper Grilka
-	    6740, -- Innkeeper Allison
-	    6746, -- Innkeeper Pala
-	    6735, -- Innkeeper Saelienne
-	    18906, -- Caregiver Ophera Windfury
-	    18907, -- Innkeeper Coryth Stoktron
-	    6741, -- Innkeeper Norman
-	    7736, -- Innkeeper Shyria
-	    32418, -- Abohba
-	    1247, -- Innkeeper Belm
-	    6790, -- Innkeeper Trelayne
-	    24342, -- Timothy Holland
-	    6739, -- Innkeeper Bates
-	    295, -- Innkeeper Farley
-	    6734, -- Innkeeper Hearthstove
-	    25278, -- Williamson
-	    18914, -- Caregiver Isel
-	    7733, -- Innkeeper Fizzgrimble
-	    11103, -- Innkeeper Lyshaerya
-	    15397, -- Marniel Amberlight
-	    28038, -- Purser Boulian
-	    18251, -- Caregiver Abidaar
-	    30308, -- Initiate Brenners
-	    11116, -- Innkeeper Abeqwa
-	    3934, -- Innkeeper Boorand Plainswind
-	    18908, -- Innkeeper Kerp
-	    16256, -- Jessica Chambers
-	    26709, -- Pahu Frosthoof
-	    29583, -- Pan'ya
-	    16739, -- Caregiver Breel
-	    27187, -- Caregiver Poallu
-	    24057, -- Christina Daniels
-	    23937, -- Innkeeper Celeste Goodhutch
-	    19232, -- Innkeeper Haelthol
-	    6736, -- Innkeeper Keldamyr
-	    11106, -- Innkeeper Sikewa
-	    21744, -- Roldemar
-	    24208, -- "Little" Logok
-	    26680, -- Aiyan Coldwind
-	    26985, -- Barracks Master Harga
-	    27125, -- Barracks Master Rhekku
-	    27174, -- Caregiver Mumik
-	    8931, -- Innkeeper Heather
-	    1464, -- Innkeeper Helbrek
-	    19495, -- Innkeeper Shaunessy
-	    2388, -- Innkeeper Shay
-	    7744, -- Innkeeper Thulfram
-	    19046, -- Minalei
-	    29971, -- Wabada Whiteflower
-	    26596, -- "Charlie" Northtop
-	    27148, -- Caregiver Iqniq
-	    33970, -- Caris Sunlance
-	    21110, -- Fizit "Doc" Clocktock
-	    22922, -- Innkeeper Aelerya
-	    5111, -- Innkeeper Firebrew
-	    23731, -- Innkeeper Hazel Lagras
-	    17630, -- Innkeeper Jovia
-	    6747, -- Innkeeper Kauth
-	    16618, -- Innkeeper Velandra
-	    25245, -- James Deacon
-	    30005, -- Lodge-Matron Embla
-	    29963, -- Magorn
-	    21088, -- Matron Varah
-	    29904, -- Smilin' Slirk Brassknob
-	    32411, -- Afsaneh Asrar
-	    23995, -- Axle
-	    24033, -- Bori Wintertotem
-	    25036, -- Caregiver Inaara
-	    27950, -- Demestrasz
-	    19352, -- Dreg Cloudsweeper
-	    19531, -- Eyonix
-	    19470, -- Gholah
-	    29926, -- Gunda Boldhammer
-	    27042, -- Illusia Lune
-	    18905, -- Innkeeper Bazil Olof'tazun
-	    6727, -- Innkeeper Brianna
-	    7714, -- Innkeeper Byula
-	    6272, -- Innkeeper Janene
-	    6930, -- Innkeeper Karakul
-	    12196, -- Innkeeper Kaylisk
-	    6738, -- Innkeeper Kimlya
-	    19571, -- Innkeeper Remi Dodoso
-	    5688, -- Innkeeper Renee
-	    9356, -- Innkeeper Shul'kar
-	    5814, -- Innkeeper Thulbek
-	    11118, -- Innkeeper Vizzie
-	    33971, -- Jarin Dawnglow
-	    18913, -- Matron Tikkit
-	    27052, -- Naohain
-	    29944, -- Peon Gakra
-	    26375, -- Quartermaster McCarty
-	    24149, -- Basil Osgood
-	    28686, -- Caliel Brightwillow
-	    16553, -- Caregiver Chellan
-	    17553, -- Caregiver Topher Loaal
-	    21746, -- Caretaker Aluuro
-	    9501, -- Innkeeper Adegwa
-	    2352, -- Innkeeper Anderson
-	    19319, -- Innkeeper Darg Bloodclaw
-	    15433, -- Innkeeper Delaniel
-	    16458, -- Innkeeper Faralia
-	    7737, -- Innkeeper Greul
-	    6928, -- Innkeeper Grosk
-	    6929, -- Innkeeper Gryshka
-	    7731, -- Innkeeper Jayka
-	    16542, -- Innkeeper Kalarin
-	    6737, -- Innkeeper Shaussiy
-	    6807, -- Innkeeper Skindle
-	    6791, -- Innkeeper Wiley
-	    27066, -- Jennifer Bell
-	    14731, -- Lard
-	    28791, -- Marissa Everwatch
-	    27069, -- Matron Magah
-	    18245, -- Merajit
-	    27027, -- Mrs. Winterby
+	[MINIMAP_TRACKING_INNKEEPER] = {
+	    [28687] = true, -- Amisi Azuregaze
+	    [32413] = true, -- Isirami Fairwind
+	    [16826] = true, -- Sid Limbardi
+	    [15174] = true, -- Calandrath
+	    [16602] = true, -- Floyd Pinkus
+	    [19296] = true, -- Innkeeper Biribi
+	    [29532] = true, -- Ajay Green
+	    [31557] = true, -- Uda the Beast
+	    [18957] = true, -- Innkeeper Grilka
+	    [6740] = true, -- Innkeeper Allison
+	    [6746] = true, -- Innkeeper Pala
+	    [6735] = true, -- Innkeeper Saelienne
+	    [18906] = true, -- Caregiver Ophera Windfury
+	    [18907] = true, -- Innkeeper Coryth Stoktron
+	    [6741] = true, -- Innkeeper Norman
+	    [7736] = true, -- Innkeeper Shyria
+	    [32418] = true, -- Abohba
+	    [1247] = true, -- Innkeeper Belm
+	    [6790] = true, -- Innkeeper Trelayne
+	    [24342] = true, -- Timothy Holland
+	    [6739] = true, -- Innkeeper Bates
+	    [295] = true, -- Innkeeper Farley
+	    [6734] = true, -- Innkeeper Hearthstove
+	    [25278] = true, -- Williamson
+	    [18914] = true, -- Caregiver Isel
+	    [7733] = true, -- Innkeeper Fizzgrimble
+	    [11103] = true, -- Innkeeper Lyshaerya
+	    [15397] = true, -- Marniel Amberlight
+	    [28038] = true, -- Purser Boulian
+	    [18251] = true, -- Caregiver Abidaar
+	    [30308] = true, -- Initiate Brenners
+	    [11116] = true, -- Innkeeper Abeqwa
+	    [3934] = true, -- Innkeeper Boorand Plainswind
+	    [18908] = true, -- Innkeeper Kerp
+	    [16256] = true, -- Jessica Chambers
+	    [26709] = true, -- Pahu Frosthoof
+	    [29583] = true, -- Pan'ya
+	    [16739] = true, -- Caregiver Breel
+	    [27187] = true, -- Caregiver Poallu
+	    [24057] = true, -- Christina Daniels
+	    [23937] = true, -- Innkeeper Celeste Goodhutch
+	    [19232] = true, -- Innkeeper Haelthol
+	    [6736] = true, -- Innkeeper Keldamyr
+	    [11106] = true, -- Innkeeper Sikewa
+	    [21744] = true, -- Roldemar
+	    [24208] = true, -- "Little" Logok
+	    [26680] = true, -- Aiyan Coldwind
+	    [26985] = true, -- Barracks Master Harga
+	    [27125] = true, -- Barracks Master Rhekku
+	    [27174] = true, -- Caregiver Mumik
+	    [8931] = true, -- Innkeeper Heather
+	    [1464] = true, -- Innkeeper Helbrek
+	    [19495] = true, -- Innkeeper Shaunessy
+	    [2388] = true, -- Innkeeper Shay
+	    [7744] = true, -- Innkeeper Thulfram
+	    [19046] = true, -- Minalei
+	    [29971] = true, -- Wabada Whiteflower
+	    [26596] = true, -- "Charlie" Northtop
+	    [27148] = true, -- Caregiver Iqniq
+	    [33970] = true, -- Caris Sunlance
+	    [21110] = true, -- Fizit "Doc" Clocktock
+	    [22922] = true, -- Innkeeper Aelerya
+	    [5111] = true, -- Innkeeper Firebrew
+	    [23731] = true, -- Innkeeper Hazel Lagras
+	    [17630] = true, -- Innkeeper Jovia
+	    [6747] = true, -- Innkeeper Kauth
+	    [16618] = true, -- Innkeeper Velandra
+	    [25245] = true, -- James Deacon
+	    [30005] = true, -- Lodge-Matron Embla
+	    [29963] = true, -- Magorn
+	    [21088] = true, -- Matron Varah
+	    [29904] = true, -- Smilin' Slirk Brassknob
+	    [32411] = true, -- Afsaneh Asrar
+	    [23995] = true, -- Axle
+	    [24033] = true, -- Bori Wintertotem
+	    [25036] = true, -- Caregiver Inaara
+	    [27950] = true, -- Demestrasz
+	    [19352] = true, -- Dreg Cloudsweeper
+	    [19531] = true, -- Eyonix
+	    [19470] = true, -- Gholah
+	    [29926] = true, -- Gunda Boldhammer
+	    [27042] = true, -- Illusia Lune
+	    [18905] = true, -- Innkeeper Bazil Olof'tazun
+	    [6727] = true, -- Innkeeper Brianna
+	    [7714] = true, -- Innkeeper Byula
+	    [6272] = true, -- Innkeeper Janene
+	    [6930] = true, -- Innkeeper Karakul
+	    [12196] = true, -- Innkeeper Kaylisk
+	    [6738] = true, -- Innkeeper Kimlya
+	    [19571] = true, -- Innkeeper Remi Dodoso
+	    [5688] = true, -- Innkeeper Renee
+	    [9356] = true, -- Innkeeper Shul'kar
+	    [5814] = true, -- Innkeeper Thulbek
+	    [11118] = true, -- Innkeeper Vizzie
+	    [33971] = true, -- Jarin Dawnglow
+	    [18913] = true, -- Matron Tikkit
+	    [27052] = true, -- Naohain
+	    [29944] = true, -- Peon Gakra
+	    [26375] = true, -- Quartermaster McCarty
+	    [24149] = true, -- Basil Osgood
+	    [28686] = true, -- Caliel Brightwillow
+	    [16553] = true, -- Caregiver Chellan
+	    [17553] = true, -- Caregiver Topher Loaal
+	    [21746] = true, -- Caretaker Aluuro
+	    [9501] = true, -- Innkeeper Adegwa
+	    [2352] = true, -- Innkeeper Anderson
+	    [19319] = true, -- Innkeeper Darg Bloodclaw
+	    [15433] = true, -- Innkeeper Delaniel
+	    [16458] = true, -- Innkeeper Faralia
+	    [7737] = true, -- Innkeeper Greul
+	    [6928] = true, -- Innkeeper Grosk
+	    [6929] = true, -- Innkeeper Gryshka
+	    [7731] = true, -- Innkeeper Jayka
+	    [16542] = true, -- Innkeeper Kalarin
+	    [6737] = true, -- Innkeeper Shaussiy
+	    [6807] = true, -- Innkeeper Skindle
+	    [6791] = true, -- Innkeeper Wiley
+	    [27066] = true, -- Jennifer Bell
+	    [14731] = true, -- Lard
+	    [28791] = true, -- Marissa Everwatch
+	    [27069] = true, -- Matron Magah
+	    [18245] = true, -- Merajit
+	    [27027] = true, -- Mrs. Winterby
 	},
-	["Reagents"] = {
-		1257, -- Keldric Boucher
-		3323, -- Horthus
-		29537, -- Darahir
-		3562, -- Alaindia
-		24780, -- Field Repair Bot 110G
-		3335, -- Hagrus
-		16015, -- Vi'el
-		25082, -- Engineer Torquespindle
-		25039, -- Kaalif
-		24935, -- Vend-O-Tron D-Luxe
-		19679, -- "Slim"
-		27133, -- Seer Yagnar
-		28809, -- Vincent Huber
-		30345, -- Chief Engineer Boltwrench
-		1463, -- Falkan Armonis
-		3490, -- Hula'mahi
-		4575, -- Hannah Akeley
-		19718, -- Provisioner Tsaalt
-		26474, -- Ameenah
-		26968, -- Drikka
-		26984, -- Stephan Franks
-		27138, -- Apprentice Rosen
-		28827, -- Co'man
-		4220, -- Cyroen
-		35642, -- Jeeves
-		4878, -- Montarr
-		19678, -- Fantei
-		24349, -- Jessica Evans
-		27149, -- Arrluk
-		983, -- Thultazor
-		2805, -- Deneb Walker
-		14739, -- Mystic Yayo'jin
-		19013, -- Vanteg
-		19535, -- Dealer Zijaad
-		20915, -- Noko Moonwhisper
-		30010, -- Fylla Ingadottir
-		1307, -- Charys Yserian
-		3542, -- Jaysin Lanyda
-		3700, -- Jadenvis Seawatcher
-		8361, -- Chepi
-		16706, -- Musal
-		16829, -- Magus Zabraxis
-		23145, -- Rumpus
-		23157, -- Aluyen
-		24357, -- Maethor Skyshadow
-		24396, -- Forest Frog
-		25736, -- Supply Master Taz'ishi
-		26908, -- Helen Fairchild
-		30069, -- Initiate Roderick
-		30244, -- Miura Brightweaver
-		37935, -- Apothecary Candith Tomas
-		3351, -- Magenius
-		27030, -- Bradley Towns
-		29288, -- Engineer Kurtis Paddock
-		29961, -- Brangrimm
-		33669, -- Demolisher Engineer Blastwrench
-		1351, -- Brother Cassius
-		1673, -- Alyssa Eva
-		18243, -- Lorti
-		18998, -- Lursa Sunfallow
-		19004, -- Vodesiin
-		19235, -- Amshesha Stilldark
-		25019, -- Merchant Felagunne
-		26598, -- Mistie Flitterdawn
-		26900, -- Tinky Stabberson
-		27176, -- Mystic Makittuq
-		27935, -- Ferithos
-		28870, -- Corpsedust
-		30239, -- Alanura Firecloud
-		30438, -- Supply Officer Thalmers
-		37904, -- Brazie Getz
-		1275, -- Kyra Boucher
-		3500, -- Tarhus
-		4562, -- Thomas Mordan
-		18017, -- Seer Janidi
-		19014, -- Ogir
-		24995, -- Merchant Fallel Stargazer
-		26382, -- Balfour Blackblade
-		27039, -- Lexey Brevig
-		29015, -- Shaman Partak
-		29037, -- Soo-jam
-		29909, -- Nilika Blastbeaker
-		29922, -- Corig the Cunning
-		30307, -- Sarhule the Risen
-		32639, -- Gnimo
-		33871, -- Julie Osworth
-		3970, -- Llana
-		5110, -- Barim Jurgenstaad
-		17518, -- Ythyar
-		18019, -- Timothy Daniels
-		23373, -- Mortog Steamhead
-		23560, -- Provisioner Ameenah
-		24409, -- Kyren
-		25010, -- Engineer Brightbuckle
-		27186, -- Oogrooq
-		29968, -- Hapanu Coldwind
-		30825, -- Chief Engineer Copperclaw
-		32641, -- Drix Blackwrench
-		12097, -- Frostwolf Quartermaster
-		15175, -- Khur Hornstriker
-		16611, -- Zalle
-		16612, -- Velanni
-		16757, -- Bildine
-		20081, -- Bortega
-		25051, -- Merchant Frostwalker
-		26569, -- Alys Vol'tyr
-		27088, -- Yolanda Haymer
-		28714, -- Ildine Sorrowspear
-		29203, -- Alchemist Karloff
-		31115, -- Quartermaster Vaskess
-		958, -- Dawn Brightstar
-		1308, -- Owen Vaughn
-		4083, -- Jeeda
-		5139, -- Kurdrum Barleybeard
-		5151, -- Ginny Longberry
-		10364, -- Yaelika Farclaw
-		12096, -- Stormpike Quartermaster
-		13476, -- Balai Lok'Wein
-		18006, -- Noraani
-		20092, -- Dealer Hazzin
-		22479, -- Sab'aoth
-		23112, -- Mingo
-		24313, -- Celina Summers
-		24843, -- Engineer Combs
-		26950, -- Sanut Swiftspear
-		27054, -- Modoru
-		29561, -- Scrapbot
-		29636, -- Hagatha Moorehead
-		29947, -- Apothecary Maple
+	[MINIMAP_TRACKING_VENDOR_REAGENT] = {
+		[1257] = true, -- Keldric Boucher
+		[3323] = true, -- Horthus
+		[29537] = true, -- Darahir
+		[3562] = true, -- Alaindia
+		[24780] = true, -- Field Repair Bot [110] = trueG
+		[3335] = true, -- Hagrus
+		[16015] = true, -- Vi'el
+		[25082] = true, -- Engineer Torquespindle
+		[25039] = true, -- Kaalif
+		[24935] = true, -- Vend-O-Tron D-Luxe
+		[19679] = true, -- "Slim"
+		[27133] = true, -- Seer Yagnar
+		[28809] = true, -- Vincent Huber
+		[30345] = true, -- Chief Engineer Boltwrench
+		[1463] = true, -- Falkan Armonis
+		[3490] = true, -- Hula'mahi
+		[4575] = true, -- Hannah Akeley
+		[19718] = true, -- Provisioner Tsaalt
+		[26474] = true, -- Ameenah
+		[26968] = true, -- Drikka
+		[26984] = true, -- Stephan Franks
+		[27138] = true, -- Apprentice Rosen
+		[28827] = true, -- Co'man
+		[4220] = true, -- Cyroen
+		[35642] = true, -- Jeeves
+		[4878] = true, -- Montarr
+		[19678] = true, -- Fantei
+		[24349] = true, -- Jessica Evans
+		[27149] = true, -- Arrluk
+		[983] = true, -- Thultazor
+		[2805] = true, -- Deneb Walker
+		[14739] = true, -- Mystic Yayo'jin
+		[19013] = true, -- Vanteg
+		[19535] = true, -- Dealer Zijaad
+		[20915] = true, -- Noko Moonwhisper
+		[30010] = true, -- Fylla Ingadottir
+		[1307] = true, -- Charys Yserian
+		[3542] = true, -- Jaysin Lanyda
+		[3700] = true, -- Jadenvis Seawatcher
+		[8361] = true, -- Chepi
+		[16706] = true, -- Musal
+		[16829] = true, -- Magus Zabraxis
+		[23145] = true, -- Rumpus
+		[23157] = true, -- Aluyen
+		[24357] = true, -- Maethor Skyshadow
+		[24396] = true, -- Forest Frog
+		[25736] = true, -- Supply Master Taz'ishi
+		[26908] = true, -- Helen Fairchild
+		[30069] = true, -- Initiate Roderick
+		[30244] = true, -- Miura Brightweaver
+		[37935] = true, -- Apothecary Candith Tomas
+		[3351] = true, -- Magenius
+		[27030] = true, -- Bradley Towns
+		[29288] = true, -- Engineer Kurtis Paddock
+		[29961] = true, -- Brangrimm
+		[33669] = true, -- Demolisher Engineer Blastwrench
+		[1351] = true, -- Brother Cassius
+		[1673] = true, -- Alyssa Eva
+		[18243] = true, -- Lorti
+		[18998] = true, -- Lursa Sunfallow
+		[19004] = true, -- Vodesiin
+		[19235] = true, -- Amshesha Stilldark
+		[25019] = true, -- Merchant Felagunne
+		[26598] = true, -- Mistie Flitterdawn
+		[26900] = true, -- Tinky Stabberson
+		[27176] = true, -- Mystic Makittuq
+		[27935] = true, -- Ferithos
+		[28870] = true, -- Corpsedust
+		[30239] = true, -- Alanura Firecloud
+		[30438] = true, -- Supply Officer Thalmers
+		[37904] = true, -- Brazie Getz
+		[1275] = true, -- Kyra Boucher
+		[3500] = true, -- Tarhus
+		[4562] = true, -- Thomas Mordan
+		[18017] = true, -- Seer Janidi
+		[19014] = true, -- Ogir
+		[24995] = true, -- Merchant Fallel Stargazer
+		[26382] = true, -- Balfour Blackblade
+		[27039] = true, -- Lexey Brevig
+		[29015] = true, -- Shaman Partak
+		[29037] = true, -- Soo-jam
+		[29909] = true, -- Nilika Blastbeaker
+		[29922] = true, -- Corig the Cunning
+		[30307] = true, -- Sarhule the Risen
+		[32639] = true, -- Gnimo
+		[33871] = true, -- Julie Osworth
+		[3970] = true, -- Llana
+		[5110] = true, -- Barim Jurgenstaad
+		[17518] = true, -- Ythyar
+		[18019] = true, -- Timothy Daniels
+		[23373] = true, -- Mortog Steamhead
+		[23560] = true, -- Provisioner Ameenah
+		[24409] = true, -- Kyren
+		[25010] = true, -- Engineer Brightbuckle
+		[27186] = true, -- Oogrooq
+		[29968] = true, -- Hapanu Coldwind
+		[30825] = true, -- Chief Engineer Copperclaw
+		[32641] = true, -- Drix Blackwrench
+		[12097] = true, -- Frostwolf Quartermaster
+		[15175] = true, -- Khur Hornstriker
+		[16611] = true, -- Zalle
+		[16612] = true, -- Velanni
+		[16757] = true, -- Bildine
+		[20081] = true, -- Bortega
+		[25051] = true, -- Merchant Frostwalker
+		[26569] = true, -- Alys Vol'tyr
+		[27088] = true, -- Yolanda Haymer
+		[28714] = true, -- Ildine Sorrowspear
+		[29203] = true, -- Alchemist Karloff
+		[31115] = true, -- Quartermaster Vaskess
+		[958] = true, -- Dawn Brightstar
+		[1308] = true, -- Owen Vaughn
+		[4083] = true, -- Jeeda
+		[5139] = true, -- Kurdrum Barleybeard
+		[5151] = true, -- Ginny Longberry
+		[10364] = true, -- Yaelika Farclaw
+		[12096] = true, -- Stormpike Quartermaster
+		[13476] = true, -- Balai Lok'Wein
+		[18006] = true, -- Noraani
+		[20092] = true, -- Dealer Hazzin
+		[22479] = true, -- Sab'aoth
+		[23112] = true, -- Mingo
+		[24313] = true, -- Celina Summers
+		[24843] = true, -- Engineer Combs
+		[26950] = true, -- Sanut Swiftspear
+		[27054] = true, -- Modoru
+		[29561] = true, -- Scrapbot
+		[29636] = true, -- Hagatha Moorehead
+		[29947] = true, -- Apothecary Maple
 	},
-	["Repair"] = {
-		19373, -- Mari Stonehand
-		28995, -- Paldesse
-		16583, -- Rohok
-		34252, -- Dubin Clay
-		28992, -- Valerie Langrom
-		37687, -- Alchemist Finklestein
-		29523, -- Bragund Brightlink
-		28997, -- Griselda Hunderland
-		25206, -- Ahlurglgr
-		31863, -- Nargle Lashcord
-		35496, -- Rueben Lauren
-		35498, -- Horace Hunderland
-		23381, -- Tydormu
-		38316, -- Ormus the Penitent
-		17904, -- Fedryen Swiftspear
-		28040, -- Mardan Thunderhoof
-		3392, -- Prospector Khazgorm
-		35497, -- Rafael Langrom
-		14624, -- Master Smith Burninate
-		18011, -- Zurai
-		35500, -- Matilda Brightlink
-		38858, -- Goodman the "Closer"
-		8161, -- Harggan
-		19662, -- Aaron Hollman
-		19575, -- Qiff
-		34087, -- Trapjaw Rix
-		38283, -- Malfus Grimfrost
-		18382, -- Mycah
-		31864, -- Xazi Smolderpipe
-		14754, -- Kelm Hargunth
-		12788, -- Legionnaire Teena
-		14921, -- Rin'wosho the Trader
-		19383, -- Captured Gnome
-		33594, -- Fizzix Blastbolt
-		12778, -- Lieutenant Rachel Vaccar
-		32385, -- Doris Volanthius
-		30006, -- Warsmith Sigfinna
-		19536, -- Dealer Jadyan
-		28722, -- Bryan Landers
-		37696, -- Crusader Halford
-		3322, -- Kaja
-		7852, -- Pratt McGrubben
-		29494, -- Shen Kang Cheng
-		29014, -- Grakjek
-		14753, -- Illiyana Moonblaze
-		28990, -- Anthony Durain
-		32381, -- Captain Dirgehammer
-		8176, -- Gharash
-		27037, -- Hidetrader Jun'ik
-		16631, -- Andra
-		31781, -- Blast Thunderbomb
-		11278, -- Magnus Frostwake
-		37998, -- Talan Moonstrike
-		32834, -- Knight-Lieutenant Moonstrike
-		28500, -- Master Siegesmith Corvus
-		37992, -- Tortunok
-		32832, -- Blood Guard Zar'shi
-		16376, -- Craftsman Wilhelm
-		1669, -- Defias Profiteer
-		3682, -- Vrang Wildgore
-		1298, -- Frederick Stover
-		15289, -- Raelis Dawnstar
-		31865, -- Zom Bocom
-		10857, -- Argent Quartermaster Lightspark
-		12782, -- Captain O'Neal
-		31776, -- Frazzle Geargrinder
-		9179, -- Jazzrik
-		20242, -- Karaaz
-		15126, -- Rutherford Twing
-		27011, -- Broff Bombast
-		29688, -- Engineer Reed
-		25314, -- Archmage Berinand
-		37688, -- Crusader Grimtong
-		15909, -- Fariel Starsong
-		26081, -- High Admiral "Shelly" Jorrik
-		3319, -- Sana
-		15176, -- Vargus
-		37999, -- Alana Moonstrike
-		15292, -- Faraden Thelryn
-		37993, -- Gerardo the Suave
-		5170, -- Hjoldir Stoneblade
-		3589, -- Keina
-		21183, -- Oronok Torn-heart
-		14581, -- Sergeant Thunderhorn
-		3534, -- Wallace the Blind
-		3167, -- Wuark
-		32594, -- Calder
-		38181, -- Haragg the Unseen
-		19342, -- Krek Cragcrush
-		19011, -- Osrok the Immovable
-		23007, -- Paulsta'ats
-		38054, -- Scott the Merciful
-		25046, -- Smith Hauthaa
-		13217, -- Thanthaldis Snowgleam
-		3314, -- Urtharo
-		38284, -- Uvlus Banefire
-		28991, -- Valaden Silverblade
-		29907, -- Xark Bolthammer
-		3537, -- Zixil
-		2135, -- Abe Winters
-		228, -- Avette Fellwood
-		3951, -- Bhaldaran Ravenshade
-		28344, -- Blazzle
-		1687, -- Cliff Hadin
-		19526, -- Dunaman
-		30434, -- Durik Bronzebomb
-		23367, -- Grella
-		16823, -- Humphry
-		2844, -- Hurklor
-		2843, -- Jutak
-		5411, -- Krinkle Goodsteel
-		12942, -- Leonard Porter
-		3529, -- Moonrage Armorer
-		1645, -- Quartermaster Hicks
-		32383, -- Sergeant Thunderhorn
-		20231, -- Supply Officer Pestle
-		28989, -- Aemara
-		8131, -- Blizrik Buckshot
-		1450, -- Brahnmar
-		21474, -- Coreiel
-		4164, -- Cylania
-		27943, -- Dalormi
-		1686, -- Irene Sureshot
-		29252, -- Jason Riggins
-		16918, -- Jel
-		19047, -- Lissaf
-		29945, -- Marksman Udabu
-		3539, -- Ott
-		28716, -- Palja Amboss
-		24188, -- Samuel Rosemond
-		14737, -- Smith Slagtree
-		1690, -- Thrawn Boltar
-		3349, -- Ukra'nor
-		16637, -- Welethelon
-		2679, -- Wenna Silkbeard
-		19517, -- Alorra
-		20613, -- Arodis Sunblade
-		16715, -- Avelii
-		17667, -- Beega
-		4602, -- Benijah Fenner
-		14301, -- Brinna Valanaar
-		26600, -- Chief Engineer Galpen Rolltie
-		1314, -- Duncan Cullen
-		13216, -- Gaelden Hammersmith
-		3343, -- Grelkor
-		13218, -- Grunnda Wolfheart
-		30067, -- Initiate Claget
-		13219, -- Jekyll Flandring
-		3015, -- Kuna Thunderhorn
-		74, -- Kurran Steele
-		19520, -- Lelagar
-		4177, -- Melea
-		38182, -- Niby the Almighty
-		16528, -- Provisioner Vredigar
-		5108, -- Raena Flinthammer
-		19240, -- Selanam the Blade
-		18672, -- Thomas Yance
-		19238, -- Urumir Stavebright
-		38841, -- Vol'guk
-		22099, -- Wyrmcult Provisioner
-		2482, -- Zarena Cromwind
-		3409, -- Zendo'jian
-		20917, -- Zinyen Swiftstrider
-		1214, -- Aldren Cordon
-		3592, -- Andiss
-		27667, -- Anwehu
-		1312, -- Ardwyn Cailen
-		10856, -- Argent Quartermaster Hasana
-		28796, -- Arlen Brighthammer
-		29499, -- Bartram Haller
-		1240, -- Boran Ironclink
-		12777, -- Captain Dirgehammer
-		29964, -- Dargum Hammerdeep
-		14337, -- Field Repair Bot 74A
-		3080, -- Harant Ironbrace
-		28760, -- Hargus the Geist
-		29538, -- Hexil Garrot
-		3160, -- Huklah
-		5155, -- Ingrys Stonebrow
-		15291, -- Jainthess Thelryn
-		12023, -- Kharedon
-		12792, -- Lady Palanseer
-		4558, -- Lauren Newcomb
-		27139, -- Librarian Whitley
-		4186, -- Mavralyn
-		3533, -- Moonrage Leatherworker
-		167, -- Morhan Coppertongue
-		8878, -- Muuran
-		4085, -- Nizzik
-		16691, -- Noraelath
-		22264, -- Ogri'la Steelshaper
-		17412, -- Phaedra
-		3528, -- Pyrewood Armorer
-		3532, -- Pyrewood Leatherworker
-		2849, -- Qixdi Goodstitch
-		3543, -- Robert Aebischer
-		27134, -- Smith Prigka
-		9551, -- Starn
-		18426, -- Terellia
-		1668, -- William MacGregor
-		37997, -- Yili
-		9544, -- Yuka Screwspigot
-		21485, -- Aldraan
-		25274, -- Armorer Orkuruk
-		20616, -- Asuur
-		22476, -- Aundro
-		16917, -- Aurok
-		23735, -- Bartleby Armorfist
-		3611, -- Brannol Eaglemoon
-		4240, -- Caynrus
-		16619, -- Celana
-		27151, -- Deniigi
-		190, -- Dermot Johns
-		836, -- Durnan Furcutter
-		4180, -- Ealyshia Dewwhisper
-		28813, -- Elizabeth Hollingsworth
-		28943, -- Fineous
-		1698, -- Frast Dokner
-		3591, -- Freja Nightwing
-		4184, -- Geenia Sunshadow
-		19333, -- Grokom Deatheye
-		1289, -- Gunther Weller
-		19879, -- Horvon the Armorer
-		3491, -- Ironzar
-		2847, -- Jansen Underwood
-		3410, -- Jin'sora
-		5512, -- Kaita Deepforge
-		3021, -- Kard Ragetotem
-		954, -- Kat Sampson
-		4257, -- Lana Thunderbrew
-		29035, -- Loomee
-		18010, -- Maktu
-		22227, -- Markus Scylan
-		27045, -- Master Smith Devin Brevig
-		4171, -- Merelyssa
-		3613, -- Meri Ironweave
-		3531, -- Moonrage Tailor
-		16919, -- Mura
-		9553, -- Nadia Vernon
-		16274, -- Narina
-		4603, -- Nicholas Atwood
-		12805, -- Officer Areyn
-		27267, -- Quartermaster Bartlett
-		30336, -- Runesmith Balehammer
-		16261, -- Sathiel
-		12799, -- Sergeant Ba'sha
-		37903, -- Shely Steelbowels
-		3361, -- Shoma
-		27019, -- Siegesmith Gulda
-		19315, -- Supply Officer Isabel
-		19314, -- Supply Officer Shandria
-		19001, -- Talaara
-		26697, -- Tewah Chillmane
-		26229, -- Tiernan Anvilheart
-		26898, -- Troz
-		4086, -- Veenix
-		4604, -- Abigail Sawyer
-		1349, -- Agustus Moulaine
-		19043, -- Ahemen
-		1294, -- Aldric Moore
-		20463, -- Apprentice Andrethan
-		15400, -- Arathel Sunforge
-		17655, -- Blacksmith Frances
-		3162, -- Burdrak Harglhelm
-		9548, -- Cawind Trueaim
-		32477, -- Chester Copperpot
-		4236, -- Cyridan
-		19351, -- Daggle Ironshaper
-		29923, -- Dagni Oregleam
-		27067, -- Drigoth
-		8360, -- Elki
-		16765, -- Ellomin
-		16258, -- Farsil
-		16666, -- Feledis
-		4043, -- Galthuk
-		1238, -- Gamili Frosthide
-		5820, -- Gillian Moore
-		1362, -- Gothor Brumn
-		1348, -- Gregory Ardus
-		1104, -- Grundel Harkin
-		10361, -- Gruul Darkblade
-		5133, -- Harick Boulderdrum
-		981, -- Hartash
-		2483, -- Jaquilina Dramet
-		4892, -- Jensen Farran
-		793, -- Kara Adams
-		5509, -- Kathrum Axehand
-		5121, -- Kelomir Ironhand
-		3588, -- Khardan Proudblade
-		3360, -- Koru
-		3536, -- Kris Legace
-		30241, -- Lanudal Silverhart
-		12784, -- Lieutenant Jackspring
-		1297, -- Lina Stover
-		1299, -- Lisbeth Schneider
-		5156, -- Maeva Snowbraid
-		37936, -- Morgan Dayblaze
-		959, -- Morley Eberlein
-		16735, -- Muhaa
-		222, -- Nillen Andemar
-		30572, -- Nofal
-		8398, -- Ohanko
-		23159, -- Okuno
-		1323, -- Osric Strang
-		1249, -- Quartermaster Hudson
-		15127, -- Samuel Hawke
-		10380, -- Sanuye Runetotem
-		12785, -- Sergeant Major Clate
-		5821, -- Sheldon Von Croy
-		18926, -- Sleyin
-		3356, -- Sumi
-		3022, -- Sunn Ragetotem
-		19436, -- Supply Master Broog
-		2999, -- Taur Stonehoof
-		1350, -- Theresa Moulaine
-		984, -- Thralosh
-		27188, -- Tonraq
-		10369, -- Trayexir
-		16762, -- Treall
-		3079, -- Varg Windwhisper
-		896, -- Veldan Lightfoot
-		1146, -- Vharr
-		26599, -- Willis Wobblewheel
-		1309, -- Wynne Larson
-		11137, -- Xai'ander
-		20082, -- Yarley
-		4884, -- Zulrg
-		24347, -- Alexis Walker
-		1315, -- Allan Hafgan
-		10379, -- Altsoba Ragetotem
-		4172, -- Anadyia
-		2046, -- Andrew Krighton
-		25196, -- Archer Delvinar
-		28855, -- Ba'kari
-		2116, -- Blacksmith Rand
-		11183, -- Blixxrak
-		21112, -- Bossi Pentapiston
-		1441, -- Brak Durnad
-		5123, -- Bretta Goldfury
-		31024, -- Brock Thriss
-		33599, -- Brollen Wheatbeard
-		1319, -- Bryan Cross
-		6028, -- Burkrum
-		26393, -- Captain Dirgehammer
-		26394, -- Captain O'Neal
-		1291, -- Carla Granger
-		19056, -- Cecil Meyers
-		4569, -- Charles Seaton
-		3166, -- Cutac
-		956, -- Dorin Songblade
-		10293, -- Dulciea Frostmoon
-		6300, -- Elisa Steelhand
-		3020, -- Etu Ragetotem
-		1310, -- Evan Larson
-		18997, -- Fallesh Sunfallow
-		1296, -- Felder Stover
-		225, -- Gavin Gnarltree
-		1333, -- Gerik Koen
-		3165, -- Ghrawt
-		4232, -- Glorandiir
-		1213, -- Godric Rothgar
-		4556, -- Gordon Wendham
-		16716, -- Gornii
-		11703, -- Graw Cornerstone
-		1273, -- Grawn Thromwyn
-		980, -- Grimnal
-		3093, -- Grod
-		12045, -- Hae'Wilani
-		28797, -- Haley Copperturn
-		30436, -- Halig Fireforge
-		5119, -- Hegnar Swiftaxe
-		1324, -- Heinrich Stone
-		1147, -- Hragran
-		37991, -- Ikfirus the Vile
-		78, -- Janos Hammerknuckle
-		38840, -- Jedebia
-		3610, -- Jeena Featherbow
-		1454, -- Jennabink Powerseam
-		16625, -- Keeli
-		22491, -- Kerpow Blastwrench
-		4231, -- Kieran
-		29253, -- Koloth
-		1381, -- Krakk
-		4173, -- Landria
-		1295, -- Lara Moore
-		31027, -- Leeka Turner
-		5129, -- Lissyphus Finespindle
-		3658, -- Lizzarik
-		4557, -- Louis Warren
-		4580, -- Lucille Castleton
-		226, -- Morg Gnarltree
-		3321, -- Morgum
-		17930, -- Nabek
-		1459, -- Naela Trance
-		31805, -- Nagojut
-		3317, -- Ollanus
-		5126, -- Olthran Craghelm
-		29969, -- Ontak
-		19370, -- Ordinn Thunderfist
-		24330, -- Orson Locke
-		18278, -- Pilot Marsha
-		3684, -- Pizznukle
-		16678, -- Rahein
-		1198, -- Rallic Finn
-		1695, -- Rendow
-		945, -- Rybrad Coldbank
-		23724, -- Samir
-		28871, -- Scabbard
-		27055, -- Sentinel Amberline
-		4185, -- Shaldyn
-		3609, -- Shalomon
-		1407, -- Sranda
-		5508, -- Strumner Flintheel
-		3023, -- Sura Wildmane
-		3053, -- Synge
-		24028, -- Talu Frosthoof
-		5510, -- Thulman Flintcrag
-		4259, -- Thurgrum Deepforge
-		4559, -- Timothy Weldon
-		3315, -- Tor'phan
-		5812, -- Tumi
-		3488, -- Uthrok
-		16186, -- Vara
-		4175, -- Vinasia
-		29497, -- Walther Whiteford
-		1341, -- Wilhelm Strang
-		20112, -- Wind Trader Tuluman
-		16693, -- Winthren
-		8129, -- Wrinkle Goodsteel
-		16750, -- Yil
-		9552, -- Zanara
-		23897, -- Zungam
-		16623, -- Zyandrel
-		3952, -- Aeolynn
-		8359, -- Ahanu
-		28800, -- Aidan Steeleye
-		3552, -- Alexandre Lefevre
-		3554, -- Andrea Boynton
-		4234, -- Andrus
-		2113, -- Archibald Kava
-		16260, -- Areyn
-		4203, -- Ariyell Skyshadow
-		18962, -- Bar Talet
-		3097, -- Bernard Brubaker
-		5152, -- Bingus
-		17245, -- Blacksmith Calypso
-		9549, -- Borand
-		5120, -- Brenwyn Wintersteel
-		27062, -- Brom Armstrong
-		5106, -- Bromiir Ormsen
-		3075, -- Bronk Steelrage
-		19499, -- Cahill
-		3522, -- Constance Brisboise
-		54, -- Corina Steele
-		29476, -- Dagna Flintlock
-		19530, -- Darmend
-		3019, -- Delgo Ragetotem
-		5125, -- Dolkin Craghelm
-		5102, -- Dolman Steelfury
-		1462, -- Edwina Monzor
-		24052, -- Eldrim Mounder
-		2137, -- Eliza Callen
-		16670, -- Eriden
-		26934, -- Everett McGill
-		2845, -- Fargon Mortalak
-		3095, -- Fela
-		30253, -- Felindel Sunhammer
-		23862, -- Finlay Fletcher
-		4601, -- Francis Eliot
-		4600, -- Geoffrey Hartwell
-		16257, -- Geron
-		3000, -- Gibbert
-		16753, -- Gotaan
-		3493, -- Grazlix
-		5103, -- Grenil Steelfury
-		23144, -- Gug
-		19561, -- Hagash the Blind
-		3486, -- Halija Whitestrider
-		3316, -- Handor
-		4886, -- Hans Weston
-		2839, -- Haren Kanmae
-		4187, -- Harlon Thornguard
-		2117, -- Harold Raims
-		1243, -- Hegnar Rumbleshot
-		3088, -- Henry Chapal
-		8358, -- Hewa
-		3018, -- Hogor Thunderhoof
-		3477, -- Hraq
-		4188, -- Illyanie
-		3483, -- Jahan Hawkwing
-		3590, -- Janna Brightmoon
-		1471, -- Jannos Ironwill
-		23908, -- Jhet Ironbeard
-		2997, -- Jyn Stonehoof
-		3331, -- Kareth
-		5816, -- Katis
-		3078, -- Kennah Hawkseye
-		29496, -- Kerta the Bold
-		3683, -- Kiknikle
-		789, -- Kimberly Hiett
-		17929, -- Kioni
-		3359, -- Kiro
-		2840, -- Kizz Bluntstrike
-		16388, -- Koren
-		19339, -- Korthul
-		4883, -- Krak
-		27185, -- Kuk'uq
-		32253, -- Kyunghee
-		3159, -- Kzan Thornslash
-		26707, -- Litoko Icetotem
-		19694, -- Loolruna
-		19239, -- Mahir Redstroke
-		3077, -- Mahnott Roughwound
-		16747, -- Mahri
-		5107, -- Mangorn Flinthammer
-		1287, -- Marda Weller
-		4888, -- Marie Holdston
-		3073, -- Marjak Keenblade
-		16620, -- Mathaleron
-		1322, -- Maxton Strang
-		1339, -- Mayda Thane
-		12024, -- Meliri
-		5819, -- Mirelle Tremayne
-		9555, -- Mu'uta
-		3330, -- Muragus
-		1461, -- Murndan Derth
-		15315, -- Mylini Frostmoon
-		4233, -- Mythidan
-		4183, -- Naram Longclaw
-		3479, -- Nargal Deatheye
-		12029, -- Narianna
-		4592, -- Nathaniel Steenwick
-		11182, -- Nixxrak
-		2136, -- Oliver Dwor
-		19479, -- Orgatha
-		16632, -- Oss
-		16263, -- Paelarin
-		4890, -- Piter Verance
-		3530, -- Pyrewood Tailor
-		31804, -- Qatiichii
-		19452, -- Quartermaster Drake
-		19236, -- Quelama Lightblade
-		19473, -- Raiza
-		3161, -- Rarc
-		23571, -- Razbo Rustgear
-		22225, -- Reagan Mancuso
-		21086, -- Ruka
-		4597, -- Samuel Van Brunt
-		3553, -- Sebastian Meloche
-		1320, -- Seoman Griffith
-		14371, -- Shen'dralar Provisioner
-		20890, -- Siflaed Coldhammer
-		3612, -- Sinda
-		5122, -- Skolmin Goldfury
-		19012, -- Sparik
-		4570, -- Sydney Upton
-		3092, -- Tagain
-		3953, -- Tandaan Lightmane
-		27711, -- Technician Halmaha
-		7976, -- Thalgus Thunderfist
-		26901, -- Torik
-		4889, -- Torq Ironblast
-		4235, -- Turian
-		3177, -- Turuk Amberstill
-		16626, -- Tynna
-		3163, -- Uhgar
-		3074, -- Varia Hardhide
-		16714, -- Ven
-		3492, -- Vexspindle
-		1469, -- Vrok Blunderblast
-		4560, -- Walter Ellingson
-		11184, -- Wixxrak
-		8159, -- Worb Strongstitch
-		5754, -- Zane Bradford
-		16636, -- Zathanna
+	[MINIMAP_TRACKING_REPAIR] = {
+		[19373] = true, -- Mari Stonehand
+		[28995] = true, -- Paldesse
+		[16583] = true, -- Rohok
+		[34252] = true, -- Dubin Clay
+		[28992] = true, -- Valerie Langrom
+		[37687] = true, -- Alchemist Finklestein
+		[29523] = true, -- Bragund Brightlink
+		[28997] = true, -- Griselda Hunderland
+		[25206] = true, -- Ahlurglgr
+		[31863] = true, -- Nargle Lashcord
+		[35496] = true, -- Rueben Lauren
+		[35498] = true, -- Horace Hunderland
+		[23381] = true, -- Tydormu
+		[38316] = true, -- Ormus the Penitent
+		[17904] = true, -- Fedryen Swiftspear
+		[28040] = true, -- Mardan Thunderhoof
+		[3392] = true, -- Prospector Khazgorm
+		[35497] = true, -- Rafael Langrom
+		[14624] = true, -- Master Smith Burninate
+		[18011] = true, -- Zurai
+		[35500] = true, -- Matilda Brightlink
+		[38858] = true, -- Goodman the "Closer"
+		[8161] = true, -- Harggan
+		[19662] = true, -- Aaron Hollman
+		[19575] = true, -- Qiff
+		[34087] = true, -- Trapjaw Rix
+		[38283] = true, -- Malfus Grimfrost
+		[18382] = true, -- Mycah
+		[31864] = true, -- Xazi Smolderpipe
+		[14754] = true, -- Kelm Hargunth
+		[12788] = true, -- Legionnaire Teena
+		[14921] = true, -- Rin'wosho the Trader
+		[19383] = true, -- Captured Gnome
+		[33594] = true, -- Fizzix Blastbolt
+		[12778] = true, -- Lieutenant Rachel Vaccar
+		[32385] = true, -- Doris Volanthius
+		[30006] = true, -- Warsmith Sigfinna
+		[19536] = true, -- Dealer Jadyan
+		[28722] = true, -- Bryan Landers
+		[37696] = true, -- Crusader Halford
+		[3322] = true, -- Kaja
+		[7852] = true, -- Pratt McGrubben
+		[29494] = true, -- Shen Kang Cheng
+		[29014] = true, -- Grakjek
+		[14753] = true, -- Illiyana Moonblaze
+		[28990] = true, -- Anthony Durain
+		[32381] = true, -- Captain Dirgehammer
+		[8176] = true, -- Gharash
+		[27037] = true, -- Hidetrader Jun'ik
+		[16631] = true, -- Andra
+		[31781] = true, -- Blast Thunderbomb
+		[11278] = true, -- Magnus Frostwake
+		[37998] = true, -- Talan Moonstrike
+		[32834] = true, -- Knight-Lieutenant Moonstrike
+		[28500] = true, -- Master Siegesmith Corvus
+		[37992] = true, -- Tortunok
+		[32832] = true, -- Blood Guard Zar'shi
+		[16376] = true, -- Craftsman Wilhelm
+		[1669] = true, -- Defias Profiteer
+		[3682] = true, -- Vrang Wildgore
+		[1298] = true, -- Frederick Stover
+		[15289] = true, -- Raelis Dawnstar
+		[31865] = true, -- Zom Bocom
+		[10857] = true, -- Argent Quartermaster Lightspark
+		[12782] = true, -- Captain O'Neal
+		[31776] = true, -- Frazzle Geargrinder
+		[9179] = true, -- Jazzrik
+		[20242] = true, -- Karaaz
+		[15126] = true, -- Rutherford Twing
+		[27011] = true, -- Broff Bombast
+		[29688] = true, -- Engineer Reed
+		[25314] = true, -- Archmage Berinand
+		[37688] = true, -- Crusader Grimtong
+		[15909] = true, -- Fariel Starsong
+		[26081] = true, -- High Admiral "Shelly" Jorrik
+		[3319] = true, -- Sana
+		[15176] = true, -- Vargus
+		[37999] = true, -- Alana Moonstrike
+		[15292] = true, -- Faraden Thelryn
+		[37993] = true, -- Gerardo the Suave
+		[5170] = true, -- Hjoldir Stoneblade
+		[3589] = true, -- Keina
+		[21183] = true, -- Oronok Torn-heart
+		[14581] = true, -- Sergeant Thunderhorn
+		[3534] = true, -- Wallace the Blind
+		[3167] = true, -- Wuark
+		[32594] = true, -- Calder
+		[38181] = true, -- Haragg the Unseen
+		[19342] = true, -- Krek Cragcrush
+		[19011] = true, -- Osrok the Immovable
+		[23007] = true, -- Paulsta'ats
+		[38054] = true, -- Scott the Merciful
+		[25046] = true, -- Smith Hauthaa
+		[13217] = true, -- Thanthaldis Snowgleam
+		[3314] = true, -- Urtharo
+		[38284] = true, -- Uvlus Banefire
+		[28991] = true, -- Valaden Silverblade
+		[29907] = true, -- Xark Bolthammer
+		[3537] = true, -- Zixil
+		[2135] = true, -- Abe Winters
+		[228] = true, -- Avette Fellwood
+		[3951] = true, -- Bhaldaran Ravenshade
+		[28344] = true, -- Blazzle
+		[1687] = true, -- Cliff Hadin
+		[19526] = true, -- Dunaman
+		[30434] = true, -- Durik Bronzebomb
+		[23367] = true, -- Grella
+		[16823] = true, -- Humphry
+		[2844] = true, -- Hurklor
+		[2843] = true, -- Jutak
+		[5411] = true, -- Krinkle Goodsteel
+		[12942] = true, -- Leonard Porter
+		[3529] = true, -- Moonrage Armorer
+		[1645] = true, -- Quartermaster Hicks
+		[32383] = true, -- Sergeant Thunderhorn
+		[20231] = true, -- Supply Officer Pestle
+		[28989] = true, -- Aemara
+		[8131] = true, -- Blizrik Buckshot
+		[1450] = true, -- Brahnmar
+		[21474] = true, -- Coreiel
+		[4164] = true, -- Cylania
+		[27943] = true, -- Dalormi
+		[1686] = true, -- Irene Sureshot
+		[29252] = true, -- Jason Riggins
+		[16918] = true, -- Jel
+		[19047] = true, -- Lissaf
+		[29945] = true, -- Marksman Udabu
+		[3539] = true, -- Ott
+		[28716] = true, -- Palja Amboss
+		[24188] = true, -- Samuel Rosemond
+		[14737] = true, -- Smith Slagtree
+		[1690] = true, -- Thrawn Boltar
+		[3349] = true, -- Ukra'nor
+		[16637] = true, -- Welethelon
+		[2679] = true, -- Wenna Silkbeard
+		[19517] = true, -- Alorra
+		[20613] = true, -- Arodis Sunblade
+		[16715] = true, -- Avelii
+		[17667] = true, -- Beega
+		[4602] = true, -- Benijah Fenner
+		[14301] = true, -- Brinna Valanaar
+		[26600] = true, -- Chief Engineer Galpen Rolltie
+		[1314] = true, -- Duncan Cullen
+		[13216] = true, -- Gaelden Hammersmith
+		[3343] = true, -- Grelkor
+		[13218] = true, -- Grunnda Wolfheart
+		[30067] = true, -- Initiate Claget
+		[13219] = true, -- Jekyll Flandring
+		[3015] = true, -- Kuna Thunderhorn
+		[74] = true, -- Kurran Steele
+		[19520] = true, -- Lelagar
+		[4177] = true, -- Melea
+		[38182] = true, -- Niby the Almighty
+		[16528] = true, -- Provisioner Vredigar
+		[5108] = true, -- Raena Flinthammer
+		[19240] = true, -- Selanam the Blade
+		[18672] = true, -- Thomas Yance
+		[19238] = true, -- Urumir Stavebright
+		[38841] = true, -- Vol'guk
+		[22099] = true, -- Wyrmcult Provisioner
+		[2482] = true, -- Zarena Cromwind
+		[3409] = true, -- Zendo'jian
+		[20917] = true, -- Zinyen Swiftstrider
+		[1214] = true, -- Aldren Cordon
+		[3592] = true, -- Andiss
+		[27667] = true, -- Anwehu
+		[1312] = true, -- Ardwyn Cailen
+		[10856] = true, -- Argent Quartermaster Hasana
+		[28796] = true, -- Arlen Brighthammer
+		[29499] = true, -- Bartram Haller
+		[1240] = true, -- Boran Ironclink
+		[12777] = true, -- Captain Dirgehammer
+		[29964] = true, -- Dargum Hammerdeep
+		[14337] = true, -- Field Repair Bot [74] = trueA
+		[3080] = true, -- Harant Ironbrace
+		[28760] = true, -- Hargus the Geist
+		[29538] = true, -- Hexil Garrot
+		[3160] = true, -- Huklah
+		[5155] = true, -- Ingrys Stonebrow
+		[15291] = true, -- Jainthess Thelryn
+		[12023] = true, -- Kharedon
+		[12792] = true, -- Lady Palanseer
+		[4558] = true, -- Lauren Newcomb
+		[27139] = true, -- Librarian Whitley
+		[4186] = true, -- Mavralyn
+		[3533] = true, -- Moonrage Leatherworker
+		[167] = true, -- Morhan Coppertongue
+		[8878] = true, -- Muuran
+		[4085] = true, -- Nizzik
+		[16691] = true, -- Noraelath
+		[22264] = true, -- Ogri'la Steelshaper
+		[17412] = true, -- Phaedra
+		[3528] = true, -- Pyrewood Armorer
+		[3532] = true, -- Pyrewood Leatherworker
+		[2849] = true, -- Qixdi Goodstitch
+		[3543] = true, -- Robert Aebischer
+		[27134] = true, -- Smith Prigka
+		[9551] = true, -- Starn
+		[18426] = true, -- Terellia
+		[1668] = true, -- William MacGregor
+		[37997] = true, -- Yili
+		[9544] = true, -- Yuka Screwspigot
+		[21485] = true, -- Aldraan
+		[25274] = true, -- Armorer Orkuruk
+		[20616] = true, -- Asuur
+		[22476] = true, -- Aundro
+		[16917] = true, -- Aurok
+		[23735] = true, -- Bartleby Armorfist
+		[3611] = true, -- Brannol Eaglemoon
+		[4240] = true, -- Caynrus
+		[16619] = true, -- Celana
+		[27151] = true, -- Deniigi
+		[190] = true, -- Dermot Johns
+		[836] = true, -- Durnan Furcutter
+		[4180] = true, -- Ealyshia Dewwhisper
+		[28813] = true, -- Elizabeth Hollingsworth
+		[28943] = true, -- Fineous
+		[1698] = true, -- Frast Dokner
+		[3591] = true, -- Freja Nightwing
+		[4184] = true, -- Geenia Sunshadow
+		[19333] = true, -- Grokom Deatheye
+		[1289] = true, -- Gunther Weller
+		[19879] = true, -- Horvon the Armorer
+		[3491] = true, -- Ironzar
+		[2847] = true, -- Jansen Underwood
+		[3410] = true, -- Jin'sora
+		[5512] = true, -- Kaita Deepforge
+		[3021] = true, -- Kard Ragetotem
+		[954] = true, -- Kat Sampson
+		[4257] = true, -- Lana Thunderbrew
+		[29035] = true, -- Loomee
+		[18010] = true, -- Maktu
+		[22227] = true, -- Markus Scylan
+		[27045] = true, -- Master Smith Devin Brevig
+		[4171] = true, -- Merelyssa
+		[3613] = true, -- Meri Ironweave
+		[3531] = true, -- Moonrage Tailor
+		[16919] = true, -- Mura
+		[9553] = true, -- Nadia Vernon
+		[16274] = true, -- Narina
+		[4603] = true, -- Nicholas Atwood
+		[12805] = true, -- Officer Areyn
+		[27267] = true, -- Quartermaster Bartlett
+		[30336] = true, -- Runesmith Balehammer
+		[16261] = true, -- Sathiel
+		[12799] = true, -- Sergeant Ba'sha
+		[37903] = true, -- Shely Steelbowels
+		[3361] = true, -- Shoma
+		[27019] = true, -- Siegesmith Gulda
+		[19315] = true, -- Supply Officer Isabel
+		[19314] = true, -- Supply Officer Shandria
+		[19001] = true, -- Talaara
+		[26697] = true, -- Tewah Chillmane
+		[26229] = true, -- Tiernan Anvilheart
+		[26898] = true, -- Troz
+		[4086] = true, -- Veenix
+		[4604] = true, -- Abigail Sawyer
+		[1349] = true, -- Agustus Moulaine
+		[19043] = true, -- Ahemen
+		[1294] = true, -- Aldric Moore
+		[20463] = true, -- Apprentice Andrethan
+		[15400] = true, -- Arathel Sunforge
+		[17655] = true, -- Blacksmith Frances
+		[3162] = true, -- Burdrak Harglhelm
+		[9548] = true, -- Cawind Trueaim
+		[32477] = true, -- Chester Copperpot
+		[4236] = true, -- Cyridan
+		[19351] = true, -- Daggle Ironshaper
+		[29923] = true, -- Dagni Oregleam
+		[27067] = true, -- Drigoth
+		[8360] = true, -- Elki
+		[16765] = true, -- Ellomin
+		[16258] = true, -- Farsil
+		[16666] = true, -- Feledis
+		[4043] = true, -- Galthuk
+		[1238] = true, -- Gamili Frosthide
+		[5820] = true, -- Gillian Moore
+		[1362] = true, -- Gothor Brumn
+		[1348] = true, -- Gregory Ardus
+		[1104] = true, -- Grundel Harkin
+		[10361] = true, -- Gruul Darkblade
+		[5133] = true, -- Harick Boulderdrum
+		[981] = true, -- Hartash
+		[2483] = true, -- Jaquilina Dramet
+		[4892] = true, -- Jensen Farran
+		[793] = true, -- Kara Adams
+		[5509] = true, -- Kathrum Axehand
+		[5121] = true, -- Kelomir Ironhand
+		[3588] = true, -- Khardan Proudblade
+		[3360] = true, -- Koru
+		[3536] = true, -- Kris Legace
+		[30241] = true, -- Lanudal Silverhart
+		[12784] = true, -- Lieutenant Jackspring
+		[1297] = true, -- Lina Stover
+		[1299] = true, -- Lisbeth Schneider
+		[5156] = true, -- Maeva Snowbraid
+		[37936] = true, -- Morgan Dayblaze
+		[959] = true, -- Morley Eberlein
+		[16735] = true, -- Muhaa
+		[222] = true, -- Nillen Andemar
+		[30572] = true, -- Nofal
+		[8398] = true, -- Ohanko
+		[23159] = true, -- Okuno
+		[1323] = true, -- Osric Strang
+		[1249] = true, -- Quartermaster Hudson
+		[15127] = true, -- Samuel Hawke
+		[10380] = true, -- Sanuye Runetotem
+		[12785] = true, -- Sergeant Major Clate
+		[5821] = true, -- Sheldon Von Croy
+		[18926] = true, -- Sleyin
+		[3356] = true, -- Sumi
+		[3022] = true, -- Sunn Ragetotem
+		[19436] = true, -- Supply Master Broog
+		[2999] = true, -- Taur Stonehoof
+		[1350] = true, -- Theresa Moulaine
+		[984] = true, -- Thralosh
+		[27188] = true, -- Tonraq
+		[10369] = true, -- Trayexir
+		[16762] = true, -- Treall
+		[3079] = true, -- Varg Windwhisper
+		[896] = true, -- Veldan Lightfoot
+		[1146] = true, -- Vharr
+		[26599] = true, -- Willis Wobblewheel
+		[1309] = true, -- Wynne Larson
+		[11137] = true, -- Xai'ander
+		[20082] = true, -- Yarley
+		[4884] = true, -- Zulrg
+		[24347] = true, -- Alexis Walker
+		[1315] = true, -- Allan Hafgan
+		[10379] = true, -- Altsoba Ragetotem
+		[4172] = true, -- Anadyia
+		[2046] = true, -- Andrew Krighton
+		[25196] = true, -- Archer Delvinar
+		[28855] = true, -- Ba'kari
+		[2116] = true, -- Blacksmith Rand
+		[11183] = true, -- Blixxrak
+		[21112] = true, -- Bossi Pentapiston
+		[1441] = true, -- Brak Durnad
+		[5123] = true, -- Bretta Goldfury
+		[31024] = true, -- Brock Thriss
+		[33599] = true, -- Brollen Wheatbeard
+		[1319] = true, -- Bryan Cross
+		[6028] = true, -- Burkrum
+		[26393] = true, -- Captain Dirgehammer
+		[26394] = true, -- Captain O'Neal
+		[1291] = true, -- Carla Granger
+		[19056] = true, -- Cecil Meyers
+		[4569] = true, -- Charles Seaton
+		[3166] = true, -- Cutac
+		[956] = true, -- Dorin Songblade
+		[10293] = true, -- Dulciea Frostmoon
+		[6300] = true, -- Elisa Steelhand
+		[3020] = true, -- Etu Ragetotem
+		[1310] = true, -- Evan Larson
+		[18997] = true, -- Fallesh Sunfallow
+		[1296] = true, -- Felder Stover
+		[225] = true, -- Gavin Gnarltree
+		[1333] = true, -- Gerik Koen
+		[3165] = true, -- Ghrawt
+		[4232] = true, -- Glorandiir
+		[1213] = true, -- Godric Rothgar
+		[4556] = true, -- Gordon Wendham
+		[16716] = true, -- Gornii
+		[11703] = true, -- Graw Cornerstone
+		[1273] = true, -- Grawn Thromwyn
+		[980] = true, -- Grimnal
+		[3093] = true, -- Grod
+		[12045] = true, -- Hae'Wilani
+		[28797] = true, -- Haley Copperturn
+		[30436] = true, -- Halig Fireforge
+		[5119] = true, -- Hegnar Swiftaxe
+		[1324] = true, -- Heinrich Stone
+		[1147] = true, -- Hragran
+		[37991] = true, -- Ikfirus the Vile
+		[78] = true, -- Janos Hammerknuckle
+		[38840] = true, -- Jedebia
+		[3610] = true, -- Jeena Featherbow
+		[1454] = true, -- Jennabink Powerseam
+		[16625] = true, -- Keeli
+		[22491] = true, -- Kerpow Blastwrench
+		[4231] = true, -- Kieran
+		[29253] = true, -- Koloth
+		[1381] = true, -- Krakk
+		[4173] = true, -- Landria
+		[1295] = true, -- Lara Moore
+		[31027] = true, -- Leeka Turner
+		[5129] = true, -- Lissyphus Finespindle
+		[3658] = true, -- Lizzarik
+		[4557] = true, -- Louis Warren
+		[4580] = true, -- Lucille Castleton
+		[226] = true, -- Morg Gnarltree
+		[3321] = true, -- Morgum
+		[17930] = true, -- Nabek
+		[1459] = true, -- Naela Trance
+		[31805] = true, -- Nagojut
+		[3317] = true, -- Ollanus
+		[5126] = true, -- Olthran Craghelm
+		[29969] = true, -- Ontak
+		[19370] = true, -- Ordinn Thunderfist
+		[24330] = true, -- Orson Locke
+		[18278] = true, -- Pilot Marsha
+		[3684] = true, -- Pizznukle
+		[16678] = true, -- Rahein
+		[1198] = true, -- Rallic Finn
+		[1695] = true, -- Rendow
+		[945] = true, -- Rybrad Coldbank
+		[23724] = true, -- Samir
+		[28871] = true, -- Scabbard
+		[27055] = true, -- Sentinel Amberline
+		[4185] = true, -- Shaldyn
+		[3609] = true, -- Shalomon
+		[1407] = true, -- Sranda
+		[5508] = true, -- Strumner Flintheel
+		[3023] = true, -- Sura Wildmane
+		[3053] = true, -- Synge
+		[24028] = true, -- Talu Frosthoof
+		[5510] = true, -- Thulman Flintcrag
+		[4259] = true, -- Thurgrum Deepforge
+		[4559] = true, -- Timothy Weldon
+		[3315] = true, -- Tor'phan
+		[5812] = true, -- Tumi
+		[3488] = true, -- Uthrok
+		[16186] = true, -- Vara
+		[4175] = true, -- Vinasia
+		[29497] = true, -- Walther Whiteford
+		[1341] = true, -- Wilhelm Strang
+		[20112] = true, -- Wind Trader Tuluman
+		[16693] = true, -- Winthren
+		[8129] = true, -- Wrinkle Goodsteel
+		[16750] = true, -- Yil
+		[9552] = true, -- Zanara
+		[23897] = true, -- Zungam
+		[16623] = true, -- Zyandrel
+		[3952] = true, -- Aeolynn
+		[8359] = true, -- Ahanu
+		[28800] = true, -- Aidan Steeleye
+		[3552] = true, -- Alexandre Lefevre
+		[3554] = true, -- Andrea Boynton
+		[4234] = true, -- Andrus
+		[2113] = true, -- Archibald Kava
+		[16260] = true, -- Areyn
+		[4203] = true, -- Ariyell Skyshadow
+		[18962] = true, -- Bar Talet
+		[3097] = true, -- Bernard Brubaker
+		[5152] = true, -- Bingus
+		[17245] = true, -- Blacksmith Calypso
+		[9549] = true, -- Borand
+		[5120] = true, -- Brenwyn Wintersteel
+		[27062] = true, -- Brom Armstrong
+		[5106] = true, -- Bromiir Ormsen
+		[3075] = true, -- Bronk Steelrage
+		[19499] = true, -- Cahill
+		[3522] = true, -- Constance Brisboise
+		[54] = true, -- Corina Steele
+		[29476] = true, -- Dagna Flintlock
+		[19530] = true, -- Darmend
+		[3019] = true, -- Delgo Ragetotem
+		[5125] = true, -- Dolkin Craghelm
+		[5102] = true, -- Dolman Steelfury
+		[1462] = true, -- Edwina Monzor
+		[24052] = true, -- Eldrim Mounder
+		[2137] = true, -- Eliza Callen
+		[16670] = true, -- Eriden
+		[26934] = true, -- Everett McGill
+		[2845] = true, -- Fargon Mortalak
+		[3095] = true, -- Fela
+		[30253] = true, -- Felindel Sunhammer
+		[23862] = true, -- Finlay Fletcher
+		[4601] = true, -- Francis Eliot
+		[4600] = true, -- Geoffrey Hartwell
+		[16257] = true, -- Geron
+		[3000] = true, -- Gibbert
+		[16753] = true, -- Gotaan
+		[3493] = true, -- Grazlix
+		[5103] = true, -- Grenil Steelfury
+		[23144] = true, -- Gug
+		[19561] = true, -- Hagash the Blind
+		[3486] = true, -- Halija Whitestrider
+		[3316] = true, -- Handor
+		[4886] = true, -- Hans Weston
+		[2839] = true, -- Haren Kanmae
+		[4187] = true, -- Harlon Thornguard
+		[2117] = true, -- Harold Raims
+		[1243] = true, -- Hegnar Rumbleshot
+		[3088] = true, -- Henry Chapal
+		[8358] = true, -- Hewa
+		[3018] = true, -- Hogor Thunderhoof
+		[3477] = true, -- Hraq
+		[4188] = true, -- Illyanie
+		[3483] = true, -- Jahan Hawkwing
+		[3590] = true, -- Janna Brightmoon
+		[1471] = true, -- Jannos Ironwill
+		[23908] = true, -- Jhet Ironbeard
+		[2997] = true, -- Jyn Stonehoof
+		[3331] = true, -- Kareth
+		[5816] = true, -- Katis
+		[3078] = true, -- Kennah Hawkseye
+		[29496] = true, -- Kerta the Bold
+		[3683] = true, -- Kiknikle
+		[789] = true, -- Kimberly Hiett
+		[17929] = true, -- Kioni
+		[3359] = true, -- Kiro
+		[2840] = true, -- Kizz Bluntstrike
+		[16388] = true, -- Koren
+		[19339] = true, -- Korthul
+		[4883] = true, -- Krak
+		[27185] = true, -- Kuk'uq
+		[32253] = true, -- Kyunghee
+		[3159] = true, -- Kzan Thornslash
+		[26707] = true, -- Litoko Icetotem
+		[19694] = true, -- Loolruna
+		[19239] = true, -- Mahir Redstroke
+		[3077] = true, -- Mahnott Roughwound
+		[16747] = true, -- Mahri
+		[5107] = true, -- Mangorn Flinthammer
+		[1287] = true, -- Marda Weller
+		[4888] = true, -- Marie Holdston
+		[3073] = true, -- Marjak Keenblade
+		[16620] = true, -- Mathaleron
+		[1322] = true, -- Maxton Strang
+		[1339] = true, -- Mayda Thane
+		[12024] = true, -- Meliri
+		[5819] = true, -- Mirelle Tremayne
+		[9555] = true, -- Mu'uta
+		[3330] = true, -- Muragus
+		[1461] = true, -- Murndan Derth
+		[15315] = true, -- Mylini Frostmoon
+		[4233] = true, -- Mythidan
+		[4183] = true, -- Naram Longclaw
+		[3479] = true, -- Nargal Deatheye
+		[12029] = true, -- Narianna
+		[4592] = true, -- Nathaniel Steenwick
+		[11182] = true, -- Nixxrak
+		[2136] = true, -- Oliver Dwor
+		[19479] = true, -- Orgatha
+		[16632] = true, -- Oss
+		[16263] = true, -- Paelarin
+		[4890] = true, -- Piter Verance
+		[3530] = true, -- Pyrewood Tailor
+		[31804] = true, -- Qatiichii
+		[19452] = true, -- Quartermaster Drake
+		[19236] = true, -- Quelama Lightblade
+		[19473] = true, -- Raiza
+		[3161] = true, -- Rarc
+		[23571] = true, -- Razbo Rustgear
+		[22225] = true, -- Reagan Mancuso
+		[21086] = true, -- Ruka
+		[4597] = true, -- Samuel Van Brunt
+		[3553] = true, -- Sebastian Meloche
+		[1320] = true, -- Seoman Griffith
+		[14371] = true, -- Shen'dralar Provisioner
+		[20890] = true, -- Siflaed Coldhammer
+		[3612] = true, -- Sinda
+		[5122] = true, -- Skolmin Goldfury
+		[19012] = true, -- Sparik
+		[4570] = true, -- Sydney Upton
+		[3092] = true, -- Tagain
+		[3953] = true, -- Tandaan Lightmane
+		[27711] = true, -- Technician Halmaha
+		[7976] = true, -- Thalgus Thunderfist
+		[26901] = true, -- Torik
+		[4889] = true, -- Torq Ironblast
+		[4235] = true, -- Turian
+		[3177] = true, -- Turuk Amberstill
+		[16626] = true, -- Tynna
+		[3163] = true, -- Uhgar
+		[3074] = true, -- Varia Hardhide
+		[16714] = true, -- Ven
+		[3492] = true, -- Vexspindle
+		[1469] = true, -- Vrok Blunderblast
+		[4560] = true, -- Walter Ellingson
+		[11184] = true, -- Wixxrak
+		[8159] = true, -- Worb Strongstitch
+		[5754] = true, -- Zane Bradford
+		[16636] = true, -- Zathanna
 	},
-	["StableMaster"] = {
-	    26044, -- Durkot Wolfbrother
-	    28690, -- Tassia Whisperglen
-	    28047, -- Hadrius Harlowe
-	    21517, -- Ilthuril
-	    11069, -- Jenova Stoneshield
-	    26504, -- Soar Hawkfury
-	    23392, -- Skyguard Stable Master
-	    16185, -- Anathos
-	    16824, -- Master Sergeant Lorin Thalmerok
-	    26944, -- Soulok Stormfury
-	    10059, -- Antarius
-	    11119, -- Azzleby
-	    10052, -- Maluressian
-	    15722, -- Squire Leoren Mal'derath
-	    27010, -- Celidh Aletracker
-	    30008, -- Kari the Beastmaster
-	    19019, -- Luftasia
-	    25037, -- Seraphina Bloodheart
-	    10056, -- Alassin
-	    16094, -- Durik
-	    22469, -- Fiskal Shadowsong
-	    29906, -- Heksi
-	    10085, -- Jaelysia
-	    10050, -- Seikwa
-	    16656, -- Shalenn
-	    9980, -- Shelby Stoneflint
-	    11104, -- Shelgrayn
-	    35290, -- Steen Horngrass
-	    13617, -- Stormpike Stable Master
-	    9984, -- Ulbrek Firehand
-	    19018, -- Wilda Bearmane
-	    29959, -- Andurg Slatechest
-	    10053, -- Anya Maulray
-	    29740, -- Craga Ironsting
-	    28790, -- Fala Softhoof
-	    13616, -- Frostwolf Stable Master
-	    21336, -- Gedrah
-	    26721, -- Halona Stormwhisper
-	    9985, -- Laziphus
-	    9989, -- Lina Hearthstove
-	    10047, -- Michael
-	    9986, -- Shyrka Wolfrunner
-	    26597, -- Toby "Mother Goose" Ironbolt
-	    9978, -- Wesley
-	    10046, -- Bethaine Flinthammer
-	    10054, -- Bulrug
-	    29658, -- Chelsea Reese
-	    10058, -- Greth
-	    10060, -- Grimestack
-	    10049, -- Hekkru
-	    23733, -- Horatio the Stable Boy
-	    16586, -- Huntsman Torf Angerhoof
-	    24905, -- Leassian
-	    16665, -- Paniar
-	    9982, -- Penny
-	    15131, -- Qeeju
-	    10063, -- Reggifuz
-	    9977, -- Sylista
-	    18984, -- Trag
-	    11105, -- Aboda
-	    16764, -- Arthaid
-	    17666, -- Astur
-	    11117, -- Awenasa
-	    19368, -- Crinn Pathfinder
-	    6749, -- Erma
-	    17485, -- Esbina
-	    10048, -- Gereck
-	    14741, -- Huntsman Markhor
-	    18250, -- Joraal
-	    17896, -- Kameel Longstride
-	    9983, -- Kelsuwa
-	    18244, -- Khalan
-	    10061, -- Killium Bouldertoe
-	    10045, -- Kirk Maxwell
-	    24974, -- Liza Cutlerflix
-	    19476, -- Lor
-	    10055, -- Morganus
-	    22468, -- Ogrin
-	    21518, -- Oruhe
-	    24350, -- Robert Clarke
-	    9979, -- Sarah Goode
-	    10051, -- Seriadne
-	    9987, -- Shoja'my
-	    9981, -- Sikwa
-	    10062, -- Steven Black
-	    9976, -- Tharlidun
-	    10057, -- Theodore Mont Claire
-	    9988, -- Xon'cha
+	[MINIMAP_TRACKING_STABLEMASTER] = {
+	    [26044] = true, -- Durkot Wolfbrother
+	    [28690] = true, -- Tassia Whisperglen
+	    [28047] = true, -- Hadrius Harlowe
+	    [21517] = true, -- Ilthuril
+	    [11069] = true, -- Jenova Stoneshield
+	    [26504] = true, -- Soar Hawkfury
+	    [23392] = true, -- Skyguard Stable Master
+	    [16185] = true, -- Anathos
+	    [16824] = true, -- Master Sergeant Lorin Thalmerok
+	    [26944] = true, -- Soulok Stormfury
+	    [10059] = true, -- Antarius
+	    [11119] = true, -- Azzleby
+	    [10052] = true, -- Maluressian
+	    [15722] = true, -- Squire Leoren Mal'derath
+	    [27010] = true, -- Celidh Aletracker
+	    [30008] = true, -- Kari the Beastmaster
+	    [19019] = true, -- Luftasia
+	    [25037] = true, -- Seraphina Bloodheart
+	    [10056] = true, -- Alassin
+	    [16094] = true, -- Durik
+	    [22469] = true, -- Fiskal Shadowsong
+	    [29906] = true, -- Heksi
+	    [10085] = true, -- Jaelysia
+	    [10050] = true, -- Seikwa
+	    [16656] = true, -- Shalenn
+	    [9980] = true, -- Shelby Stoneflint
+	    [11104] = true, -- Shelgrayn
+	    [35290] = true, -- Steen Horngrass
+	    [13617] = true, -- Stormpike Stable Master
+	    [9984] = true, -- Ulbrek Firehand
+	    [19018] = true, -- Wilda Bearmane
+	    [29959] = true, -- Andurg Slatechest
+	    [10053] = true, -- Anya Maulray
+	    [29740] = true, -- Craga Ironsting
+	    [28790] = true, -- Fala Softhoof
+	    [13616] = true, -- Frostwolf Stable Master
+	    [21336] = true, -- Gedrah
+	    [26721] = true, -- Halona Stormwhisper
+	    [9985] = true, -- Laziphus
+	    [9989] = true, -- Lina Hearthstove
+	    [10047] = true, -- Michael
+	    [9986] = true, -- Shyrka Wolfrunner
+	    [26597] = true, -- Toby "Mother Goose" Ironbolt
+	    [9978] = true, -- Wesley
+	    [10046] = true, -- Bethaine Flinthammer
+	    [10054] = true, -- Bulrug
+	    [29658] = true, -- Chelsea Reese
+	    [10058] = true, -- Greth
+	    [10060] = true, -- Grimestack
+	    [10049] = true, -- Hekkru
+	    [23733] = true, -- Horatio the Stable Boy
+	    [16586] = true, -- Huntsman Torf Angerhoof
+	    [24905] = true, -- Leassian
+	    [16665] = true, -- Paniar
+	    [9982] = true, -- Penny
+	    [15131] = true, -- Qeeju
+	    [10063] = true, -- Reggifuz
+	    [9977] = true, -- Sylista
+	    [18984] = true, -- Trag
+	    [11105] = true, -- Aboda
+	    [16764] = true, -- Arthaid
+	    [17666] = true, -- Astur
+	    [11117] = true, -- Awenasa
+	    [19368] = true, -- Crinn Pathfinder
+	    [6749] = true, -- Erma
+	    [17485] = true, -- Esbina
+	    [10048] = true, -- Gereck
+	    [14741] = true, -- Huntsman Markhor
+	    [18250] = true, -- Joraal
+	    [17896] = true, -- Kameel Longstride
+	    [9983] = true, -- Kelsuwa
+	    [18244] = true, -- Khalan
+	    [10061] = true, -- Killium Bouldertoe
+	    [10045] = true, -- Kirk Maxwell
+	    [24974] = true, -- Liza Cutlerflix
+	    [19476] = true, -- Lor
+	    [10055] = true, -- Morganus
+	    [22468] = true, -- Ogrin
+	    [21518] = true, -- Oruhe
+	    [24350] = true, -- Robert Clarke
+	    [9979] = true, -- Sarah Goode
+	    [10051] = true, -- Seriadne
+	    [9987] = true, -- Shoja'my
+	    [9981] = true, -- Sikwa
+	    [10062] = true, -- Steven Black
+	    [9976] = true, -- Tharlidun
+	    [10057] = true, -- Theodore Mont Claire
+	    [9988] = true, -- Xon'cha
 	},
-	["Tabard"] = {
-	    4161, -- Lysheana
-	    4974, -- Aldwin Laughlin
-	    5193, -- Rebecca Laughlin
-	    28774, -- Andrew Matthews
-	    5130, -- Jondor Steelbrow
-	    5054, -- Krumn
-	    5052, -- Edward Remington
-	    16734, -- Funaam
-	    16568, -- Tandrine
-	    3370, -- Urtrun Clanbringer
-	    4613, -- Christopher Drakul
-	    5047, -- Ellaercia
-	    18897, -- "King" Dond
-	    19861, -- Bip Nigstrom
-	    19856, -- Steamwheedle Sam
+	[CHAT_MSG_GUILD] = {
+	    [4161] = true, -- Lysheana
+	    [4974] = true, -- Aldwin Laughlin
+	    [5193] = true, -- Rebecca Laughlin
+	    [28774] = true, -- Andrew Matthews
+	    [5130] = true, -- Jondor Steelbrow
+	    [5054] = true, -- Krumn
+	    [5052] = true, -- Edward Remington
+	    [16734] = true, -- Funaam
+	    [16568] = true, -- Tandrine
+	    [3370] = true, -- Urtrun Clanbringer
+	    [4613] = true, -- Christopher Drakul
+	    [5047] = true, -- Ellaercia
+	    [18897] = true, -- "King" Dond
+	    [19861] = true, -- Bip Nigstrom
+	    [19856] = true, -- Steamwheedle Sam
 	},
-	["Profession"] = {
-		29156, -- Archmage Celindra
-		28697, -- Timofey Oshenko
-		35135, -- Wind Rider Sabamba
-		28699, -- Charles Worth
-		28746, -- Pilot Vic
-		4752, -- Kildar
-		35093, -- Wind Rider Jahubo
-		26953, -- Thomas Kolichio
-		26905, -- Brom Brewbaster
-		26986, -- Tiponi Stormwhisper
-		28705, -- Katherine Lee
-		26989, -- Rollick MacKreel
-		28703, -- Linzy Blackbolt
-		26972, -- Orn Tenderhoof
-		29631, -- Awilo Lon'gomba
-		26992, -- Brynna Wilson
-		33586, -- Binkie Brightgear
-		35100, -- Hargen Bronzewing
-		28706, -- Olisarra the Kind
-		11073, -- Annora
-		8736, -- Buzzek Bracketswing
-		35133, -- Maigra Keenfeather
-		26964, -- Alexandra McQueen
-		26996, -- Awan Iceborn
-		27001, -- Darin Goodstitch
-		8126, -- Nixx Sprocketspring
-		26993, -- Old Man Robert
-		4732, -- Randal Hunter
-		26997, -- Alestos
-		26976, -- Brunna Ironaxe
-		28698, -- Jedidiah Handers
-		28702, -- Professor Pallin
-		25099, -- Jonathan Garrett
-		33623, -- Fishing
-		5174, -- Springspindle Fizzlegear
-		30713, -- Catarina Stanford
-		33613, -- Tailoring
-		26991, -- Sock Brightbolt
-		3494, -- Tinkerwiz
-		28694, -- Alard Schmied
-		4212, -- Telonis
-		25277, -- Chief Engineer Leveny
-		33580, -- Dustin Vail
-		3064, -- Gennia Runetotem
-		33616, -- Herbalism
-		26969, -- Raenah
-		4772, -- Ultham Ironhorn
-		26975, -- Arthur Henslowe
-		11868, -- Sayoc
-		11052, -- Timothy Worthington
-		26999, -- Fendrig Redbeard
-		12042, -- Loganaar
-		24868, -- Niobe Whizzlespark
-		33611, -- Engineering
-		2836, -- Brikk Keencraft
-		7406, -- Oglethorpe Obnoticus
-		27000, -- Trapper Jack
-		11097, -- Drakk Stonehand
-		19778, -- Farii
-		1346, -- Georgio Bolero
-		29233, -- Nurse Applewood
-		16280, -- Perascamin
-		26974, -- Tansy Wildmane
-		4773, -- Velma Warnam
-		28693, -- Enchanter Nalthanis
-		19052, -- Lorokeem
-		26998, -- Rosemary Bovard
-		23734, -- Anchorite Yazmina
-		11869, -- Ansekhwa
-		31084, -- Highlord Darion Mograine
-		18779, -- Hurnak Grimmord
-		30706, -- Jo'mah
-		7869, -- Brumn Winterhoof
-		33610, -- Enchanting
-		5159, -- Daryl Riknussun
-		28704, -- Dorothy Egan
-		26912, -- Grumbol Stoutpick
-		33617, -- Mining
-		7944, -- Tinkmaster Overspark
-		18777, -- Jelena Nightsky
-		2399, -- Daryl Stack
-		28696, -- Derik Marks
-		26955, -- Jamesina Watterly
-		17637, -- Mack Diver
-		11017, -- Roxxik
-		26914, -- Benjamin Clegg
-		30717, -- Elise Brightletter
-		30715, -- Feyden Darkin
-		26956, -- Sally Tompkins
-		26957, -- Angelina Soren
-		26909, -- Byron Welwick
-		26982, -- Geba'li
-		11098, -- Hahrana Ironhide
-		28700, -- Diane Cannings
-		26961, -- Gunter Hansen
-		7948, -- Kylanna Windwhisper
-		6287, -- Radnaal Maneweaver
-		5482, -- Stephen Ryback
-		7954, -- Binjy Featherwhistle
-		19775, -- Kalinda
-		4258, -- Bengus Deepforge
-		19252, -- High Enchanter Bardolan
-		26915, -- Ounhulo
-		26963, -- Roberta Jacks
-		26990, -- Alexis Marlowe
-		5885, -- Deino
-		33583, -- Fael Morningsong
-		26987, -- Falorn Nightwhisper
-		5513, -- Gelman Stonehand
-		5497, -- Jennea Cannon
-		18755, -- Moorutu
-		11870, -- Archibald
-		26988, -- Argo Strongstout
-		26981, -- Crog Steelspine
-		33588, -- Crystal Brightspark
-		20791, -- Iorioa
-		29195, -- Lady Alistra
-		34713, -- Ondani Greatmill
-		26904, -- Rosina Rivet
-		5938, -- Uthan Stillwater
-		29194, -- Amal'thazad
-		11074, -- Hgarth
-		28958, -- Jessa Weaver
-		11072, -- Kitta Firewind
-		33612, -- Leatherworking
-		3355, -- Saru Steelfury
-		5504, -- Sheldras Moontree
-		26951, -- Wilhelmina Renel
-		3399, -- Zamja
-		3026, -- Aska Mistrunner
-		1232, -- Azar Stronghammer
-		4218, -- Denatharion
-		32474, -- Fishy Ser'ji
-		2837, -- Jaxin Chong
-		30721, -- Michael Schwan
-		20500, -- Olrokk
-		27703, -- Ysuria
-		30710, -- Zantasia
-		33603, -- Arthur Denny
-		4588, -- Arthur Moore
-		33609, -- Blacksmithing
-		3347, -- Yelmak
-		3326, -- Zevrost
-		33608, -- Alchemy
-		29513, -- Didi the Wrench
-		16621, -- Ileda
-		20511, -- Ilsa Blusterbrew
-		33614, -- Jewelcrafting
-		4146, -- Jocaste
-		5153, -- Jormund Stonebrow
-		17634, -- K. Lee Smallfry
-		4563, -- Kaal Soulreaper
-		8144, -- Kulleg Stonehorn
-		7866, -- Peter Galen
-		1386, -- Rogvar
-		5564, -- Simon Tanner
-		3607, -- Androl Oakhand
-		3032, -- Beram Skychaser
-		4611, -- Doctor Herbert Halsey
-		4205, -- Dorion
-		5515, -- Einris Brightspear
-		26980, -- Eorain Dawnstrike
-		29514, -- Findle Whistlesteam
-		11146, -- Ironus Coldsteel
-		3344, -- Kardris Dreamseeker
-		26994, -- Kirea Moondancer
-		30722, -- Neferatti
-		30709, -- Poshken Hardbinder
-		18776, -- Rorelien
-		6251, -- Strahad Farsan
-		19576, -- Xyrol
-		17110, -- Acteon
-		11865, -- Buliwyf Stonehand
-		34708, -- Caitrin Ironkettle
-		16681, -- Champion Bachi
-		19187, -- Darmari
-		19063, -- Hamanar
-		29505, -- Imindril Spearsong
-		33615, -- Inscription
-		26962, -- Jonathan Lewis
-		3365, -- Karolek
-		26952, -- Kristen Smythe
-		33618, -- Skinning
-		30716, -- Thoth
-		1241, -- Tognus Flintfire
-		11867, -- Woo Ping
-		20914, -- Aalun
-		4568, -- Anastasia Hartwell
-		3373, -- Arnok
-		5149, -- Brandur Ironhammer
-		6387, -- Dranh
-		5157, -- Gimble Thistlefuzz
-		376, -- High Priestess Laurena
-		15280, -- Jesthenis Sunstriker
-		3690, -- Kar Stormsinger
-		26903, -- Lanolis Dewdrop
-		2485, -- Larimaine Purdue
-		1651, -- Lee Brown
-		19340, -- Mi'irku Farstep
-		3067, -- Pyall Silentstride
-		7871, -- Se'Jib
-		3007, -- Una
-		17844, -- Vindicator Aesom
-		28956, -- Warcaster Fanoraithe
-		4160, -- Ainethil
-		3606, -- Alanna Raveneye
-		5491, -- Arthur the Faithful
-		26911, -- Bernadette Dexter
-		11178, -- Borgosh Corebender
-		5489, -- Brother Joshua
-		4211, -- Dannelor
-		8306, -- Duhng
-		6707, -- Fahrad
-		26913, -- Frederic Burrhus
-		4219, -- Fylerian Nightwing
-		2704, -- Hanashi
-		17513, -- Harnan
-		19185, -- Jack Trapper
-		4753, -- Jartsam
-		5499, -- Lilyssia Nightbreeze
-		928, -- Lord Grayson Shadowbreaker
-		28472, -- Lord Thorval
-		3357, -- Makaru
-		30711, -- Margaux Parchley
-		906, -- Maximillian Crowe
-		11401, -- Priestess Alathea
-		3401, -- Shenthul
-		17219, -- Sulaa
-		7867, -- Thorkaf Dragoneye
-		26907, -- Tisha Longbridge
-		6018, -- Ur'kyo
-		7953, -- Xar'Ti
-		4606, -- Aelthalyste
-		16646, -- Alamma
-		15501, -- Aleinia
-		17424, -- Anchorite Paetheus
-		6291, -- Balthus Stoneflayer
-		17120, -- Behomat
-		3001, -- Brek Stonehoof
-		3601, -- Dazalar
-		26954, -- Emil Autumn
-		33621, -- First Aid
-		3181, -- Fremal Doohickey
-		1470, -- Ghak Healtouch
-		1231, -- Grif Wildheart
-		16653, -- Inethven
-		12961, -- Kil'Hiwana
-		2130, -- Marion Call
-		2329, -- Michelle Belle
-		19184, -- Mildred Fletcher
-		3352, -- Ormak Grimshot
-		18748, -- Ruak Stronghorn
-		35281, -- Rukua
-		7868, -- Sarah Tanner
-		2327, -- Shaina Fuller
-		16703, -- Amin
-		27029, -- Apothecary Wormwick
-		5493, -- Arnold Leland
-		4156, -- Astaia
-		16669, -- Bemarrin
-		5144, -- Bink
-		5690, -- Clyde Kellen
-		3965, -- Cylania Rootstalker
-		1103, -- Eldrin
-		5498, -- Elsharin
-		4254, -- Geofram Bouldertoe
-		5164, -- Grumnus Steelshaper
-		986, -- Haromm
-		17509, -- Jol
-		4576, -- Josef Gregorian
-		4578, -- Josephine Lister
-		3175, -- Krunn
-		3964, -- Kylanna
-		27705, -- Lorrin Foxfire
-		1317, -- Lucan Cordell
-		3704, -- Mahani
-		2834, -- Myizz Luckycatch
-		16275, -- Noellene
-		16726, -- Ockil
-		33591, -- Rekka the Hammer
-		3030, -- Siln Skychaser
-		2818, -- Slagg
-		3354, -- Sorek
-		5511, -- Therum Deepforge
-		7088, -- Thuwd
-		5479, -- Wu Shen
-		1215, -- Alchemist Mallory
-		22477, -- Anchorite Ensham
-		4595, -- Baltus Fowler
-		3009, -- Bena Winterhoof
-		5484, -- Brother Benjamin
-		34710, -- Ellen Moore
-		23127, -- Farseer Javad
-		17089, -- Firmanvaar
-		5161, -- Grimnur Stonebrand
-		16773, -- Handiir
-		1411, -- Ian Strom
-		9584, -- Jalane Ayrole
-		3555, -- Johan Focht
-		3028, -- Kah Mistrunner
-		3170, -- Kaplak
-		5492, -- Katherine the Pure
-		18747, -- Krugosh
-		12030, -- Malux
-		29507, -- Manfred Staller
-		26958, -- Marjory Kains
-		7089, -- Mooranta
-		29509, -- Namha Moonwater
-		5116, -- Olmin Burningbeard
-		18804, -- Prospector Nachlan
-		3407, -- Sian'dur
-		4163, -- Syurna
-		3011, -- Teg Dawnstrider
-		1430, -- Tomas
-		5147, -- Valgar Highforge
-		8738, -- Vazario Linkgrease
-		5939, -- Vira Younghoof
-		3967, -- Aayndia Floralwind
-		16728, -- Akham
-		3593, -- Alyissia
-		16660, -- Belestra
-		16663, -- Belil
-		7946, -- Brannock
-		2132, -- Carolai Anise
-		33619, -- Cooking
-		16667, -- Danwe
-		7312, -- Dink
-		17005, -- Duelist Larenis
-		26906, -- Elizabeth Jackson
-		20407, -- Farseer Umbrua
-		5127, -- Fimble Finespindle
-		16712, -- Ganaar
-		3353, -- Grezz Ragefist
-		4193, -- Grondal Moonbreeze
-		17520, -- Gurrag
-		3179, -- Harold Riggs
-		6306, -- Helene Peltskinner
-		2998, -- Karn Stonehoof
-		988, -- Kartosh
-		4616, -- Lavinia Crowe
-		23128, -- Master Pyreanor
-		3184, -- Miao'zan
-		2489, -- Milstaff Stormeye
-		17442, -- Moordo
-		5150, -- Nissa Firestone
-		375, -- Priestess Anetta
-		3041, -- Torm Ragetotem
-		5880, -- Un'Thuwa
-		6295, -- Wilma Ranthal
-		16651, -- Zaedana
-		8308, -- Alenndaar Lapidaar
-		34785, -- Alnar Whitebough
-		26564, -- Borus Ironbender
-		4598, -- Brom Killian
-		4582, -- Carolyn Ward
-		3963, -- Danlaar Nightstride
-		6292, -- Eladriel
-		4204, -- Firodren Mooncaller
-		3594, -- Frahun Shadewhisper
-		16270, -- Hannovia
-		3039, -- Holt Thunderhorn
-		4596, -- James Van Brunt
-		3038, -- Kary Thunderhorn
-		20124, -- Kradu Grimblade
-		33581, -- Kul'de
-		3036, -- Kym Wildmane
-		5941, -- Lau'Tiki
-		13283, -- Lord Tony Romano
-		5506, -- Maldryn
-		11177, -- Okothos Ironrager
-		29506, -- Orland Schaeffer
-		5166, -- Ormyr Flinteye
-		2798, -- Pand Stonebinder
-		5943, -- Rawrk
-		16633, -- Sedana
-		3595, -- Shanda
-		16647, -- Talionia
-		5177, -- Tally Berryfizz
-		5566, -- Tannysa
-		16271, -- Telenus
-		895, -- Thorgas Grimson
-		3171, -- Thotar
-		5958, -- Thuul
-		3033, -- Turak Runetotem
-		16692, -- Tyn
-		6290, -- Yonn Deepcut
-		6286, -- Zarrin
-		16771, -- Ahonan
-		2856, -- Angrun
-		2390, -- Aranae Venomblood
-		23534, -- Babagaya Shadowcleft
-		5148, -- Beldruk Doombrow
-		29924, -- Brandig
-		1702, -- Bronk Guzzlegear
-		26960, -- Carter Tiffens
-		7870, -- Caryssia Moonhunter
-		16266, -- Celoenus
-		3174, -- Dwukk
-		19251, -- Enchantress Volali
-		5883, -- Enyo
-		17487, -- Erin Kelly
-		17204, -- Farseer Nobundo
-		2114, -- Faruza
-		3345, -- Godan
-		17441, -- Gurf
-		16675, -- Halthenis
-		3620, -- Harruk
-		1218, -- Herbalist Pomeroy
-		5165, -- Hulfdan Blackbeard
-		11866, -- Ilyenia Moonfire
-		5145, -- Juli Stormkettle
-		7231, -- Kelgruk Bloodaxe
-		3707, -- Ken'jai
-		3013, -- Komin Winterhoof
-		3363, -- Magar
-		1228, -- Magis Sparkmantle
-		3604, -- Malorne Bladeleaf
-		985, -- Malosh
-		944, -- Marryk Nurribit
-		34711, -- Mary Allerton
-		17434, -- Morae
-		16654, -- Narinth
-		3066, -- Narm Skychaser
-		16679, -- Osselan
-		16276, -- Ponaris
-		2127, -- Rupert Boch
-		3157, -- Shikrik
-		4213, -- Taladan
-		16279, -- Tannaria
-		5171, -- Thistleheart
-		5516, -- Ulfir Ironbeard
-		3048, -- Ursyn Ghull
-		7311, -- Uthel'nay
-		5695, -- Vance Undergloom
-		16684, -- Zelanis
-		460, -- Alamar Grimm
-		29508, -- Andellion
-		4090, -- Astarii Starseeker
-		16501, -- Aurelon
-		2131, -- Austil de Mon
-		16761, -- Baatun
-		33587, -- Bethany Cromwell
-		5142, -- Braenna Flintcrag
-		5172, -- Briarthorn
-		8141, -- Captain Evencane
-		16736, -- Cemmorhan
-		3545, -- Claude Erksine
-		1701, -- Dank Drizzlecut
-		7315, -- Darnath Bladesinger
-		6299, -- Delfrum Flintbeard
-		23103, -- Derek the Undying
-		16738, -- Deremiis
-		16749, -- Edirah
-		16685, -- Elara
-		26910, -- Fayin Whisperleaf
-		5167, -- Fenthwick
-		5612, -- Gimrizz Shadowcog
-		1229, -- Granis Swiftaxe
-		16655, -- Harene Plainwalker
-		10086, -- Hesuwa Thunderhorn
-		11406, -- High Priest Rohan
-		2124, -- Isabella
-		3404, -- Jandi
-		6288, -- Jayla
-		11037, -- Jenna Lemkenilli
-		33589, -- Joseph Wilson
-		27034, -- Josric Fame
-		15279, -- Julia Sunstriker
-		4566, -- Kaelystia Hatebringer
-		5501, -- Kaerbrus
-		16499, -- Keilnei
-		3484, -- Kil'hala
-		3061, -- Lanka Farshot
-		4092, -- Lariia
-		5518, -- Lilliam Sparkspindle
-		16659, -- Lotheolan
-		3332, -- Lumak
-		34714, -- Mahara Goldwheat
-		5884, -- Mai'ah
-		4591, -- Mary Edras
-		4583, -- Miles Dexter
-		3325, -- Mirket
-		1382, -- Mudduk
-		16686, -- Nerisen
-		5146, -- Nittlebur Sparkfizzle
-		918, -- Osborne the Night Man
-		15285, -- Pathstalker Avokor
-		1700, -- Paxton Ganter
-		5882, -- Pephredo
-		8128, -- Pikkle
-		3688, -- Reban Freerunner
-		16763, -- Remere
-		34712, -- Roberta Carter
-		3155, -- Rwag
-		5496, -- Sandahl
-		17481, -- Semid
-		16721, -- Shalannius
-		916, -- Solm Hargrin
-		1458, -- Telurinon Moonshadow
-		5517, -- Thorfin Stoneshield
-		17212, -- Tuluun
-		3040, -- Urek Thunderhorn
-		5495, -- Ursula Deline
-		16500, -- Valaatu
-		17122, -- Vord
-		1683, -- Warg Deepwater
-		3406, -- Xor'juul
-		5392, -- Yarr Hammerstone
-		328, -- Zaldimar Wefhellt
-		16648, -- Zanien
-		1632, -- Adele Fielder
-		4900, -- Alchemist Narett
-		28474, -- Amal'thazad
-		17214, -- Anchorite Fateema
-		4215, -- Anishar
-		27023, -- Apothecary Bressa
-		16161, -- Arcanist Sheynathren
-		3047, -- Archmage Shymm
-		4573, -- Armand Cromwell
-		3596, -- Ayanna Everstride
-		10090, -- Belia Thundergranite
-		5957, -- Birgitte Cranston
-		13084, -- Bixi Wobblebonk
-		7232, -- Borgus Steelhand
-		16644, -- Botanist Nathera
-		3523, -- Bowen Brisboise
-		837, -- Branstock Khalder
-		1385, -- Brawn
-		1681, -- Brock Stoneseeker
-		8140, -- Brother Karman
-		925, -- Brother Sammuel
-		927, -- Brother Wilhelm
-		2128, -- Cain Firesong
-		16642, -- Camberon
-		20406, -- Champion Cyssa Dawnrose
-		3136, -- Clarise Gnarltree
-		1355, -- Cook Ghilm
-		3087, -- Crystal Boughman
-		3603, -- Cyndra Kindwhisper
-		5115, -- Daera Brightspear
-		2119, -- Dannal Stern
-		10930, -- Dargh Trueaim
-		2122, -- David Trias
-		461, -- Demisette Cloyce
-		3172, -- Dhugru Gorelust
-		16780, -- Drathen
-		459, -- Drusilla La Salle
-		17488, -- Dulvi
-		4214, -- Erion Shadewhisper
-		4552, -- Eunice Burch
-		17511, -- Fallat
-		4608, -- Father Lazarus
-		19478, -- Fera Palerunner
-		1676, -- Finbus Geargrind
-		11031, -- Franklin Lloyd
-		16269, -- Garridel
-		3327, -- Gest
-		2627, -- Grarnik Goodstitch
-		21087, -- Grikka
-		3324, -- Grol'dar
-		17482, -- Guvan
-		17519, -- Hobahken
-		33641, -- Irduil
-		16680, -- Ithelis
-		4091, -- Jandria
-		8142, -- Jannos Lighthoof
-		4138, -- Jeen'ra Nightrunner
-		3154, -- Jen'shan
-		3602, -- Kal
-		16272, -- Kanaria
-		2879, -- Karrina Mekenda
-		16640, -- Keelen Sheets
-		3306, -- Keldas
-		1901, -- Kelstrum Stonebreaker
-		5113, -- Kelv Sternhammer
-		917, -- Keryn Sylvius
-		198, -- Khelden Bremen
-		17505, -- Killac
-		7087, -- Killian Hagey
-		16503, -- Kore
-		1404, -- Kragg
-		3063, -- Krang Stonehoof
-		6297, -- Kurdram Stonehammer
-		28471, -- Lady Alistra
-		2492, -- Lexington Mortaim
-		911, -- Llane Beshere
-		29196, -- Lord Thorval
-		12032, -- Lui'Mala
-		4564, -- Luther Pickman
-		16688, -- Lynalis
-		913, -- Lyria Du Lac
-		331, -- Maginor Dumas
-		16160, -- Magistrix Eredania
-		1292, -- Maris Granger
-		3137, -- Matt Johnson
-		1680, -- Matthew Hooper
-		1226, -- Maxan Anvol
-		2126, -- Maximillion
-		4159, -- Me'lynn
-		3062, -- Meela Dawnstrider
-		16724, -- Miall
-		3185, -- Mishiki
-		16752, -- Muaat
-		16719, -- Mumman
-		3605, -- Nadyia Maneweaver
-		16725, -- Nahogg
-		543, -- Nalesette Wildbringer
-		3156, -- Nartok
-		8153, -- Narv Hidecrafter
-		987, -- Ogromm
-		33590, -- Oluros
-		3328, -- Ormok
-		4567, -- Pierce Shackleton
-		377, -- Priestess Josetta
-		16277, -- Quarelestra
-		16652, -- Quithas
-		6289, -- Rand Rhobart
-		15513, -- Ranger Sallina
-		5117, -- Regnus Thundergranite
-		5137, -- Reyna Stonebranch
-		4565, -- Richard Kerwin
-		17480, -- Ruada
-		8146, -- Ruw
-		13417, -- Sagorne Creststrider
-		2391, -- Serge Hinott
-		19180, -- Seymour
-		5502, -- Shylamiir
-		4089, -- Sildanair
-		10089, -- Silvaria
-		15283, -- Summoner Teli'Larien
-		3173, -- Swart
-		16672, -- Tana
-		3169, -- Tarshaw Jaggedscar
-		5141, -- Theodrus Frostbeard
-		5505, -- Theridran
-		3049, -- Thurston Xane
-		3031, -- Tigor Skychaser
-		5143, -- Toldren Deepiron
-		10993, -- Twizwick Sprocketgrind
-		6014, -- X'yera
-		3065, -- Yaw Sharpmane
-		16674, -- Zandine
-		5994, -- Zayus
-		3624, -- Zudd
-		16658, -- Aldrae
-		4210, -- Alegorn
-		16662, -- Alestus
-		812, -- Alma Jainrose
-		914, -- Ander Germaine
-		4594, -- Angela Curthas
-		4087, -- Arias'ta Bladesinger
-		17514, -- Bati
-		11068, -- Betty Quin
-		5114, -- Bilban Tosslespanner
-		3698, -- Bolyun
-		4898, -- Brant Jasperbloom
-		926, -- Bromos Grummner
-		17484, -- Buruk
-		6094, -- Byancie
-		16756, -- Caedmos
-		4320, -- Caelyb
-		19369, -- Celie Steelwing
-		3069, -- Chaw Stronghide
-		4593, -- Christoph Walker
-		17215, -- Daedal
-		2129, -- Dark Cleric Beryl
-		2123, -- Dark Cleric Duesten
-		3290, -- Deek Fizzlebizz
-		2367, -- Donald Rabonne
-		17105, -- Emissary Valustraa
-		16774, -- Erett
-		3046, -- Father Cobb
-		4607, -- Father Lankester
-		908, -- Flora Silverwind
-		3153, -- Frang
-		3060, -- Gart Mistrunner
-		9465, -- Golhine the Hooded
-		4584, -- Gregory Charles
-		1699, -- Gremlock Pilsnor
-		3622, -- Grokor
-		19341, -- Grutah
-		3557, -- Guillaume Sorouy
-		3059, -- Harutt Thunderhorn
-		17983, -- Heur
-		1234, -- Hogral Bakkan
-		27704, -- Horace Alder
-		5480, -- Ilsa Corbin
-		17510, -- Izmir
-		3599, -- Jannok Breezesong
-		915, -- Jorik Kerridan
-		1473, -- Kali Healtouch
-		17121, -- Kavaan
-		17504, -- Kazi
-		3043, -- Ker Ragetotem
-		3703, -- Krulmoo Fullmoon
-		3598, -- Kyra Windblade
-		3600, -- Laurna Morninglight
-		16723, -- Lucc
-		16755, -- Lunaraa
-		3045, -- Malakai Cross
-		12025, -- Malvor
-		3597, -- Mardant Strongoak
-		4614, -- Martha Alliestar
-		16273, -- Mathreyn
-		15284, -- Matron Arena
-		11025, -- Mukdrak
-		11397, -- Nara Meideros
-		5759, -- Nurse Neela
-		16731, -- Nus
-		16673, -- Oninath
-		2878, -- Peria Lamenur
-		16729, -- Refik
-		3042, -- Sark Ragetotem
-		16278, -- Sathein
-		7230, -- Shayis Steelfury
-		3034, -- Sheal Runetotem
-		3549, -- Shelene Rhobart
-		3403, -- Sian'tsu
-		514, -- Smith Argus
-		16676, -- Sylann
-		3706, -- Tai'jin
-		3004, -- Tepa
-		2326, -- Thamner Pol
-		912, -- Thran Khorman
-		3478, -- Traugh
-		17483, -- Tullas
-		5784, -- Waldor
-		10088, -- Xao'tsu
-		7949, -- Xylinnia Starshine
-		16502, -- Zalduun
-		3408, -- Zel'mak
-		20125, -- Zula Slagfury
+	[MINIMAP_TRACKING_TRAINER_PROFESSION] = {
+		[29156] = true, -- Archmage Celindra
+		[28697] = true, -- Timofey Oshenko
+		[35135] = true, -- Wind Rider Sabamba
+		[28699] = true, -- Charles Worth
+		[28746] = true, -- Pilot Vic
+		[4752] = true, -- Kildar
+		[35093] = true, -- Wind Rider Jahubo
+		[26953] = true, -- Thomas Kolichio
+		[26905] = true, -- Brom Brewbaster
+		[26986] = true, -- Tiponi Stormwhisper
+		[28705] = true, -- Katherine Lee
+		[26989] = true, -- Rollick MacKreel
+		[28703] = true, -- Linzy Blackbolt
+		[26972] = true, -- Orn Tenderhoof
+		[29631] = true, -- Awilo Lon'gomba
+		[26992] = true, -- Brynna Wilson
+		[33586] = true, -- Binkie Brightgear
+		[35100] = true, -- Hargen Bronzewing
+		[28706] = true, -- Olisarra the Kind
+		[11073] = true, -- Annora
+		[8736] = true, -- Buzzek Bracketswing
+		[35133] = true, -- Maigra Keenfeather
+		[26964] = true, -- Alexandra McQueen
+		[26996] = true, -- Awan Iceborn
+		[27001] = true, -- Darin Goodstitch
+		[8126] = true, -- Nixx Sprocketspring
+		[26993] = true, -- Old Man Robert
+		[4732] = true, -- Randal Hunter
+		[26997] = true, -- Alestos
+		[26976] = true, -- Brunna Ironaxe
+		[28698] = true, -- Jedidiah Handers
+		[28702] = true, -- Professor Pallin
+		[25099] = true, -- Jonathan Garrett
+		[33623] = true, -- Fishing
+		[5174] = true, -- Springspindle Fizzlegear
+		[30713] = true, -- Catarina Stanford
+		[33613] = true, -- Tailoring
+		[26991] = true, -- Sock Brightbolt
+		[3494] = true, -- Tinkerwiz
+		[28694] = true, -- Alard Schmied
+		[4212] = true, -- Telonis
+		[25277] = true, -- Chief Engineer Leveny
+		[33580] = true, -- Dustin Vail
+		[3064] = true, -- Gennia Runetotem
+		[33616] = true, -- Herbalism
+		[26969] = true, -- Raenah
+		[4772] = true, -- Ultham Ironhorn
+		[26975] = true, -- Arthur Henslowe
+		[11868] = true, -- Sayoc
+		[11052] = true, -- Timothy Worthington
+		[26999] = true, -- Fendrig Redbeard
+		[12042] = true, -- Loganaar
+		[24868] = true, -- Niobe Whizzlespark
+		[33611] = true, -- Engineering
+		[2836] = true, -- Brikk Keencraft
+		[7406] = true, -- Oglethorpe Obnoticus
+		[27000] = true, -- Trapper Jack
+		[11097] = true, -- Drakk Stonehand
+		[19778] = true, -- Farii
+		[1346] = true, -- Georgio Bolero
+		[29233] = true, -- Nurse Applewood
+		[16280] = true, -- Perascamin
+		[26974] = true, -- Tansy Wildmane
+		[4773] = true, -- Velma Warnam
+		[28693] = true, -- Enchanter Nalthanis
+		[19052] = true, -- Lorokeem
+		[26998] = true, -- Rosemary Bovard
+		[23734] = true, -- Anchorite Yazmina
+		[11869] = true, -- Ansekhwa
+		[31084] = true, -- Highlord Darion Mograine
+		[18779] = true, -- Hurnak Grimmord
+		[30706] = true, -- Jo'mah
+		[7869] = true, -- Brumn Winterhoof
+		[33610] = true, -- Enchanting
+		[5159] = true, -- Daryl Riknussun
+		[28704] = true, -- Dorothy Egan
+		[26912] = true, -- Grumbol Stoutpick
+		[33617] = true, -- Mining
+		[7944] = true, -- Tinkmaster Overspark
+		[18777] = true, -- Jelena Nightsky
+		[2399] = true, -- Daryl Stack
+		[28696] = true, -- Derik Marks
+		[26955] = true, -- Jamesina Watterly
+		[17637] = true, -- Mack Diver
+		[11017] = true, -- Roxxik
+		[26914] = true, -- Benjamin Clegg
+		[30717] = true, -- Elise Brightletter
+		[30715] = true, -- Feyden Darkin
+		[26956] = true, -- Sally Tompkins
+		[26957] = true, -- Angelina Soren
+		[26909] = true, -- Byron Welwick
+		[26982] = true, -- Geba'li
+		[11098] = true, -- Hahrana Ironhide
+		[28700] = true, -- Diane Cannings
+		[26961] = true, -- Gunter Hansen
+		[7948] = true, -- Kylanna Windwhisper
+		[6287] = true, -- Radnaal Maneweaver
+		[5482] = true, -- Stephen Ryback
+		[7954] = true, -- Binjy Featherwhistle
+		[19775] = true, -- Kalinda
+		[4258] = true, -- Bengus Deepforge
+		[19252] = true, -- High Enchanter Bardolan
+		[26915] = true, -- Ounhulo
+		[26963] = true, -- Roberta Jacks
+		[26990] = true, -- Alexis Marlowe
+		[5885] = true, -- Deino
+		[33583] = true, -- Fael Morningsong
+		[26987] = true, -- Falorn Nightwhisper
+		[5513] = true, -- Gelman Stonehand
+		[5497] = true, -- Jennea Cannon
+		[18755] = true, -- Moorutu
+		[11870] = true, -- Archibald
+		[26988] = true, -- Argo Strongstout
+		[26981] = true, -- Crog Steelspine
+		[33588] = true, -- Crystal Brightspark
+		[20791] = true, -- Iorioa
+		[29195] = true, -- Lady Alistra
+		[34713] = true, -- Ondani Greatmill
+		[26904] = true, -- Rosina Rivet
+		[5938] = true, -- Uthan Stillwater
+		[29194] = true, -- Amal'thazad
+		[11074] = true, -- Hgarth
+		[28958] = true, -- Jessa Weaver
+		[11072] = true, -- Kitta Firewind
+		[33612] = true, -- Leatherworking
+		[3355] = true, -- Saru Steelfury
+		[5504] = true, -- Sheldras Moontree
+		[26951] = true, -- Wilhelmina Renel
+		[3399] = true, -- Zamja
+		[3026] = true, -- Aska Mistrunner
+		[1232] = true, -- Azar Stronghammer
+		[4218] = true, -- Denatharion
+		[32474] = true, -- Fishy Ser'ji
+		[2837] = true, -- Jaxin Chong
+		[30721] = true, -- Michael Schwan
+		[20500] = true, -- Olrokk
+		[27703] = true, -- Ysuria
+		[30710] = true, -- Zantasia
+		[33603] = true, -- Arthur Denny
+		[4588] = true, -- Arthur Moore
+		[33609] = true, -- Blacksmithing
+		[3347] = true, -- Yelmak
+		[3326] = true, -- Zevrost
+		[33608] = true, -- Alchemy
+		[29513] = true, -- Didi the Wrench
+		[16621] = true, -- Ileda
+		[20511] = true, -- Ilsa Blusterbrew
+		[33614] = true, -- Jewelcrafting
+		[4146] = true, -- Jocaste
+		[5153] = true, -- Jormund Stonebrow
+		[17634] = true, -- K. Lee Smallfry
+		[4563] = true, -- Kaal Soulreaper
+		[8144] = true, -- Kulleg Stonehorn
+		[7866] = true, -- Peter Galen
+		[1386] = true, -- Rogvar
+		[5564] = true, -- Simon Tanner
+		[3607] = true, -- Androl Oakhand
+		[3032] = true, -- Beram Skychaser
+		[4611] = true, -- Doctor Herbert Halsey
+		[4205] = true, -- Dorion
+		[5515] = true, -- Einris Brightspear
+		[26980] = true, -- Eorain Dawnstrike
+		[29514] = true, -- Findle Whistlesteam
+		[11146] = true, -- Ironus Coldsteel
+		[3344] = true, -- Kardris Dreamseeker
+		[26994] = true, -- Kirea Moondancer
+		[30722] = true, -- Neferatti
+		[30709] = true, -- Poshken Hardbinder
+		[18776] = true, -- Rorelien
+		[6251] = true, -- Strahad Farsan
+		[19576] = true, -- Xyrol
+		[17110] = true, -- Acteon
+		[11865] = true, -- Buliwyf Stonehand
+		[34708] = true, -- Caitrin Ironkettle
+		[16681] = true, -- Champion Bachi
+		[19187] = true, -- Darmari
+		[19063] = true, -- Hamanar
+		[29505] = true, -- Imindril Spearsong
+		[33615] = true, -- Inscription
+		[26962] = true, -- Jonathan Lewis
+		[3365] = true, -- Karolek
+		[26952] = true, -- Kristen Smythe
+		[33618] = true, -- Skinning
+		[30716] = true, -- Thoth
+		[1241] = true, -- Tognus Flintfire
+		[11867] = true, -- Woo Ping
+		[20914] = true, -- Aalun
+		[4568] = true, -- Anastasia Hartwell
+		[3373] = true, -- Arnok
+		[5149] = true, -- Brandur Ironhammer
+		[6387] = true, -- Dranh
+		[5157] = true, -- Gimble Thistlefuzz
+		[376] = true, -- High Priestess Laurena
+		[15280] = true, -- Jesthenis Sunstriker
+		[3690] = true, -- Kar Stormsinger
+		[26903] = true, -- Lanolis Dewdrop
+		[2485] = true, -- Larimaine Purdue
+		[1651] = true, -- Lee Brown
+		[19340] = true, -- Mi'irku Farstep
+		[3067] = true, -- Pyall Silentstride
+		[7871] = true, -- Se'Jib
+		[3007] = true, -- Una
+		[17844] = true, -- Vindicator Aesom
+		[28956] = true, -- Warcaster Fanoraithe
+		[4160] = true, -- Ainethil
+		[3606] = true, -- Alanna Raveneye
+		[5491] = true, -- Arthur the Faithful
+		[26911] = true, -- Bernadette Dexter
+		[11178] = true, -- Borgosh Corebender
+		[5489] = true, -- Brother Joshua
+		[4211] = true, -- Dannelor
+		[8306] = true, -- Duhng
+		[6707] = true, -- Fahrad
+		[26913] = true, -- Frederic Burrhus
+		[4219] = true, -- Fylerian Nightwing
+		[2704] = true, -- Hanashi
+		[17513] = true, -- Harnan
+		[19185] = true, -- Jack Trapper
+		[4753] = true, -- Jartsam
+		[5499] = true, -- Lilyssia Nightbreeze
+		[928] = true, -- Lord Grayson Shadowbreaker
+		[28472] = true, -- Lord Thorval
+		[3357] = true, -- Makaru
+		[30711] = true, -- Margaux Parchley
+		[906] = true, -- Maximillian Crowe
+		[11401] = true, -- Priestess Alathea
+		[3401] = true, -- Shenthul
+		[17219] = true, -- Sulaa
+		[7867] = true, -- Thorkaf Dragoneye
+		[26907] = true, -- Tisha Longbridge
+		[6018] = true, -- Ur'kyo
+		[7953] = true, -- Xar'Ti
+		[4606] = true, -- Aelthalyste
+		[16646] = true, -- Alamma
+		[15501] = true, -- Aleinia
+		[17424] = true, -- Anchorite Paetheus
+		[6291] = true, -- Balthus Stoneflayer
+		[17120] = true, -- Behomat
+		[3001] = true, -- Brek Stonehoof
+		[3601] = true, -- Dazalar
+		[26954] = true, -- Emil Autumn
+		[33621] = true, -- First Aid
+		[3181] = true, -- Fremal Doohickey
+		[1470] = true, -- Ghak Healtouch
+		[1231] = true, -- Grif Wildheart
+		[16653] = true, -- Inethven
+		[12961] = true, -- Kil'Hiwana
+		[2130] = true, -- Marion Call
+		[2329] = true, -- Michelle Belle
+		[19184] = true, -- Mildred Fletcher
+		[3352] = true, -- Ormak Grimshot
+		[18748] = true, -- Ruak Stronghorn
+		[35281] = true, -- Rukua
+		[7868] = true, -- Sarah Tanner
+		[2327] = true, -- Shaina Fuller
+		[16703] = true, -- Amin
+		[27029] = true, -- Apothecary Wormwick
+		[5493] = true, -- Arnold Leland
+		[4156] = true, -- Astaia
+		[16669] = true, -- Bemarrin
+		[5144] = true, -- Bink
+		[5690] = true, -- Clyde Kellen
+		[3965] = true, -- Cylania Rootstalker
+		[1103] = true, -- Eldrin
+		[5498] = true, -- Elsharin
+		[4254] = true, -- Geofram Bouldertoe
+		[5164] = true, -- Grumnus Steelshaper
+		[986] = true, -- Haromm
+		[17509] = true, -- Jol
+		[4576] = true, -- Josef Gregorian
+		[4578] = true, -- Josephine Lister
+		[3175] = true, -- Krunn
+		[3964] = true, -- Kylanna
+		[27705] = true, -- Lorrin Foxfire
+		[1317] = true, -- Lucan Cordell
+		[3704] = true, -- Mahani
+		[2834] = true, -- Myizz Luckycatch
+		[16275] = true, -- Noellene
+		[16726] = true, -- Ockil
+		[33591] = true, -- Rekka the Hammer
+		[3030] = true, -- Siln Skychaser
+		[2818] = true, -- Slagg
+		[3354] = true, -- Sorek
+		[5511] = true, -- Therum Deepforge
+		[7088] = true, -- Thuwd
+		[5479] = true, -- Wu Shen
+		[1215] = true, -- Alchemist Mallory
+		[22477] = true, -- Anchorite Ensham
+		[4595] = true, -- Baltus Fowler
+		[3009] = true, -- Bena Winterhoof
+		[5484] = true, -- Brother Benjamin
+		[34710] = true, -- Ellen Moore
+		[23127] = true, -- Farseer Javad
+		[17089] = true, -- Firmanvaar
+		[5161] = true, -- Grimnur Stonebrand
+		[16773] = true, -- Handiir
+		[1411] = true, -- Ian Strom
+		[9584] = true, -- Jalane Ayrole
+		[3555] = true, -- Johan Focht
+		[3028] = true, -- Kah Mistrunner
+		[3170] = true, -- Kaplak
+		[5492] = true, -- Katherine the Pure
+		[18747] = true, -- Krugosh
+		[12030] = true, -- Malux
+		[29507] = true, -- Manfred Staller
+		[26958] = true, -- Marjory Kains
+		[7089] = true, -- Mooranta
+		[29509] = true, -- Namha Moonwater
+		[5116] = true, -- Olmin Burningbeard
+		[18804] = true, -- Prospector Nachlan
+		[3407] = true, -- Sian'dur
+		[4163] = true, -- Syurna
+		[3011] = true, -- Teg Dawnstrider
+		[1430] = true, -- Tomas
+		[5147] = true, -- Valgar Highforge
+		[8738] = true, -- Vazario Linkgrease
+		[5939] = true, -- Vira Younghoof
+		[3967] = true, -- Aayndia Floralwind
+		[16728] = true, -- Akham
+		[3593] = true, -- Alyissia
+		[16660] = true, -- Belestra
+		[16663] = true, -- Belil
+		[7946] = true, -- Brannock
+		[2132] = true, -- Carolai Anise
+		[33619] = true, -- Cooking
+		[16667] = true, -- Danwe
+		[7312] = true, -- Dink
+		[17005] = true, -- Duelist Larenis
+		[26906] = true, -- Elizabeth Jackson
+		[20407] = true, -- Farseer Umbrua
+		[5127] = true, -- Fimble Finespindle
+		[16712] = true, -- Ganaar
+		[3353] = true, -- Grezz Ragefist
+		[4193] = true, -- Grondal Moonbreeze
+		[17520] = true, -- Gurrag
+		[3179] = true, -- Harold Riggs
+		[6306] = true, -- Helene Peltskinner
+		[2998] = true, -- Karn Stonehoof
+		[988] = true, -- Kartosh
+		[4616] = true, -- Lavinia Crowe
+		[23128] = true, -- Master Pyreanor
+		[3184] = true, -- Miao'zan
+		[2489] = true, -- Milstaff Stormeye
+		[17442] = true, -- Moordo
+		[5150] = true, -- Nissa Firestone
+		[375] = true, -- Priestess Anetta
+		[3041] = true, -- Torm Ragetotem
+		[5880] = true, -- Un'Thuwa
+		[6295] = true, -- Wilma Ranthal
+		[16651] = true, -- Zaedana
+		[8308] = true, -- Alenndaar Lapidaar
+		[34785] = true, -- Alnar Whitebough
+		[26564] = true, -- Borus Ironbender
+		[4598] = true, -- Brom Killian
+		[4582] = true, -- Carolyn Ward
+		[3963] = true, -- Danlaar Nightstride
+		[6292] = true, -- Eladriel
+		[4204] = true, -- Firodren Mooncaller
+		[3594] = true, -- Frahun Shadewhisper
+		[16270] = true, -- Hannovia
+		[3039] = true, -- Holt Thunderhorn
+		[4596] = true, -- James Van Brunt
+		[3038] = true, -- Kary Thunderhorn
+		[20124] = true, -- Kradu Grimblade
+		[33581] = true, -- Kul'de
+		[3036] = true, -- Kym Wildmane
+		[5941] = true, -- Lau'Tiki
+		[13283] = true, -- Lord Tony Romano
+		[5506] = true, -- Maldryn
+		[11177] = true, -- Okothos Ironrager
+		[29506] = true, -- Orland Schaeffer
+		[5166] = true, -- Ormyr Flinteye
+		[2798] = true, -- Pand Stonebinder
+		[5943] = true, -- Rawrk
+		[16633] = true, -- Sedana
+		[3595] = true, -- Shanda
+		[16647] = true, -- Talionia
+		[5177] = true, -- Tally Berryfizz
+		[5566] = true, -- Tannysa
+		[16271] = true, -- Telenus
+		[895] = true, -- Thorgas Grimson
+		[3171] = true, -- Thotar
+		[5958] = true, -- Thuul
+		[3033] = true, -- Turak Runetotem
+		[16692] = true, -- Tyn
+		[6290] = true, -- Yonn Deepcut
+		[6286] = true, -- Zarrin
+		[16771] = true, -- Ahonan
+		[2856] = true, -- Angrun
+		[2390] = true, -- Aranae Venomblood
+		[23534] = true, -- Babagaya Shadowcleft
+		[5148] = true, -- Beldruk Doombrow
+		[29924] = true, -- Brandig
+		[1702] = true, -- Bronk Guzzlegear
+		[26960] = true, -- Carter Tiffens
+		[7870] = true, -- Caryssia Moonhunter
+		[16266] = true, -- Celoenus
+		[3174] = true, -- Dwukk
+		[19251] = true, -- Enchantress Volali
+		[5883] = true, -- Enyo
+		[17487] = true, -- Erin Kelly
+		[17204] = true, -- Farseer Nobundo
+		[2114] = true, -- Faruza
+		[3345] = true, -- Godan
+		[17441] = true, -- Gurf
+		[16675] = true, -- Halthenis
+		[3620] = true, -- Harruk
+		[1218] = true, -- Herbalist Pomeroy
+		[5165] = true, -- Hulfdan Blackbeard
+		[11866] = true, -- Ilyenia Moonfire
+		[5145] = true, -- Juli Stormkettle
+		[7231] = true, -- Kelgruk Bloodaxe
+		[3707] = true, -- Ken'jai
+		[3013] = true, -- Komin Winterhoof
+		[3363] = true, -- Magar
+		[1228] = true, -- Magis Sparkmantle
+		[3604] = true, -- Malorne Bladeleaf
+		[985] = true, -- Malosh
+		[944] = true, -- Marryk Nurribit
+		[34711] = true, -- Mary Allerton
+		[17434] = true, -- Morae
+		[16654] = true, -- Narinth
+		[3066] = true, -- Narm Skychaser
+		[16679] = true, -- Osselan
+		[16276] = true, -- Ponaris
+		[2127] = true, -- Rupert Boch
+		[3157] = true, -- Shikrik
+		[4213] = true, -- Taladan
+		[16279] = true, -- Tannaria
+		[5171] = true, -- Thistleheart
+		[5516] = true, -- Ulfir Ironbeard
+		[3048] = true, -- Ursyn Ghull
+		[7311] = true, -- Uthel'nay
+		[5695] = true, -- Vance Undergloom
+		[16684] = true, -- Zelanis
+		[460] = true, -- Alamar Grimm
+		[29508] = true, -- Andellion
+		[4090] = true, -- Astarii Starseeker
+		[16501] = true, -- Aurelon
+		[2131] = true, -- Austil de Mon
+		[16761] = true, -- Baatun
+		[33587] = true, -- Bethany Cromwell
+		[5142] = true, -- Braenna Flintcrag
+		[5172] = true, -- Briarthorn
+		[8141] = true, -- Captain Evencane
+		[16736] = true, -- Cemmorhan
+		[3545] = true, -- Claude Erksine
+		[1701] = true, -- Dank Drizzlecut
+		[7315] = true, -- Darnath Bladesinger
+		[6299] = true, -- Delfrum Flintbeard
+		[23103] = true, -- Derek the Undying
+		[16738] = true, -- Deremiis
+		[16749] = true, -- Edirah
+		[16685] = true, -- Elara
+		[26910] = true, -- Fayin Whisperleaf
+		[5167] = true, -- Fenthwick
+		[5612] = true, -- Gimrizz Shadowcog
+		[1229] = true, -- Granis Swiftaxe
+		[16655] = true, -- Harene Plainwalker
+		[10086] = true, -- Hesuwa Thunderhorn
+		[11406] = true, -- High Priest Rohan
+		[2124] = true, -- Isabella
+		[3404] = true, -- Jandi
+		[6288] = true, -- Jayla
+		[11037] = true, -- Jenna Lemkenilli
+		[33589] = true, -- Joseph Wilson
+		[27034] = true, -- Josric Fame
+		[15279] = true, -- Julia Sunstriker
+		[4566] = true, -- Kaelystia Hatebringer
+		[5501] = true, -- Kaerbrus
+		[16499] = true, -- Keilnei
+		[3484] = true, -- Kil'hala
+		[3061] = true, -- Lanka Farshot
+		[4092] = true, -- Lariia
+		[5518] = true, -- Lilliam Sparkspindle
+		[16659] = true, -- Lotheolan
+		[3332] = true, -- Lumak
+		[34714] = true, -- Mahara Goldwheat
+		[5884] = true, -- Mai'ah
+		[4591] = true, -- Mary Edras
+		[4583] = true, -- Miles Dexter
+		[3325] = true, -- Mirket
+		[1382] = true, -- Mudduk
+		[16686] = true, -- Nerisen
+		[5146] = true, -- Nittlebur Sparkfizzle
+		[918] = true, -- Osborne the Night Man
+		[15285] = true, -- Pathstalker Avokor
+		[1700] = true, -- Paxton Ganter
+		[5882] = true, -- Pephredo
+		[8128] = true, -- Pikkle
+		[3688] = true, -- Reban Freerunner
+		[16763] = true, -- Remere
+		[34712] = true, -- Roberta Carter
+		[3155] = true, -- Rwag
+		[5496] = true, -- Sandahl
+		[17481] = true, -- Semid
+		[16721] = true, -- Shalannius
+		[916] = true, -- Solm Hargrin
+		[1458] = true, -- Telurinon Moonshadow
+		[5517] = true, -- Thorfin Stoneshield
+		[17212] = true, -- Tuluun
+		[3040] = true, -- Urek Thunderhorn
+		[5495] = true, -- Ursula Deline
+		[16500] = true, -- Valaatu
+		[17122] = true, -- Vord
+		[1683] = true, -- Warg Deepwater
+		[3406] = true, -- Xor'juul
+		[5392] = true, -- Yarr Hammerstone
+		[328] = true, -- Zaldimar Wefhellt
+		[16648] = true, -- Zanien
+		[1632] = true, -- Adele Fielder
+		[4900] = true, -- Alchemist Narett
+		[28474] = true, -- Amal'thazad
+		[17214] = true, -- Anchorite Fateema
+		[4215] = true, -- Anishar
+		[27023] = true, -- Apothecary Bressa
+		[16161] = true, -- Arcanist Sheynathren
+		[3047] = true, -- Archmage Shymm
+		[4573] = true, -- Armand Cromwell
+		[3596] = true, -- Ayanna Everstride
+		[10090] = true, -- Belia Thundergranite
+		[5957] = true, -- Birgitte Cranston
+		[13084] = true, -- Bixi Wobblebonk
+		[7232] = true, -- Borgus Steelhand
+		[16644] = true, -- Botanist Nathera
+		[3523] = true, -- Bowen Brisboise
+		[837] = true, -- Branstock Khalder
+		[1385] = true, -- Brawn
+		[1681] = true, -- Brock Stoneseeker
+		[8140] = true, -- Brother Karman
+		[925] = true, -- Brother Sammuel
+		[927] = true, -- Brother Wilhelm
+		[2128] = true, -- Cain Firesong
+		[16642] = true, -- Camberon
+		[20406] = true, -- Champion Cyssa Dawnrose
+		[3136] = true, -- Clarise Gnarltree
+		[1355] = true, -- Cook Ghilm
+		[3087] = true, -- Crystal Boughman
+		[3603] = true, -- Cyndra Kindwhisper
+		[5115] = true, -- Daera Brightspear
+		[2119] = true, -- Dannal Stern
+		[10930] = true, -- Dargh Trueaim
+		[2122] = true, -- David Trias
+		[461] = true, -- Demisette Cloyce
+		[3172] = true, -- Dhugru Gorelust
+		[16780] = true, -- Drathen
+		[459] = true, -- Drusilla La Salle
+		[17488] = true, -- Dulvi
+		[4214] = true, -- Erion Shadewhisper
+		[4552] = true, -- Eunice Burch
+		[17511] = true, -- Fallat
+		[4608] = true, -- Father Lazarus
+		[19478] = true, -- Fera Palerunner
+		[1676] = true, -- Finbus Geargrind
+		[11031] = true, -- Franklin Lloyd
+		[16269] = true, -- Garridel
+		[3327] = true, -- Gest
+		[2627] = true, -- Grarnik Goodstitch
+		[21087] = true, -- Grikka
+		[3324] = true, -- Grol'dar
+		[17482] = true, -- Guvan
+		[17519] = true, -- Hobahken
+		[33641] = true, -- Irduil
+		[16680] = true, -- Ithelis
+		[4091] = true, -- Jandria
+		[8142] = true, -- Jannos Lighthoof
+		[4138] = true, -- Jeen'ra Nightrunner
+		[3154] = true, -- Jen'shan
+		[3602] = true, -- Kal
+		[16272] = true, -- Kanaria
+		[2879] = true, -- Karrina Mekenda
+		[16640] = true, -- Keelen Sheets
+		[3306] = true, -- Keldas
+		[1901] = true, -- Kelstrum Stonebreaker
+		[5113] = true, -- Kelv Sternhammer
+		[917] = true, -- Keryn Sylvius
+		[198] = true, -- Khelden Bremen
+		[17505] = true, -- Killac
+		[7087] = true, -- Killian Hagey
+		[16503] = true, -- Kore
+		[1404] = true, -- Kragg
+		[3063] = true, -- Krang Stonehoof
+		[6297] = true, -- Kurdram Stonehammer
+		[28471] = true, -- Lady Alistra
+		[2492] = true, -- Lexington Mortaim
+		[911] = true, -- Llane Beshere
+		[29196] = true, -- Lord Thorval
+		[12032] = true, -- Lui'Mala
+		[4564] = true, -- Luther Pickman
+		[16688] = true, -- Lynalis
+		[913] = true, -- Lyria Du Lac
+		[331] = true, -- Maginor Dumas
+		[16160] = true, -- Magistrix Eredania
+		[1292] = true, -- Maris Granger
+		[3137] = true, -- Matt Johnson
+		[1680] = true, -- Matthew Hooper
+		[1226] = true, -- Maxan Anvol
+		[2126] = true, -- Maximillion
+		[4159] = true, -- Me'lynn
+		[3062] = true, -- Meela Dawnstrider
+		[16724] = true, -- Miall
+		[3185] = true, -- Mishiki
+		[16752] = true, -- Muaat
+		[16719] = true, -- Mumman
+		[3605] = true, -- Nadyia Maneweaver
+		[16725] = true, -- Nahogg
+		[543] = true, -- Nalesette Wildbringer
+		[3156] = true, -- Nartok
+		[8153] = true, -- Narv Hidecrafter
+		[987] = true, -- Ogromm
+		[33590] = true, -- Oluros
+		[3328] = true, -- Ormok
+		[4567] = true, -- Pierce Shackleton
+		[377] = true, -- Priestess Josetta
+		[16277] = true, -- Quarelestra
+		[16652] = true, -- Quithas
+		[6289] = true, -- Rand Rhobart
+		[15513] = true, -- Ranger Sallina
+		[5117] = true, -- Regnus Thundergranite
+		[5137] = true, -- Reyna Stonebranch
+		[4565] = true, -- Richard Kerwin
+		[17480] = true, -- Ruada
+		[8146] = true, -- Ruw
+		[13417] = true, -- Sagorne Creststrider
+		[2391] = true, -- Serge Hinott
+		[19180] = true, -- Seymour
+		[5502] = true, -- Shylamiir
+		[4089] = true, -- Sildanair
+		[10089] = true, -- Silvaria
+		[15283] = true, -- Summoner Teli'Larien
+		[3173] = true, -- Swart
+		[16672] = true, -- Tana
+		[3169] = true, -- Tarshaw Jaggedscar
+		[5141] = true, -- Theodrus Frostbeard
+		[5505] = true, -- Theridran
+		[3049] = true, -- Thurston Xane
+		[3031] = true, -- Tigor Skychaser
+		[5143] = true, -- Toldren Deepiron
+		[10993] = true, -- Twizwick Sprocketgrind
+		[6014] = true, -- X'yera
+		[3065] = true, -- Yaw Sharpmane
+		[16674] = true, -- Zandine
+		[5994] = true, -- Zayus
+		[3624] = true, -- Zudd
+		[16658] = true, -- Aldrae
+		[4210] = true, -- Alegorn
+		[16662] = true, -- Alestus
+		[812] = true, -- Alma Jainrose
+		[914] = true, -- Ander Germaine
+		[4594] = true, -- Angela Curthas
+		[4087] = true, -- Arias'ta Bladesinger
+		[17514] = true, -- Bati
+		[11068] = true, -- Betty Quin
+		[5114] = true, -- Bilban Tosslespanner
+		[3698] = true, -- Bolyun
+		[4898] = true, -- Brant Jasperbloom
+		[926] = true, -- Bromos Grummner
+		[17484] = true, -- Buruk
+		[6094] = true, -- Byancie
+		[16756] = true, -- Caedmos
+		[4320] = true, -- Caelyb
+		[19369] = true, -- Celie Steelwing
+		[3069] = true, -- Chaw Stronghide
+		[4593] = true, -- Christoph Walker
+		[17215] = true, -- Daedal
+		[2129] = true, -- Dark Cleric Beryl
+		[2123] = true, -- Dark Cleric Duesten
+		[3290] = true, -- Deek Fizzlebizz
+		[2367] = true, -- Donald Rabonne
+		[17105] = true, -- Emissary Valustraa
+		[16774] = true, -- Erett
+		[3046] = true, -- Father Cobb
+		[4607] = true, -- Father Lankester
+		[908] = true, -- Flora Silverwind
+		[3153] = true, -- Frang
+		[3060] = true, -- Gart Mistrunner
+		[9465] = true, -- Golhine the Hooded
+		[4584] = true, -- Gregory Charles
+		[1699] = true, -- Gremlock Pilsnor
+		[3622] = true, -- Grokor
+		[19341] = true, -- Grutah
+		[3557] = true, -- Guillaume Sorouy
+		[3059] = true, -- Harutt Thunderhorn
+		[17983] = true, -- Heur
+		[1234] = true, -- Hogral Bakkan
+		[27704] = true, -- Horace Alder
+		[5480] = true, -- Ilsa Corbin
+		[17510] = true, -- Izmir
+		[3599] = true, -- Jannok Breezesong
+		[915] = true, -- Jorik Kerridan
+		[1473] = true, -- Kali Healtouch
+		[17121] = true, -- Kavaan
+		[17504] = true, -- Kazi
+		[3043] = true, -- Ker Ragetotem
+		[3703] = true, -- Krulmoo Fullmoon
+		[3598] = true, -- Kyra Windblade
+		[3600] = true, -- Laurna Morninglight
+		[16723] = true, -- Lucc
+		[16755] = true, -- Lunaraa
+		[3045] = true, -- Malakai Cross
+		[12025] = true, -- Malvor
+		[3597] = true, -- Mardant Strongoak
+		[4614] = true, -- Martha Alliestar
+		[16273] = true, -- Mathreyn
+		[15284] = true, -- Matron Arena
+		[11025] = true, -- Mukdrak
+		[11397] = true, -- Nara Meideros
+		[5759] = true, -- Nurse Neela
+		[16731] = true, -- Nus
+		[16673] = true, -- Oninath
+		[2878] = true, -- Peria Lamenur
+		[16729] = true, -- Refik
+		[3042] = true, -- Sark Ragetotem
+		[16278] = true, -- Sathein
+		[7230] = true, -- Shayis Steelfury
+		[3034] = true, -- Sheal Runetotem
+		[3549] = true, -- Shelene Rhobart
+		[3403] = true, -- Sian'tsu
+		[514] = true, -- Smith Argus
+		[16676] = true, -- Sylann
+		[3706] = true, -- Tai'jin
+		[3004] = true, -- Tepa
+		[2326] = true, -- Thamner Pol
+		[912] = true, -- Thran Khorman
+		[3478] = true, -- Traugh
+		[17483] = true, -- Tullas
+		[5784] = true, -- Waldor
+		[10088] = true, -- Xao'tsu
+		[7949] = true, -- Xylinnia Starshine
+		[16502] = true, -- Zalduun
+		[3408] = true, -- Zel'mak
+		[20125] = true, -- Zula Slagfury
 	},
-	["Vendor"] = {
-		5594, -- Alchemist Pestlezugg
-		8137, -- Gikkix
-		2685, -- Mazk Snipeshot
-		14846, -- Lhara
-		12022, -- Lorelae Wintersong
-		7947, -- Vivianna
-		3556, -- Andrew Hilbert
-		340, -- Kendor Kabonka
-		12919, -- Nat Pagle
-		2806, -- Bale
-		1465, -- Drac Roughcut
-		2664, -- Kelsey Yance
-		8145, -- Sheendra Tallgrass
-		4561, -- Daniel Bartlett
-		8139, -- Jabbey
-		1448, -- Neal Allen
-		8125, -- Dirge Quikcleave
-		4229, -- Mythrin'dir
-		66, -- Tharynn Bouden
-		2821, -- Keena
-		15419, -- Kania
-		11056, -- Alchemist Arbington
-		5494, -- Catherine Leland
-		4877, -- Jandia
-		9499, -- Plugger Spazzring
-		12944, -- Lokhtos Darkbargainer
-		2803, -- Malygen
-		3362, -- Ogunaro Wolfrunner
-		11189, -- Qia
-		8666, -- Lil Timmy
-		3482, -- Tari'qa
-		7564, -- Marin Noggenfogger
-		16786, -- Argent Quartermaster
-		12781, -- Master Sergeant Biggins
-		2810, -- Hammon Karwn
-		12245, -- Vendor-Tron 1000
-		3955, -- Shandrina
-		12246, -- Super-Seller 680
-		3489, -- Zargh
-		15174, -- Calandrath
-		12043, -- Kulwia
-		15351, -- Alliance Brigadier General
-		8401, -- Halpa
-		6548, -- Magus Tirth
-		4585, -- Ezekiel Graves
-		1326, -- Sloan McCoy
-		5162, -- Tansy Puddlefizz
-		12033, -- Wulan
-		17598, -- Renn'az
-		3546, -- Bernie Heisten
-		483, -- Elaine Trias
-		11188, -- Evie Whirlbrew
-		3443, -- Grub
-		14847, -- Professor Thaddeus Paleo
-		4453, -- Wizzle Brassbolts
-		11185, -- Xizzer Fizzbolt
-		1263, -- Yarlyn Amberstill
-		5175, -- Gearcutter Cogspinner
-		2848, -- Glyx Brewright
-		11557, -- Meilosh
-		2663, -- Narkk
-		5817, -- Shimra
-		2480, -- Bro'kin
-		4897, -- Helenia Olden
-		8679, -- Knaz Blunderflame
-		3027, -- Naal Mistrunner
-		10667, -- Chromie
-		3497, -- Kilxx
-		3334, -- Rekkul
-		844, -- Antonio Perelli
-		1303, -- Felicia Gump
-		5940, -- Harn Longcast
-		12783, -- Lieutenant Karter
-		2381, -- Micha Yance
-		16787, -- Argent Outfitter
-		5519, -- Billibub Cogspinner
-		3960, -- Ulthaan
-		15293, -- Aendel Windspear
-		12793, -- Brave Stonehide
-		734, -- Corporal Bluth
-		3954, -- Dalria
-		3180, -- Dark Iron Entrepreneur
-		1684, -- Khara Deepwater
-		4217, -- Mathrengyl Bearwalker
-		11536, -- Quartermaster Miranda Breechlock
-		8665, -- Shylenai
-		3413, -- Sovik
-		11057, -- Apothecary Dithers
-		4981, -- Ben Trias
-		6740, -- Innkeeper Allison
-		6746, -- Innkeeper Pala
-		5753, -- Martha Strain
-		12943, -- Werg Thickblade
-		14322, -- Stomper Kreeg
-		4610, -- Algernon
-		3369, -- Gotri
-		6735, -- Innkeeper Saelienne
-		10618, -- Rivern Frostwind
-		6779, -- Smudge Thunderwood
-		6777, -- Zan Shivsproket
-		1347, -- Alexandra Bolero
-		6576, -- Brienna Starglow
-		6367, -- Donni Anthania
-		4165, -- Elissa Dumas
-		7775, -- Gregan Brewspewer
-		7854, -- Jangdor Swiftstrider
-		3346, -- Kithas
-		4879, -- Ogg'marr
-		1285, -- Thurman Mullby
-		4731, -- Zachariah Post
-		5188, -- Garyl
-		2698, -- George Candarte
-		2265, -- Hillsbrad Apprentice Blacksmith
-		6741, -- Innkeeper Norman
-		7736, -- Innkeeper Shyria
-		5565, -- Jillian Tanner
-		1148, -- Nerrist
-		2481, -- Bliztik
-		2687, -- Gnaz Blunderflame
-		11555, -- Gorn One Eye
-		4574, -- Lizbeth Cromwell
-		8157, -- Logannas
-		3550, -- Martine Tramblay
-		15179, -- Mishta
-		5109, -- Myra Tyrngaarde
-		10118, -- Nessa Shadowsong
-		4553, -- Ronald Burch
-		2819, -- Tunkk
-		5611, -- Barkeep Morag
-		6328, -- Dannie Fizzwizzle
-		1286, -- Edna Mullby
-		4181, -- Fyrenna
-		1247, -- Innkeeper Belm
-		6790, -- Innkeeper Trelayne
-		4305, -- Kriggon Talsone
-		4190, -- Kyndri
-		3134, -- Kzixx
-		4200, -- Laird
-		11874, -- Masat T'andr
-		4241, -- Mydrannul
-		4581, -- Salazar Bloch
-		1261, -- Veron Amberstill
-		3081, -- Wunna Darkmane
-		1682, -- Yanni Stoutheart
-		3405, -- Zeal'aya
-		989, -- Banalash
-		1302, -- Bernard Gump
-		3578, -- Dalaran Miner
-		5140, -- Edris Barleybeard
-		14860, -- Flik
-		6739, -- Innkeeper Bates
-		8678, -- Jubie Gadgetspring
-		9636, -- Kireena
-		5758, -- Leo Sarn
-		9676, -- Tink Sprocketwhistle
-		4226, -- Ulthir
-		7952, -- Zjolnir
-		465, -- Barkeep Dobbins
-		3364, -- Borya
-		5101, -- Bryllia Ironbrand
-		3096, -- Captured Servant of Azora
-		11038, -- Caretaker Alen
-		4167, -- Dendrythis
-		2812, -- Drovnar Strongbrew
-		4891, -- Dwane Wertle
-		1328, -- Elly Langston
-		3495, -- Gagsprocket
-		3547, -- Hamlin Atkins
-		15165, -- Haughty Modiste
-		11187, -- Himmik
-		295, -- Innkeeper Farley
-		6734, -- Innkeeper Hearthstove
-		1301, -- Julia Gallina
-		372, -- Karm Ironquill
-		8362, -- Kuruk
-		9099, -- Sraaz
-		5189, -- Thrumn
-		14522, -- Ur'dan
-		1685, -- Xandar Goodbeard
-		14637, -- Zorbin Fandazzle
-		9087, -- Bashana Runetotem
-		7978, -- Bimble Longberry
-		2838, -- Crazk Sparks
-		12021, -- Daeolyn Summerleaf
-		3577, -- Dalaran Brewmaster
-		233, -- Farmer Saldean
-		3367, -- Felika
-		5100, -- Fillius Fizzlespinner
-		5112, -- Gwenna Firebrew
-		3685, -- Harb Clawhoof
-		7733, -- Innkeeper Fizzgrimble
-		11103, -- Innkeeper Lyshaerya
-		12941, -- Jase Farlane
-		8121, -- Jaxxil Sparks
-		5783, -- Kalldan Felmoon
-		1456, -- Kersok Prond
-		5848, -- Malgin Barleybrew
-		2626, -- Old Man Heming
-		12796, -- Raider Bork
-		13432, -- Seersa Copperpinch
-		15199, -- Sergeant Hartman
-		5178, -- Soolie Berryfizz
-		14845, -- Stamp Thunderhorn
-		14844, -- Sylannia
-		3187, -- Tai'tasi
-		3366, -- Tamar
-		3313, -- Trak'gen
-		1678, -- Vernon Hale
-		1316, -- Adair Gilroy
-		2816, -- Androd Fadran
-		11287, -- Baker Masterson
-		274, -- Barkeep Hann
-		4168, -- Elynna
-		3881, -- Grimtak
-		15350, -- Horde Warbringer
-		11116, -- Innkeeper Abeqwa
-		3934, -- Innkeeper Boorand Plainswind
-		8150, -- Janet Hommers
-		15012, -- Javnir Nashak
-		8403, -- Jeremiah Payson
-		1318, -- Jessara Cordell
-		16256, -- Jessica Chambers
-		4589, -- Joseph Moore
-		14740, -- Katoom the Angler
-		3005, -- Mahu
-		5190, -- Merill Pleasance
-		4571, -- Morley Bates
-		2364, -- Neema
-		13018, -- Nipsy
-		2832, -- Nixxrax Fillamug
-		5193, -- Rebecca Laughlin
-		277, -- Roberto Pupellyverbos
-		7945, -- Savanne
-		4192, -- Taldan
-		3016, -- Tand
-		1460, -- Unger Statforth
-		2118, -- Abigail Shiel
-		5173, -- Alexander Calder
-		1321, -- Alyssa Griffith
-		12384, -- Augustus the Touched
-		12957, -- Blimo Gadgetspring
-		5128, -- Bombus Finespindle
-		2393, -- Christoph Jeffcoat
-		6374, -- Cylina Darkheart
-		12019, -- Dargon
-		2140, -- Edwin Harly
-		14481, -- Emmithue Smails
-		5483, -- Erika Tate
-		3090, -- Gerald Crawley
-		12958, -- Gigget Zipcoil
-		6731, -- Harlown Darkweave
-		4307, -- Heldan Galesong
-		2264, -- Hillsbrad Tailor
-		6736, -- Innkeeper Keldamyr
-		11106, -- Innkeeper Sikewa
-		384, -- Katie Hunter
-		5748, -- Killian Sanatha
-		3937, -- Kira Songshine
-		8305, -- Kixxle
-		15471, -- Lieutenant General Andorov
-		5757, -- Lilly
-		3961, -- Maliynn
-		2357, -- Merideth Carlson
-		12959, -- Nergal
-		8178, -- Nina Lightbrew
-		13420, -- Penney Copperpinch
-		8177, -- Rartar
-		982, -- Thultash
-		5169, -- Tynnus Venomsprout
-		4194, -- Ullanna
-		15011, -- Wagner Hammerstrike
-		5942, -- Zansoa
-		829, -- Adlin Pridedrift
-		6496, -- Brivelthwerp
-		5514, -- Brooke Stonebraid
-		2672, -- Cowardly Crosby
-		4894, -- Craig Nollward
-		6373, -- Dane Winslow
-		1304, -- Darian Singh
-		15197, -- Darkcaller Yanka
-		7940, -- Darnall
-		1453, -- Dewin Shimmerdawn
-		4587, -- Elizabeth Van Talen
-		3168, -- Flakk
-		2682, -- Fradd Swiftgear
-		3003, -- Fyr Mistrunner
-		3085, -- Gloria Femmel
-		4885, -- Gregor MacVince
-		3133, -- Herble Baubbletump
-		8931, -- Innkeeper Heather
-		1464, -- Innkeeper Helbrek
-		2388, -- Innkeeper Shay
-		7744, -- Innkeeper Thulfram
-		1325, -- Jasper Fel
-		3884, -- Jhawna Oatwind
-		5698, -- Joanna Whitehall
-		6382, -- Jubahl Corpseseeker
-		7772, -- Kalin Windflight
-		790, -- Karen Taylor
-		3958, -- Lardan
-		2383, -- Lindea Rabonne
-		1672, -- Lohgan Eva
-		5049, -- Lyesa Steelbrow
-		7955, -- Milli Featherwhistle
-		7879, -- Quintis Jonespyre
-		3499, -- Ranik
-		1457, -- Samor Festivus
-		8363, -- Shadi Mistrunner
-		5191, -- Shalumon
-		3333, -- Shankys
-		3089, -- Sherman Femmel
-		2622, -- Sly Garrett
-		8307, -- Tarban Hearthgrain
-		15124, -- Targot Jinglepocket
-		3935, -- Toddrick
-		4782, -- Truk Wildbeard
-		4875, -- Turhaw
-		1149, -- Uthok
-		15864, -- Valadar Starsong
-		13433, -- Wulmort Jinglepocket
-		3882, -- Zlagk
-		7683, -- Alessandro Luca
-		777, -- Amy Davenport
-		8158, -- Bronk
-		5570, -- Bruuk Barleybeard
-		8934, -- Christopher Hewen
-		1250, -- Drake Lindgren
-		4170, -- Ellandrieth
-		14963, -- Gapp Jinglepocket
-		6567, -- Ghok'kah
-		6301, -- Gorbold Steelhand
-		14437, -- Gorzeeki Wildeyes
-		13436, -- Guchie Jinglepocket
-		3956, -- Harklan Moongrove
-		894, -- Homer Stonefield
-		5111, -- Innkeeper Firebrew
-		6747, -- Innkeeper Kauth
-		1305, -- Jarel Moor
-		13430, -- Jaycrue Copperpinch
-		6730, -- Jinky Twizzlefixxit
-		2115, -- Joshua Kien
-		4615, -- Katrina Alliestar
-		13418, -- Kaymard Copperpinch
-		1237, -- Kazan Mogosh
-		5815, -- Kurgul
-		227, -- Mabel Solaj
-		13434, -- Macey Jinglepocket
-		1313, -- Maria Lumere
-		3480, -- Moorane Hearthgrain
-		2134, -- Mrs. Winters
-		12026, -- My'lanna
-		2683, -- Namdo Bizzfizzle
-		2380, -- Nandar Branson
-		2814, -- Narj Deepslice
-		3012, -- Nata Dawnstrider
-		8160, -- Nioma
-		4265, -- Nyoma
-		14450, -- Orphan Matron Nightingale
-		8681, -- Outfitter Eric
-		2699, -- Rikqiz
-		2684, -- Rizz Loosebolt
-		2688, -- Ruppo Zipcoil
-		4225, -- Saenorion
-		3548, -- Selina Weston
-		12794, -- Stone Guard Zarg
-		5135, -- Svalbrad Farmountain
-		3779, -- Syurana
-		3518, -- Thomas Miller
-		8117, -- Wizbang Booms
-		2670, -- Xizk Goodstitch
-		12956, -- Zannok Hidepiercer
-		14480, -- Alowicious Czervik
-		3350, -- Asoran
-		2366, -- Barkeep Kelly
-		5620, -- Bartender Wental
-		2846, -- Blixrez Goodstitch
-		3368, -- Borstan
-		4255, -- Brogus Thunderbrew
-		152, -- Brother Danil
-		4084, -- Chylina
-		4182, -- Dalmond
-		6091, -- Dellylah
-		3158, -- Duokna
-		5503, -- Eldraeith
-		4555, -- Eleanor Rusk
-		5160, -- Emrul Riknussun
-		4775, -- Felicia Doan
-		12795, -- First Sergeant Hola'mahi
-		5569, -- Fizzlebang Booms
-		4223, -- Fyldan
-		3298, -- Gabrielle Chase
-		16543, -- Garon Hutchins
-		843, -- Gina MacGregor
-		4256, -- Golnir Bouldertoe
-		1692, -- Golorn Frostbeard
-		3358, -- Gorina
-		2908, -- Grawl
-		8508, -- Gretta Ganter
-		5138, -- Gwina Stonebranch
-		3540, -- Hal McAllister
-		3962, -- Haljan Oakheart
-		8152, -- Harnor
-		6727, -- Innkeeper Brianna
-		7714, -- Innkeeper Byula
-		6272, -- Innkeeper Janene
-		6930, -- Innkeeper Karakul
-		12196, -- Innkeeper Kaylisk
-		6738, -- Innkeeper Kimlya
-		5688, -- Innkeeper Renee
-		9356, -- Innkeeper Shul'kar
-		5814, -- Innkeeper Thulbek
-		11118, -- Innkeeper Vizzie
-		3544, -- Jason Lemieux
-		4876, -- Jawn Highmesa
-		3498, -- Jazzik
-		4590, -- Jonathan Chambers
-		258, -- Joshua Maclure
-		6574, -- Jun'ha
-		15353, -- Katrina Shimmerstar
-		1697, -- Keeg Gibn
-		3348, -- Kor'geld
-		3329, -- Kor'jus
-		5870, -- Krond
-		1671, -- Lamar Veisilli
-		5871, -- Larhka
-		4730, -- Lelanai
-		8118, -- Lillian Singh
-		791, -- Lindsay Ashlock
-		1694, -- Loslor Rudge
-		15898, -- Lunar Festival Vendor
-		3587, -- Lyrai
-		2303, -- Lyranne Feathersong
-		2394, -- Mallen Swain
-		3010, -- Mani Winterhoof
-		7941, -- Mardrack Greenwell
-		1670, -- Mike Miller
-		13429, -- Nardstrum Copperpinch
-		7485, -- Nargatt
-		3614, -- Narret Shadowgrove
-		3014, -- Nida Winterhoof
-		14738, -- Otho Moji'ko
-		5132, -- Pithwick
-		5154, -- Poranna Snowbraid
-		15354, -- Rachelle Gothena
-		3541, -- Sarah Raycroft
-		955, -- Sergeant De Vries
-		3029, -- Sewa Mistrunner
-		3342, -- Shan'ti
-		2669, -- Sheri Zipstitch
-		5124, -- Sognar Cliffbeard
-		4221, -- Talaelar
-		1650, -- Terry Palin
-		4617, -- Thaddeus Webb
-		5158, -- Tilli Thistlefuzz
-		4195, -- Tiyani
-		4899, -- Uma Bartulm
-		4954, -- Uttnar
-		4189, -- Valdaron
-		4222, -- Voloren
-		13431, -- Whulwert Copperpinch
-		2842, -- Wigcik
-		8404, -- Xan'tish
-		4230, -- Yldan
-		8116, -- Ziggle Sparks
-		2225, -- Zora Guthrek
-		3608, -- Aldia
-		4191, -- Allyndia
-		3481, -- Barg
-		4893, -- Bartender Lillian
-		151, -- Brog Hamfist
-		2365, -- Bront Coldcleave
-		5163, -- Burbik Gearspanner
-		4216, -- Chardryn
-		4896, -- Charity Mipsy
-		12960, -- Christi Galvanis
-		2697, -- Clyde Ranthal
-		2668, -- Danielle Zipstitch
-		4266, -- Danlyia
-		3411, -- Denni'ka
-		2397, -- Derak Nightfall
-		15006, -- Deze Snowbane
-		14962, -- Dillord Copperpinch
-		3969, -- Fahran Silentblade
-		7942, -- Faralorn
-		3091, -- Franklin Hamar
-		3705, -- Gahroot
-		5750, -- Gina Lang
-		2820, -- Graud
-		4082, -- Grawnal
-		3291, -- Greishan Ironstove
-		12807, -- Greshka
-		3086, -- Gretchen Vogel
-		1452, -- Gruham Rumdnul
-		3708, -- Gruna
-		10216, -- Gubber Blump
-		960, -- Gunder Thornbush
-		5886, -- Gwyn Farrow
-		3933, -- Hai'zan
-		7943, -- Harklane
-		14964, -- Hecht Copperpinch
-		3948, -- Honni Goldenoat
-		12776, -- Hraug
-		9501, -- Innkeeper Adegwa
-		2352, -- Innkeeper Anderson
-		16458, -- Innkeeper Faralia
-		7737, -- Innkeeper Greul
-		6928, -- Innkeeper Grosk
-		6929, -- Innkeeper Gryshka
-		7731, -- Innkeeper Jayka
-		6737, -- Innkeeper Shaussiy
-		6807, -- Innkeeper Skindle
-		6791, -- Innkeeper Wiley
-		4169, -- Jaeana
-		3164, -- Jark
-		1311, -- Joachim Brenlow
-		5134, -- Jonivera Farmountain
-		3186, -- K'waii
-		3025, -- Kaga Mistrunner
-		3487, -- Kalyimah Stormcloud
-		3072, -- Kawnie Softbreeze
-		5749, -- Kayla Smithe
-		2401, -- Kayren Soothallow
-		13435, -- Khole Jinglepocket
-		6027, -- Kitha
-		8122, -- Kizzak Sparks
-		15125, -- Kosco Copperpinch
-		1691, -- Kreg Bilmn
-		3621, -- Kurll
-		3002, -- Kurm Stonehoof
-		3561, -- Kyrai
-		3689, -- Laer Stepperunner
-		12028, -- Lah'Mawhani
-		14731, -- Lard
-		8143, -- Loorana
-		11186, -- Lunnix Sprocketslip
-		12031, -- Mai'Lahii
-		3135, -- Malissa
-		3044, -- Miles Welsh
-		4577, -- Millie Gregorian
-		14961, -- Mirvyna Jinglepocket
-		3883, -- Moodan Sungrain
-		3076, -- Moorat Longstride
-		3017, -- Nan Mistrunner
-		3959, -- Nantar
-		2084, -- Natheril Raincaller
-		3312, -- Olvia
-		8364, -- Pakwa
-		3551, -- Patrice Dwyer
-		491, -- Quartermaster Lewis
-		1474, -- Rann Flamespinner
-		3625, -- Rarck
-		6495, -- Riznek
-		4599, -- Sarah Killian
-		3138, -- Scott Carevin
-		10367, -- Shrye Ragefist
-		5520, -- Spackle Thornberry
-		3178, -- Stuart Fleming
-		4554, -- Tawny Grisette
-		6298, -- Thelgrum Stonehammer
-		12027, -- Tukk
-		4228, -- Vaean
-		2808, -- Vikki Lonsav
-		6568, -- Vizzklick
-		12962, -- Wik'Tar
-		3485, -- Wrahk
-		6376, -- Wren Darkspring
-		3400, -- Xen'to
-		5944, -- Yonada
-		3572, -- Zizzek
-		18960, -- Rungor
-		18484, -- Wind Trader Lathrai
-		18911, -- Juno Dufrain
-		18756, -- Haris Pilton
-		19663, -- Madame Ruby
-		19186, -- Kylene
-		27721, -- Drelik Blastpipe
-		19213, -- Eiin
-		27722, -- Drolig Blastpipe
-		18753, -- Felannia
-		20097, -- Nula the Butcher
-		20028, -- Doba
-		18015, -- Gambarinka
-		21655, -- Nakodu
-		20096, -- Uriku
-		19837, -- Daga Ramba
-		23604, -- Agnes Farwithers
-		20080, -- Galgrom
-		18751, -- Kalaen
-		27668, -- Ontok Shatterhorn
-		19321, -- Quartermaster Endarin
-		21643, -- Alurmi
-		16585, -- Cookie One-Eye
-		18773, -- Johan Barnes
-		16826, -- Sid Limbardi
-		18005, -- Haalrun
-		19227, -- Griftah
-		18525, -- G'eras
-		18774, -- Tatiana
-		18775, -- Lebowski
-		16782, -- Yatheon
-		21432, -- Almaador
-		16602, -- Floyd Pinkus
-		19296, -- Innkeeper Biribi
-		19331, -- Quartermaster Enuril
-		17585, -- Quartermaster Urgronn
-		18988, -- Baxter
-		19196, -- Cro Threadstrong
-		17657, -- Logistics Officer Ulrike
-		19661, -- Viggz Shinesparked
-		18898, -- Explodyne Fizzlespurt
-		20807, -- Scribe Saalyn
-		19042, -- Leeli Longhaggle
-		16689, -- Zaralda
-		18987, -- Gaston
-		16657, -- Feera
-		20808, -- Scribe Veredis
-		25976, -- Theremis
-		18990, -- Burko
-		20981, -- Dealer Najeeb
-		16860, -- Jilanne
-		16635, -- Lyna
-		16253, -- Master Chef Mouldier
-		17584, -- Torallius the Pack Handler
-		25178, -- Ecton Brasstumbler
-		18957, -- Innkeeper Grilka
-		19074, -- Skreah
-		20278, -- Vixton Pinchwhistle
-		18266, -- Warrant Officer Tracy Proudwell
-		18991, -- Aresella
-		20986, -- Dealer Tariq
-		23489, -- Drake Dealer Hurlunk
-		25032, -- Eldara Dawnrunner
-		19772, -- Spirit Sage Gartok
-		20916, -- Xerintha Ravenoak
-		18255, -- Apprentice Darius
-		16641, -- Melaris
-		22212, -- Andrion Darkspinner
-		16262, -- Landraelanis
-		19038, -- Supply Officer Mills
-		20980, -- Dealer Rashaad
-		16722, -- Egomis
-		19773, -- Spirit Sage Zran
-		16367, -- Botanist Tyniarrel
-		18906, -- Caregiver Ophera Windfury
-		19053, -- Fabian Lanzonelli
-		18907, -- Innkeeper Coryth Stoktron
-		18993, -- Naka
-		22208, -- Nasmara Moonsong
-		20989, -- Dealer Sadaqat
-		16224, -- Rathis Tomber
-		24934, -- Snack-O-Matic IV
-		27817, -- Brew Vendor
-		18771, -- Brumman
-		20494, -- Dama Wildmane
-		24408, -- Gunter
-		23484, -- Haldor the Compulsive
-		19065, -- Inessera
-		23521, -- Anne Summers
-		18267, -- Battlecryer Blackeye
-		26352, -- Big Zokk Torquewrench
-		18772, -- Hama
-		18564, -- Horde Field Scout
-		19182, -- Shaarubo
-		18897, -- "King" Dond
-		23245, -- Aether-tech Master
-		19617, -- Boots
-		17421, -- Clopper Wizbang
-		19857, -- Meminnie
-		26092, -- Soryn
-		19245, -- Vinemaster Alamaro
-		18018, -- Zurjaya
-		18542, -- Alexston Chrome
-		19521, -- Arrond
-		18754, -- Barim Spilthoof
-		23263, -- Brendan Turner
-		19534, -- Dealer Digriz
-		17101, -- Diktynna
-		18427, -- Fazu
-		16766, -- Issca
-		22270, -- Ogri'la Merchant
-		22271, -- Ogri'la Trader
-		21019, -- Sixx
-		18752, -- Zebig
-		17246, -- "Cookie" McWeaksauce
-		19017, -- Borto
-		18914, -- Caregiver Isel
-		16709, -- Cuzi
-		18749, -- Dalinna
-		19197, -- Eral
-		25179, -- Frixee Brasstumbler
-		24993, -- Galley Chief Mariss
-		19050, -- Garul
-		16444, -- Halis Dawnstrider
-		18929, -- Kyrenna
-		15397, -- Marniel Amberlight
-		27666, -- Ontuvo
-		18821, -- Quartermaster Jaffrey Noreliqe
-		18947, -- Solanin
-		19244, -- Trader Endernor
-		25034, -- Tradesman Portanuus
-		16264, -- Winaestra
-		21488, -- Banro
-		21111, -- Bembil Knockhammer
-		20510, -- Brunn Flamebeard
-		18251, -- Caregiver Abidaar
-		16267, -- Daestra
-		18959, -- Dod'ss
-		24510, -- Driz Tumblequick
-		16268, -- Eralan
-		16624, -- Gelanthis
-		22213, -- Gidge Spellweaver
-		23437, -- Indormi
-		18908, -- Innkeeper Kerp
-		23428, -- Jho'nass
-		26124, -- Midsummer Merchant
-		16768, -- Nurguni
-		20241, -- Provisioner Nasela
-		21113, -- Sassa Weldwell
-		23606, -- Suntouched Apprentice
-		25977, -- Yrma
-		19234, -- Yurial Soulwater
-		17512, -- Arred
-		19540, -- Asarnan
-		24495, -- Blix Fixwidget
-		27814, -- Brew Vendor
-		27818, -- Brew Vendor
-		23605, -- Bron
-		16739, -- Caregiver Breel
-		25176, -- Grikkin Copperspring
-		19232, -- Innkeeper Haelthol
-		19195, -- Jim Saltit
-		19345, -- Kalara
-		19474, -- Karnaze
-		21906, -- Kelara
-		23699, -- Kevin Browning
-		24392, -- Leeni "Smiley" Smalls
-		25195, -- Marksman Bova
-		19015, -- Mathar G'ochar
-		26123, -- Midsummer Supplier
-		16767, -- Neii
-		19045, -- Oloraak
-		19372, -- Oran Blusterbrew
-		21744, -- Roldemar
-		23510, -- Thunderbrew Apprentice
-		20240, -- Trader Narasu
-		21905, -- Veynna Dawnstar
-		16442, -- Vinemaster Suntouched
-		15494, -- Yasmine Teli'Larien
-		24208, -- "Little" Logok
-		18664, -- Aged Dalaran Wizard
-		19932, -- Andormu
-		20249, -- Cymbre Starsong
-		16708, -- Dekin
-		19495, -- Innkeeper Shaunessy
-		26089, -- Kayri
-		23396, -- Krixel Pinchwhistle
-		27478, -- Larkin Thunderbrew
-		26395, -- Lieutenant Tristia
-		24975, -- Mar'nah
-		16613, -- Parnis
-		19562, -- Peon Bolgar
-		16718, -- Phea
-		24468, -- Pol Amberstill
-		16187, -- Quartermaster Lymel
-		27489, -- Ray'ma
-		23363, -- Sahaak
-		16649, -- Torian
-		16443, -- Zalene Firstlight
-		23244, -- Aether-tech Adept
-		23243, -- Aether-tech Assistant
-		23483, -- Arcanist Xorith
-		23522, -- Arlen Lochlan
-		17222, -- Artificer Daelo
-		19371, -- Dalin Stouthammer
-		16683, -- Darlia
-		19538, -- Dealer Senzik
-		25177, -- Evee Copperspring
-		21110, -- Fizit "Doc" Clocktock
-		17630, -- Innkeeper Jovia
-		16618, -- Innkeeper Velandra
-		19539, -- Jazdalaad
-		23748, -- Kurzel
-		21145, -- Little Azimi
-		23535, -- Matero Zeshuwal
-		19664, -- Muffin Man Moser
-		22266, -- Ogri'la Grubgiver
-		18810, -- Otonambusi
-		19450, -- Pol Snowhoof
-		17277, -- Provisioner Valine
-		15287, -- Shara Sunwing
-		23010, -- Wolgren Jinglepocket
-		23896, -- "Dirty" Michael Crowe
-		18581, -- Alliance Field Scout
-		23995, -- Axle
-		20377, -- Barkeep Kelly
-		23482, -- Barleybrew Apprentice
-		23710, -- Belbi Quikswitch
-		16650, -- Bithrus
-		27810, -- Brew Vendor
-		27820, -- Brew Vendor
-		27806, -- Brew Vendor
-		25036, -- Caregiver Inaara
-		21487, -- Cendrii
-		20378, -- Chef Jessen
-		19435, -- Dark Cleric Malod
-		19537, -- Dealer Malij
-		16638, -- Deynna
-		19649, -- Dorni
-		19352, -- Dreg Cloudsweeper
-		24501, -- Drohn's Distillery Apprentice
-		23064, -- Eebee Jinglepocket
-		21484, -- Embelar
-		17490, -- Ergh of the Stillpine
-		21083, -- Erool
-		19531, -- Eyonix
-		19518, -- Feranin
-		25012, -- Galley Chief Gathers
-		24834, -- Galley Chief Grace
-		25089, -- Galley Chief Steelbelly
-		19572, -- Gant
-		19470, -- Gholah
-		19223, -- Granny Smith
-		28225, -- Griz Gutshank
-		16748, -- Haferet
-		18905, -- Innkeeper Bazil Olof'tazun
-		16610, -- Kredis
-		19330, -- Lisrythe Bloodwatch
-		18913, -- Matron Tikkit
-		18811, -- Meriaad
-		16751, -- Merran
-		19559, -- Mondul
-		20893, -- Morula
-		23110, -- Ogri'la Keg King
-		23065, -- Olnayvi Copperpinch
-		26091, -- Olus
-		16732, -- Onnis
-		18009, -- Puluu
-		18822, -- Quartermaster Davian Vaclav
-		20892, -- Ruogo
-		16920, -- Ryosh
-		19374, -- Salle Sunforge
-		21172, -- Sarinei Whitestar
-		16366, -- Sempstress Ambershine
-		16259, -- Sheri
-		23533, -- T'chali's Voodoo Brewery Apprentice
-		19498, -- Tanaide
-		21483, -- Tasaldan
-		24545, -- Thunderbrew "Apprentice"
-		25035, -- Tyrael Flamekissed
-		16664, -- Zelan
-		19625, -- Alorya
-		16705, -- Altaa
-		16713, -- Arras
-		23009, -- Bessbi Jinglepocket
-		21084, -- Braagor
-		27816, -- Brew Vendor
-		27811, -- Brew Vendor
-		27819, -- Brew Vendor
-		23525, -- Brother Cartwright
-		19497, -- Caoileann
-		16553, -- Caregiver Chellan
-		17553, -- Caregiver Topher Loaal
-		21746, -- Caretaker Aluuro
-		19573, -- Dash
-		19533, -- Dealer Aljaan
-		20194, -- Dealer Dunar
-		19532, -- Dearny
-		18951, -- Erilia
-		19194, -- Ernie Packwell
-		20121, -- Fingin
-		25020, -- Galley Chief Alunwea
-		25052, -- Galley Chief Halumvorea
-		23511, -- Gordok Brew Apprentice
-		17656, -- Heron Skygaze
-		23143, -- Horus
-		15433, -- Innkeeper Delaniel
-		16542, -- Innkeeper Kalarin
-		19049, -- Karokka
-		26090, -- Karynna
-		23481, -- Keiran Donoghue
-		18277, -- Kinamisa
-		19574, -- Kizzie
-		23573, -- Krixil Slogswitch
-		21082, -- Krugash
-		17489, -- Logan Daniel
-		19560, -- Lukra
-		19020, -- Matron Qualia
-		18245, -- Merajit
-		19836, -- Mixie Farshot
-		19722, -- Muheru the Weaver
-		19243, -- Nalama the Merchant
-		19021, -- Nancila
-		19528, -- Nanomah
-		19471, -- Old Orok
-		18347, -- Olirea
-		17446, -- Parkat Steelfur
-		16798, -- Provisioner Anir
-		19451, -- Quartermaster Gorman
-		16677, -- Quelis
-		21085, -- Ragar
-		20250, -- Rashere Pridehoof
-		16690, -- Rathin
-		18954, -- Sailor Melinan
-		16191, -- Sathren Azuredawn
-		25043, -- Sereth Duskbringer
-		25950, -- Shaani
-		20891, -- Skraa
-		23208, -- Skyguard Pyrotechnician
-		19348, -- Targrom
-		19472, -- Threlc
-		19343, -- Trop Rendlimb
-		23603, -- Uta Roughdough
-		17486, -- Ziz
-		32538, -- Duchess Mynx
-		32216, -- Mei Francis
-		30431, -- Veteran Crusader Aliocha Segard
-		32540, -- Lillehoff
-		199387, -- D3-BA
-		31247, -- Roxi Ramrocket
-		31238, -- Hira Snowdawn
-		32287, -- Archmage Alvareaux
-		32533, -- Cielstrasza
-		32763, -- Sairuk
-		34885, -- Dame Evniki Kapsalis
-		31916, -- Tanaika
-		28715, -- Endora Moorehead
-		32296, -- Stone Guard Mukar
-		40160, -- Frozo the Renowned
-		32565, -- Gara Skullcrush
-		32172, -- Harold Winston
-		32294, -- Knight Dameron
-		32564, -- Logistics Officer Silverstone
-		211332, -- Korralin Hoperender
-		211340, -- Kolara Dreamsmasher
-		28742, -- Marcia Chase
-		207128, -- Animated Constellation
-		33557, -- Trellis Morningsun
-		31580, -- Arcanist Ivrenne
-		33555, -- Eliza Killian
-		31910, -- Geen
-		29587, -- Dread Commander Thalanor
-		32774, -- Sebastian Crane
-		35494, -- Arcanist Miluria
-		31582, -- Magistrix Lambriesse
-		35826, -- Kaye Toogie
-		28701, -- Timothy Jones
-		33634, -- Engineer Sinbei
-		33653, -- Rook Hawkfist
-		32515, -- Braeg Stoutbeard
-		33682, -- Fono
-		33963, -- Magister Sarien
-		32773, -- Logistics Officer Brighton
-		33553, -- Freka Bloodaxe
-		32509, -- Brammold Deepmine
-		32514, -- Vanessa Sellers
-		33640, -- Hanlir
-		33554, -- Samamba
-		35508, -- Enchanter Erodin
-		35507, -- Enchanter Isian
-		33307, -- Corporal Arthur Flew
-		33650, -- Rillie Spindlenut
-		30730, -- Stanly McCormick
-		33310, -- Derrick Brindlebeard
-		33657, -- Irisee
-		35577, -- Valiant Laradia
-		33026, -- Sarah Brady
-		29535, -- Alchemist Cinesra
-		29744, -- Rork Sharpchin
-		35578, -- Valiant Bressia
-		37941, -- Magister Arlan
-		31031, -- Misensi
-		31032, -- Derek Odds
-		34772, -- Vasarin Redmorn
-		29493, -- Jarold Puller
-		32380, -- Lieutenant Tristia
-		37942, -- Arcanist Uovril
-		32836, -- Noblegarden Vendor
-		28776, -- Elizabeth Ross
-		27760, -- "Grizzly" D. Adams
-		31581, -- Magister Brasael
-		30472, -- Olut Alegut
-		28721, -- Tiffany Cartier
-		28687, -- Amisi Azuregaze
-		29478, -- Jepetto Joybuzz
-		31579, -- Arcanist Adurin
-		28951, -- Breanni
-		30723, -- Xantili
-		32382, -- Lady Palanseer
-		27730, -- Purkom
-		33556, -- Doru Thunderhorn
-		33636, -- Miralisse
-		32837, -- Noblegarden Merchant
-		29547, -- Applebough
-		30885, -- Blazik Fireclaw
-		28726, -- Dominique Stefano
-		32413, -- Isirami Fairwind
-		29628, -- Angelique Butler
-		35580, -- Aspirant Naradiel
-		26110, -- Librarian Serrah
-		35575, -- Champion Isimode
-		35495, -- Magistrix Vesara
-		33595, -- Mera Mistrunner
-		26977, -- Adelene Sunlance
-		34881, -- Hiren Loresong
-		32354, -- Leeni "Smiley" Smalls
-		37674, -- Lovely Merchant
-		29532, -- Ajay Green
-		29491, -- Karandonna
-		28993, -- Aerith Primrose
-		35099, -- Bana Wildmane
-		32337, -- Christi Stockton
-		32362, -- Evee Copperspring
-		33027, -- Jessica Sellers
-		33964, -- Arcanist Firael
-		26484, -- Hugh Glass
-		33679, -- Recorder Lidio
-		31911, -- Tanak
-		33677, -- Technician Mihila
-		33996, -- William Saldean
-		31557, -- Uda the Beast
-		33631, -- Barien
-		35576, -- Champion Faesrol
-		26938, -- Groll
-		33638, -- Scribe Lanloer
-		33684, -- Weaver Aoa
-		24539, -- "Silvermoon" Harry
-		29716, -- Clockwork Assistant
-		33853, -- Broxel Goldgrasp
-		29715, -- Fialla Sweetberry
-		28347, -- Miles Sidney
-		29495, -- Norvin Alderman
-		39173, -- Champion Ros'slai
-		28692, -- "Red" Jack Findle
-		32355, -- Big Zokk Torquewrench
-		32379, -- Captain O'Neal
-		29528, -- Debbi Moore
-		33678, -- Jijia
-		26995, -- Tink Brightbolt
-		25248, -- "Salty" John Thorpe
-		35574, -- Magistrix Iruvia
-		29527, -- Orton Bennet
-		24291, -- Anton
-		33637, -- Kirembri Silvermane
-		34682, -- Wilmina Holbeck
-		33596, -- Meline Duskpath
-		28718, -- Ranid Glowergold
-		29122, -- Rarkag
-		29548, -- Aimee
-		32359, -- Argex Irongut
-		35579, -- Aspirant Forudir
-		35131, -- Durgan Thunderbeak
-		26959, -- Booker Kells
-		26718, -- Trader Alorn
-		30488, -- Travis Day
-		32356, -- Kezzik the Striker
-		28723, -- Larana Drome
-		29529, -- Ninsianna
-		26868, -- Provisioner Lorkran
-		34382, -- Chapman
-		29277, -- Datalore Smallsphere
-		32415, -- Hamaka
-		32642, -- Mojodishu
-		33680, -- Nemiha
-		33675, -- Onodo
-		30011, -- Sigdis the Trader
-		27193, -- Alornerk
-		33602, -- Anuur
-		29702, -- Chameli Banaphash
-		35101, -- Grunda Bronzewing
-		28868, -- Mulch
-		35573, -- Arcanist Asarina
-		29208, -- Fester
-		31101, -- Hoodoo Master Fu'jin
-		34683, -- Rose Standish
-		28691, -- Susana Averoy
-		24342, -- Timothy Holland
-		29270, -- Aspen Grove Trader
-		24054, -- Balar Rumsbane
-		194795, -- Fishspeaker Irtusk
-		28046, -- Korg the Cleaver
-		39172, -- Marshal Magruder
-		32420, -- Mimbihi
-		26916, -- Mindri Dinkles
-		27144, -- Noatak
-		28792, -- Noggra
-		29261, -- Windle Sparkshine
-		32631, -- Alfred Copperworth
-		29275, -- Aspen Grove Supplier
-		24341, -- Barnabas Frye
-		33639, -- Botanist Alaenra
-		35343, -- Bountiful Barrel
-		35341, -- Bountiful Barrel
-		26941, -- Brokkan Bear-Arms
-		29207, -- Gangrenus
-		32638, -- Hakmud of Argus
-		34681, -- Ikaneba Summerset
-		30735, -- Kul Inkspiller
-		30724, -- Mertle Murkpen
-		27938, -- Trizormu
-		25278, -- Williamson
-		30098, -- Amphitheater Vendor
-		35342, -- Bountiful Barrel
-		34685, -- Dalni Tallgrass
-		29291, -- Galley Chief Paul Kubit
-		29905, -- Grillix Bonesaw
-		28589, -- Gristlegut
-		30254, -- Marisalira
-		30489, -- Morgan Day
-		29908, -- Plip Fatpurse
-		28038, -- Purser Boulian
-		27022, -- Afha
-		28707, -- Angelo Pescatore
-		29049, -- Arille Azuregaze
-		35337, -- Bountiful Barrel
-		199649, -- Crafted Gearataur
-		32360, -- Ecton Brasstumbler
-		27142, -- Librarian Jeffers
-		33597, -- Liere Morningsong
-		26709, -- Pahu Frosthoof
-		29583, -- Pan'ya
-		29703, -- Sheddle Glossgleam
-		31051, -- Sorceress Kaylana
-		27146, -- Uukkarnit
-		29512, -- Ainderu Summerleaf
-		27031, -- Apothecary Rose
-		27187, -- Caregiver Poallu
-		24057, -- Christina Daniels
-		28869, -- Deathdrip
-		30729, -- Ickabod Pimlen
-		30731, -- Illianna Moonscribe
-		23937, -- Innkeeper Celeste Goodhutch
-		29121, -- Soo-yum
-		31021, -- Sophie Aaren
-		27145, -- Tipvigut
-		35132, -- Tohfo Skyhoof
-		32419, -- Umbiwa
-		28994, -- Abra Cadabra
-		26680, -- Aiyan Coldwind
-		33866, -- Akrittok
-		27125, -- Barracks Master Rhekku
-		30306, -- Bileblow
-		35338, -- Bountiful Barrel
-		27174, -- Caregiver Mumik
-		28798, -- Claudia Bloodraven
-		29205, -- Corpulous
-		28682, -- Inzi Charmlight
-		29244, -- Jesse Masters
-		33681, -- Korim
-		26939, -- Koro the Wanderer
-		30727, -- Lelorian
-		27940, -- Lethecus
-		27147, -- Librarian Erickson
-		27070, -- Lisa Philbrook
-		28685, -- Narisa Redgold
-		28725, -- Patricia Egan
-		27182, -- Takubvik
-		27195, -- Tarralikitak
-		27063, -- Vrok
-		29971, -- Wabada Whiteflower
-		26945, -- Zend'li Venomtusk
-		26596, -- "Charlie" Northtop
-		27148, -- Caregiver Iqniq
-		26936, -- Chaska Frosthoof
-		33635, -- Daenril
-		28727, -- Edward Egan
-		24053, -- Helga Rumsbane
-		29962, -- Horgoru the Collector
-		23731, -- Innkeeper Hazel Lagras
-		25245, -- James Deacon
-		34684, -- Laha Farplain
-		29510, -- Linna Bruder
-		30005, -- Lodge-Matron Embla
-		29963, -- Magorn
-		33865, -- Makuli
-		31017, -- Mal Corricks
-		30311, -- Mangled
-		32421, -- Marcella Bloom
-		33019, -- Megan Owings
-		27181, -- Qannik
-		27132, -- Sani'i
-		30256, -- Scout Ordimbral
-		30257, -- Scout Yribria
-		29904, -- Smilin' Slirk Brassknob
-		28867, -- Spiked
-		28872, -- Squirmworm
-		24147, -- Tara Cooper
-		33872, -- Torgah
-		27021, -- Tradesman Kontor
-		26567, -- Aegalas
-		28828, -- Ansari
-		24333, -- Bartender Jason Goodhutch
-		27012, -- Beem Goldsprocket
-		27071, -- Benjamin Jacobs
-		24033, -- Bori Wintertotem
-		35340, -- Bountiful Barrel
-		24343, -- Brock Olson
-		33600, -- Cerie Larksong
-		32426, -- Coira Longrifle
-		23737, -- Coot "The Stranger" Albertson
-		30437, -- Crusader Marisse
-		29970, -- Danho Farcloud
-		24148, -- David Marks
-		27950, -- Demestrasz
-		28728, -- Dorian Fines
-		33683, -- Dremm
-		27038, -- Drolfy
-		33601, -- Elka Stormbrew
-		33644, -- Ellia Moondancer
-		27041, -- Fanny McLumpkins
-		30346, -- Galley Chief Dolinger
-		31022, -- George Goodman
-		29926, -- Gunda Boldhammer
-		27042, -- Illusia Lune
-		27184, -- Imnek
-		30070, -- Initiate Gahark
-		33645, -- Jenna Thunderbrew
-		33018, -- Jennifer Owings
-		29511, -- Lalla Brightweave
-		27053, -- Lanus Longleaf
-		28812, -- Lapu Stormhorn
-		27143, -- Librarian Ingram
-		27032, -- Lovely Liddia
-		29714, -- Lucian Trias
-		26374, -- Maevin Farmoon
-		27052, -- Naohain
-		32334, -- Nixi Fireclaw
-		29944, -- Peon Gakra
-		26375, -- Quartermaster McCarty
-		28830, -- Ra'wiri
-		27026, -- Rohesia Werner
-		32403, -- Sandra Bartan
-		27057, -- Saramer Whitewillow
-		28829, -- Saree
-		30732, -- Sessoh
-		30309, -- Shambles
-		30439, -- Sister Colleen Tulley
-		32416, -- Stefen Cotter
-		24141, -- Stephen Barone
-		30733, -- Thargen Heavyquill
-		27043, -- Trixy Trixerton
-		30827, -- Utamu
-		26388, -- Veira Langdon
-		23802, -- Wink Sprinklesprankle
-		26568, -- Zebu'tan
-		28799, -- Alanna
-		28807, -- Amarante
-		30255, -- Aniduria
-		27137, -- Apprentice Fraser
-		24149, -- Basil Osgood
-		30310, -- Boltskull
-		28811, -- Brady Ironcrock
-		28806, -- Chad Carter
-		28832, -- Chin'ika
-		28866, -- Corrosion
-		26720, -- Danook Stormwhisper
-		27051, -- Doldaen
-		34645, -- Elizabeth Barker Winslow
-		33598, -- Fanii
-		24356, -- Glen Roberts
-		27025, -- Harold Haggler
-		27066, -- Jennifer Bell
-		30734, -- Jezebel Bican
-		28794, -- Kevin Weaver
-		27058, -- Korag Keeneye
-		32424, -- Laire Brewgold
-		28810, -- Lessien
-		27140, -- Librarian Andersen
-		27141, -- Librarian Hamilton
-		28791, -- Marissa Everwatch
-		32412, -- Mato
-		27069, -- Matron Magah
-		27027, -- Mrs. Winterby
-		27044, -- Ordal McLumpkins
-		24348, -- Patrick Hall
-		34783, -- Ranisa Whitebough
-		29925, -- Rutner Steelpick
-		27089, -- Saffron Reynolds
-		32478, -- Slosh
-		23732, -- Sorely Twitchblade
-		31019, -- Stephanie Sindree
-		33868, -- Tingiyok
-		33869, -- Torngasak
-		27190, -- Tupit
-		28831, -- Yamuna
+	[MERCHANT] = {
+		[5594] = true, -- Alchemist Pestlezugg
+		[8137] = true, -- Gikkix
+		[2685] = true, -- Mazk Snipeshot
+		[14846] = true, -- Lhara
+		[12022] = true, -- Lorelae Wintersong
+		[7947] = true, -- Vivianna
+		[3556] = true, -- Andrew Hilbert
+		[340] = true, -- Kendor Kabonka
+		[12919] = true, -- Nat Pagle
+		[2806] = true, -- Bale
+		[1465] = true, -- Drac Roughcut
+		[2664] = true, -- Kelsey Yance
+		[8145] = true, -- Sheendra Tallgrass
+		[4561] = true, -- Daniel Bartlett
+		[8139] = true, -- Jabbey
+		[1448] = true, -- Neal Allen
+		[8125] = true, -- Dirge Quikcleave
+		[4229] = true, -- Mythrin'dir
+		[66] = true, -- Tharynn Bouden
+		[2821] = true, -- Keena
+		[15419] = true, -- Kania
+		[11056] = true, -- Alchemist Arbington
+		[5494] = true, -- Catherine Leland
+		[4877] = true, -- Jandia
+		[9499] = true, -- Plugger Spazzring
+		[12944] = true, -- Lokhtos Darkbargainer
+		[2803] = true, -- Malygen
+		[3362] = true, -- Ogunaro Wolfrunner
+		[11189] = true, -- Qia
+		[8666] = true, -- Lil Timmy
+		[3482] = true, -- Tari'qa
+		[7564] = true, -- Marin Noggenfogger
+		[16786] = true, -- Argent Quartermaster
+		[12781] = true, -- Master Sergeant Biggins
+		[2810] = true, -- Hammon Karwn
+		[12245] = true, -- Vendor-Tron [1000] = true
+		[3955] = true, -- Shandrina
+		[12246] = true, -- Super-Seller [680] = true
+		[3489] = true, -- Zargh
+		[15174] = true, -- Calandrath
+		[12043] = true, -- Kulwia
+		[15351] = true, -- Alliance Brigadier General
+		[8401] = true, -- Halpa
+		[6548] = true, -- Magus Tirth
+		[4585] = true, -- Ezekiel Graves
+		[1326] = true, -- Sloan McCoy
+		[5162] = true, -- Tansy Puddlefizz
+		[12033] = true, -- Wulan
+		[17598] = true, -- Renn'az
+		[3546] = true, -- Bernie Heisten
+		[483] = true, -- Elaine Trias
+		[11188] = true, -- Evie Whirlbrew
+		[3443] = true, -- Grub
+		[14847] = true, -- Professor Thaddeus Paleo
+		[4453] = true, -- Wizzle Brassbolts
+		[11185] = true, -- Xizzer Fizzbolt
+		[1263] = true, -- Yarlyn Amberstill
+		[5175] = true, -- Gearcutter Cogspinner
+		[2848] = true, -- Glyx Brewright
+		[11557] = true, -- Meilosh
+		[2663] = true, -- Narkk
+		[5817] = true, -- Shimra
+		[2480] = true, -- Bro'kin
+		[4897] = true, -- Helenia Olden
+		[8679] = true, -- Knaz Blunderflame
+		[3027] = true, -- Naal Mistrunner
+		[10667] = true, -- Chromie
+		[3497] = true, -- Kilxx
+		[3334] = true, -- Rekkul
+		[844] = true, -- Antonio Perelli
+		[1303] = true, -- Felicia Gump
+		[5940] = true, -- Harn Longcast
+		[12783] = true, -- Lieutenant Karter
+		[2381] = true, -- Micha Yance
+		[16787] = true, -- Argent Outfitter
+		[5519] = true, -- Billibub Cogspinner
+		[3960] = true, -- Ulthaan
+		[15293] = true, -- Aendel Windspear
+		[12793] = true, -- Brave Stonehide
+		[734] = true, -- Corporal Bluth
+		[3954] = true, -- Dalria
+		[3180] = true, -- Dark Iron Entrepreneur
+		[1684] = true, -- Khara Deepwater
+		[4217] = true, -- Mathrengyl Bearwalker
+		[11536] = true, -- Quartermaster Miranda Breechlock
+		[8665] = true, -- Shylenai
+		[3413] = true, -- Sovik
+		[11057] = true, -- Apothecary Dithers
+		[4981] = true, -- Ben Trias
+		[6740] = true, -- Innkeeper Allison
+		[6746] = true, -- Innkeeper Pala
+		[5753] = true, -- Martha Strain
+		[12943] = true, -- Werg Thickblade
+		[14322] = true, -- Stomper Kreeg
+		[4610] = true, -- Algernon
+		[3369] = true, -- Gotri
+		[6735] = true, -- Innkeeper Saelienne
+		[10618] = true, -- Rivern Frostwind
+		[6779] = true, -- Smudge Thunderwood
+		[6777] = true, -- Zan Shivsproket
+		[1347] = true, -- Alexandra Bolero
+		[6576] = true, -- Brienna Starglow
+		[6367] = true, -- Donni Anthania
+		[4165] = true, -- Elissa Dumas
+		[7775] = true, -- Gregan Brewspewer
+		[7854] = true, -- Jangdor Swiftstrider
+		[3346] = true, -- Kithas
+		[4879] = true, -- Ogg'marr
+		[1285] = true, -- Thurman Mullby
+		[4731] = true, -- Zachariah Post
+		[5188] = true, -- Garyl
+		[2698] = true, -- George Candarte
+		[2265] = true, -- Hillsbrad Apprentice Blacksmith
+		[6741] = true, -- Innkeeper Norman
+		[7736] = true, -- Innkeeper Shyria
+		[5565] = true, -- Jillian Tanner
+		[1148] = true, -- Nerrist
+		[2481] = true, -- Bliztik
+		[2687] = true, -- Gnaz Blunderflame
+		[11555] = true, -- Gorn One Eye
+		[4574] = true, -- Lizbeth Cromwell
+		[8157] = true, -- Logannas
+		[3550] = true, -- Martine Tramblay
+		[15179] = true, -- Mishta
+		[5109] = true, -- Myra Tyrngaarde
+		[10118] = true, -- Nessa Shadowsong
+		[4553] = true, -- Ronald Burch
+		[2819] = true, -- Tunkk
+		[5611] = true, -- Barkeep Morag
+		[6328] = true, -- Dannie Fizzwizzle
+		[1286] = true, -- Edna Mullby
+		[4181] = true, -- Fyrenna
+		[1247] = true, -- Innkeeper Belm
+		[6790] = true, -- Innkeeper Trelayne
+		[4305] = true, -- Kriggon Talsone
+		[4190] = true, -- Kyndri
+		[3134] = true, -- Kzixx
+		[4200] = true, -- Laird
+		[11874] = true, -- Masat T'andr
+		[4241] = true, -- Mydrannul
+		[4581] = true, -- Salazar Bloch
+		[1261] = true, -- Veron Amberstill
+		[3081] = true, -- Wunna Darkmane
+		[1682] = true, -- Yanni Stoutheart
+		[3405] = true, -- Zeal'aya
+		[989] = true, -- Banalash
+		[1302] = true, -- Bernard Gump
+		[3578] = true, -- Dalaran Miner
+		[5140] = true, -- Edris Barleybeard
+		[14860] = true, -- Flik
+		[6739] = true, -- Innkeeper Bates
+		[8678] = true, -- Jubie Gadgetspring
+		[9636] = true, -- Kireena
+		[5758] = true, -- Leo Sarn
+		[9676] = true, -- Tink Sprocketwhistle
+		[4226] = true, -- Ulthir
+		[7952] = true, -- Zjolnir
+		[465] = true, -- Barkeep Dobbins
+		[3364] = true, -- Borya
+		[5101] = true, -- Bryllia Ironbrand
+		[3096] = true, -- Captured Servant of Azora
+		[11038] = true, -- Caretaker Alen
+		[4167] = true, -- Dendrythis
+		[2812] = true, -- Drovnar Strongbrew
+		[4891] = true, -- Dwane Wertle
+		[1328] = true, -- Elly Langston
+		[3495] = true, -- Gagsprocket
+		[3547] = true, -- Hamlin Atkins
+		[15165] = true, -- Haughty Modiste
+		[11187] = true, -- Himmik
+		[295] = true, -- Innkeeper Farley
+		[6734] = true, -- Innkeeper Hearthstove
+		[1301] = true, -- Julia Gallina
+		[372] = true, -- Karm Ironquill
+		[8362] = true, -- Kuruk
+		[9099] = true, -- Sraaz
+		[5189] = true, -- Thrumn
+		[14522] = true, -- Ur'dan
+		[1685] = true, -- Xandar Goodbeard
+		[14637] = true, -- Zorbin Fandazzle
+		[9087] = true, -- Bashana Runetotem
+		[7978] = true, -- Bimble Longberry
+		[2838] = true, -- Crazk Sparks
+		[12021] = true, -- Daeolyn Summerleaf
+		[3577] = true, -- Dalaran Brewmaster
+		[233] = true, -- Farmer Saldean
+		[3367] = true, -- Felika
+		[5100] = true, -- Fillius Fizzlespinner
+		[5112] = true, -- Gwenna Firebrew
+		[3685] = true, -- Harb Clawhoof
+		[7733] = true, -- Innkeeper Fizzgrimble
+		[11103] = true, -- Innkeeper Lyshaerya
+		[12941] = true, -- Jase Farlane
+		[8121] = true, -- Jaxxil Sparks
+		[5783] = true, -- Kalldan Felmoon
+		[1456] = true, -- Kersok Prond
+		[5848] = true, -- Malgin Barleybrew
+		[2626] = true, -- Old Man Heming
+		[12796] = true, -- Raider Bork
+		[13432] = true, -- Seersa Copperpinch
+		[15199] = true, -- Sergeant Hartman
+		[5178] = true, -- Soolie Berryfizz
+		[14845] = true, -- Stamp Thunderhorn
+		[14844] = true, -- Sylannia
+		[3187] = true, -- Tai'tasi
+		[3366] = true, -- Tamar
+		[3313] = true, -- Trak'gen
+		[1678] = true, -- Vernon Hale
+		[1316] = true, -- Adair Gilroy
+		[2816] = true, -- Androd Fadran
+		[11287] = true, -- Baker Masterson
+		[274] = true, -- Barkeep Hann
+		[4168] = true, -- Elynna
+		[3881] = true, -- Grimtak
+		[15350] = true, -- Horde Warbringer
+		[11116] = true, -- Innkeeper Abeqwa
+		[3934] = true, -- Innkeeper Boorand Plainswind
+		[8150] = true, -- Janet Hommers
+		[15012] = true, -- Javnir Nashak
+		[8403] = true, -- Jeremiah Payson
+		[1318] = true, -- Jessara Cordell
+		[16256] = true, -- Jessica Chambers
+		[4589] = true, -- Joseph Moore
+		[14740] = true, -- Katoom the Angler
+		[3005] = true, -- Mahu
+		[5190] = true, -- Merill Pleasance
+		[4571] = true, -- Morley Bates
+		[2364] = true, -- Neema
+		[13018] = true, -- Nipsy
+		[2832] = true, -- Nixxrax Fillamug
+		[5193] = true, -- Rebecca Laughlin
+		[277] = true, -- Roberto Pupellyverbos
+		[7945] = true, -- Savanne
+		[4192] = true, -- Taldan
+		[3016] = true, -- Tand
+		[1460] = true, -- Unger Statforth
+		[2118] = true, -- Abigail Shiel
+		[5173] = true, -- Alexander Calder
+		[1321] = true, -- Alyssa Griffith
+		[12384] = true, -- Augustus the Touched
+		[12957] = true, -- Blimo Gadgetspring
+		[5128] = true, -- Bombus Finespindle
+		[2393] = true, -- Christoph Jeffcoat
+		[6374] = true, -- Cylina Darkheart
+		[12019] = true, -- Dargon
+		[2140] = true, -- Edwin Harly
+		[14481] = true, -- Emmithue Smails
+		[5483] = true, -- Erika Tate
+		[3090] = true, -- Gerald Crawley
+		[12958] = true, -- Gigget Zipcoil
+		[6731] = true, -- Harlown Darkweave
+		[4307] = true, -- Heldan Galesong
+		[2264] = true, -- Hillsbrad Tailor
+		[6736] = true, -- Innkeeper Keldamyr
+		[11106] = true, -- Innkeeper Sikewa
+		[384] = true, -- Katie Hunter
+		[5748] = true, -- Killian Sanatha
+		[3937] = true, -- Kira Songshine
+		[8305] = true, -- Kixxle
+		[15471] = true, -- Lieutenant General Andorov
+		[5757] = true, -- Lilly
+		[3961] = true, -- Maliynn
+		[2357] = true, -- Merideth Carlson
+		[12959] = true, -- Nergal
+		[8178] = true, -- Nina Lightbrew
+		[13420] = true, -- Penney Copperpinch
+		[8177] = true, -- Rartar
+		[982] = true, -- Thultash
+		[5169] = true, -- Tynnus Venomsprout
+		[4194] = true, -- Ullanna
+		[15011] = true, -- Wagner Hammerstrike
+		[5942] = true, -- Zansoa
+		[829] = true, -- Adlin Pridedrift
+		[6496] = true, -- Brivelthwerp
+		[5514] = true, -- Brooke Stonebraid
+		[2672] = true, -- Cowardly Crosby
+		[4894] = true, -- Craig Nollward
+		[6373] = true, -- Dane Winslow
+		[1304] = true, -- Darian Singh
+		[15197] = true, -- Darkcaller Yanka
+		[7940] = true, -- Darnall
+		[1453] = true, -- Dewin Shimmerdawn
+		[4587] = true, -- Elizabeth Van Talen
+		[3168] = true, -- Flakk
+		[2682] = true, -- Fradd Swiftgear
+		[3003] = true, -- Fyr Mistrunner
+		[3085] = true, -- Gloria Femmel
+		[4885] = true, -- Gregor MacVince
+		[3133] = true, -- Herble Baubbletump
+		[8931] = true, -- Innkeeper Heather
+		[1464] = true, -- Innkeeper Helbrek
+		[2388] = true, -- Innkeeper Shay
+		[7744] = true, -- Innkeeper Thulfram
+		[1325] = true, -- Jasper Fel
+		[3884] = true, -- Jhawna Oatwind
+		[5698] = true, -- Joanna Whitehall
+		[6382] = true, -- Jubahl Corpseseeker
+		[7772] = true, -- Kalin Windflight
+		[790] = true, -- Karen Taylor
+		[3958] = true, -- Lardan
+		[2383] = true, -- Lindea Rabonne
+		[1672] = true, -- Lohgan Eva
+		[5049] = true, -- Lyesa Steelbrow
+		[7955] = true, -- Milli Featherwhistle
+		[7879] = true, -- Quintis Jonespyre
+		[3499] = true, -- Ranik
+		[1457] = true, -- Samor Festivus
+		[8363] = true, -- Shadi Mistrunner
+		[5191] = true, -- Shalumon
+		[3333] = true, -- Shankys
+		[3089] = true, -- Sherman Femmel
+		[2622] = true, -- Sly Garrett
+		[8307] = true, -- Tarban Hearthgrain
+		[15124] = true, -- Targot Jinglepocket
+		[3935] = true, -- Toddrick
+		[4782] = true, -- Truk Wildbeard
+		[4875] = true, -- Turhaw
+		[1149] = true, -- Uthok
+		[15864] = true, -- Valadar Starsong
+		[13433] = true, -- Wulmort Jinglepocket
+		[3882] = true, -- Zlagk
+		[7683] = true, -- Alessandro Luca
+		[777] = true, -- Amy Davenport
+		[8158] = true, -- Bronk
+		[5570] = true, -- Bruuk Barleybeard
+		[8934] = true, -- Christopher Hewen
+		[1250] = true, -- Drake Lindgren
+		[4170] = true, -- Ellandrieth
+		[14963] = true, -- Gapp Jinglepocket
+		[6567] = true, -- Ghok'kah
+		[6301] = true, -- Gorbold Steelhand
+		[14437] = true, -- Gorzeeki Wildeyes
+		[13436] = true, -- Guchie Jinglepocket
+		[3956] = true, -- Harklan Moongrove
+		[894] = true, -- Homer Stonefield
+		[5111] = true, -- Innkeeper Firebrew
+		[6747] = true, -- Innkeeper Kauth
+		[1305] = true, -- Jarel Moor
+		[13430] = true, -- Jaycrue Copperpinch
+		[6730] = true, -- Jinky Twizzlefixxit
+		[2115] = true, -- Joshua Kien
+		[4615] = true, -- Katrina Alliestar
+		[13418] = true, -- Kaymard Copperpinch
+		[1237] = true, -- Kazan Mogosh
+		[5815] = true, -- Kurgul
+		[227] = true, -- Mabel Solaj
+		[13434] = true, -- Macey Jinglepocket
+		[1313] = true, -- Maria Lumere
+		[3480] = true, -- Moorane Hearthgrain
+		[2134] = true, -- Mrs. Winters
+		[12026] = true, -- My'lanna
+		[2683] = true, -- Namdo Bizzfizzle
+		[2380] = true, -- Nandar Branson
+		[2814] = true, -- Narj Deepslice
+		[3012] = true, -- Nata Dawnstrider
+		[8160] = true, -- Nioma
+		[4265] = true, -- Nyoma
+		[14450] = true, -- Orphan Matron Nightingale
+		[8681] = true, -- Outfitter Eric
+		[2699] = true, -- Rikqiz
+		[2684] = true, -- Rizz Loosebolt
+		[2688] = true, -- Ruppo Zipcoil
+		[4225] = true, -- Saenorion
+		[3548] = true, -- Selina Weston
+		[12794] = true, -- Stone Guard Zarg
+		[5135] = true, -- Svalbrad Farmountain
+		[3779] = true, -- Syurana
+		[3518] = true, -- Thomas Miller
+		[8117] = true, -- Wizbang Booms
+		[2670] = true, -- Xizk Goodstitch
+		[12956] = true, -- Zannok Hidepiercer
+		[14480] = true, -- Alowicious Czervik
+		[3350] = true, -- Asoran
+		[2366] = true, -- Barkeep Kelly
+		[5620] = true, -- Bartender Wental
+		[2846] = true, -- Blixrez Goodstitch
+		[3368] = true, -- Borstan
+		[4255] = true, -- Brogus Thunderbrew
+		[152] = true, -- Brother Danil
+		[4084] = true, -- Chylina
+		[4182] = true, -- Dalmond
+		[6091] = true, -- Dellylah
+		[3158] = true, -- Duokna
+		[5503] = true, -- Eldraeith
+		[4555] = true, -- Eleanor Rusk
+		[5160] = true, -- Emrul Riknussun
+		[4775] = true, -- Felicia Doan
+		[12795] = true, -- First Sergeant Hola'mahi
+		[5569] = true, -- Fizzlebang Booms
+		[4223] = true, -- Fyldan
+		[3298] = true, -- Gabrielle Chase
+		[16543] = true, -- Garon Hutchins
+		[843] = true, -- Gina MacGregor
+		[4256] = true, -- Golnir Bouldertoe
+		[1692] = true, -- Golorn Frostbeard
+		[3358] = true, -- Gorina
+		[2908] = true, -- Grawl
+		[8508] = true, -- Gretta Ganter
+		[5138] = true, -- Gwina Stonebranch
+		[3540] = true, -- Hal McAllister
+		[3962] = true, -- Haljan Oakheart
+		[8152] = true, -- Harnor
+		[6727] = true, -- Innkeeper Brianna
+		[7714] = true, -- Innkeeper Byula
+		[6272] = true, -- Innkeeper Janene
+		[6930] = true, -- Innkeeper Karakul
+		[12196] = true, -- Innkeeper Kaylisk
+		[6738] = true, -- Innkeeper Kimlya
+		[5688] = true, -- Innkeeper Renee
+		[9356] = true, -- Innkeeper Shul'kar
+		[5814] = true, -- Innkeeper Thulbek
+		[11118] = true, -- Innkeeper Vizzie
+		[3544] = true, -- Jason Lemieux
+		[4876] = true, -- Jawn Highmesa
+		[3498] = true, -- Jazzik
+		[4590] = true, -- Jonathan Chambers
+		[258] = true, -- Joshua Maclure
+		[6574] = true, -- Jun'ha
+		[15353] = true, -- Katrina Shimmerstar
+		[1697] = true, -- Keeg Gibn
+		[3348] = true, -- Kor'geld
+		[3329] = true, -- Kor'jus
+		[5870] = true, -- Krond
+		[1671] = true, -- Lamar Veisilli
+		[5871] = true, -- Larhka
+		[4730] = true, -- Lelanai
+		[8118] = true, -- Lillian Singh
+		[791] = true, -- Lindsay Ashlock
+		[1694] = true, -- Loslor Rudge
+		[15898] = true, -- Lunar Festival Vendor
+		[3587] = true, -- Lyrai
+		[2303] = true, -- Lyranne Feathersong
+		[2394] = true, -- Mallen Swain
+		[3010] = true, -- Mani Winterhoof
+		[7941] = true, -- Mardrack Greenwell
+		[1670] = true, -- Mike Miller
+		[13429] = true, -- Nardstrum Copperpinch
+		[7485] = true, -- Nargatt
+		[3614] = true, -- Narret Shadowgrove
+		[3014] = true, -- Nida Winterhoof
+		[14738] = true, -- Otho Moji'ko
+		[5132] = true, -- Pithwick
+		[5154] = true, -- Poranna Snowbraid
+		[15354] = true, -- Rachelle Gothena
+		[3541] = true, -- Sarah Raycroft
+		[955] = true, -- Sergeant De Vries
+		[3029] = true, -- Sewa Mistrunner
+		[3342] = true, -- Shan'ti
+		[2669] = true, -- Sheri Zipstitch
+		[5124] = true, -- Sognar Cliffbeard
+		[4221] = true, -- Talaelar
+		[1650] = true, -- Terry Palin
+		[4617] = true, -- Thaddeus Webb
+		[5158] = true, -- Tilli Thistlefuzz
+		[4195] = true, -- Tiyani
+		[4899] = true, -- Uma Bartulm
+		[4954] = true, -- Uttnar
+		[4189] = true, -- Valdaron
+		[4222] = true, -- Voloren
+		[13431] = true, -- Whulwert Copperpinch
+		[2842] = true, -- Wigcik
+		[8404] = true, -- Xan'tish
+		[4230] = true, -- Yldan
+		[8116] = true, -- Ziggle Sparks
+		[2225] = true, -- Zora Guthrek
+		[3608] = true, -- Aldia
+		[4191] = true, -- Allyndia
+		[3481] = true, -- Barg
+		[4893] = true, -- Bartender Lillian
+		[151] = true, -- Brog Hamfist
+		[2365] = true, -- Bront Coldcleave
+		[5163] = true, -- Burbik Gearspanner
+		[4216] = true, -- Chardryn
+		[4896] = true, -- Charity Mipsy
+		[12960] = true, -- Christi Galvanis
+		[2697] = true, -- Clyde Ranthal
+		[2668] = true, -- Danielle Zipstitch
+		[4266] = true, -- Danlyia
+		[3411] = true, -- Denni'ka
+		[2397] = true, -- Derak Nightfall
+		[15006] = true, -- Deze Snowbane
+		[14962] = true, -- Dillord Copperpinch
+		[3969] = true, -- Fahran Silentblade
+		[7942] = true, -- Faralorn
+		[3091] = true, -- Franklin Hamar
+		[3705] = true, -- Gahroot
+		[5750] = true, -- Gina Lang
+		[2820] = true, -- Graud
+		[4082] = true, -- Grawnal
+		[3291] = true, -- Greishan Ironstove
+		[12807] = true, -- Greshka
+		[3086] = true, -- Gretchen Vogel
+		[1452] = true, -- Gruham Rumdnul
+		[3708] = true, -- Gruna
+		[10216] = true, -- Gubber Blump
+		[960] = true, -- Gunder Thornbush
+		[5886] = true, -- Gwyn Farrow
+		[3933] = true, -- Hai'zan
+		[7943] = true, -- Harklane
+		[14964] = true, -- Hecht Copperpinch
+		[3948] = true, -- Honni Goldenoat
+		[12776] = true, -- Hraug
+		[9501] = true, -- Innkeeper Adegwa
+		[2352] = true, -- Innkeeper Anderson
+		[16458] = true, -- Innkeeper Faralia
+		[7737] = true, -- Innkeeper Greul
+		[6928] = true, -- Innkeeper Grosk
+		[6929] = true, -- Innkeeper Gryshka
+		[7731] = true, -- Innkeeper Jayka
+		[6737] = true, -- Innkeeper Shaussiy
+		[6807] = true, -- Innkeeper Skindle
+		[6791] = true, -- Innkeeper Wiley
+		[4169] = true, -- Jaeana
+		[3164] = true, -- Jark
+		[1311] = true, -- Joachim Brenlow
+		[5134] = true, -- Jonivera Farmountain
+		[3186] = true, -- K'waii
+		[3025] = true, -- Kaga Mistrunner
+		[3487] = true, -- Kalyimah Stormcloud
+		[3072] = true, -- Kawnie Softbreeze
+		[5749] = true, -- Kayla Smithe
+		[2401] = true, -- Kayren Soothallow
+		[13435] = true, -- Khole Jinglepocket
+		[6027] = true, -- Kitha
+		[8122] = true, -- Kizzak Sparks
+		[15125] = true, -- Kosco Copperpinch
+		[1691] = true, -- Kreg Bilmn
+		[3621] = true, -- Kurll
+		[3002] = true, -- Kurm Stonehoof
+		[3561] = true, -- Kyrai
+		[3689] = true, -- Laer Stepperunner
+		[12028] = true, -- Lah'Mawhani
+		[14731] = true, -- Lard
+		[8143] = true, -- Loorana
+		[11186] = true, -- Lunnix Sprocketslip
+		[12031] = true, -- Mai'Lahii
+		[3135] = true, -- Malissa
+		[3044] = true, -- Miles Welsh
+		[4577] = true, -- Millie Gregorian
+		[14961] = true, -- Mirvyna Jinglepocket
+		[3883] = true, -- Moodan Sungrain
+		[3076] = true, -- Moorat Longstride
+		[3017] = true, -- Nan Mistrunner
+		[3959] = true, -- Nantar
+		[2084] = true, -- Natheril Raincaller
+		[3312] = true, -- Olvia
+		[8364] = true, -- Pakwa
+		[3551] = true, -- Patrice Dwyer
+		[491] = true, -- Quartermaster Lewis
+		[1474] = true, -- Rann Flamespinner
+		[3625] = true, -- Rarck
+		[6495] = true, -- Riznek
+		[4599] = true, -- Sarah Killian
+		[3138] = true, -- Scott Carevin
+		[10367] = true, -- Shrye Ragefist
+		[5520] = true, -- Spackle Thornberry
+		[3178] = true, -- Stuart Fleming
+		[4554] = true, -- Tawny Grisette
+		[6298] = true, -- Thelgrum Stonehammer
+		[12027] = true, -- Tukk
+		[4228] = true, -- Vaean
+		[2808] = true, -- Vikki Lonsav
+		[6568] = true, -- Vizzklick
+		[12962] = true, -- Wik'Tar
+		[3485] = true, -- Wrahk
+		[6376] = true, -- Wren Darkspring
+		[3400] = true, -- Xen'to
+		[5944] = true, -- Yonada
+		[3572] = true, -- Zizzek
+		[18960] = true, -- Rungor
+		[18484] = true, -- Wind Trader Lathrai
+		[18911] = true, -- Juno Dufrain
+		[18756] = true, -- Haris Pilton
+		[19663] = true, -- Madame Ruby
+		[19186] = true, -- Kylene
+		[27721] = true, -- Drelik Blastpipe
+		[19213] = true, -- Eiin
+		[27722] = true, -- Drolig Blastpipe
+		[18753] = true, -- Felannia
+		[20097] = true, -- Nula the Butcher
+		[20028] = true, -- Doba
+		[18015] = true, -- Gambarinka
+		[21655] = true, -- Nakodu
+		[20096] = true, -- Uriku
+		[19837] = true, -- Daga Ramba
+		[23604] = true, -- Agnes Farwithers
+		[20080] = true, -- Galgrom
+		[18751] = true, -- Kalaen
+		[27668] = true, -- Ontok Shatterhorn
+		[19321] = true, -- Quartermaster Endarin
+		[21643] = true, -- Alurmi
+		[16585] = true, -- Cookie One-Eye
+		[18773] = true, -- Johan Barnes
+		[16826] = true, -- Sid Limbardi
+		[18005] = true, -- Haalrun
+		[19227] = true, -- Griftah
+		[18525] = true, -- G'eras
+		[18774] = true, -- Tatiana
+		[18775] = true, -- Lebowski
+		[16782] = true, -- Yatheon
+		[21432] = true, -- Almaador
+		[16602] = true, -- Floyd Pinkus
+		[19296] = true, -- Innkeeper Biribi
+		[19331] = true, -- Quartermaster Enuril
+		[17585] = true, -- Quartermaster Urgronn
+		[18988] = true, -- Baxter
+		[19196] = true, -- Cro Threadstrong
+		[17657] = true, -- Logistics Officer Ulrike
+		[19661] = true, -- Viggz Shinesparked
+		[18898] = true, -- Explodyne Fizzlespurt
+		[20807] = true, -- Scribe Saalyn
+		[19042] = true, -- Leeli Longhaggle
+		[16689] = true, -- Zaralda
+		[18987] = true, -- Gaston
+		[16657] = true, -- Feera
+		[20808] = true, -- Scribe Veredis
+		[25976] = true, -- Theremis
+		[18990] = true, -- Burko
+		[20981] = true, -- Dealer Najeeb
+		[16860] = true, -- Jilanne
+		[16635] = true, -- Lyna
+		[16253] = true, -- Master Chef Mouldier
+		[17584] = true, -- Torallius the Pack Handler
+		[25178] = true, -- Ecton Brasstumbler
+		[18957] = true, -- Innkeeper Grilka
+		[19074] = true, -- Skreah
+		[20278] = true, -- Vixton Pinchwhistle
+		[18266] = true, -- Warrant Officer Tracy Proudwell
+		[18991] = true, -- Aresella
+		[20986] = true, -- Dealer Tariq
+		[23489] = true, -- Drake Dealer Hurlunk
+		[25032] = true, -- Eldara Dawnrunner
+		[19772] = true, -- Spirit Sage Gartok
+		[20916] = true, -- Xerintha Ravenoak
+		[18255] = true, -- Apprentice Darius
+		[16641] = true, -- Melaris
+		[22212] = true, -- Andrion Darkspinner
+		[16262] = true, -- Landraelanis
+		[19038] = true, -- Supply Officer Mills
+		[20980] = true, -- Dealer Rashaad
+		[16722] = true, -- Egomis
+		[19773] = true, -- Spirit Sage Zran
+		[16367] = true, -- Botanist Tyniarrel
+		[18906] = true, -- Caregiver Ophera Windfury
+		[19053] = true, -- Fabian Lanzonelli
+		[18907] = true, -- Innkeeper Coryth Stoktron
+		[18993] = true, -- Naka
+		[22208] = true, -- Nasmara Moonsong
+		[20989] = true, -- Dealer Sadaqat
+		[16224] = true, -- Rathis Tomber
+		[24934] = true, -- Snack-O-Matic IV
+		[27817] = true, -- Brew Vendor
+		[18771] = true, -- Brumman
+		[20494] = true, -- Dama Wildmane
+		[24408] = true, -- Gunter
+		[23484] = true, -- Haldor the Compulsive
+		[19065] = true, -- Inessera
+		[23521] = true, -- Anne Summers
+		[18267] = true, -- Battlecryer Blackeye
+		[26352] = true, -- Big Zokk Torquewrench
+		[18772] = true, -- Hama
+		[18564] = true, -- Horde Field Scout
+		[19182] = true, -- Shaarubo
+		[18897] = true, -- "King" Dond
+		[23245] = true, -- Aether-tech Master
+		[19617] = true, -- Boots
+		[17421] = true, -- Clopper Wizbang
+		[19857] = true, -- Meminnie
+		[26092] = true, -- Soryn
+		[19245] = true, -- Vinemaster Alamaro
+		[18018] = true, -- Zurjaya
+		[18542] = true, -- Alexston Chrome
+		[19521] = true, -- Arrond
+		[18754] = true, -- Barim Spilthoof
+		[23263] = true, -- Brendan Turner
+		[19534] = true, -- Dealer Digriz
+		[17101] = true, -- Diktynna
+		[18427] = true, -- Fazu
+		[16766] = true, -- Issca
+		[22270] = true, -- Ogri'la Merchant
+		[22271] = true, -- Ogri'la Trader
+		[21019] = true, -- Sixx
+		[18752] = true, -- Zebig
+		[17246] = true, -- "Cookie" McWeaksauce
+		[19017] = true, -- Borto
+		[18914] = true, -- Caregiver Isel
+		[16709] = true, -- Cuzi
+		[18749] = true, -- Dalinna
+		[19197] = true, -- Eral
+		[25179] = true, -- Frixee Brasstumbler
+		[24993] = true, -- Galley Chief Mariss
+		[19050] = true, -- Garul
+		[16444] = true, -- Halis Dawnstrider
+		[18929] = true, -- Kyrenna
+		[15397] = true, -- Marniel Amberlight
+		[27666] = true, -- Ontuvo
+		[18821] = true, -- Quartermaster Jaffrey Noreliqe
+		[18947] = true, -- Solanin
+		[19244] = true, -- Trader Endernor
+		[25034] = true, -- Tradesman Portanuus
+		[16264] = true, -- Winaestra
+		[21488] = true, -- Banro
+		[21111] = true, -- Bembil Knockhammer
+		[20510] = true, -- Brunn Flamebeard
+		[18251] = true, -- Caregiver Abidaar
+		[16267] = true, -- Daestra
+		[18959] = true, -- Dod'ss
+		[24510] = true, -- Driz Tumblequick
+		[16268] = true, -- Eralan
+		[16624] = true, -- Gelanthis
+		[22213] = true, -- Gidge Spellweaver
+		[23437] = true, -- Indormi
+		[18908] = true, -- Innkeeper Kerp
+		[23428] = true, -- Jho'nass
+		[26124] = true, -- Midsummer Merchant
+		[16768] = true, -- Nurguni
+		[20241] = true, -- Provisioner Nasela
+		[21113] = true, -- Sassa Weldwell
+		[23606] = true, -- Suntouched Apprentice
+		[25977] = true, -- Yrma
+		[19234] = true, -- Yurial Soulwater
+		[17512] = true, -- Arred
+		[19540] = true, -- Asarnan
+		[24495] = true, -- Blix Fixwidget
+		[27814] = true, -- Brew Vendor
+		[27818] = true, -- Brew Vendor
+		[23605] = true, -- Bron
+		[16739] = true, -- Caregiver Breel
+		[25176] = true, -- Grikkin Copperspring
+		[19232] = true, -- Innkeeper Haelthol
+		[19195] = true, -- Jim Saltit
+		[19345] = true, -- Kalara
+		[19474] = true, -- Karnaze
+		[21906] = true, -- Kelara
+		[23699] = true, -- Kevin Browning
+		[24392] = true, -- Leeni "Smiley" Smalls
+		[25195] = true, -- Marksman Bova
+		[19015] = true, -- Mathar G'ochar
+		[26123] = true, -- Midsummer Supplier
+		[16767] = true, -- Neii
+		[19045] = true, -- Oloraak
+		[19372] = true, -- Oran Blusterbrew
+		[21744] = true, -- Roldemar
+		[23510] = true, -- Thunderbrew Apprentice
+		[20240] = true, -- Trader Narasu
+		[21905] = true, -- Veynna Dawnstar
+		[16442] = true, -- Vinemaster Suntouched
+		[15494] = true, -- Yasmine Teli'Larien
+		[24208] = true, -- "Little" Logok
+		[18664] = true, -- Aged Dalaran Wizard
+		[19932] = true, -- Andormu
+		[20249] = true, -- Cymbre Starsong
+		[16708] = true, -- Dekin
+		[19495] = true, -- Innkeeper Shaunessy
+		[26089] = true, -- Kayri
+		[23396] = true, -- Krixel Pinchwhistle
+		[27478] = true, -- Larkin Thunderbrew
+		[26395] = true, -- Lieutenant Tristia
+		[24975] = true, -- Mar'nah
+		[16613] = true, -- Parnis
+		[19562] = true, -- Peon Bolgar
+		[16718] = true, -- Phea
+		[24468] = true, -- Pol Amberstill
+		[16187] = true, -- Quartermaster Lymel
+		[27489] = true, -- Ray'ma
+		[23363] = true, -- Sahaak
+		[16649] = true, -- Torian
+		[16443] = true, -- Zalene Firstlight
+		[23244] = true, -- Aether-tech Adept
+		[23243] = true, -- Aether-tech Assistant
+		[23483] = true, -- Arcanist Xorith
+		[23522] = true, -- Arlen Lochlan
+		[17222] = true, -- Artificer Daelo
+		[19371] = true, -- Dalin Stouthammer
+		[16683] = true, -- Darlia
+		[19538] = true, -- Dealer Senzik
+		[25177] = true, -- Evee Copperspring
+		[21110] = true, -- Fizit "Doc" Clocktock
+		[17630] = true, -- Innkeeper Jovia
+		[16618] = true, -- Innkeeper Velandra
+		[19539] = true, -- Jazdalaad
+		[23748] = true, -- Kurzel
+		[21145] = true, -- Little Azimi
+		[23535] = true, -- Matero Zeshuwal
+		[19664] = true, -- Muffin Man Moser
+		[22266] = true, -- Ogri'la Grubgiver
+		[18810] = true, -- Otonambusi
+		[19450] = true, -- Pol Snowhoof
+		[17277] = true, -- Provisioner Valine
+		[15287] = true, -- Shara Sunwing
+		[23010] = true, -- Wolgren Jinglepocket
+		[23896] = true, -- "Dirty" Michael Crowe
+		[18581] = true, -- Alliance Field Scout
+		[23995] = true, -- Axle
+		[20377] = true, -- Barkeep Kelly
+		[23482] = true, -- Barleybrew Apprentice
+		[23710] = true, -- Belbi Quikswitch
+		[16650] = true, -- Bithrus
+		[27810] = true, -- Brew Vendor
+		[27820] = true, -- Brew Vendor
+		[27806] = true, -- Brew Vendor
+		[25036] = true, -- Caregiver Inaara
+		[21487] = true, -- Cendrii
+		[20378] = true, -- Chef Jessen
+		[19435] = true, -- Dark Cleric Malod
+		[19537] = true, -- Dealer Malij
+		[16638] = true, -- Deynna
+		[19649] = true, -- Dorni
+		[19352] = true, -- Dreg Cloudsweeper
+		[24501] = true, -- Drohn's Distillery Apprentice
+		[23064] = true, -- Eebee Jinglepocket
+		[21484] = true, -- Embelar
+		[17490] = true, -- Ergh of the Stillpine
+		[21083] = true, -- Erool
+		[19531] = true, -- Eyonix
+		[19518] = true, -- Feranin
+		[25012] = true, -- Galley Chief Gathers
+		[24834] = true, -- Galley Chief Grace
+		[25089] = true, -- Galley Chief Steelbelly
+		[19572] = true, -- Gant
+		[19470] = true, -- Gholah
+		[19223] = true, -- Granny Smith
+		[28225] = true, -- Griz Gutshank
+		[16748] = true, -- Haferet
+		[18905] = true, -- Innkeeper Bazil Olof'tazun
+		[16610] = true, -- Kredis
+		[19330] = true, -- Lisrythe Bloodwatch
+		[18913] = true, -- Matron Tikkit
+		[18811] = true, -- Meriaad
+		[16751] = true, -- Merran
+		[19559] = true, -- Mondul
+		[20893] = true, -- Morula
+		[23110] = true, -- Ogri'la Keg King
+		[23065] = true, -- Olnayvi Copperpinch
+		[26091] = true, -- Olus
+		[16732] = true, -- Onnis
+		[18009] = true, -- Puluu
+		[18822] = true, -- Quartermaster Davian Vaclav
+		[20892] = true, -- Ruogo
+		[16920] = true, -- Ryosh
+		[19374] = true, -- Salle Sunforge
+		[21172] = true, -- Sarinei Whitestar
+		[16366] = true, -- Sempstress Ambershine
+		[16259] = true, -- Sheri
+		[23533] = true, -- T'chali's Voodoo Brewery Apprentice
+		[19498] = true, -- Tanaide
+		[21483] = true, -- Tasaldan
+		[24545] = true, -- Thunderbrew "Apprentice"
+		[25035] = true, -- Tyrael Flamekissed
+		[16664] = true, -- Zelan
+		[19625] = true, -- Alorya
+		[16705] = true, -- Altaa
+		[16713] = true, -- Arras
+		[23009] = true, -- Bessbi Jinglepocket
+		[21084] = true, -- Braagor
+		[27816] = true, -- Brew Vendor
+		[27811] = true, -- Brew Vendor
+		[27819] = true, -- Brew Vendor
+		[23525] = true, -- Brother Cartwright
+		[19497] = true, -- Caoileann
+		[16553] = true, -- Caregiver Chellan
+		[17553] = true, -- Caregiver Topher Loaal
+		[21746] = true, -- Caretaker Aluuro
+		[19573] = true, -- Dash
+		[19533] = true, -- Dealer Aljaan
+		[20194] = true, -- Dealer Dunar
+		[19532] = true, -- Dearny
+		[18951] = true, -- Erilia
+		[19194] = true, -- Ernie Packwell
+		[20121] = true, -- Fingin
+		[25020] = true, -- Galley Chief Alunwea
+		[25052] = true, -- Galley Chief Halumvorea
+		[23511] = true, -- Gordok Brew Apprentice
+		[17656] = true, -- Heron Skygaze
+		[23143] = true, -- Horus
+		[15433] = true, -- Innkeeper Delaniel
+		[16542] = true, -- Innkeeper Kalarin
+		[19049] = true, -- Karokka
+		[26090] = true, -- Karynna
+		[23481] = true, -- Keiran Donoghue
+		[18277] = true, -- Kinamisa
+		[19574] = true, -- Kizzie
+		[23573] = true, -- Krixil Slogswitch
+		[21082] = true, -- Krugash
+		[17489] = true, -- Logan Daniel
+		[19560] = true, -- Lukra
+		[19020] = true, -- Matron Qualia
+		[18245] = true, -- Merajit
+		[19836] = true, -- Mixie Farshot
+		[19722] = true, -- Muheru the Weaver
+		[19243] = true, -- Nalama the Merchant
+		[19021] = true, -- Nancila
+		[19528] = true, -- Nanomah
+		[19471] = true, -- Old Orok
+		[18347] = true, -- Olirea
+		[17446] = true, -- Parkat Steelfur
+		[16798] = true, -- Provisioner Anir
+		[19451] = true, -- Quartermaster Gorman
+		[16677] = true, -- Quelis
+		[21085] = true, -- Ragar
+		[20250] = true, -- Rashere Pridehoof
+		[16690] = true, -- Rathin
+		[18954] = true, -- Sailor Melinan
+		[16191] = true, -- Sathren Azuredawn
+		[25043] = true, -- Sereth Duskbringer
+		[25950] = true, -- Shaani
+		[20891] = true, -- Skraa
+		[23208] = true, -- Skyguard Pyrotechnician
+		[19348] = true, -- Targrom
+		[19472] = true, -- Threlc
+		[19343] = true, -- Trop Rendlimb
+		[23603] = true, -- Uta Roughdough
+		[17486] = true, -- Ziz
+		[32538] = true, -- Duchess Mynx
+		[32216] = true, -- Mei Francis
+		[30431] = true, -- Veteran Crusader Aliocha Segard
+		[32540] = true, -- Lillehoff
+		[199387] = true, -- D[3] = true-BA
+		[31247] = true, -- Roxi Ramrocket
+		[31238] = true, -- Hira Snowdawn
+		[32287] = true, -- Archmage Alvareaux
+		[32533] = true, -- Cielstrasza
+		[32763] = true, -- Sairuk
+		[34885] = true, -- Dame Evniki Kapsalis
+		[31916] = true, -- Tanaika
+		[28715] = true, -- Endora Moorehead
+		[32296] = true, -- Stone Guard Mukar
+		[40160] = true, -- Frozo the Renowned
+		[32565] = true, -- Gara Skullcrush
+		[32172] = true, -- Harold Winston
+		[32294] = true, -- Knight Dameron
+		[32564] = true, -- Logistics Officer Silverstone
+		[211332] = true, -- Korralin Hoperender
+		[211340] = true, -- Kolara Dreamsmasher
+		[28742] = true, -- Marcia Chase
+		[207128] = true, -- Animated Constellation
+		[33557] = true, -- Trellis Morningsun
+		[31580] = true, -- Arcanist Ivrenne
+		[33555] = true, -- Eliza Killian
+		[31910] = true, -- Geen
+		[29587] = true, -- Dread Commander Thalanor
+		[32774] = true, -- Sebastian Crane
+		[35494] = true, -- Arcanist Miluria
+		[31582] = true, -- Magistrix Lambriesse
+		[35826] = true, -- Kaye Toogie
+		[28701] = true, -- Timothy Jones
+		[33634] = true, -- Engineer Sinbei
+		[33653] = true, -- Rook Hawkfist
+		[32515] = true, -- Braeg Stoutbeard
+		[33682] = true, -- Fono
+		[33963] = true, -- Magister Sarien
+		[32773] = true, -- Logistics Officer Brighton
+		[33553] = true, -- Freka Bloodaxe
+		[32509] = true, -- Brammold Deepmine
+		[32514] = true, -- Vanessa Sellers
+		[33640] = true, -- Hanlir
+		[33554] = true, -- Samamba
+		[35508] = true, -- Enchanter Erodin
+		[35507] = true, -- Enchanter Isian
+		[33307] = true, -- Corporal Arthur Flew
+		[33650] = true, -- Rillie Spindlenut
+		[30730] = true, -- Stanly McCormick
+		[33310] = true, -- Derrick Brindlebeard
+		[33657] = true, -- Irisee
+		[35577] = true, -- Valiant Laradia
+		[33026] = true, -- Sarah Brady
+		[29535] = true, -- Alchemist Cinesra
+		[29744] = true, -- Rork Sharpchin
+		[35578] = true, -- Valiant Bressia
+		[37941] = true, -- Magister Arlan
+		[31031] = true, -- Misensi
+		[31032] = true, -- Derek Odds
+		[34772] = true, -- Vasarin Redmorn
+		[29493] = true, -- Jarold Puller
+		[32380] = true, -- Lieutenant Tristia
+		[37942] = true, -- Arcanist Uovril
+		[32836] = true, -- Noblegarden Vendor
+		[28776] = true, -- Elizabeth Ross
+		[27760] = true, -- "Grizzly" D. Adams
+		[31581] = true, -- Magister Brasael
+		[30472] = true, -- Olut Alegut
+		[28721] = true, -- Tiffany Cartier
+		[28687] = true, -- Amisi Azuregaze
+		[29478] = true, -- Jepetto Joybuzz
+		[31579] = true, -- Arcanist Adurin
+		[28951] = true, -- Breanni
+		[30723] = true, -- Xantili
+		[32382] = true, -- Lady Palanseer
+		[27730] = true, -- Purkom
+		[33556] = true, -- Doru Thunderhorn
+		[33636] = true, -- Miralisse
+		[32837] = true, -- Noblegarden Merchant
+		[29547] = true, -- Applebough
+		[30885] = true, -- Blazik Fireclaw
+		[28726] = true, -- Dominique Stefano
+		[32413] = true, -- Isirami Fairwind
+		[29628] = true, -- Angelique Butler
+		[35580] = true, -- Aspirant Naradiel
+		[26110] = true, -- Librarian Serrah
+		[35575] = true, -- Champion Isimode
+		[35495] = true, -- Magistrix Vesara
+		[33595] = true, -- Mera Mistrunner
+		[26977] = true, -- Adelene Sunlance
+		[34881] = true, -- Hiren Loresong
+		[32354] = true, -- Leeni "Smiley" Smalls
+		[37674] = true, -- Lovely Merchant
+		[29532] = true, -- Ajay Green
+		[29491] = true, -- Karandonna
+		[28993] = true, -- Aerith Primrose
+		[35099] = true, -- Bana Wildmane
+		[32337] = true, -- Christi Stockton
+		[32362] = true, -- Evee Copperspring
+		[33027] = true, -- Jessica Sellers
+		[33964] = true, -- Arcanist Firael
+		[26484] = true, -- Hugh Glass
+		[33679] = true, -- Recorder Lidio
+		[31911] = true, -- Tanak
+		[33677] = true, -- Technician Mihila
+		[33996] = true, -- William Saldean
+		[31557] = true, -- Uda the Beast
+		[33631] = true, -- Barien
+		[35576] = true, -- Champion Faesrol
+		[26938] = true, -- Groll
+		[33638] = true, -- Scribe Lanloer
+		[33684] = true, -- Weaver Aoa
+		[24539] = true, -- "Silvermoon" Harry
+		[29716] = true, -- Clockwork Assistant
+		[33853] = true, -- Broxel Goldgrasp
+		[29715] = true, -- Fialla Sweetberry
+		[28347] = true, -- Miles Sidney
+		[29495] = true, -- Norvin Alderman
+		[39173] = true, -- Champion Ros'slai
+		[28692] = true, -- "Red" Jack Findle
+		[32355] = true, -- Big Zokk Torquewrench
+		[32379] = true, -- Captain O'Neal
+		[29528] = true, -- Debbi Moore
+		[33678] = true, -- Jijia
+		[26995] = true, -- Tink Brightbolt
+		[25248] = true, -- "Salty" John Thorpe
+		[35574] = true, -- Magistrix Iruvia
+		[29527] = true, -- Orton Bennet
+		[24291] = true, -- Anton
+		[33637] = true, -- Kirembri Silvermane
+		[34682] = true, -- Wilmina Holbeck
+		[33596] = true, -- Meline Duskpath
+		[28718] = true, -- Ranid Glowergold
+		[29122] = true, -- Rarkag
+		[29548] = true, -- Aimee
+		[32359] = true, -- Argex Irongut
+		[35579] = true, -- Aspirant Forudir
+		[35131] = true, -- Durgan Thunderbeak
+		[26959] = true, -- Booker Kells
+		[26718] = true, -- Trader Alorn
+		[30488] = true, -- Travis Day
+		[32356] = true, -- Kezzik the Striker
+		[28723] = true, -- Larana Drome
+		[29529] = true, -- Ninsianna
+		[26868] = true, -- Provisioner Lorkran
+		[34382] = true, -- Chapman
+		[29277] = true, -- Datalore Smallsphere
+		[32415] = true, -- Hamaka
+		[32642] = true, -- Mojodishu
+		[33680] = true, -- Nemiha
+		[33675] = true, -- Onodo
+		[30011] = true, -- Sigdis the Trader
+		[27193] = true, -- Alornerk
+		[33602] = true, -- Anuur
+		[29702] = true, -- Chameli Banaphash
+		[35101] = true, -- Grunda Bronzewing
+		[28868] = true, -- Mulch
+		[35573] = true, -- Arcanist Asarina
+		[29208] = true, -- Fester
+		[31101] = true, -- Hoodoo Master Fu'jin
+		[34683] = true, -- Rose Standish
+		[28691] = true, -- Susana Averoy
+		[24342] = true, -- Timothy Holland
+		[29270] = true, -- Aspen Grove Trader
+		[24054] = true, -- Balar Rumsbane
+		[194795] = true, -- Fishspeaker Irtusk
+		[28046] = true, -- Korg the Cleaver
+		[39172] = true, -- Marshal Magruder
+		[32420] = true, -- Mimbihi
+		[26916] = true, -- Mindri Dinkles
+		[27144] = true, -- Noatak
+		[28792] = true, -- Noggra
+		[29261] = true, -- Windle Sparkshine
+		[32631] = true, -- Alfred Copperworth
+		[29275] = true, -- Aspen Grove Supplier
+		[24341] = true, -- Barnabas Frye
+		[33639] = true, -- Botanist Alaenra
+		[35343] = true, -- Bountiful Barrel
+		[35341] = true, -- Bountiful Barrel
+		[26941] = true, -- Brokkan Bear-Arms
+		[29207] = true, -- Gangrenus
+		[32638] = true, -- Hakmud of Argus
+		[34681] = true, -- Ikaneba Summerset
+		[30735] = true, -- Kul Inkspiller
+		[30724] = true, -- Mertle Murkpen
+		[27938] = true, -- Trizormu
+		[25278] = true, -- Williamson
+		[30098] = true, -- Amphitheater Vendor
+		[35342] = true, -- Bountiful Barrel
+		[34685] = true, -- Dalni Tallgrass
+		[29291] = true, -- Galley Chief Paul Kubit
+		[29905] = true, -- Grillix Bonesaw
+		[28589] = true, -- Gristlegut
+		[30254] = true, -- Marisalira
+		[30489] = true, -- Morgan Day
+		[29908] = true, -- Plip Fatpurse
+		[28038] = true, -- Purser Boulian
+		[27022] = true, -- Afha
+		[28707] = true, -- Angelo Pescatore
+		[29049] = true, -- Arille Azuregaze
+		[35337] = true, -- Bountiful Barrel
+		[199649] = true, -- Crafted Gearataur
+		[32360] = true, -- Ecton Brasstumbler
+		[27142] = true, -- Librarian Jeffers
+		[33597] = true, -- Liere Morningsong
+		[26709] = true, -- Pahu Frosthoof
+		[29583] = true, -- Pan'ya
+		[29703] = true, -- Sheddle Glossgleam
+		[31051] = true, -- Sorceress Kaylana
+		[27146] = true, -- Uukkarnit
+		[29512] = true, -- Ainderu Summerleaf
+		[27031] = true, -- Apothecary Rose
+		[27187] = true, -- Caregiver Poallu
+		[24057] = true, -- Christina Daniels
+		[28869] = true, -- Deathdrip
+		[30729] = true, -- Ickabod Pimlen
+		[30731] = true, -- Illianna Moonscribe
+		[23937] = true, -- Innkeeper Celeste Goodhutch
+		[29121] = true, -- Soo-yum
+		[31021] = true, -- Sophie Aaren
+		[27145] = true, -- Tipvigut
+		[35132] = true, -- Tohfo Skyhoof
+		[32419] = true, -- Umbiwa
+		[28994] = true, -- Abra Cadabra
+		[26680] = true, -- Aiyan Coldwind
+		[33866] = true, -- Akrittok
+		[27125] = true, -- Barracks Master Rhekku
+		[30306] = true, -- Bileblow
+		[35338] = true, -- Bountiful Barrel
+		[27174] = true, -- Caregiver Mumik
+		[28798] = true, -- Claudia Bloodraven
+		[29205] = true, -- Corpulous
+		[28682] = true, -- Inzi Charmlight
+		[29244] = true, -- Jesse Masters
+		[33681] = true, -- Korim
+		[26939] = true, -- Koro the Wanderer
+		[30727] = true, -- Lelorian
+		[27940] = true, -- Lethecus
+		[27147] = true, -- Librarian Erickson
+		[27070] = true, -- Lisa Philbrook
+		[28685] = true, -- Narisa Redgold
+		[28725] = true, -- Patricia Egan
+		[27182] = true, -- Takubvik
+		[27195] = true, -- Tarralikitak
+		[27063] = true, -- Vrok
+		[29971] = true, -- Wabada Whiteflower
+		[26945] = true, -- Zend'li Venomtusk
+		[26596] = true, -- "Charlie" Northtop
+		[27148] = true, -- Caregiver Iqniq
+		[26936] = true, -- Chaska Frosthoof
+		[33635] = true, -- Daenril
+		[28727] = true, -- Edward Egan
+		[24053] = true, -- Helga Rumsbane
+		[29962] = true, -- Horgoru the Collector
+		[23731] = true, -- Innkeeper Hazel Lagras
+		[25245] = true, -- James Deacon
+		[34684] = true, -- Laha Farplain
+		[29510] = true, -- Linna Bruder
+		[30005] = true, -- Lodge-Matron Embla
+		[29963] = true, -- Magorn
+		[33865] = true, -- Makuli
+		[31017] = true, -- Mal Corricks
+		[30311] = true, -- Mangled
+		[32421] = true, -- Marcella Bloom
+		[33019] = true, -- Megan Owings
+		[27181] = true, -- Qannik
+		[27132] = true, -- Sani'i
+		[30256] = true, -- Scout Ordimbral
+		[30257] = true, -- Scout Yribria
+		[29904] = true, -- Smilin' Slirk Brassknob
+		[28867] = true, -- Spiked
+		[28872] = true, -- Squirmworm
+		[24147] = true, -- Tara Cooper
+		[33872] = true, -- Torgah
+		[27021] = true, -- Tradesman Kontor
+		[26567] = true, -- Aegalas
+		[28828] = true, -- Ansari
+		[24333] = true, -- Bartender Jason Goodhutch
+		[27012] = true, -- Beem Goldsprocket
+		[27071] = true, -- Benjamin Jacobs
+		[24033] = true, -- Bori Wintertotem
+		[35340] = true, -- Bountiful Barrel
+		[24343] = true, -- Brock Olson
+		[33600] = true, -- Cerie Larksong
+		[32426] = true, -- Coira Longrifle
+		[23737] = true, -- Coot "The Stranger" Albertson
+		[30437] = true, -- Crusader Marisse
+		[29970] = true, -- Danho Farcloud
+		[24148] = true, -- David Marks
+		[27950] = true, -- Demestrasz
+		[28728] = true, -- Dorian Fines
+		[33683] = true, -- Dremm
+		[27038] = true, -- Drolfy
+		[33601] = true, -- Elka Stormbrew
+		[33644] = true, -- Ellia Moondancer
+		[27041] = true, -- Fanny McLumpkins
+		[30346] = true, -- Galley Chief Dolinger
+		[31022] = true, -- George Goodman
+		[29926] = true, -- Gunda Boldhammer
+		[27042] = true, -- Illusia Lune
+		[27184] = true, -- Imnek
+		[30070] = true, -- Initiate Gahark
+		[33645] = true, -- Jenna Thunderbrew
+		[33018] = true, -- Jennifer Owings
+		[29511] = true, -- Lalla Brightweave
+		[27053] = true, -- Lanus Longleaf
+		[28812] = true, -- Lapu Stormhorn
+		[27143] = true, -- Librarian Ingram
+		[27032] = true, -- Lovely Liddia
+		[29714] = true, -- Lucian Trias
+		[26374] = true, -- Maevin Farmoon
+		[27052] = true, -- Naohain
+		[32334] = true, -- Nixi Fireclaw
+		[29944] = true, -- Peon Gakra
+		[26375] = true, -- Quartermaster McCarty
+		[28830] = true, -- Ra'wiri
+		[27026] = true, -- Rohesia Werner
+		[32403] = true, -- Sandra Bartan
+		[27057] = true, -- Saramer Whitewillow
+		[28829] = true, -- Saree
+		[30732] = true, -- Sessoh
+		[30309] = true, -- Shambles
+		[30439] = true, -- Sister Colleen Tulley
+		[32416] = true, -- Stefen Cotter
+		[24141] = true, -- Stephen Barone
+		[30733] = true, -- Thargen Heavyquill
+		[27043] = true, -- Trixy Trixerton
+		[30827] = true, -- Utamu
+		[26388] = true, -- Veira Langdon
+		[23802] = true, -- Wink Sprinklesprankle
+		[26568] = true, -- Zebu'tan
+		[28799] = true, -- Alanna
+		[28807] = true, -- Amarante
+		[30255] = true, -- Aniduria
+		[27137] = true, -- Apprentice Fraser
+		[24149] = true, -- Basil Osgood
+		[30310] = true, -- Boltskull
+		[28811] = true, -- Brady Ironcrock
+		[28806] = true, -- Chad Carter
+		[28832] = true, -- Chin'ika
+		[28866] = true, -- Corrosion
+		[26720] = true, -- Danook Stormwhisper
+		[27051] = true, -- Doldaen
+		[34645] = true, -- Elizabeth Barker Winslow
+		[33598] = true, -- Fanii
+		[24356] = true, -- Glen Roberts
+		[27025] = true, -- Harold Haggler
+		[27066] = true, -- Jennifer Bell
+		[30734] = true, -- Jezebel Bican
+		[28794] = true, -- Kevin Weaver
+		[27058] = true, -- Korag Keeneye
+		[32424] = true, -- Laire Brewgold
+		[28810] = true, -- Lessien
+		[27140] = true, -- Librarian Andersen
+		[27141] = true, -- Librarian Hamilton
+		[28791] = true, -- Marissa Everwatch
+		[32412] = true, -- Mato
+		[27069] = true, -- Matron Magah
+		[27027] = true, -- Mrs. Winterby
+		[27044] = true, -- Ordal McLumpkins
+		[24348] = true, -- Patrick Hall
+		[34783] = true, -- Ranisa Whitebough
+		[29925] = true, -- Rutner Steelpick
+		[27089] = true, -- Saffron Reynolds
+		[32478] = true, -- Slosh
+		[23732] = true, -- Sorely Twitchblade
+		[31019] = true, -- Stephanie Sindree
+		[33868] = true, -- Tingiyok
+		[33869] = true, -- Torngasak
+		[27190] = true, -- Tupit
+		[28831] = true, -- Yamuna
 	},
 }

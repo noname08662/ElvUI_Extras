@@ -8,17 +8,30 @@ local LSM = E.Libs.LSM
 local modName = mod:GetName()
 local NPCOccupations_data = {}
 local NPCOccupations_cache = {}
+local dataTexMap = {}
+local dataTexMapDefaults = {
+	[MINIMAP_TRACKING_AUCTIONEER		] = "Interface\\Minimap\\Tracking\\Auctioneer",
+	[MINIMAP_TRACKING_BANKER			] = "Interface\\Minimap\\Tracking\\Banker",
+	[MINIMAP_TRACKING_BATTLEMASTER		] = "Interface\\Minimap\\Tracking\\BattleMaster",
+	[MINIMAP_TRACKING_TRAINER_CLASS		] = "Interface\\Minimap\\Tracking\\Class",
+	[MINIMAP_TRACKING_FLIGHTMASTER		] = "Interface\\Minimap\\Tracking\\FlightMaster",
+	[MINIMAP_TRACKING_INNKEEPER			] = "Interface\\Minimap\\Tracking\\Innkeeper",
+	[MINIMAP_TRACKING_VENDOR_REAGENT	] = "Interface\\Minimap\\Tracking\\Reagents",
+	[MINIMAP_TRACKING_REPAIR			] = "Interface\\Minimap\\Tracking\\Repair",
+	[MINIMAP_TRACKING_STABLEMASTER		] = "Interface\\Minimap\\Tracking\\StableMaster",
+	[GUILD								] = "Interface\\GossipFrame\\TabardGossipIcon",
+	[MINIMAP_TRACKING_TRAINER_PROFESSION] = "Interface\\Minimap\\Tracking\\Profession",
+	[MERCHANT							] = "Interface\\GossipFrame\\VendorGossipIcon",
+	[BARBERSHOP							] = "Interface\\GossipFrame\\HealerGossipIcon",
+}
 local isAwesome = C_NamePlate
 
 local scanner = CreateFrame("GameTooltip", "ExtrasGT_ScanningTooltip", nil, "GameTooltipTemplate")
 scanner:SetOwner(WorldFrame, "ANCHOR_NONE")
 
-local trackingTypes = {}
-local iconIndex = 1
-
 local max = math.max
 local _G, pairs, ipairs, tonumber, select = _G, pairs, ipairs, tonumber, select
-local twipe, tinsert, tremove, tcontains = table.wipe, table.insert, table.remove, tContains
+local twipe, tinsert, tsort = table.wipe, table.insert, table.sort
 local format, match, find, gsub, sub = string.format, string.match, string.find, string.gsub, string.sub
 local GetGuildInfo = GetGuildInfo
 local UnitInRaid, UnitInParty, UnitIsPlayer, UnitGUID = UnitInRaid, UnitInParty, UnitIsPlayer, UnitGUID
@@ -26,14 +39,12 @@ local UnitReaction, UnitName, UnitPlayerControlled, UnitCanAttack = UnitReaction
 local IsResting, IsInInstance = IsResting, IsInInstance
 local UNKNOWN, UNIT_LEVEL_TEMPLATE = UNKNOWN, UNIT_LEVEL_TEMPLATE
 local TOOLTIP_UNIT_LEVEL_RACE_CLASS = gsub(table.concat({strsplit(1, string.format(TOOLTIP_UNIT_LEVEL_RACE_CLASS, 1, 1, 1))}), '[%d%p%s]+', '')
-local MINIMAP_TRACKING_VENDOR_AMMO, MINIMAP_TRACKING_AUCTIONEER, MINIMAP_TRACKING_BANKER,
-		MINIMAP_TRACKING_BATTLEMASTER, MINIMAP_TRACKING_TRAINER_CLASS, MINIMAP_TRACKING_VENDOR_FOOD,
-		MINIMAP_TRACKING_INNKEEPER, MINIMAP_TRACKING_MAILBOX, MINIMAP_TRACKING_VENDOR_POISON,
+local MINIMAP_TRACKING_AUCTIONEER, MINIMAP_TRACKING_BANKER,
+		MINIMAP_TRACKING_BATTLEMASTER, MINIMAP_TRACKING_TRAINER_CLASS, MINIMAP_TRACKING_INNKEEPER,
 		MINIMAP_TRACKING_VENDOR_REAGENT, MINIMAP_TRACKING_TRAINER_PROFESSION, MINIMAP_TRACKING_REPAIR,
 		MINIMAP_TRACKING_STABLEMASTER, MINIMAP_TRACKING_FLIGHTMASTER, BARBERSHOP, GUILD, MERCHANT, ALL =
-			MINIMAP_TRACKING_VENDOR_AMMO, MINIMAP_TRACKING_AUCTIONEER, MINIMAP_TRACKING_BANKER,
-			MINIMAP_TRACKING_BATTLEMASTER, MINIMAP_TRACKING_TRAINER_CLASS, MINIMAP_TRACKING_VENDOR_FOOD,
-			MINIMAP_TRACKING_INNKEEPER, MINIMAP_TRACKING_MAILBOX, MINIMAP_TRACKING_VENDOR_POISON,
+			MINIMAP_TRACKING_AUCTIONEER, MINIMAP_TRACKING_BANKER,
+			MINIMAP_TRACKING_BATTLEMASTER, MINIMAP_TRACKING_TRAINER_CLASS, MINIMAP_TRACKING_INNKEEPER,
 			MINIMAP_TRACKING_VENDOR_REAGENT, MINIMAP_TRACKING_TRAINER_PROFESSION, MINIMAP_TRACKING_REPAIR,
 			MINIMAP_TRACKING_STABLEMASTER, MINIMAP_TRACKING_FLIGHTMASTER, BARBERSHOP, GUILD, MERCHANT, ALL
 
@@ -55,53 +66,29 @@ local separatorMap = {
 	CURVE1 = "( %s )"
 }
 
-local dataTexMap = {
-	["Auctioneer"] = "Interface\\Minimap\\Tracking\\Auctioneer",
-	["Banker"] = "Interface\\Minimap\\Tracking\\Banker",
-	["BattleMaster"] = "Interface\\Minimap\\Tracking\\BattleMaster",
-	["Class"] = "Interface\\Minimap\\Tracking\\Class",
-	["FlightMaster"] = "Interface\\Minimap\\Tracking\\FlightMaster",
-	["Innkeeper"] = "Interface\\Minimap\\Tracking\\Innkeeper",
-	["Reagents"] = "Interface\\Minimap\\Tracking\\Reagents",
-	["Repair"] = "Interface\\Minimap\\Tracking\\Repair",
-	["StableMaster"] = "Interface\\Minimap\\Tracking\\StableMaster",
-	["Tabard"] = "Interface\\GossipFrame\\TabardGossipIcon",
-	["Profession"] = "Interface\\Minimap\\Tracking\\Profession",
-	["Vendor"] = "Interface\\GossipFrame\\VendorGossipIcon",
-	["Barber"] = "Interface\\GossipFrame\\HealerGossipIcon",
-}
-
-mod.trackingTexMap = {
-	"Interface\\Minimap\\Tracking\\Ammunition", -- 1
-	"Interface\\Minimap\\Tracking\\Auctioneer", -- 2
-	"Interface\\Minimap\\Tracking\\Banker", -- 3
-	"Interface\\Minimap\\Tracking\\BattleMaster", -- 4
-	"Interface\\Minimap\\Tracking\\Class", -- 5
-	"Interface\\Minimap\\Tracking\\Food", -- 6
-	"Interface\\Minimap\\Tracking\\Innkeeper", -- 7
-	"Interface\\Minimap\\Tracking\\Mailbox", -- 8
-	"Interface\\Minimap\\Tracking\\Poisons", -- 9
-	"Interface\\Minimap\\Tracking\\Reagents", -- 10
-	"Interface\\Minimap\\Tracking\\Profession", -- 11
-	"Interface\\Minimap\\Tracking\\Repair", -- 12
-	"Interface\\Minimap\\Tracking\\StableMaster", -- 13
-	"Interface\\Minimap\\Tracking\\FlightMaster" -- 14
-}
-
 
 P["Extras"]["nameplates"][modName] = {
 	["selectedSubSection"] = 'OccupationIcon',
 	["UnitTitle"] = {},
-	["NPCList"] = {},
-	["GuildList"] = {},
-	["NPCOccupations"] = {},
 	["NPCOccupations_cache"] = {},
+	["NPCOccupations_data"] = {
+		[MINIMAP_TRACKING_AUCTIONEER] = {},
+		[MINIMAP_TRACKING_BANKER] = {},
+		[MINIMAP_TRACKING_BATTLEMASTER] = {},
+		[MINIMAP_TRACKING_TRAINER_CLASS] = {},
+		[MINIMAP_TRACKING_FLIGHTMASTER] = {},
+		[MINIMAP_TRACKING_INNKEEPER] = {},
+		[MINIMAP_TRACKING_VENDOR_REAGENT] = {},
+		[MINIMAP_TRACKING_REPAIR] = {},
+		[MINIMAP_TRACKING_STABLEMASTER] = {},
+		[GUILD] = {},
+		[MINIMAP_TRACKING_TRAINER_PROFESSION] = {},
+		[MERCHANT] = {},
+		[BARBERSHOP] = {},
+	},
 	["OccupationIcon"] = {
 		["enabled"] = false,
-		["desc"] = L["An icon similar to the minimap search."..
-					"\n\nTooltip scanning, might not be precise."..
-					"\n\nFor consistency reasons, no keywards are added by defult, "..
-					"use /addOccupation command to mark the appropriate ones yourself (only need to do it once per unique occupation text)."],
+		["desc"] = L["An icon similar to the minimap search."],
 		["size"] = 24,
 		["point"] = "TOP",
 		["relativeTo"] = "BOTTOM",
@@ -109,11 +96,25 @@ P["Extras"]["nameplates"][modName] = {
 		["yOffset"] = -16,
 		["level"] = 40,
 		["anchor"] = "FRAME",
-		["playerList"] = {},
-		["playerTextures"] = {},
 		["modifier"] = 'Alt',
 		["backdrop"] = false,
 		["types"] = {},
+		["selectedOccupation"] = MERCHANT,
+		["dataTexMap"] = {
+			[MINIMAP_TRACKING_AUCTIONEER		] = "Interface\\Minimap\\Tracking\\Auctioneer",
+			[MINIMAP_TRACKING_BANKER			] = "Interface\\Minimap\\Tracking\\Banker",
+			[MINIMAP_TRACKING_BATTLEMASTER		] = "Interface\\Minimap\\Tracking\\BattleMaster",
+			[MINIMAP_TRACKING_TRAINER_CLASS		] = "Interface\\Minimap\\Tracking\\Class",
+			[MINIMAP_TRACKING_FLIGHTMASTER		] = "Interface\\Minimap\\Tracking\\FlightMaster",
+			[MINIMAP_TRACKING_INNKEEPER			] = "Interface\\Minimap\\Tracking\\Innkeeper",
+			[MINIMAP_TRACKING_VENDOR_REAGENT	] = "Interface\\Minimap\\Tracking\\Reagents",
+			[MINIMAP_TRACKING_REPAIR			] = "Interface\\Minimap\\Tracking\\Repair",
+			[MINIMAP_TRACKING_STABLEMASTER		] = "Interface\\Minimap\\Tracking\\StableMaster",
+			[GUILD								] = "Interface\\GossipFrame\\TabardGossipIcon",
+			[MINIMAP_TRACKING_TRAINER_PROFESSION] = "Interface\\Minimap\\Tracking\\Profession",
+			[MERCHANT							] = "Interface\\GossipFrame\\VendorGossipIcon",
+			[BARBERSHOP							] = "Interface\\GossipFrame\\HealerGossipIcon",
+		},
 	},
 	["Titles"] = {
 		["enabled"] = false,
@@ -249,13 +250,24 @@ function mod:LoadConfig()
 						name = L["Purge Cache"],
 						desc = "",
 						func = function()
-							if selectedSubSection() == 'OccupationIcon' then
-								db.NPCOccupations_cache = {}
-							else
-								db.UnitTitle = {}
-							end
-							self:UpdateAllSettings(db)
-							print(core.customColorBeta .. L["Cache purged."])
+							StaticPopupDialogs["PURGECHACHEDDATA"] = {
+								text = L["Purge Cache"]..'?',
+								button1 = YES,
+								button2 = NO,
+								OnAccept = function()
+									if selectedSubSection() == 'OccupationIcon' then
+										db.NPCOccupations_cache = {}
+									else
+										db.UnitTitle = {}
+									end
+									self:UpdateAllSettings(db)
+									print(core.customColorBeta .. L["Cache purged."])
+								end,
+								timeout = 0,
+								whileDead = true,
+								hideOnEscape = true,
+							}
+							StaticPopup_Show("PURGECHACHEDDATA")
 						end,
 					},
 				},
@@ -522,114 +534,123 @@ function mod:LoadConfig()
 						desc = "",
 						min = -200, max = 200, step = 1
 					},
-					addOccupation = {
-						order = 8,
-						type = "input",
-						name = L["/addOccupation"],
-						desc = format(L["Usage:\n%%d=%%s\n\n%%d - index from the list below\n%%s - keywords to look for\n\nIndexes of icons:"..
-									"\n1 - %s"..
-									"\n2 - %s"..
-									"\n3 - %s"..
-									"\n4 - %s"..
-									"\n5 - %s"..
-									"\n6 - %s"..
-									"\n7 - %s"..
-									"\n8 - %s"..
-									"\n9 - %s"..
-									"\n10 - %s"..
-									"\n11 - %s"..
-									"\n12 - %s"..
-									"\n13 - %s"..
-									"\n14 - %s"..
-									"\n\n\nAlso available as a '/addOccupation %%d' slash command where %%d is an optional icon index. "..
-									"If no index is provided, this command will cycle through all of the available icons. Works on either TARGET or MOUSEOVER, prioritising the latter."],
-									MINIMAP_TRACKING_VENDOR_AMMO, MINIMAP_TRACKING_AUCTIONEER, MINIMAP_TRACKING_BANKER, MINIMAP_TRACKING_BATTLEMASTER, MINIMAP_TRACKING_TRAINER_CLASS,
-									MINIMAP_TRACKING_VENDOR_FOOD, MINIMAP_TRACKING_INNKEEPER, MINIMAP_TRACKING_MAILBOX, MINIMAP_TRACKING_VENDOR_POISON, MINIMAP_TRACKING_VENDOR_REAGENT,
-									MINIMAP_TRACKING_TRAINER_PROFESSION, MINIMAP_TRACKING_REPAIR, MINIMAP_TRACKING_STABLEMASTER, MINIMAP_TRACKING_FLIGHTMASTER),
-						set = function(_, value)
-							if value and value ~= "" then
-								tinsert(db.OccupationIcon.playerList, value)
-								self:UpdateAllSettings(db)
-							end
-						end,
-					},
-					removeOccupation = {
-						order = 9,
-						type = "select",
-						name = L["Remove occupation"],
-						desc = "",
-						values = function()
-							local list = {}
-								for i = 1, #db.OccupationIcon.playerList do
-									local entry = db.OccupationIcon.playerList[i]
-									list[entry] = entry
-								end
-							return list
-						end,
-						set = function(_, value)
-							for i, occupation in ipairs(db.OccupationIcon.playerList) do
-								if occupation == value then
-									tremove(db.OccupationIcon.playerList, i)
-								end
-							end
-							self:UpdateAllSettings(db)
-						end,
-					},
 					modifier = {
-						order = 10,
+						order = 8,
 						type = "select",
 						name = L["Modifier"],
-						desc = L["Hold this while using /addOccupation command to clear the list of the current target/mouseover occupation.\nDon't forget to unbind the modifier+key bind!"],
+						desc = L["Hold this key while using /addOccupation command to clear the list of the current target/mouseover NPC."],
 						get = function(info) return db.OccupationIcon[info[#info]] end,
 						set = function(info, value) db.OccupationIcon[info[#info]] = value end,
 						values = function()
 							local modsList = {}
-							for mod, val in pairs(E.db.Extras.modifiers) do
-								if mod ~= 'ANY' then
-									modsList[mod] = val
+							for modifier, val in pairs(E.db.Extras.modifiers) do
+								if modifier ~= 'ANY' then
+									modsList[modifier] = val
 								end
 							end
 							return modsList
 						end,
 					},
-					addTexture = {
-						order = 11,
-						type = "input",
-						name = L["Add Texture Path"],
-						desc = L["E.g. Interface\\Icons\\INV_Misc_QuestionMark"],
-						set = function(_, value)
-							if value and match(value, '%S+') then
-								tinsert(mod.trackingTexMap, value)
-								tinsert(db.OccupationIcon.playerTextures, value)
-							end
-						end,
-					},
 					backdrop = {
-						order = 12,
+						order = 9,
 						type = "toggle",
 						name = L["Use Backdrop"],
 						desc = "",
 					},
-					removeTexture = {
-						order = 13,
+					addOccupation = {
+						order = 10,
+						type = "input",
+						name = L["/addOccupation"],
+						desc = L["Use /addOccupation slash command while targeting/hovering over a NPC to add it to the list. Use again to cycle."],
+						get = function() return "/addOccupation" end,
+					},
+					removeOccupation = {
+						order = 11,
 						type = "select",
 						width = "double",
-						name = L["Remove Selected Texture"],
+						name = L["Remove NPC"],
 						desc = "",
+						values = function()
+							local list = {}
+							for occupation, data in pairs(db.NPCOccupations_data) do
+								for id, name in pairs(data) do
+									list[id] = format("%s (%s)", name, occupation)
+								end
+							end
+							return list
+						end,
 						set = function(_, value)
-							for i in ipairs(db.OccupationIcon.playerTextures) do
-								if i == value then
-									tremove(db.OccupationIcon.playerTextures, i)
-									tremove(mod.trackingTexMap, 14 + i)
+							for _, data in pairs(db.NPCOccupations_data) do
+								for id, name in pairs(data) do
+									if id == value then
+										data[id] = nil
+										db.NPCOccupations_cache[name] = nil
+										self:UpdateAllSettings(db)
+										return
+									end
 								end
 							end
 						end,
+					},
+					changeNPCOccupation = {
+						order = 12,
+						type = "select",
+						width = "double",
+						name = L["Change NPC's Occupation"],
+						desc = L["...to the currently selected one."],
 						values = function()
 							local list = {}
-							for i, icon in ipairs(db.OccupationIcon.playerTextures) do
-								list[i] = icon .. ' |T' .. icon .. ':16:16|t'
+							for occupation, data in pairs(db.NPCOccupations_data) do
+								for id, name in pairs(data) do
+									list[id] = format("%s (%s)", name, occupation)
+								end
 							end
 							return list
+						end,
+						get = function() return "" end,
+						set = function(_, value)
+							local occupation = db[selectedSubSection()].selectedOccupation
+							for oc, data in pairs(db.NPCOccupations_data) do
+								if oc ~= occupation then
+									for id, name in pairs(data) do
+										if id == value then
+											data[id] = nil
+											db.NPCOccupations_data[occupation][id] = name
+											db.NPCOccupations_cache[name] = occupation
+											self:UpdateAllSettings(db)
+											return
+										end
+									end
+								end
+							end
+						end,
+					},
+					selectedOccupation = {
+						order = 13,
+						type = "select",
+						width = "double",
+						name = L["Select Occupation"],
+						desc = "",
+						values = function()
+							local list = {}
+							for occupation in pairs(db.NPCOccupations_data) do
+								list[occupation] = occupation
+							end
+							return list
+						end,
+						set = function(_, value) db[selectedSubSection()].selectedOccupation = value end,
+					},
+					dataTexMap = {
+						order = 14,
+						type = "input",
+						width = "double",
+						name = L["Texture"],
+						desc = L["E.g. Interface\\Icons\\INV_Misc_QuestionMark"],
+						get = function() return db.OccupationIcon.dataTexMap[db[selectedSubSection()].selectedOccupation] end,
+						set = function(_, value)
+							local occupation = db[selectedSubSection()].selectedOccupation
+							db.OccupationIcon.dataTexMap[occupation] = value == "" and dataTexMapDefaults[occupation] or value
+							NP:ConfigureAll()
 						end,
 					},
 				},
@@ -871,9 +892,6 @@ function mod:LoadConfig()
 			},
 		},
 	}
-	for _, tex in pairs(db.OccupationIcon.playerTextures) do
-		tinsert(self.trackingTexMap , tex)
-	end
 end
 
 
@@ -890,46 +908,33 @@ local function constructTitle(frame)
 	frame.OccupationIcon.icon:SetAllPoints(frame.OccupationIcon)
 end
 
-local function findPlateByName(unit)
-	local name = UnitName(unit)
-	for plate in pairs(NP.VisiblePlates) do
-		if plate.UnitName == name then
-			return plate
-		end
-	end
-end
-
-local function manageTitleFrame(frame, title, db, unitType, db_icon)
-	title.str:SetFont(LSM:Fetch("font", db.font), db.fontSize, db.fontOutline)
-	title:Height(db.fontSize)
-
+local function manageTitleFrame(frame, title, db, db_icon)
 	local health = frame.Health
-	local anchor = health:IsVisible() and health or frame.Name
-
-	title:ClearAllPoints()
-	title:Point(db.point, anchor, db.relativeTo, db.xOffset, db.yOffset)
-	title:SetFrameLevel(max(1, frame:GetFrameLevel() + db.level))
-
-	if not db_icon then return end
-
-	local occupationIcon = frame.OccupationIcon
-
-	if db_icon.anchor ~= "FRAME" then
-		anchor = title
+	if db then
+		title.str:SetFont(LSM:Fetch("font", db.font), db.fontSize, db.fontOutline)
+		title:Height(db.fontSize)
+		title:ClearAllPoints()
+		title:Point(db.point, health:IsVisible() and health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
+		title:SetFrameLevel(max(1, frame:GetFrameLevel() + db.level))
 	end
+	if db_icon then
+		local occupationIcon = frame.OccupationIcon
 
-	occupationIcon:ClearAllPoints()
-	occupationIcon:Size(db_icon.size)
-	occupationIcon:Point(db_icon.point, anchor, db_icon.relativeTo, db_icon.xOffset, db_icon.yOffset)
-	occupationIcon:SetFrameLevel(max(1,frame:GetFrameLevel() + db_icon.level))
+		occupationIcon:ClearAllPoints()
+		occupationIcon:Size(db_icon.size)
+		occupationIcon:Point(db_icon.point,
+							db_icon.anchor ~= "FRAME" and title or health:IsVisible() and health or frame.Name,
+							db_icon.relativeTo, db_icon.xOffset, db_icon.yOffset)
+		occupationIcon:SetFrameLevel(max(1,frame:GetFrameLevel() + db_icon.level))
 
-	if db_icon.backdrop then
-		if not occupationIcon.backdrop then
-			occupationIcon:CreateBackdrop("Transparent")
+		if db_icon.backdrop then
+			if not occupationIcon.backdrop then
+				occupationIcon:CreateBackdrop("Transparent")
+			end
+			occupationIcon.backdrop:Show()
+		elseif occupationIcon.backdrop then
+			occupationIcon.backdrop:Hide()
 		end
-		occupationIcon.backdrop:Show()
-	elseif occupationIcon.backdrop then
-		occupationIcon.backdrop:Hide()
 	end
 end
 
@@ -941,25 +946,32 @@ function mod:UpdateTitle(frame, db, unit, unitTitle, name)
 
 	if not unit or not name then return end
 
-	local title = frame.Title
-	local _, unitType = NP:GetUnitInfo(frame)
+	local title, unitType = frame.Title, frame.UnitType
 
 	if unitType == 'FRIENDLY_NPC' or unitType == 'ENEMY_NPC' then
 		local iconEnabled = db.OccupationIcon.enabled
 		if not unitTitle or match(unitTitle, UNIT_LEVEL_TEMPLATE) or find(gsub(unitTitle, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
 			if iconEnabled then
-				manageTitleFrame(frame, title, db.Titles[unitType], unitType, db.OccupationIcon)
-				self:UpdateOccupation(frame.OccupationIcon, db, unit, unitTitle, name)
+				if unitType == 'FRIENDLY_NPC' then
+					manageTitleFrame(frame, title, nil, db.OccupationIcon)
+					self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
+				elseif frame.OccupationIcon then
+					frame.OccupationIcon:Hide()
+				end
 			end
 		elseif unitTitle and db.Titles.enabled then
 			if not isAwesome and db.UnitTitle[name] ~= unitTitle then
 				db.UnitTitle[name] = unitTitle
 			end
 			if iconEnabled then
-				manageTitleFrame(frame, title, db.Titles[unitType], unitType, db.OccupationIcon)
-				self:UpdateOccupation(frame.OccupationIcon, db, unit, unitTitle, name)
+				manageTitleFrame(frame, title, db.Titles[unitType], db.OccupationIcon)
+				if unitType == 'FRIENDLY_NPC' then
+					self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
+				elseif frame.OccupationIcon then
+					frame.OccupationIcon:Hide()
+				end
 			else
-				manageTitleFrame(frame, title, db.Titles[unitType], unitType)
+				manageTitleFrame(frame, title, db.Titles[unitType])
 			end
 			db = db.Titles[unitType]
 
@@ -988,8 +1000,12 @@ function mod:UpdateTitle(frame, db, unit, unitTitle, name)
 			title:Width(title.str:GetStringWidth())
 			title:Show()
 		elseif iconEnabled then
-			manageTitleFrame(frame, title, db.Titles[unitType], unitType, db.OccupationIcon)
-			self:UpdateOccupation(frame.OccupationIcon, db, unit, unitTitle, name)
+			if unitType == 'FRIENDLY_NPC' then
+				manageTitleFrame(frame, title, nil, db.OccupationIcon)
+				self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
+			elseif frame.OccupationIcon then
+				frame.OccupationIcon:Hide()
+			end
 		end
 	elseif unitTitle and db.Guilds.enabled and (unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER') then
 		db = db.Guilds[unitType]
@@ -1013,7 +1029,7 @@ function mod:UpdateTitle(frame, db, unit, unitTitle, name)
 		end
 
 		if shown then
-			manageTitleFrame(frame, title, db, unitType)
+			manageTitleFrame(frame, title, db)
 
 			local color
 
@@ -1086,39 +1102,40 @@ function mod:AwesomeUpdateUnitInfo(frame, db, unit)
 	end
 end
 
-function mod:UpdateOccupation(occupationIcon, db, unit, unitTitle, name)
-	if db.NPCOccupations[name] then
-		occupationIcon.icon:SetTexture(db.NPCOccupations[name].icon)
-		occupationIcon:Show()
-		return
-	elseif not isAwesome and NPCOccupations_cache[name] then
-		occupationIcon.icon:SetTexture(NPCOccupations_cache[name])
-		occupationIcon:Show()
-		return
-	elseif unitTitle then
-		for type, icon in pairs(trackingTypes) do
-			if find(gsub(gsub(unitTitle, '%p+', ''), '%s+', ''), type) then
-				occupationIcon.icon:SetTexture(icon)
-				occupationIcon:Show()
-				db.NPCOccupations[name] = { occupation = type, icon = icon }
-				return
+function mod:UpdateOccupation(occupationIcon, db, unit, name)
+	if not isAwesome then
+		local cachedOccupation = NPCOccupations_cache[name]
+		if cachedOccupation then
+			occupationIcon.icon:SetTexture(dataTexMap[cachedOccupation])
+			occupationIcon:Show()
+			return
+		else
+			local guid = unit and UnitGUID(unit)
+			if guid then
+				local npcId = tonumber(sub(guid, -10, -7), 16)
+				for occupation, entries in pairs(NPCOccupations_data) do
+					if entries[npcId] then
+						occupationIcon.icon:SetTexture(dataTexMap[occupation])
+						occupationIcon:Show()
+						if not db.NPCOccupations_cache[name] then
+							db.NPCOccupations_cache[name] = occupation
+							NPCOccupations_cache[name] = occupation
+						end
+						return
+					end
+				end
 			end
 		end
-	end
-
-	local guid = unit and UnitGUID(unit)
-	if guid and not UnitCanAttack('player', unit) then
-		local npcId = tonumber(sub(guid, -10, -7), 16)
-		for occupation, entries in pairs(NPCOccupations_data) do
-			if tcontains(entries, npcId) then
-				local tex = dataTexMap[occupation]
-				occupationIcon.icon:SetTexture(tex)
-				occupationIcon:Show()
-				if not isAwesome and not db.NPCOccupations_cache[name] then
-					db.NPCOccupations_cache[name] = { occupation = occupation, tex = tex }
-					NPCOccupations_cache[name] = tex
+	else
+		local guid = unit and UnitGUID(unit)
+		if guid then
+			local npcId = tonumber(sub(guid, -10, -7), 16)
+			for occupation, entries in pairs(NPCOccupations_data) do
+				if entries[npcId] then
+					occupationIcon.icon:SetTexture(dataTexMap[occupation])
+					occupationIcon:Show()
+					return
 				end
-				return
 			end
 		end
 	end
@@ -1148,7 +1165,6 @@ function mod:UpdateUnitInfo(frame, db, unit)
 
 			E_Delay(nil, 0.1, function()
 				if name ~= UnitName(unit) then return end
-
 				guildName = GetGuildInfo(unit)
 				if guildName then
 					mod:UpdateTitle(frame, db, unit, guildName, name)
@@ -1169,7 +1185,18 @@ function mod:UpdateUnitInfo(frame, db, unit)
 		local name = _G["ExtrasGT_ScanningTooltipTextLeft1"]:GetText()
 		if not name then return end
 		local description = _G["ExtrasGT_ScanningTooltipTextLeft2"]:GetText()
-		if not description then return end
+		if not description then
+			if db.OccupationIcon.enabled then
+				local unitType = frame.UnitType
+				if unitType == 'FRIENDLY_NPC' then
+					manageTitleFrame(frame, frame.Title, nil, db.OccupationIcon)
+					self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
+				elseif frame.OccupationIcon then
+					frame.OccupationIcon:Hide()
+				end
+			end
+			return
+		end
 
 		name = gsub(gsub((name), "|c........", ""), "|r", "")
 		if name ~= UnitName(unit) then return end
@@ -1178,38 +1205,37 @@ function mod:UpdateUnitInfo(frame, db, unit)
 	end
 end
 
-function mod:UpdateTrackingTypes(db)
-	twipe(trackingTypes)
+function mod:UpdateAllSettings(db)
 	twipe(NPCOccupations_data)
 	twipe(NPCOccupations_cache)
-	if #db.OccupationIcon.playerList > 0 then
-		for i = 1, #db.OccupationIcon.playerList do
-			local entry = db.OccupationIcon.playerList[i]
-			local iconIndex, occupation = match(entry, '(%d+)%s*=%s*(.+)')
-			if iconIndex and occupation then
-				trackingTypes[gsub(gsub(occupation, '%p+', ''), '%s+', '')] = self.trackingTexMap[tonumber(iconIndex)]
-			end
-		end
-	end
-	for name, info in pairs(db.NPCOccupations) do
-		if not trackingTypes[info.occupation] or trackingTypes[info.occupation] ~= info.icon then
-			db.NPCOccupations[name] = nil
-		end
-	end
+	dataTexMap = db.OccupationIcon.dataTexMap
 	local all = db.OccupationIcon.types["All"]
 	for occupation, data in pairs(core.NPCOccupations_data or {}) do
 		if all or db.OccupationIcon.types[occupation] then
-			NPCOccupations_data[occupation] = data
+			NPCOccupations_data[occupation] = {}
+			local occupation_data = NPCOccupations_data[occupation]
+			for id in pairs(data) do
+				occupation_data[id] = true
+			end
 		end
 	end
-	for name, info in pairs(db.NPCOccupations_cache) do
-		if all or db.OccupationIcon.types[info.occupation] then
-			NPCOccupations_cache[name] = info.tex
+	for occupation, data in pairs(db.NPCOccupations_data) do
+		if all or db.OccupationIcon.types[occupation] then
+			NPCOccupations_data[occupation] = NPCOccupations_data[occupation] or {}
+			local occupation_data = NPCOccupations_data[occupation]
+			for id in pairs(data) do
+				occupation_data[id] = true
+			end
+		end
+	end
+	for name, occupation in pairs(db.NPCOccupations_cache) do
+		if all or db.OccupationIcon.types[occupation] then
+			NPCOccupations_cache[name] = occupation
 		end
 	end
 	if db.OccupationIcon.enabled then
 		if db.OccupationIcon.anchor == "FRAME" then
-			core.plateAnchoring['OccupationIcon'] = function(unitType, frame)
+			core.plateAnchoring['OccupationIcon'] = function(unitType)
 				if unitType == 'FRIENDLY_NPC' or unitType == 'ENEMY_NPC' then
 					return db.OccupationIcon
 				end
@@ -1220,63 +1246,96 @@ function mod:UpdateTrackingTypes(db)
 	else
 		core.plateAnchoring['OccupationIcon'] = nil
 	end
-end
-
-function mod:UpdateAllSettings(db)
-	self:UpdateTrackingTypes(db)
-	for frame in pairs(NP.VisiblePlates) do
-		if frame.Title then frame.Title:Hide() end
+	for plate in pairs(NP.CreatedPlates) do
+		local frame = plate and plate.UnitFrame
+		if frame then
+			if frame.Title then frame.Title:Hide() end
+			if frame.OccupationIcon then frame.OccupationIcon:Hide() end
+		end
 	end
-	NP:ConfigureAll()
+	if not core.reload then
+		NP:ConfigureAll()
+	end
 end
 
-function mod:addOccupation(msg)
+function mod:addOccupation()
 	local db = E.db.Extras.nameplates[modName]
 	for _, unit in ipairs({'mouseover', 'target'}) do
-		if not UnitIsPlayer(unit) then
-			scanner:ClearLines()
-			scanner:SetUnit(unit)
-			local name = _G["ExtrasGT_ScanningTooltipTextLeft1"]:GetText()
-			local title = _G["ExtrasGT_ScanningTooltipTextLeft2"]:GetText()
-			if name and title then
-				if not match(title, UNIT_LEVEL_TEMPLATE) then
-					if _G['Is'..db.OccupationIcon.modifier..'KeyDown']() then
-						for i, occupation in ipairs(db.OccupationIcon.playerList) do
-							if find(gsub(gsub(occupation, '%p+', ''), '%s+', ''), gsub(gsub(title, '%p+', ''), '%s+', '')) then
-								tremove(db.OccupationIcon.playerList, i)
-								self:UpdateAllSettings(db)
-								return
-							end
-						end
-					end
-					local icon = find(msg, '%d+') and msg or iconIndex
-					for i, occupation in ipairs(db.OccupationIcon.playerList) do
-						if find(gsub(gsub(occupation, '%p+', ''), '%s+', ''), gsub(gsub(title, '%p+', ''), '%s+', '')) then
-							db.OccupationIcon.playerList[i] = icon.."="..title
-							iconIndex = (iconIndex % #self.trackingTexMap) + 1
-							self:UpdateAllSettings(db)
+		if not UnitIsPlayer(unit) and not UnitCanAttack('player', unit) then
+			local guid = UnitGUID(unit)
+			local npcId = guid and tonumber(sub(guid, -10, -7), 16)
+			if npcId then
+				local name = UnitName(unit)
+				if _G['Is'..db.OccupationIcon.modifier..'KeyDown']() then
+					for occupation, entries in pairs(NPCOccupations_data) do
+						if entries[npcId] then
+							entries[npcId] = nil
+							db.NPCOccupations_data[occupation][npcId] = nil
+							db.NPCOccupations_cache[name] = nil
+							NPCOccupations_cache[name] = nil
+							NP:ConfigureAll()
+							if E.RefreshGUI then E:RefreshGUI() end
 							return
 						end
 					end
-					tinsert(db.OccupationIcon.playerList, icon.."="..title)
-					iconIndex = (iconIndex % #self.trackingTexMap) + 1
-					self:UpdateAllSettings(db)
-					return
 				end
+				for _, entries in pairs(core.NPCOccupations_data or {}) do
+					if entries[npcId] then
+						return
+					end
+				end
+				local foundOccupation
+				local order = {}
+				for occupation, entries in pairs(db.NPCOccupations_data) do
+					if not foundOccupation and entries[npcId] then
+						entries[npcId] = nil
+						NPCOccupations_data[occupation][npcId] = nil
+						NPCOccupations_cache[name] = nil
+						db.NPCOccupations_cache[name] = nil
+						foundOccupation = occupation
+					end
+					tinsert(order, occupation)
+				end
+				if foundOccupation then
+					tsort(order)
+					for i, occupation in ipairs(order) do
+						if occupation == foundOccupation then
+							local newOccupation = order[i % #order+1]
+							NPCOccupations_data[newOccupation][npcId] = name
+							db.NPCOccupations_data[newOccupation][npcId] = name
+							NPCOccupations_cache[name] = newOccupation
+							db.NPCOccupations_cache[name] = newOccupation
+							break
+						end
+					end
+				else
+					NPCOccupations_data[MERCHANT][npcId] = name
+					db.NPCOccupations_data[MERCHANT][npcId] = name
+					NPCOccupations_cache[name] = MERCHANT
+					db.NPCOccupations_cache[name] = MERCHANT
+				end
+				NP:ConfigureAll()
+				if E.RefreshGUI then E:RefreshGUI() end
+				return
 			end
 		end
 	end
 end
 
 function mod:OnEvent(db, unit)
-	local frame = findPlateByName(unit)
-	if not frame then return end
-	self:UpdateUnitInfo(frame, db, unit)
+	local name = UnitName(unit)
+	if name then
+		for frame in pairs(NP.VisiblePlates) do
+			if frame.UnitName == name then
+				self:UpdateUnitInfo(frame, db, unit)
+			end
+		end
+	end
 end
 
 
 function mod:Toggle(db)
-	if not db.Guilds.enabled and not db.Titles.enabled and not db.OccupationIcon.enabled then
+	if core.reload or (not db.Guilds.enabled and not db.Titles.enabled and not db.OccupationIcon.enabled) then
 		if not db.Guilds.enabled and not db.Titles.enabled then
 			core.plateAnchoring['Title'] = nil
 		end
@@ -1293,7 +1352,7 @@ function mod:Toggle(db)
 		hash_SlashCmdList["/ADDOCCUPATION"] = nil
 	else
 		if db.Guilds.enabled or db.Titles.enabled then
-			core.plateAnchoring['Title'] = function(unitType, frame)
+			core.plateAnchoring['Title'] = function(unitType)
 				if unitType == 'FRIENDLY_NPC' or unitType == 'ENEMY_NPC' then
 					return db.Titles[unitType]
 				elseif unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER' then
@@ -1306,8 +1365,8 @@ function mod:Toggle(db)
 		self:RegisterEvent("RAID_ROSTER_UPDATE", function() self:UpdateAllSettings(db) end)
 		if isAwesome then
 			if not self:IsHooked(NP, "OnCreated") then
-				self:SecureHook(NP, "OnCreated", function(self, frame)
-					constructTitle(frame.UnitFrame)
+				self:SecureHook(NP, "OnCreated", function(self, plate)
+					constructTitle(plate.UnitFrame)
 				end)
 			end
 			if not self:IsHooked(NP, "OnShow") then
@@ -1337,13 +1396,23 @@ function mod:Toggle(db)
 					end
 				end)
 			end
-			if not self:IsHooked(NP, "OnShow") then
-				self:SecureHook(NP, "OnShow", function(self)
-					local frame = self.UnitFrame
+			if not self:IsHooked(NP, "OnCreated") then
+				self:SecureHook(NP, "OnCreated", function(self, plate)
+					local frame = plate.UnitFrame
 					constructTitle(frame)
 					frame.Title:Hide()
 					frame.OccupationIcon:Hide()
 					mod:UpdateTitle(frame, db, nil, nil, frame.UnitName)
+				end)
+			end
+			if not self:IsHooked(NP, "OnShow") then
+				self:SecureHook(NP, "OnShow", function(self)
+					local frame = self.UnitFrame
+					if frame and frame.Title then
+						frame.Title:Hide()
+						frame.OccupationIcon:Hide()
+						mod:UpdateTitle(frame, db, nil, nil, frame.UnitName)
+					end
 				end)
 			end
 		end

@@ -26,16 +26,16 @@ local UNITNAME_SUMMON_TITLES = {gsub(format(UNITNAME_SUMMON_TITLE1, 1), '[%d%p%s
 
 local function tagFunc(frame, unit)
 	local playerName = UnitName(unit)
-	local activeCooldowns = activeCooldowns[playerName]
+	local activeCds = activeCooldowns[playerName]
 
-	if activeCooldowns and tcontains(framelist, frame) then
-		for i, cooldown in ipairs(activeCooldowns) do
+	if activeCds and tcontains(framelist, frame) then
+		for i, cooldown in ipairs(activeCds) do
 			if cooldown.endTime < GetTime() then
-				tremove(activeCooldowns, i)
+				tremove(activeCds, i)
 			end
 		end
 
-		mod:AttachCooldowns(frame, activeCooldowns)
+		mod:AttachCooldowns(frame, activeCds)
 	elseif frame.CDTracker then
 		frame.CDTracker:Hide()
 	end
@@ -983,9 +983,9 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Shadow"],
 						desc = L["For the important stuff."],
-						get = function() return #highlightedSpells > 0 and highlightedSpellsData().enabled end,
+						get = function() return selectedSpell() ~= "" and highlightedSpellsData().enabled end,
 						set = function(_, value) highlightedSpellsData().enabled = value self:Toggle() end,
-						disabled = function() return not db[selectedType()].selectedSpell end,
+						disabled = function() return selectedSpell() == "" end,
 					},
 					petSpell = {
 						order = 5,
@@ -994,7 +994,7 @@ function mod:LoadConfig()
 						desc = L["Pet casts require some special treatment."],
 						get = function() return db.petSpells[selectedSpell()] end,
 						set = function(_, value) db.petSpells[selectedSpell()] = value and value or nil self:Toggle() end,
-						disabled = function() return not selectedTypeData().selectedSpell end,
+						disabled = function() return selectedSpell() == "" end,
 					},
 					shadowSize = {
 						order = 6,
@@ -1002,9 +1002,9 @@ function mod:LoadConfig()
 						name = L["Shadow Size"],
 						desc = "",
 						min = 1, max = 12, step = 1,
-						get = function() return #highlightedSpells > 0 and highlightedSpellsData().size or 0 end,
+						get = function() return selectedSpell() ~= "" and highlightedSpellsData().size or 0 end,
 						set = function(_, value) highlightedSpellsData().size = value self:Toggle() end,
-						disabled = function() return #highlightedSpells == 0 or not highlightedSpellsData().enabled end,
+						disabled = function() return selectedSpell() == "" or not highlightedSpellsData().enabled end,
 					},
 					shadowColor = {
 						order = 7,
@@ -1012,9 +1012,9 @@ function mod:LoadConfig()
 						hasAlpha = true,
 						name = L["Shadow Color"],
 						desc = "",
-						get = function() return unpack(#highlightedSpells > 0 and highlightedSpellsData().color or {}) end,
+						get = function() return unpack(selectedSpell() ~= "" and highlightedSpellsData().color or {}) end,
 						set = function(_, r, g, b, a) highlightedSpellsData().color = {r, g, b, a} self:Toggle() end,
-						disabled = function() return #highlightedSpells == 0 or not highlightedSpellsData().enabled end,
+						disabled = function() return selectedSpell() == "" or not highlightedSpellsData().enabled end,
 					},
 				},
 			},
@@ -1136,10 +1136,10 @@ function mod:UpdateFrames(playerName, updateAll)
 							twipe(activeCooldowns[playerName])
 						end
 						frame.CDTracker:Hide()
-						for _, frame in ipairs(framelist) do
-							local unit = frame.unit
+						for _, f in ipairs(framelist) do
+							local unit = f.unit
 							if unit and UnitName(unit) == ownerName and UnitIsPlayer(unit) then
-								self:AttachCooldowns(frame, activeCooldowns[ownerName], ownerName)
+								self:AttachCooldowns(f, activeCooldowns[ownerName], ownerName)
 								return
 							end
 						end
@@ -1154,9 +1154,14 @@ function mod:UpdateFrames(playerName, updateAll)
 	end
 end
 
-function mod:AttachCooldowns(frame, cooldowns, testMode)
+function mod:AttachCooldowns(frame, cooldowns, inTestMode)
 	local unitType = UnitCanAttack(frame.unit, 'player') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER'
-    local db = testMode and E.db.Extras.unitframes[modName][E.db.Extras.unitframes[modName].selectedType].units[E.db.Extras.unitframes[modName].selectedUnit] or E.db.Extras.unitframes[modName][unitType].units[frame.unitframeType]
+    local db
+	if inTestMode then
+		db = E.db.Extras.unitframes[modName][E.db.Extras.unitframes[modName].selectedType].units[E.db.Extras.unitframes[modName].selectedUnit]
+	else
+		db = E.db.Extras.unitframes[modName][unitType].units[frame.unitframeType]
+	end
 
 	local shown = db.showAll
 	if not shown then
@@ -1450,11 +1455,13 @@ end
 function mod:Toggle()
 	local enabled
 
-	for _, type in ipairs({'FRIENDLY_PLAYER', 'ENEMY_PLAYER'}) do
-		for _, info in pairs(E.db.Extras.unitframes[modName][type].units) do
-			if info.enabled then
-				enabled = true
-				break
+	if not core.reload then
+		for _, type in ipairs({'FRIENDLY_PLAYER', 'ENEMY_PLAYER'}) do
+			for _, info in pairs(E.db.Extras.unitframes[modName][type].units) do
+				if info.enabled then
+					enabled = true
+					break
+				end
 			end
 		end
 	end

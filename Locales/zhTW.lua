@@ -2,16 +2,16 @@ local E = unpack(ElvUI); --Import: Engine, Locales, PrivateDB, ProfileDB, Global
 local L = E.Libs.ACL:NewLocale("ElvUI", "zhTW")
 
 L["Hits the 'Confirm' button automatically."] = "自動點擊'確認'按鈕。"
-L["Picks up quest items and money automatically."] = "自動拾取任務物品和金錢。"
-L["Fills 'DELETE' field automatically."] = "自動填寫'刪除'欄位。"
-L["Selects the first gossip option if it's the only one available unless holding a modifier.\nCareful with important event triggers, there's no fail-safe mechanism."] = "如果只有一個對話選項可用，則自動選擇第一個選項，除非按住修飾鍵。\n對於重要的事件觸發要小心，沒有故障保護機制。"
+L["Picks up items and money automatically."] = "自動拾取物品和金錢。"
+L["Automatically fills the 'DELETE' field."] = "自動填寫'刪除'欄位。"
+L["Selects the first gossip option if it's the only one available unless holding a modifier.\nBe careful with important event triggers; there is no fail-safe mechanism."] = "如果只有一個對話選項可用，則自動選擇第一個選項，除非按住修飾鍵。\n對於重要的事件觸發要小心，沒有故障保護機制。"
 L["Accepts and turns in quests automatically while holding a modifier."] = "按住修飾鍵時自動接受和提交任務。"
 L["Loot info wiped."] = "拾取資訊已清除。"
 L["/lootinfo slash command to get a quick rundown of the recent lootings.\n\nUsage: /lootinfo Apple 60\n'Apple' - item/player name \n(search @self to get player loot)\n'60' - \ntime limit (<60 seconds ago), optional,\n/lootinfo !wipe - purge loot cache."] = "/lootinfo 命令以快速查看最近的戰利品。\n\n用法: /lootinfo 蘋果 60\n'蘋果' - 物品/玩家名稱 \n(搜尋 @self 以獲取玩家的戰利品)\n'60' - \n時間限制（<60秒前），可選，\n/lootinfo !wipe - 清除戰利品快取。"
-L["Colors online friends' and guildmates' names in some of the messages and styles the rolls.\nAlready handled chat bubbles will not get styled before you /reload."] = "在某些訊息中為線上好友和公會成員的名字著色，並為擲骰添加樣式。\n已處理的聊天氣泡在你使用 /reload 之前不會被重新設置樣式。"
+L["Colors the names of online friends and guildmates in some messages and styles the rolls.\nAlready handled chat bubbles will not get styled before you /reload."] = "在某些訊息中為線上好友和公會成員的名字著色，並為擲骰添加樣式。\n已處理的聊天氣泡在你使用 /reload 之前不會被重新設置樣式。"
 L["Colors loot roll messages for you and other players."] = "為你和其他玩家的拾取擲骰訊息著色。"
 L["Loot rolls icon size."] = "拾取擲骰圖示大小。"
-L["Restyles loot bars.\nRequires 'Loot Roll' (General -> BlizzUI Improvements -> Loot Roll) to be enabled (toggling this module enables it automatically)."] = "重新設置拾取條樣式。\n需要啟用'拾取擲骰'（一般 -> BlizzUI改進 -> 拾取擲骰）（切換此模組會自動啟用它）。"
+L["Restyles the loot bars.\nRequires 'Loot Roll' (General -> BlizzUI Improvements -> Loot Roll) to be enabled (toggling this module enables it automatically)."] = "重新設置拾取條樣式。\n需要啟用'拾取擲骰'（一般 -> BlizzUI改進 -> 拾取擲骰）（切換此模組會自動啟用它）。"
 L["Displays the name of the player pinging the minimap."] = "顯示在小地圖上發出標記的玩家名稱。"
 L["Displays the currently held currency amount next to the item prices."] = "在物品價格旁顯示當前持有的貨幣數量。"
 L["Narrows down the World(..Frame)."] = "縮小World(..Frame)。"
@@ -28,7 +28,7 @@ L["Adds shadows to all of the frames.\nDoes nothing unless you replace your ElvU
 L["Combat state notification alerts."] = "戰鬥狀態通知警報。"
 L["Custom editbox position and size."] = "自訂編輯框位置和大小。"
 L["Usage:"..
-	"\n/tnote list - returns all eixting notes"..
+	"\n/tnote list - returns all existing notes"..
 	"\n/tnote wipe - clears all existing notes"..
 	"\n/tnote 1 icon Interface\\Path\\ToYourIcon - same as set (except for the lua part)"..
 	"\n/tnote 1 get - same as set, returns existing notes"..
@@ -69,28 +69,25 @@ L["Usage:"..
 			"\n  (1-percentage)*255, percentage*255)"
 L["Adds an icon next to chat hyperlinks."] = "在聊天超連結旁添加一個圖標。"
 L["A new action bar that collects usable quest items from your bag.\n\nDue to state actions limit, this module overrides bar10 created by ElvUI Extra Action Bars."] = "一個新的動作條，用於收集背包中可用的任務物品。\n\n由於狀態動作限制，該模組會覆蓋ElvUI額外動作條創建的bar10。"
-L["Toggles the display of the actionbars backdrop."] = "切換動作條背景的顯示。"
-L["The frame won't show unless you mouse over it."] = "除非滑鼠懸停，否則框架不會顯示。"
-L["Inherit the global fade, mousing over, targetting, setting focus, losing health, entering combat will set the remove transparency. Otherwise it will use the transparency level in the general actionbar settings for global fade alpha."] = "繼承全局淡出效果，滑鼠懸停、選擇目標、設置焦點、失去生命值、進入戰鬥將移除透明度。否則，它將使用一般動作條設置中的透明度級別作為全局淡出的透明度。"
+L["Toggles the display of the actionbar's backdrop."] = "切換動作條背景的顯示。"
+L["The frame will not be displayed unless hovered over."] = "除非滑鼠懸停，否則框架不會顯示。"
+L["Inherit the global fade; mousing over, targetting, setting focus, losing health, entering combat will set the remove transparency. Otherwise it will use the transparency level in the general actionbar settings for global fade alpha."] = "繼承全局淡出效果，滑鼠懸停、選擇目標、設置焦點、失去生命值、進入戰鬥將移除透明度。否則，它將使用一般動作條設置中的透明度級別作為全局淡出的透明度。"
 L["The first button anchors itself to this point on the bar."] = "第一個按鈕固定在動作條上的這個點。"
 L["Right-click the item while holding the modifier to blacklist it. Blacklisted items will not show up on the bar.\nUse /questbarRestore to purge the blacklist."] = "按住修飾鍵的同時右鍵點擊物品將其加入黑名單。黑名單中的物品不會在動作條上顯示。\n使用 /questbarRestore 清除黑名單。"
-L["The amount of buttons to display."] = "要顯示的按鈕數量。"
-L["The amount of buttons to display per row."] = "每行顯示的按鈕數量。"
+L["The number of buttons to display."] = "要顯示的按鈕數量。"
+L["The number of buttons to display per row."] = "每行顯示的按鈕數量。"
 L["The size of the action buttons."] = "動作按鈕的大小。"
-L["The spacing between buttons."] = "按鈕之間的間距。"
-L["The spacing between the backdrop and the buttons."] = "背景和按鈕之間的間距。"
-L["Multiply the backdrops height or width by this value. This is usefull if you wish to have more than one bar behind a backdrop."] = "將背景的高度或寬度乘以此值。如果你希望在一個背景後面有多個動作條，這很有用。"
-L["This works like a macro, you can run different situations to get the actionbar to show/hide differently.\n Example: '[combat] showhide'"] = "這就像一個巨集，你可以運行不同的情況來讓動作條以不同方式顯示/隱藏。\n 例如：'[combat] showhide'"
-L["Adds anchoring options to movers' nudges."] = "為移動器的微調添加錨點選項。"
-L["Mod-clicking an item suggest a skill/item to process it."] = "按住 Mod 鍵點擊物品會建議處理該物品的技能/物品。"
-L["Holding %s while left-clicking a stack splits it in two; to combine available copies, right-click instead.\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."] =
+L["Spacing between the buttons."] = "按鈕之間的間距。"
+L["Spacing between the backdrop and the buttons."] = "背景和按鈕之間的間距。"
+L["Multiply the backdrop's height or width by this value. This is useful if you wish to have more than one bar behind a backdrop."] = "將背景的高度或寬度乘以此值。如果你希望在一個背景後面有多個動作條，這很有用。"
+L["This works like a macro; you can run different conditions to show or hide the action bar.\n Example: '[combat] showhide'"] = "這就像一個巨集，你可以運行不同的情況來讓動作條以不同方式顯示/隱藏。\n 例如：'[combat] showhide'"
+L["Adds anchoring options to the movers' nudges."] = "為移動器的微調添加錨點選項。"
+L["Mod-clicking an item suggests a skill/item to process it."] = "按住 Mod 鍵點擊物品會建議處理該物品的技能/物品。"
+L["Holding %s while left-clicking a stack will split it in two; right-click instead to combine available copies.\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."] =
 	"按住%s的同時左鍵點擊堆疊可將其分為兩半；要合併可用副本，請右鍵點擊。\n\n還修改了SplitStackFrame，使用編輯框而不是箭頭。"
 L["Extends the bags functionality."] = "擴展背包功能。"
-L["Handles automated repositioning of the newly received items."] = "處理新獲得物品的自動重新定位。"
-L["Default method: type > inventoryslotid > ilvl > name."] = "預設方法：類型 > 背包欄位ID > 物品等級 > 名稱。"
+L["Default method: type > inventory slot ID > item level > name."] = "預設方法：類型 > 背包欄位ID > 物品等級 > 名稱。"
 L["Listed ItemIDs will not get sorted."] = "列出的物品ID不會被排序。"
-L["Double-click the title text to minimize the section."] = "雙擊標題文字以最小化該部分。"
-L["Minimized section's line color."] = "最小化部分的線條顏色。"
 L["E.g. Interface\\Icons\\INV_Misc_QuestionMark"] = "例如：Interface\\Icons\\INV_Misc_QuestionMark"
 L["Invalid condition format: "] = "無效的條件格式："
 L["The generated custom sorting method did not return a function."] = "生成的自定義排序方法未返回函數。"
@@ -98,26 +95,26 @@ L["The loaded custom sorting method did not return a function."] = "載入的自
 L["Item received: "] = "收到物品："
 L[" added."] = " 已添加。"
 L[" removed."] = " 已移除。"
-L["Handles automated repositioning of the newly received items."..
+L["Handles the automated repositioning of the newly received items."..
 	"\nSyntax: filter@value\n\n"..
 	"Available filters:\n"..
-	"id@number - matches itemID,\n"..
-	"name@string - matches name,\n"..
-	"subtype@string - matches subtype,\n"..
-	"ilvl@number - matches ilvl,\n"..
-	"uselevel@number - matches equip level,\n"..
-	"quality@number - matches quality,\n"..
-	"equipslot@number - matches nventorySlotID,\n"..
-	"maxstack@number - matches stack limit,\n"..
-	"price@number - matches sell price,\n\n"..
-	"tooltip@string - matches tooltip text,\n\n"..
-	"All string matches are not case sensitive and match only the alphanumeric symbols. Standart lua logic applies. "..
+	" id@number - matches itemID,\n"..
+	" name@string - matches name,\n"..
+	" subtype@string - matches subtype,\n"..
+	" ilvl@number - matches ilvl,\n"..
+	" uselevel@number - matches equip level,\n"..
+	" quality@number - matches quality,\n"..
+	" equipslot@number - matches inventorySlotID,\n"..
+	" maxstack@number - matches stack limit,\n"..
+	" price@number - matches sell price,\n\n"..
+	" tooltip@string - matches tooltip text,\n\n"..
+	"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
 	"Look up GetItemInfo API for more info on filters. "..
 	"Use GetAuctionItemClasses and GetAuctionItemSubClasses (same as on the AH) to get the localized types and subtypes values.\n\n"..
 	"Example usage (priest t8 or Shadowmourne):\n"..
 	"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne.\n\n"..
 	"Accepts custom functions (bagID, slotID, itemID are exposed)\n"..
-	"The below one notifies of the newly aquired items.\n\n"..
+	"The below one notifies of the newly acquired items.\n\n"..
 	"local icon = GetContainerItemInfo(bagID, slotID)\n"..
 	"local _, link = GetItemInfo(itemID)\n"..
 	"icon = gsub(icon, '\\124', '\\124\\124')\n"..
@@ -126,16 +123,16 @@ L["Handles automated repositioning of the newly received items."..
 		"處理新獲得物品的自動重新定位。"..
 		"\n語法: 過濾器@值\n\n"..
 		"可用過濾器:\n"..
-		"id@數字 - 匹配物品ID,\n"..
-		"name@字串 - 匹配名稱,\n"..
-		"subtype@字串 - 匹配子類型,\n"..
-		"ilvl@數字 - 匹配物品等級,\n"..
-		"uselevel@數字 - 匹配裝備等級,\n"..
-		"quality@數字 - 匹配品質,\n"..
-		"equipslot@數字 - 匹配庫存欄位ID,\n"..
-		"maxstack@數字 - 匹配堆疊上限,\n"..
-		"price@數字 - 匹配售價,\n\n"..
-		"tooltip@字串 - 匹配提示文字,\n\n"..
+		" id@數字 - 匹配物品ID,\n"..
+		" name@字串 - 匹配名稱,\n"..
+		" subtype@字串 - 匹配子類型,\n"..
+		" ilvl@數字 - 匹配物品等級,\n"..
+		" uselevel@數字 - 匹配裝備等級,\n"..
+		" quality@數字 - 匹配品質,\n"..
+		" equipslot@數字 - 匹配庫存欄位ID,\n"..
+		" maxstack@數字 - 匹配堆疊上限,\n"..
+		" price@數字 - 匹配售價,\n\n"..
+		" tooltip@字串 - 匹配提示文字,\n\n"..
 		"所有字串匹配不區分大小寫，僅匹配字母數字符號。適用標準lua邏輯。"..
 		"查看GetItemInfo API以獲取更多關於過濾器的資訊。"..
 		"使用GetAuctionItemClasses和GetAuctionItemSubClasses（與拍賣行相同）獲取本地化的類型和子類型值。\n\n"..
@@ -148,6 +145,47 @@ L["Handles automated repositioning of the newly received items."..
 		"icon = gsub(icon, '\124', '\124\124')\n"..
 		"local string = '\124T' .. icon .. ':16:16\124t' .. link\n"..
 		"print('獲得物品: ' .. string)"
+L["Syntax: filter@value\n\n"..
+	"Available filters:\n"..
+	" id@number - matches itemID,\n"..
+	" name@string - matches name,\n"..
+	" type@string - matches type,\n"..
+	" subtype@string - matches subtype,\n"..
+	" ilvl@number - matches ilvl,\n"..
+	" uselevel@number - matches equip level,\n"..
+	" quality@number - matches quality,\n"..
+	" equipslot@number - matches inventorySlotID,\n"..
+	" maxstack@number - matches stack limit,\n"..
+	" price@number - matches sell price,\n"..
+	" tooltip@string - matches tooltip text.\n\n"..
+	"All string matches are case-insensitive and match only alphanumeric symbols.\n"..
+	"Standard Lua logic for branching (and/or/parenthesis/etc.) applies.\n\n"..
+	"Example usage (priest t8 or Shadowmourne):\n"..
+	"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."] =
+		"語法：過濾器@值\n\n"..
+			"可用過濾器：\n"..
+			" id@數字 - 匹配物品ID，\n"..
+			" name@字串 - 匹配名稱，\n"..
+			" type@字串 - 匹配類型，\n"..
+			" subtype@字串 - 匹配子類型，\n"..
+			" ilvl@數字 - 匹配物品等級，\n"..
+			" uselevel@數字 - 匹配裝備等級，\n"..
+			" quality@數字 - 匹配品質，\n"..
+			" equipslot@數字 - 匹配背包欄位ID，\n"..
+			" maxstack@數字 - 匹配堆疊上限，\n"..
+			" price@數字 - 匹配售價，\n"..
+			" tooltip@字串 - 匹配提示文字。\n\n"..
+			"所有字串匹配不區分大小寫，且僅匹配字母數字符號。\n"..
+			"適用標準lua分支邏輯（和/或/括號等）。\n\n"..
+			"使用範例（牧師t8或暗影之悲）：\n"..
+			"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."
+L["Available Item Types"] = "可用物品類型"
+L["Lists all available item subtypes for each available item type."] =
+	"列出每個可用物品類型的所有可用物品子類型。"
+L["Holding this key while interacting with a merchant buys all items that pass the Auto Buy set method.\n"..
+	"Hold the modifier key and click the buyout list entry to purchase a single item, regardless of the '@amount' rule."] =
+		"與商人互動時按住此鍵會購買所有符合自動購買設定的物品。\n"..
+			"在購買清單條目上進行模組點擊，即可無視'@數量'規則，只購買一件符合條件的物品。"
 L["Default method: type > inventoryslotid > ilvl > name.\n\n"..
 	"Accepts custom functions (bagID and slotID are available at the a/b.bagID/slotID).\n\n"..
 	"function(a,b)\n"..
@@ -171,7 +209,7 @@ L["Syntax:"..
 	"\n[k~=@@UnitName('player')]"..
 	"\n@@@commands@@@"..
 	"\n\n'EVENT' - Event from the events section above"..
-	"\n'n, m, k' - indexex of the desired payload args (number)"..
+	"\n'n, m, k' - indexes of the desired payload args (number)"..
 	"\n'nil/value/boolean/lua code' - desired output of n arg"..
 	"\n'@@' - lua arg flag, must go before the lua code within the args' value section"..
 	"\n'~' - negate flag, add before the equals sign to have the code executed if n/m/k is not mathing the set value instead"..
@@ -181,13 +219,13 @@ L["Syntax:"..
 	"\n\nUNIT_AURA[1=player]@@@"..
 	"\nprint(player has gained/lost an aura)@@@"..
 	"\n\nCHAT_MSG_WHISPER"..
-	"\n[5~=UnitName('player')]"..
+	"\n[5~=@@UnitName('player')]"..
 	"\n[14=false]@@@"..
 	"\nPlaySound('LEVELUPSOUND', 'master')@@@"..
 	"\n\nCOMBAT_LOG_EVENT_"..
 	"\nUNFILTERED"..
-	"\n[5=UnitName('arena1')]"..
-	"\n[5=UnitName('arena2')]@@@"..
+	"\n[5=@@UnitName('arena1')]"..
+	"\n[5=@@UnitName('arena2')]@@@"..
 	"\nfor i = 1, 2 do"..
 	"\nif UnitDebuff('party'..i, 'Bad Spell')"..
 	"\nthen print(UnitName('party'..i)..' is afflicted!')"..
@@ -210,13 +248,13 @@ L["Syntax:"..
 		"\n\nUNIT_AURA[1=player]@@@"..
 		"\nprint(玩家獲得/失去了一個光環)@@@"..
 		"\n\nCHAT_MSG_WHISPER"..
-		"\n[5~=UnitName('player')]"..
+		"\n[5~=@@UnitName('player')]"..
 		"\n[14=false]@@@"..
 		"\nPlaySound('LEVELUPSOUND', 'master')@@@"..
 		"\n\nCOMBAT_LOG_EVENT_"..
 		"\nUNFILTERED"..
-		"\n[5=UnitName('arena1')]"..
-		"\n[5=UnitName('arena2')]@@@"..
+		"\n[5=@@UnitName('arena1')]"..
+		"\n[5=@@UnitName('arena2')]@@@"..
 		"\nfor i = 1, 2 do"..
 		"\nif UnitDebuff('party'..i, '不良法術')"..
 		"\nthen print(UnitName('party'..i)..'受到了影響！')"..
@@ -224,7 +262,7 @@ L["Syntax:"..
 		"\n\n此模組解析字符串，所以盡量嚴格遵循語法，否則可能無法正常工作。"
 L["Highlights auras."] = "突出顯示光環。"
 L["E.g. 42292"] = "例如 42292"
-L["Aplies highlights to all auras passing the selected filter."] = "突出顯示所有通過選擇過濾器的光環。"
+L["Applies highlights to all auras passing the selected filter."] = "突出顯示所有通過選擇過濾器的光環。"
 L["Priority: spell, filter, curable/stealable."] = "優先級：法術、過濾器、可治療/可偷竊。"
 L["If toggled, the GLOBAL Spell or Filter entry values would be used."] = "如果切換，將使用全局法術或過濾器條目值。"
 L["Makes auras grow sideswise."] = "使光環向兩側擴展。"
@@ -236,7 +274,15 @@ L["Right-click a player buff to cancel it."] = "右鍵點擊玩家的增益效�
 L["Disables debuffs desaturation."] = "禁用減少 debuff 飽和度。"
 L["Saturated Debuffs"] = "飽和 debuffs"
 L["Confirm Rolls"] = "確認擲骰"
-L["Quest Items and Money"] = "任務物品和金錢"
+L["Auto Pickup"] = "自動拾取"
+L["Swift Buy"] = "快速購買"
+L["Buys out items automatically."] = "自動購買物品。"
+L["Failsafe"] = "故障保護"
+L["Enables popup confirmation dialog."] = "啟用彈出確認對話框。"
+L["Add Set"] = "新增套裝"
+L["Delete Set"] = "刪除套裝"
+L["Select Set"] = "選擇套裝"
+L["Auto Buy"] = "自動購買"
 L["Fill Delete"] = "填寫刪除"
 L["Gossip"] = "對話"
 L["Accept Quest"] = "接受任務"
@@ -272,7 +318,6 @@ L["Select Container Type"] = "選擇容器類型"
 L["Settings"] = "設置"
 L["Add Section"] = "添加部分"
 L["Delete Section"] = "刪除部分"
-L["Section Length"] = "部分長度"
 L["Select Section"] = "選擇部分"
 L["Section Priority"] = "部分優先級"
 L["Section Spacing"] = "部分間距"
@@ -280,8 +325,6 @@ L["Collection Method"] = "收集方法"
 L["Sorting Method"] = "排序方法"
 L["Ignore Item (by ID)"] = "忽略物品（按ID）"
 L["Remove Ignored"] = "移除已忽略"
-L["Minimize"] = "最小化"
-L["Line Color"] = "線條顏色"
 L["Title"] = "標題"
 L["Color"] = "顏色"
 L["Attach to Icon"] = "附加到圖示"
@@ -447,13 +490,10 @@ L["Add Texture Path"] = "添加材質路徑"
 L["Remove Selected Texture"] = "移除所選材質"
 L["Titles"] = "頭銜"
 L["Reaction Color"] = "反應顏色"
-L["Hold this while using /addOccupation command to clear the list of the current target/mouseover occupation.\nDon't forget to unbind the modifier+key bind!"] =
-	"使用 /addOccupation 命令時按住此鍵以清除當前目標/滑鼠懸停對象的職業列表。\n別忘了解除修飾鍵+按鍵綁定！"
 L["Color based on reaction type."] = "根據反應類型著色。"
 L["Nameplates"] = "名條"
 L["Unitframes"] = "單位框架"
-L["An icon similar to the minimap search.\n\nTooltip scanning, might not be precise.\n\nFor consistency reasons, no keywards are added by defult, use /addOccupation command to mark the appropriate ones yourself (only need to do it once per unique occupation text)."] =
-	"類似於小地圖搜索的圖標。\n\n工具提示掃描，可能不準確。\n\n為了一致性，默認情況下不添加任何關鍵詞，請使用 /addOccupation 命令自行標記適當的關鍵詞（每個獨特的職業文本只需做一次）。"
+L["An icon similar to the minimap search."] = "類似於小地圖搜索的圖標。"
 L["Displays player guild text."] = "顯示玩家的公會文本。"
 L["Displays NPC occupation text."] = "顯示NPC的職業文本。"
 L["Strata"] = "層級"
@@ -476,40 +516,6 @@ L["Unmark all plates."] = "取消所有姓名板的標記。"
 L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"] =
 	"用法：將 '/qmark' 宏綁定到您選擇的按鍵。\n\n不要忘記解除您的修飾鍵綁定！"
 L["Use Backdrop"] = "使用背景"
-L["Usage:\n%%d=%%s\n\n%%d - index from the list below\n%%s - keywords to look for\n\nIndexes of icons:"..
-	"\n1 - %s"..
-	"\n2 - %s"..
-	"\n3 - %s"..
-	"\n4 - %s"..
-	"\n5 - %s"..
-	"\n6 - %s"..
-	"\n7 - %s"..
-	"\n8 - %s"..
-	"\n9 - %s"..
-	"\n10 - %s"..
-	"\n11 - %s"..
-	"\n12 - %s"..
-	"\n13 - %s"..
-	"\n14 - %s"..
-	"\n\n\nAlso available as a '/addOccupation %%d' slash command where %%d is an optional icon index. "..
-	"If no index is provided, this command will cycle through all of the available icons. Works on either TARGET or MOUSEOVER, prioritising the latter."] =
-		"用法:\n%%d=%%s\n\n%%d - 下列表中的索引\n%%s - 要查找的關鍵詞\n\n圖標索引:"..
-			"\n1 - %s"..
-			"\n2 - %s"..
-			"\n3 - %s"..
-			"\n4 - %s"..
-			"\n5 - %s"..
-			"\n6 - %s"..
-			"\n7 - %s"..
-			"\n8 - %s"..
-			"\n9 - %s"..
-			"\n10 - %s"..
-			"\n11 - %s"..
-			"\n12 - %s"..
-			"\n13 - %s"..
-			"\n14 - %s"..
-			"\n\n\n也可以使用'/addOccupation %%d'指令，其中%%d是可選的圖標索引。"..
-			"如果未提供索引，該命令將循環所有可用圖標。適用於目標或鼠標懸停，以鼠標懸停為優先。"
 L["Linked Style Filter Triggers"] = "連結的樣式過濾器觸發器"
 L["Select Link"] = "選擇連結"
 L["New Link"] = "新連結"
@@ -614,7 +620,7 @@ L["Disable Event"] = "禁用事件"
 L["School"] = "學派"
 L["Use School Colors"] = "使用學派顏色"
 L["Colors"] = "顏色"
-L["Colors (School)"] = "顏色（學派）"
+L["Color (School)"] = "顏色（系別）"
 L["Animation Type"] = "動畫類型"
 L["Custom Animation"] = "自定義動畫"
 L["Flag Settings"] = "標誌設定"
@@ -700,7 +706,7 @@ L["Rare Elite"] = "稀有精英"
 L["Class Spec Icons"] = "職業專精圖示"
 L["Classification Textures"] = "分類材質"
 L["Use Nameplates' Icons"] = "使用姓名板圖示"
-L["Color enemy npc icon based on the unit type."] = "根據單位類型為敵對NPC圖示著色。"
+L["Color enemy NPC icon based on the unit type."] = "根據單位類型為敵對NPC圖示著色。"
 L["Strata and Level"] = "層級和等級"
 L["Warrior"] = "戰士"
 L["Warlock"] = "術士"
@@ -772,7 +778,6 @@ L["On meeting multiple conditions, colors from the tab with the highest priority
 L["Copy Tab"] = "複製標籤"
 L["Select a tab to copy its settings onto the current tab."] = "選擇一個標籤將其設置複製到當前標籤。"
 L["Flash"] = "閃爍"
-L["Toggle color flash for the current tab."] = "切換當前標籤的顏色閃爍。"
 L["Speed"] = "速度"
 L["Glow"] = "發光"
 L["Determines which glow to apply when statusbars are not detached from frame."] = "決定當狀態條未從框架分離時應用哪種發光效果。"
@@ -789,7 +794,7 @@ L["Disabled unless classbar is enabled."] = "除非啟用職業條，否則禁�
 L["InfoPanel Color"] = "信息面板顏色"
 L["Disabled unless infopanel is enabled."] = "除非啟用信息面板，否則禁用。"
 L["ClassBar Adapt To"] = "職業條適應於"
-L["Copies color of the selected bar."] = "複製所選條的顏色。"
+L["Copies the color of the selected bar."] = "複製所選條的顏色。"
 L["InfoPanel Adapt To"] = "信息面板適應於"
 L["Override Mode"] = "覆蓋模式"
 L["'None' - threat borders highlight will be prioritized over this one".. "\n'Threat' - this highlight will be prioritized."] = "'無' - 威脅邊框高亮將優先於此高亮".. "\n'威脅' - 此高亮將優先。"
@@ -804,33 +809,41 @@ L["Handle only player combat log events."] = "僅處理玩家戰鬥日誌事件�
 L["Rotate Icon"] = "旋轉圖示"
 L["Usage example:"..
 	"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
-	"\nif UnitIsUnit(@unit, 'target') then return true end"..
-	"\n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
-	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group (more than 5 in the example above)"..
-	"\n\n'return {bR=1,f=false}' - you can dynamically color the frames by returning the colors in a table format:"..
+	"\n    local r, g, b = ElvUF_Target.Health:GetStatusBarColor()"..
+	"\n    return true, {mR = r, mG = g, mB = b}"..
+	"\nelseif UnitIsUnit(unit, 'target') then"..
+	"\n    return true"..
+	"\nend"..
+	"\n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question "..
+	"(in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not"..
+	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group "..
+	"(more than 5 in the example above)"..
+	"\n\n'return true, {bR=1,f=false}' - you can dynamically color the frames by returning the colors in a table format:"..
 	"\n  to apply to the statusbar, assign your rgb values to mR, mG and mB respectively"..
 	"\n  to apply the glow - to gR, gG, gB, gA (alpha)"..
 	"\n  for borders - bR, bG, bB"..
 	"\n  and for the flash - fR, fG, fB, fA"..
 	"\n  to prevent the elements styling, return {m = false, g = false, b = false, f = false}"..
-	"\n\nFeel free to use '@unit' to register current unit like this: UnitBuff(@unit, 'player')."..
+	"\n\nFrame and unitID are available at 'frame' and 'unit' respectively: UnitBuff(unit, 'player')/frame.Health:IsVisible()."..
 	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"使用示例："..
 			"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
-			"\nif UnitIsUnit(@unit, 'target') then return true end"..
-			"\n\n@@[raid, Health, 2, >5]@@ - 根據相關標籤（在上面的例子中：'player' - 目標單位；'Power' - 目標狀態條；'3' - 目標標籤）是否處於活動狀態來返回 true/false（提及相同單位/群組的功能已禁用；不是遞歸的）"..
+			"\n    local r, g, b = ElvUF_Target.Health:GetStatusBarColor()"..
+			"\n    return true, {mR = r, mG = g, mB = b}"..
+			"\nelseif UnitIsUnit(unit, 'target') then"..
+			"\n    return true"..
+			"\nend"..
+			"\n\n@@[raid, Health, 2, >5]@@ - 根據相關標籤（在上面的例子中：'player' - 目標單位；'Power' - 目標狀態條；'3' - 目標標籤）是否處於活動狀態來返回 true/false"..
 			"\n(>/>=/<=/</~= num) - （可選，僅適用於群組單位）匹配群組內觸發框架的特定數量（上面例子中大於 5）"..
-			"\n\n'return {bR=1,f=false}' - 你可以通過以表格格式返回顏色來動態為框架上色："..
+			"\n\n'return true, {bR=1,f=false}' - 你可以通過以表格格式返回顏色來動態為框架上色："..
 			"\n  要應用於狀態條，請將你的 rgb 值分別指派給 mR、mG 和 mB"..
 			"\n  要應用發光效果 - 指派給 gR、gG、gB、gA（透明度）"..
 			"\n  邊框顏色 - bR、bG、bB"..
 			"\n  閃光效果 - fR、fG、fB、fA"..
 			"\n  要防止元素樣式，返回 {m = false, g = false, b = false, f = false}"..
-			"\n\n你可以自由使用 '@unit' 來註冊當前單位，例如：UnitBuff(@unit, 'player')。"..
+			"\n\nFrame和unitID可在'frame'和'unit'中獲得：UnitBuff(unit, 'player')/frame.Health:IsVisible()。"..
 			"\n\n此模組解析字符串，所以請嘗試讓你的代碼嚴格遵循語法，否則可能無法正常工作。"
-L["Unless holding a modifier, hovering units, items, and spells draws no tooltip.\nModifies cursor tooltips only."] = "除非按住修飾鍵，否則懸停單位、物品和法術不會顯示工具提示。\n僅修改游標工具提示。"
+L["Tooltips will not display when hovering over units, items, and spells unless a modifier is held.\nModifies cursor tooltips only."] = "除非按住修飾鍵，否則懸停單位、物品和法術不會顯示工具提示。\n僅修改游標工具提示。"
 L["Pick a..."] = "選擇一個..."
 L["...mover to anchor to."] = "...要錨定的移動器。"
 L["...mover to anchor."] = "...錨定移動器。"
@@ -946,3 +959,123 @@ L["To Level"] = "至等級"
 L["Names will be shortened based on level text position."] = "名稱將根據等級文字的位置縮短。"
 L["Add Item (by ID)"] = "添加物品 (通過ID)"
 L["Remove Item"] = "移除物品"
+L["Pre-Load"] = "預載入"
+L["Executes commands during the addon's initialization process."] = "在插件初始化過程中執行命令。"
+L["Justify"] = "對齊"
+L["Alt-Click: free bag slots, if possible."] = "Alt-點擊：釋放背包欄位（如果可能）。"
+L["Click: Toggle layout mode."] = "點擊：切換佈局模式。"
+L["Alt-Click: Re-evaluate all items."] = "Alt-點擊：重新評估所有物品。"
+L["Drag-and-Drop: Evaluate and position the cursor item."] = "拖放：評估並定位游標上的物品。"
+L["Mouse-Wheel: Navigate between special and normal bags."] = "滑鼠滾輪：切換特殊與普通背包。"
+L["Setup Sections"] = "設置分區"
+L["Adds default sections set to the currently selected container."] = "將預設分區添加到當前選定的容器。"
+L["Handles the automated repositioning of the newly received items."..
+	"\nSyntax: filter@value\n\n"..
+	"Available filters:\n"..
+	" id@number - matches itemID,\n"..
+	" name@string - matches name,\n"..
+	" subtype@string - matches subtype,\n"..
+	" ilvl@number - matches ilvl,\n"..
+	" uselevel@number - matches equip level,\n"..
+	" quality@number - matches quality,\n"..
+	" equipslot@number - matches inventorySlotID,\n"..
+	" maxstack@number - matches stack limit,\n"..
+	" price@number - matches sell price,\n\n"..
+	" tooltip@string - matches tooltip text,\n\n"..
+	"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
+	"Look up GetItemInfo API for more info on filters. "..
+	"Use GetAuctionItemClasses and GetAuctionItemSubClasses (same as on the AH) to get the localized types and subtypes values.\n\n"..
+	"Example usage (priest t8 or Shadowmourne):\n"..
+	"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne.\n\n"..
+	"Accepts custom functions (bagID, slotID, itemID are exposed)\n"..
+	"The below one notifies of the newly acquired items.\n\n"..
+	"local icon = GetContainerItemInfo(bagID, slotID)\n"..
+	"local _, link = GetItemInfo(itemID)\n"..
+	"icon = gsub(icon, '\\124', '\\124\\124')\n"..
+	"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
+	"print('Item received: ' .. string)"] =
+		"處理自動物品定位。\n"..
+			"語法：filter@value\n\n"..
+			"可用過濾器：\n"..
+			" id@number - 匹配 itemID，\n"..
+			" name@string - 匹配名稱，\n"..
+			" type@string - 匹配類型，\n"..
+			" subtype@string - 匹配子類型，\n"..
+			" ilvl@number - 匹配物品等級，\n"..
+			" uselevel@number - 匹配裝備等級，\n"..
+			" quality@number - 匹配品質，\n"..
+			" equipslot@number - 匹配 InventorySlotID，\n"..
+			" maxstack@number - 匹配堆疊上限，\n"..
+			" price@number - 匹配售價，\n"..
+			" tooltip@string - 匹配提示文字，\n"..
+			" set@setName - 匹配裝備套裝物品。\n\n"..
+			"所有字串匹配不區分大小寫，僅匹配字母數字符號。\n"..
+			"標準 Lua 邏輯（and/or/括號等）適用。\n\n"..
+			"使用範例（牧師 t8 或 Shadowmourne）：\n"..
+			"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne。\n\n"..
+			"接受自定義函數（bagID、slotID、itemID 可用）。\n"..
+			"以下範例通知新獲得的物品。\n\n"..
+			"local icon = GetContainerItemInfo(bagID, slotID)\n"..
+			"local _, link = GetItemInfo(itemID)\n"..
+			"icon = gsub(icon, '\\124', '\\124\\124')\n"..
+			"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
+			"print('獲得物品：' .. string)"
+L["Syntax: filter@value@amount\n\n"..
+	"Available filters:\n"..
+	" id@number@amount(+)/+ - matches itemID,\n"..
+	" name@string@amount(+)/+ - matches name,\n"..
+	" type@string@amount(+)/+ - matches type,\n"..
+	" subtype@string@amount(+)/+ - matches subtype,\n"..
+	" ilvl@number@amount(+)/+ - matches ilvl,\n"..
+	" uselevel@number@amount(+)/+ - matches equip level,\n"..
+	" quality@number@amount(+)/+ - matches quality,\n"..
+	" equipslot@number@amount(+)/+ - matches inventorySlotID,\n"..
+	" maxstack@number@amount(+)/+ - matches stack limit,\n"..
+	" price@number@amount(+)/+ - matches sell price,\n"..
+	" tooltip@string@amount(+)/+ - matches tooltip text.\n\n"..
+	"The optional 'amount' part could be:\n"..
+	"  a number - to purchase a static amount,\n"..
+	"  a + sign - to replenish the existing partial stack or purchase a new one,\n"..
+	"  both (e.g. 5+) - to purchase enough items to reach a specified total (in this case, 5),\n"..
+	"  ommited - defaults to 1.\n\n"..
+	"All string matches are case-insensitive and match only alphanumeric symbols.\n"..
+	"Standard Lua logic for branching (and/or/parenthesis/etc.) applies.\n\n"..
+	"Example usage (priest t8 or Shadowmourne):\n"..
+	"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."] =
+		"語法：filter@value@amount\n\n"..
+			"可用過濾器：\n"..
+			" id@number@amount(+)/+ - 匹配 itemID，\n"..
+			" name@string@amount(+)/+ - 匹配名稱，\n"..
+			" type@string@amount(+)/+ - 匹配類型，\n"..
+			" subtype@string@amount(+)/+ - 匹配子類型，\n"..
+			" ilvl@number@amount(+)/+ - 匹配物品等級，\n"..
+			" uselevel@number@amount(+)/+ - 匹配裝備等級，\n"..
+			" quality@number@amount(+)/+ - 匹配品質，\n"..
+			" equipslot@number@amount(+)/+ - 匹配 InventorySlotID，\n"..
+			" maxstack@number@amount(+)/+ - 匹配堆疊上限，\n"..
+			" price@number@amount(+)/+ - 匹配售價，\n"..
+			" tooltip@string@amount(+)/+ - 匹配提示文字。\n\n"..
+			"可選的 'amount' 部分可以是：\n"..
+			" 一個數字 - 購買固定數量，\n"..
+			" + 符號 - 補充現有部分堆疊或購買新堆疊，\n"..
+			" 兩者（例如 5+） - 購買足夠的物品以達到指定總數（此例中為 5），\n"..
+			" 省略 - 默認為 1。\n\n"..
+			"所有字串匹配不區分大小寫，僅匹配字母數字符號。\n"..
+			"標準 Lua 邏輯（and/or/括號等）適用。\n\n"..
+			"使用範例（牧師 t8 或 Shadowmourne）：\n"..
+			"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne。"
+L["PERIODIC"] = "週期性"
+L["Hold this key while using /addOccupation command to clear the list of the current target/mouseover NPC."] = "在使用 /addOccupation 命令時按住此鍵以清除當前目標/滑鼠懸停 NPC 的列表."
+L["Use /addOccupation slash command while targeting/hovering over a NPC to add it to the list. Use again to cycle."] = "在目標/滑鼠懸停在 NPC 上時使用 /addOccupation 斜線命令將其添加到列表中。再次使用以循環."
+L["Style Filter Icons"] = "樣式過濾器圖示"
+L["Custom icons for the style filter."] = "樣式過濾器的自定義圖示."
+L["Whitelist"] = "白名單"
+L["X Direction"] = "X方向"
+L["Y Direction"] = "Y方向"
+L["Create Icon"] = "建立圖標"
+L["Delete Icon"] = "刪除圖標"
+L["0 to match frame width."] = "0 以匹配框架寬度。"
+L["Remove a NPC"] = "移除 NPC"
+L["Change a NPC's Occupation"] = "更改 NPC 的職業"
+L["...to the currently selected one."] = "...為當前選擇的職業。"
+L["Select Occupation"] = "選擇職業"

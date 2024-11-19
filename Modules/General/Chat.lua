@@ -297,8 +297,7 @@ local function setupHooks(db)
 				return
 			end
 
-			local tokens = mod:Tokenize(query)
-			local queryTree = mod:ParseExpression(tokens)
+			local queryTree = mod:ParseExpression(mod:Tokenize(query))
 			local highlight_patterns = {}
 
 			local validType = frame.searchArgs["LIVE"]
@@ -350,8 +349,7 @@ local function setupHooks(db)
 				return
 			end
 
-			local tokens = mod:Tokenize(query)
-			local queryTree = mod:ParseExpression(tokens)
+			local queryTree = mod:ParseExpression(mod:Tokenize(query))
 			local highlight_patterns = {}
 
 			local validType = frame.searchArgs["LIVE"]
@@ -453,9 +451,11 @@ local function setupHooks(db)
 end
 
 local function setupSearchFilter(db)
-	hlR, hlG, hlB = unpack(db.highlightColor)
-	prompts, queries = db.prompts, db.queries
-	historyIndex = #prompts
+	if not core.reload then
+		hlR, hlG, hlB = unpack(db.highlightColor)
+		prompts, queries = db.prompts, db.queries
+		historyIndex = #prompts
+	end
 
 	for i = 1, NUM_CHAT_WINDOWS do
 		local frame = _G["ChatFrame"..i]
@@ -467,6 +467,8 @@ local function setupSearchFilter(db)
 					["rules"] = {
 						{
 							["terms"] = "",
+							["queryTree"] = {},
+							["parsedExpression"] = {},
 							["types"] = {},
 							["blacklist"] = true,
 						},
@@ -474,7 +476,10 @@ local function setupSearchFilter(db)
 				}
 
 				frame.filterRules = db.frames[i].rules
-
+				for _, rule in ipairs(db.frames[i].rules) do
+					rule.queryTree = mod:Tokenize(rule.terms)
+					rule.parsedExpression = mod:ParseExpression(rule.queryTree)
+				end
 				if not frame.searchBar then
 					blockedMsgs[frame] = {}
 					savedChatState[frame] = {}
@@ -568,13 +573,13 @@ local function setupSearchFilter(db)
 						end
 					end)
 
-					local chatTypes = { "LIVE", "HISTORY", "ALL", "SAY", "YELL", "PARTY", "RAID", "BATTLEGROUND", "GUILD", "WHISPER", "CHANNEL", "OTHER" }
-
                     local function initializeConfigDropdown(self, level)
 						if not level then return end
 
 						if level == 1 then
-							for j, event in ipairs(chatTypes) do
+							for j, event in ipairs({"LIVE", "HISTORY", "ALL",
+													"SAY", "YELL", "PARTY", "RAID",
+													"BATTLEGROUND", "GUILD", "WHISPER", "CHANNEL", "OTHER" }) do
 								if j <= 3 or not frame.searchArgs["ALL"] then
 									local info = UIDropDownMenu_CreateInfo()
 									info.text = event == "LIVE" and L["Live"] or event == "HISTORY" and L["History"] or event == "ALL" and L["All"] or localizedTypes[event]
@@ -599,8 +604,8 @@ local function setupSearchFilter(db)
 											mod:PerformSearch(frame, frame.searchBar:GetText())
 										end
 										CloseDropDownMenus()
-										local button = self:GetParent()
-										ToggleDropDownMenu(1, nil, button.configDropdown, button, 0, 0)
+										local searchButton = self:GetParent()
+										ToggleDropDownMenu(1, nil, searchButton.configDropdown, searchButton, 0, 0)
 									end
 									info.value = event
 									UIDropDownMenu_AddButton(info, level)
@@ -632,8 +637,8 @@ local function setupSearchFilter(db)
 									if IsShiftKeyDown() then
 										saveQuery(i)
 										CloseDropDownMenus()
-										local button = self:GetParent()
-										ToggleDropDownMenu(1, nil, button.historyDropdown, button, 0, 0)
+										local searchButton = self:GetParent()
+										ToggleDropDownMenu(1, nil, searchButton.historyDropdown, searchButton, 0, 0)
 									else
 										local query = recentQueries[i]
 										local searchBar = frame.searchBar
@@ -666,8 +671,8 @@ local function setupSearchFilter(db)
 									if IsShiftKeyDown() then
 										deleteQuery(i)
 										CloseDropDownMenus()
-										local button = self:GetParent()
-										ToggleDropDownMenu(1, nil, button.historyDropdown, button, 0, 0)
+										local searchButton = self:GetParent()
+										ToggleDropDownMenu(1, nil, searchButton.historyDropdown, searchButton, 0, 0)
 									else
 										local query = queries[i].query
 										local searchBar = frame.searchBar
@@ -815,8 +820,8 @@ local function setupCompactChat(db)
 				db.selectedLeftTab = id
 			end
 
-			local alertingTabs = alertingTabs[(isRightSide and 'right' or 'left')]
-			alertingTabs[id] = nil
+			local alertTabs = alertingTabs[(isRightSide and 'right' or 'left')]
+			alertTabs[id] = nil
 
 			if not next(alertingTabs) then
 				local button = (isRightSide and RightChatPanel or LeftChatPanel).tabManagerButton
@@ -933,9 +938,9 @@ local function setupCompactChat(db)
 									button.highlightTexture:SetAlpha(0)
 								end
 
-								local alertingTabs = isRightSide and alertingTabs.right or alertingTabs.left
+								local alertTabs = isRightSide and alertingTabs.right or alertingTabs.left
 
-								if alertingTabs[id] then
+								if alertTabs[id] then
 									if not tcontains(flashingButtons, button.highlightTexture) then
 										UIFrameFlash(button.highlightTexture, 1.0, 1.0, -1, false, 0, 0, "chat")
 										tinsert(flashingButtons, button.highlightTexture)
@@ -1211,16 +1216,18 @@ local function setupCompactChat(db)
 					local tab = _G[format("%sTab", frameName)]
 
 					if (id <= NUM_CHAT_WINDOWS) then
-						local isRightChatTab = isRightChatTab(chat)
+						local isRight = isRightChatTab(chat)
 						local parentFrame
 
-						if isRightChatTab then
+						if isRight then
 							parentFrame = RightChatPanel
 						else
 							parentFrame = LeftChatPanel
 						end
 
-						local offset = ((isRightChatTab and E.db.datatexts.rightChatPanel) or (not isRightChatTab and E.db.datatexts.leftChatPanel)) and E.Border*3 - E.Spacing + 22 or 0
+						local offset = ((isRight and E.db.datatexts.rightChatPanel)
+										or (not isRight and E.db.datatexts.leftChatPanel)) and E.Border*3 - E.Spacing + 22
+										or 0
 
 						chat:ClearAllPoints()
 						chat:Point("TOPLEFT", parentFrame, "TOPLEFT", db.leftOffset, -db.topOffset)
@@ -1394,7 +1401,9 @@ local function setupCompactChat(db)
 				chatFrame:ClearAllPoints()
 				chatFrame:Point("TOPLEFT", GeneralDockManager, "BOTTOMLEFT", 0, -6)
 				chatFrame:Point("TOPRIGHT", GeneralDockManager, "BOTTOMRIGHT", 0, -6)
-				break
+			end
+			if mod:IsHooked(chatFrame, "OnUpdate") then
+				mod:Unhook(chatFrame, "OnUpdate")
 			end
 		end
 
@@ -1403,7 +1412,9 @@ local function setupCompactChat(db)
 			buttonTex:SetAlpha(0)
 		end
 
-		CH:UpdateAnchors()
+		if not core.reload then
+			CH:UpdateAnchors()
+		end
 	end
 
 	if not initialized.compactChat then return end
@@ -1467,6 +1478,8 @@ P["Extras"]["general"][modName] = {
 				["rules"] = {
 					{
 						["terms"] = "",
+						["queryTree"] = {},
+						["parsedExpression"] = {},
 						["types"] = {},
 						["blacklist"] = true,
 					},
@@ -1716,7 +1729,12 @@ function mod:LoadConfig()
 						desc = "",
 						func = function()
 							local frameRules = db.SearchFilter.frames[selectedFrame()].rules
-							tinsert(frameRules, { ["terms"] = "", ["blacklist"] = true, ["types"] = {}})
+							tinsert(frameRules, { 	["terms"] = "",
+													["queryTree"] = "",
+													["parsedExpression"] = {},
+													["blacklist"] = true,
+													["types"] = {}
+												})
 							db.SearchFilter.frames[selectedFrame()].selectedRule = #frameRules
 							self:Toggle(db)
 						end,
@@ -1855,12 +1873,9 @@ function mod:FilterNotPassed(frame, msg, chatType)
 	chatType = chatTypes[chatType] and chatType or "OTHER"
 
 	local cleanMsg = mod:StripMsg(msg)
-	local frameRules = frame.filterRules
-	for _, info in ipairs(frameRules) do
+	for _, info in ipairs(frame.filterRules) do
 		if (info.types["ALL"] or info.types[chatType]) then
-			local tokens = mod:Tokenize(info.terms)
-			local queryTree = mod:ParseExpression(tokens)
-			local matched = mod:MatchPattern(queryTree, nil, cleanMsg, lower(cleanMsg))
+			local matched = mod:MatchPattern(info.parsedExpression, nil, cleanMsg, lower(cleanMsg))
 			if (info.blacklist and matched) or (not info.blacklist and not matched) then
 				return true
 			end
@@ -1985,7 +2000,7 @@ function mod:StripMsg(msg)
     local strippedMsg, msgMap = "", {}
     local i, j = 1, 1
     local tempMsg = lower(msg)
-    local len = #tempMsg
+    local strLen = #tempMsg
 
     local colorPattern = "^|c%x%x%x%x%x%x%x%x"
     local linkPattern = "(.-|h)(.-)|h"
@@ -1999,7 +2014,7 @@ function mod:StripMsg(msg)
 	end
 
 	-- strip junk text and store real positions
-    while i <= len do
+    while i <= strLen do
         local b1, b2 = byte(tempMsg, i, i+1)
 
         if b1 == 124 then -- '|, code start'
@@ -2120,16 +2135,16 @@ function mod:HighlightText(msg, cleanMsg, cleanMsgLower, msgMap, terms)
     tsort(matches, function(a, b) return a[1] < b[1] end)
 
     local currentRange = nil
-    for _, match in ipairs(matches) do
+    for _, matchVal in ipairs(matches) do
         if currentRange then
-            if match[1] <= currentRange[2] + 1 then
-                currentRange[2] = max(currentRange[2], match[2])
+            if matchVal[1] <= currentRange[2] + 1 then
+                currentRange[2] = max(currentRange[2], matchVal[2])
             else
                 tinsert(ranges, currentRange)
-                currentRange = {match[1], match[2]}
+                currentRange = {matchVal[1], matchVal[2]}
             end
         else
-            currentRange = {match[1], match[2]}
+            currentRange = {matchVal[1], matchVal[2]}
         end
     end
 
@@ -2222,8 +2237,7 @@ function mod:PerformSearch(frame, query)
 
     twipe(searchResults)
 
-    local tokens = self:Tokenize(query)
-    local queryTree = self:ParseExpression(tokens)
+    local queryTree = self:ParseExpression(self:Tokenize(query))
 	local displayingFiltered = frame.displayingFiltered
     local lastHistoryMsg = (not displayingFiltered and lastHisoryMsgIndex[frame] and not frame.searchArgs["HISTORY"]) and lastHisoryMsgIndex[frame] or -1
 	local targetTable = (displayingFiltered and filteredMsgs[frame].processed) or (not displayingFiltered and savedChatState[frame])
@@ -2255,16 +2269,16 @@ function mod:PerformSearch(frame, query)
     self:DisplaySearchResults(frame, searchResults, query)
 end
 
-function mod:DisplaySearchResults(frame, searchResults, query)
+function mod:DisplaySearchResults(frame, results, query)
 	frame.displayingSearchResults = true
 
     frame:Clear()
 
-    for _, msg in ipairs(searchResults) do
+    for _, msg in ipairs(results) do
 		frame:AddMessage(msg)
     end
 
-    if #searchResults == 0 then
+    if #results == 0 then
         frame:AddMessage("No results found.", rBad, gBad, bBad)
 		frame.searchNoResults = true
     end
@@ -2313,7 +2327,7 @@ function mod:InitializeCallback()
 	bBad = tonumber(sub(hex, 5, 6), 16) / 255
 
 	mod:LoadConfig()
-	mod:Toggle(E.db.Extras.general[modName])
+	mod:Toggle(core.reload and {SearchFilter = {}, CompactChat = {}, ChatEditBox = {}} or E.db.Extras.general[modName])
 end
 
 core.modules[modName] = mod.InitializeCallback

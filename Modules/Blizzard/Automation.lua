@@ -4,27 +4,294 @@ local mod = core:NewModule("Automation", "AceHook-3.0", "AceEvent-3.0")
 
 local modName = mod:GetName()
 
-local pairs, select = pairs, select
-local tinsert, tsort = table.insert, table.sort
-local match, gsub, format = string.match, string.gsub, string.format
+local _G, ipairs, select, type, unpack = _G, ipairs, select, type, unpack
+local loadstring, pcall, tonumber, tostring = loadstring, pcall, tonumber, tostring
+local tinsert, tremove, tconcat = table.insert, table.remove, table.concat
+local gmatch, match, gsub, format, find, lower = string.gmatch, string.match, string.gsub, string.format, string.find, string.lower
 local ConfirmLootRoll, LootSlot, GetLootSlotInfo = ConfirmLootRoll, LootSlot, GetLootSlotInfo
 local GetNumLootItems, GetLootSlotLink =  GetNumLootItems, GetLootSlotLink
 local QuestGetAutoAccept, AcceptQuest, CloseQuest, ConfirmAcceptQuest = QuestGetAutoAccept, AcceptQuest, CloseQuest, ConfirmAcceptQuest
 local GetNumQuestChoices, IsQuestCompletable, CompleteQuest, GetQuestReward = GetNumQuestChoices, IsQuestCompletable, CompleteQuest, GetQuestReward
 local GossipFrame, GetNumGossipOptions, GetGossipAvailableQuests = GossipFrame, GetNumGossipOptions, GetGossipAvailableQuests
 local GetGossipActiveQuests, SelectGossipOption = GetGossipActiveQuests, SelectGossipOption
-local StaticPopupDialogs, StaticPopup_Hide = StaticPopupDialogs, StaticPopup_Hide
-local IsModifierKeyDown, GetItemInfo = IsModifierKeyDown, GetItemInfo
-local localizedQuestItemString = select(12,GetAuctionItemClasses())
-local DELETE_ITEM_CONFIRM_STRING = DELETE_ITEM_CONFIRM_STRING
+local StaticPopupDialogs, StaticPopup_Hide, StaticPopup_Show = StaticPopupDialogs, StaticPopup_Hide, StaticPopup_Show
+local IsModifierKeyDown, GetItemInfo, GetItemCount = IsModifierKeyDown, GetItemInfo, GetItemCount
+local GetMerchantItemLink, BuyMerchantItem = GetMerchantItemLink, BuyMerchantItem
+local GetAuctionItemClasses, GetAuctionItemSubClasses = GetAuctionItemClasses, GetAuctionItemSubClasses
+local BROWSE_NO_RESULTS, BANKSLOTPURCHASE, DELETE_ITEM_CONFIRM_STRING = BROWSE_NO_RESULTS, BANKSLOTPURCHASE, DELETE_ITEM_CONFIRM_STRING
+local YES, NO = YES, NO
+
+local methodFuncs, swiftBuyButton = {}
+local scanner = CreateFrame("GameTooltip", "ExtrasAutomation_ScanningTooltip", nil, "GameTooltipTemplate")
+scanner:SetOwner(WorldFrame, "ANCHOR_NONE")
+
+local inventorySlotIDs = {
+	["INVTYPE_AMMO"] = 0,
+	["INVTYPE_HEAD"] = 1,
+	["INVTYPE_NECK"] = 2,
+	["INVTYPE_SHOULDER"] = 3,
+	["INVTYPE_BODY"] = 4,
+	["INVTYPE_CHEST"] = 5,
+	["INVTYPE_ROBE"] = 5,
+	["INVTYPE_WAIST"] = 6,
+	["INVTYPE_LEGS"] = 7,
+	["INVTYPE_FEET"] = 8,
+	["INVTYPE_WRIST"] = 9,
+	["INVTYPE_HAND"] = 10,
+	["INVTYPE_FINGER"] = 11,
+	["INVTYPE_TRINKET"] = 13,
+	["INVTYPE_CLOAK"] = 15,
+	["INVTYPE_WEAPON"] = 16,
+	["INVTYPE_SHIELD"] = 17,
+	["INVTYPE_2HWEAPON"] = 16,
+	["INVTYPE_WEAPONMAINHAND"] = 16,
+	["INVTYPE_WEAPONOFFHAND"] = 17,
+	["INVTYPE_HOLDABLE"] = 17,
+	["INVTYPE_RANGED"] = 18,
+	["INVTYPE_THROWN"] = 18,
+	["INVTYPE_RELIC"] = 18,
+}
+
+local filter = {
+	id = function(item) return item.id end,
+    type = function(item) return item.type and lower(gsub(item.type, '[%s%p]+', '')) end,
+    subtype = function(item) return item.subType and lower(gsub(item.subType, '[%s%p]+', '')) end,
+    ilvl = function(item) return item.ilvl end,
+    uselevel = function(item) return item.useLevel end,
+    quality = function(item) return item.quality end,
+    name = function(item) return item.name and lower(gsub(item.name, '[%s%p]+', '')) end,
+	equipslot = function(item) return inventorySlotIDs[item.equipSlot] end,
+	maxstack = function(item) return item.maxStack end,
+	price = function(item) return item.sellPrice end,
+	tooltip = function(item)
+		scanner:ClearLines()
+		scanner:SetHyperlink(item.link)
+		local tooltipText = ''
+		for i = 2, scanner:NumLines() do
+			local left = _G["ExtrasAutomation_ScanningTooltipTextLeft"..i]:GetText()
+			local right = _G["ExtrasAutomation_ScanningTooltipTextRight"..i]:GetText()
+
+			tooltipText = tooltipText .. (left or '')
+			tooltipText = tooltipText .. (right or '')
+		end
+		return tooltipText
+	end,
+}
+
+local function formatCondition(filterName, operator, value, amount)
+	if tonumber(value) then
+		return format('((filterFuncs.%s(item) and filterFuncs.%s(item) %s %s) and %s)', filterName, filterName, operator, value, amount)
+	elseif operator == '~=' then
+		return format('not find(filterFuncs.%s(item) or "", "%s", 1, true) and %s', filterName, lower(value), amount)
+	else
+		return format('find(filterFuncs.%s(item) or "", "%s", 1, true) and %s', filterName, lower(value), amount)
+	end
+end
+
+local function parseCollectionString(conditions)
+    local formattedConditions = conditions
+
+    for condition in gmatch(formattedConditions, '%S+@[<>=~!]*%S+') do
+        local pair, filterName, operator, value, amount = match(condition, '(([^%s%p]*)@(%p*)([^%s%p]*)@*([+%d]*))')
+		if filterName and filter[filterName] and value then
+			local formattedCondition = formatCondition(filterName, operator ~= '' and operator or '==',
+														value, amount ~= '' and (tonumber(amount) or format("'%s'", amount or 1)) or 1)
+			formattedConditions = gsub(formattedConditions, gsub(pair, "([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1"), formattedCondition)
+		else
+			core:print('FORMATTING', L["Automations"])
+			return
+		end
+    end
+
+    if formattedConditions ~= conditions then
+        return format([[
+            return function(filterFuncs)
+                return function(item)
+                    return %s
+                end
+            end
+        ]], formattedConditions)
+    end
+end
+
+local function updateCollectionMethods(collectionMethod)
+	if not find(collectionMethod or "", '%S+') then
+		return
+	end
+
+	local parsedString = parseCollectionString(collectionMethod)
+	if not parsedString then return end
+
+	local luaFunction, errorMsg = loadstring(parsedString)
+	if luaFunction then
+		setfenv(luaFunction, {find = string.find})
+		local success, customFuncGenerator = pcall(luaFunction)
+		if not success then
+			core:print('FAIL', L["Automations"], customFuncGenerator)
+		else
+			local customFunc = customFuncGenerator(filter)
+
+			if type(customFunc) == "function" then
+				return function(itemInfo)
+					return itemInfo and customFunc(itemInfo) or false
+				end
+			else
+				core:print('LUA', L["Automations"], L["The generated custom looting method did not return a function."])
+			end
+		end
+	else
+		core:print('LUA', L["Automations"], errorMsg)
+	end
+end
+
+local function getItemDetails(itemID)
+	local itemName, itemLink, quality, itemLevel, useLevel, itemType, itemSubType, maxStack, equipSlot, _, sellPrice = GetItemInfo(itemID)
+	return {
+		id = tonumber(itemID),
+		name = itemName,
+		link = itemLink,
+		quality = quality,
+		ilvl = itemLevel,
+		useLevel = useLevel,
+		type = itemType,
+		subType = itemSubType,
+		equipSlot = equipSlot,
+		maxStack = maxStack,
+		sellPrice = sellPrice,
+	}
+end
+
+local function createTex(button, texture, size)
+	local tex = button:CreateTexture(nil, "ARTWORK")
+	tex:SetTexture(texture)
+	tex:Point("CENTER")
+	tex:Size(size)
+
+	return tex
+end
+
+
+local function updatePopupDialog(pending, popupsCount, index, itemLink, amount)
+	StaticPopupDialogs["CONFIRM_BUY_ITEM"..popupsCount] = {
+		text = format("%s %s x%s?", BANKSLOTPURCHASE, itemLink, amount),
+		button1 = YES,
+		button2 = NO,
+		OnAccept = function()
+			BuyMerchantItem(index, amount)
+			if #pending > 0 then
+				StaticPopup_Hide("CONFIRM_BUY_ITEM"..popupsCount)
+				updatePopupDialog(pending, popupsCount, unpack(tremove(pending)))
+				StaticPopup_Show("CONFIRM_BUY_ITEM"..popupsCount)
+				return true
+			end
+		end,
+		OnCancel = function()
+			if #pending > 0 then
+				StaticPopup_Hide("CONFIRM_BUY_ITEM"..popupsCount)
+				updatePopupDialog(pending, popupsCount, unpack(tremove(pending)))
+				StaticPopup_Show("CONFIRM_BUY_ITEM"..popupsCount)
+				return true
+			end
+		end,
+		timeout = 0,
+		whileDead = true,
+		hideOnEscape = true,
+	}
+end
+
+local function buyMerchantStuff(collectionMethod, failsafe, buyOne)
+	local index = 1
+	local staticOffset = 1
+	local pending = {}
+	local itemLink = GetMerchantItemLink(index)
+	while itemLink do
+		local itemID = tonumber(match(itemLink, "item:(%d+)"))
+		local buyoutAmount = collectionMethod(getItemDetails(itemID))
+		if buyoutAmount then
+			if buyOne then
+				buyoutAmount = 1
+			end
+            if failsafe then
+				local popupsCount = staticOffset
+				local staticbuyoutAmount
+				if buyoutAmount == '+' then
+					local maxStack = select(8, GetItemInfo(itemID))
+					local heldAmount = maxStack - GetItemCount(itemID)
+					staticbuyoutAmount = heldAmount > 0 and heldAmount or maxStack
+				else
+					local amount1, amount2 = match(buyoutAmount, '(%d*)+(%d*)')
+					local buyoutAmountVal = tonumber(amount1 or amount2)
+					if buyoutAmountVal then
+						local topAmount = buyoutAmountVal - GetItemCount(itemID)
+						if topAmount > 0 then
+							staticbuyoutAmount = topAmount
+						end
+					else
+						staticbuyoutAmount = tonumber(buyoutAmount)
+					end
+				end
+				if staticbuyoutAmount then
+					if popupsCount > 4 then
+						tinsert(pending, 1, {index, itemLink, staticbuyoutAmount})
+					else
+						updatePopupDialog(pending, popupsCount, index, itemLink, staticbuyoutAmount)
+						StaticPopup_Show("CONFIRM_BUY_ITEM"..popupsCount)
+					end
+					staticOffset = staticOffset + 1
+				end
+            elseif buyoutAmount == '+' then
+				local maxStack = select(8,GetItemInfo(itemID))
+				local heldAmount = maxStack - GetItemCount(itemID)
+				BuyMerchantItem(index, heldAmount > 0 and heldAmount or maxStack)
+			else
+				local amount1, amount2 = match(buyoutAmount, '(%d*)+(%d*)')
+				local buyoutAmountVal = tonumber(amount1 or amount2)
+				if buyoutAmountVal then
+					local topAmount = buyoutAmountVal - GetItemCount(itemID)
+					if topAmount > 0 then
+						BuyMerchantItem(index, topAmount)
+					end
+				else
+					BuyMerchantItem(index, tonumber(buyoutAmount))
+				end
+			end
+		end
+		index = index + 1
+		itemLink = GetMerchantItemLink(index)
+	end
+end
+
+local function probeMerchantStuff(collectionMethod)
+	local index = 1
+	local itemLink = GetMerchantItemLink(index)
+	while itemLink do
+		local itemID = tonumber(match(itemLink, "item:(%d+)"))
+		local buyoutAmount = collectionMethod(getItemDetails(itemID))
+		if buyoutAmount then
+			return true
+		else
+			index = index + 1
+			itemLink = GetMerchantItemLink(index)
+		end
+	end
+end
+
 
 P["Extras"]["blizzard"][modName] = {
 	["ConfirmRolls"] = {
 		["enabled"] = false,
 	},
-	["PickupQuest"] = {
+	["AutoPickup"] = {
 		["enabled"] = false,
-		["itemsToPickUp"] = {},
+		["collectionMethod"] = "type@"..select(12,GetAuctionItemClasses()),
+	},
+	["SwiftBuy"] = {
+		["enabled"] = false,
+		["modifier"] = "Alt",
+		["selectedSet"] = 0,
+		["defaultCollectionMethod"] = "",
+		["defaultFailsafe"] = true,
+		["sets"] = {},
 	},
 	["FillDelete"] = {
 		["enabled"] = false,
@@ -38,11 +305,16 @@ P["Extras"]["blizzard"][modName] = {
 }
 
 function mod:LoadConfig(db)
+	local selectedItemType = 0
+    local function selectedSet() return db.SwiftBuy.selectedSet end
+    local function selectedSetData()
+		return core:getSelected("blizzard", modName, format("SwiftBuy.sets[%s]", selectedSet() or ""), 0)
+	end
 	core.blizzard.args[modName] = {
 		type = "group",
 		name = L[modName],
 		get = function(info) return db[info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
-		set = function(info, value) db[info[#info-1]][gsub(info[#info], info[#info-1], '')] = value mod:Toggle(db) end,
+		set = function(info, value) db[info[#info-1]][gsub(info[#info], info[#info-1], '')] = value self:Toggle(db) end,
 		disabled = function(info) return info[#info] ~= modName and not match(info[#info], '^enabled') and not db[info[#info-1]].enabled end,
 		args = {
 			ConfirmRolls = {
@@ -57,64 +329,256 @@ function mod:LoadConfig(db)
 					},
 				},
 			},
-			PickupQuest = {
+			AutoPickup = {
 				type = "group",
-				name = L["Quest Items and Money"],
+				name = L["Auto Pickup"],
 				guiInline = true,
 				args = {
-					enabledPickupQuest = {
+					enabledAutoPickup = {
 						order = 1,
 						type = "toggle",
 						width = "full",
 						name = core.pluginColor..L["Enable"],
-						desc = L["Picks up quest items and money automatically."],
+						desc = L["Picks up items and money automatically."],
 					},
-					addItem = {
+					collectionMethod = {
 						order = 2,
 						type = "input",
-						name = L["Add Item (by ID)"],
-						desc = L["More items to pick up automatically."],
-						get = function() return "" end,
-						set = function(_, value)
-							if value and GetItemInfo(value) then
-								db.PickupQuest.itemsToPickUp[value] = true
-								local _, link, _, _, _, _, _, _, _, icon = GetItemInfo(value)
-								core:print('ADDED', '\124T'..gsub(icon, '\124', '\124\124')..':16:16\124t'..link)
-							end
-						end,
+						multiline = true,
+						width = "double",
+						name = L["Collection Method"],
+						desc = L["Syntax: filter@value\n\n"..
+								"Available filters:\n"..
+								" id@number - matches itemID,\n"..
+								" name@string - matches name,\n"..
+								" type@string - matches type,\n"..
+								" subtype@string - matches subtype,\n"..
+								" ilvl@number - matches ilvl,\n"..
+								" uselevel@number - matches equip level,\n"..
+								" quality@number - matches quality,\n"..
+								" equipslot@number - matches inventorySlotID,\n"..
+								" maxstack@number - matches stack limit,\n"..
+								" price@number - matches sell price,\n"..
+								" tooltip@string - matches tooltip text.\n\n"..
+								"All string matches are case-insensitive and match only alphanumeric symbols.\n"..
+								"Standard Lua logic for branching (and/or/parenthesis/etc.) applies.\n\n"..
+								"Example usage (priest t8 or Shadowmourne):\n"..
+								"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."],
 					},
-					removeItem = {
+					itemTypeInfo = {
 						order = 3,
 						type = "select",
-						name = L["Remove Item"],
-						desc = "",
-						get = function() return "" end,
-						set = function(_, value)
-							db.PickupQuest.itemsToPickUp[value] = nil
-							local _, link, _, _, _, _, _, _, _, icon = GetItemInfo(value)
-							core:print('REMOVED', '\124T'..gsub(icon, '\124', '\124\124')..':16:16\124t'..link)
-						end,
+						width = "double",
+						name = L["Available Item Types"],
+						desc = L["Lists all available item subtypes for each available item type."],
+						get = function() return selectedItemType end,
+						set = function(_, value) selectedItemType = value end,
 						values = function()
-							local values = {}
-							for id in pairs(db.PickupQuest.itemsToPickUp or {}) do
-								local name, _, _, _, _, _, _, _, _, icon = GetItemInfo(id)
-								icon = icon and "|T"..icon..":0|t" or ""
-								values[id] = format("%s %s (%s)", icon, name or "", id)
+							local dropdownValues = {[1] = ""}
+							for _, itemType in ipairs({GetAuctionItemClasses()}) do
+								tinsert(dropdownValues, itemType)
 							end
-							return values
+							return dropdownValues
 						end,
-						sorting = function()
-							local sortedKeys = {}
-							for id in pairs(db.PickupQuest.itemsToPickUp or {}) do
-								tinsert(sortedKeys, id)
+						hidden = function() return not db.AutoPickup.enabled end,
+					},
+					subTypeInfo = {
+						order = 4,
+						type = "description",
+						name = function()
+							return tconcat({GetAuctionItemSubClasses(selectedItemType-1)}, ", ")
+						end,
+						hidden = function() return not (db.AutoPickup.enabled and selectedItemType and selectedItemType > 1) end,
+					},
+				},
+			},
+			SwiftBuy = {
+				type = "group",
+				name = L["Swift Buy"],
+				guiInline = true,
+				args = {
+					enabledSwiftBuy = {
+						order = 1,
+						type = "toggle",
+						name = core.pluginColor..L["Enable"],
+						desc = L["Buys out items automatically."],
+					},
+					modifier = {
+						order = 2,
+						type = "select",
+						name = L["Modifier"],
+						desc = L["Holding this key while interacting with a merchant buys all items that pass the Auto Buy set method.\n"..
+								"Hold the modifier key and click the buyout list entry to purchase a single item, regardless of the '@amount' rule."],
+						values = E.db.Extras.modifiers,
+						hidden = function() return not db.SwiftBuy.enabled end,
+					},
+					failsafe = {
+						order = 3,
+						type = "toggle",
+						name = L["Failsafe"],
+						desc = L["Enables popup confirmation dialog."],
+						get = function() return selectedSet() == 0 and db.SwiftBuy.defaultFailsafe or selectedSetData().failsafe end,
+						set = function(_, value)
+							if selectedSet() == 0 then
+								db.SwiftBuy.defaultFailsafe = value
+							else
+								selectedSetData().failsafe = value
 							end
-							tsort(sortedKeys, function(a, b)
-								local nameA = GetItemInfo(a) or ""
-								local nameB = GetItemInfo(b) or ""
-								return nameA < nameB
-							end)
-							return sortedKeys
+							self:Toggle(db)
 						end,
+						hidden = function() return not db.SwiftBuy.enabled end,
+					},
+					color = {
+						order = 4,
+						type = "color",
+						name = L["Text Color"],
+						desc = "",
+						get = function() return unpack(selectedSet() == 0 and {} or selectedSetData().color or {}) end,
+						set = function(_, r, g, b)
+							selectedSetData().color = {r, g, b}
+							self:Toggle(db)
+						end,
+						disabled = function() return selectedSet() == 0 end,
+						hidden = function() return not db.SwiftBuy.enabled end,
+					},
+					addSet = {
+						order = 5,
+						type = "execute",
+						name = L["Add Set"],
+						desc = "",
+						func = function()
+							tinsert(db.SwiftBuy.sets, 1,
+									{["failsafe"] = true,
+									["title"] = "",
+									["collectionMethod"] = "",
+									["icon"] = "",
+									["color"] = {1,1,1}})
+							db.SwiftBuy.selectedSet = 1
+							self:Toggle(db)
+						end,
+						hidden = function() return not db.SwiftBuy.enabled end,
+					},
+					deleteSet = {
+						order = 6,
+						type = "execute",
+						name = L["Delete Set"],
+						desc = "",
+						func = function()
+							tremove(db.SwiftBuy.sets, selectedSet())
+							db.SwiftBuy.selectedSet = 0
+							self:Toggle(db)
+						end,
+						disabled = function() return selectedSet() == 0 end,
+						hidden = function() return not db.SwiftBuy.enabled end,
+					},
+					title = {
+						order = 7,
+						type = "input",
+						name = L["Title"],
+						desc = "",
+						get = function() return selectedSet() == 0 and L["Auto Buy"] or selectedSetData().title end,
+						set = function(_, value) selectedSetData().title = value end,
+						disabled = function() return selectedSet() == 0 end,
+						hidden = function() return not db.SwiftBuy.enabled end,
+					},
+					selectedSet = {
+						order = 8,
+						type = "select",
+						name = L["Select Set"],
+						desc = "",
+						get = function() return tostring(selectedSet()) end,
+						set = function(_, value) db.SwiftBuy.selectedSet = tonumber(value) end,
+						values = function()
+							local dropdownValues = {[0] = L["Auto Buy"]}
+							for i, set in ipairs(db.SwiftBuy.sets) do
+								dropdownValues[tostring(i)] = set.title
+							end
+							return dropdownValues
+						end,
+						hidden = function() return not db.SwiftBuy.enabled end,
+					},
+					icon = {
+						order = 9,
+						type = "input",
+						width = "double",
+						name = L["Icon"],
+						desc = "",
+						get = function() return selectedSet() == 0 and "" or selectedSetData().icon end,
+						set = function(_, value)
+							selectedSetData().icon = value
+							self:Toggle(db)
+						end,
+						hidden = function() return not db.SwiftBuy.enabled end,
+					},
+					collectionMethod = {
+						order = 10,
+						type = "input",
+						multiline = true,
+						width = "double",
+						name = L["Collection Method"],
+						desc = L["Syntax: filter@value@amount\n\n"..
+								"Available filters:\n"..
+								" id@number@amount(+)/+ - matches itemID,\n"..
+								" name@string@amount(+)/+ - matches name,\n"..
+								" type@string@amount(+)/+ - matches type,\n"..
+								" subtype@string@amount(+)/+ - matches subtype,\n"..
+								" ilvl@number@amount(+)/+ - matches ilvl,\n"..
+								" uselevel@number@amount(+)/+ - matches equip level,\n"..
+								" quality@number@amount(+)/+ - matches quality,\n"..
+								" equipslot@number@amount(+)/+ - matches inventorySlotID,\n"..
+								" maxstack@number@amount(+)/+ - matches stack limit,\n"..
+								" price@number@amount(+)/+ - matches sell price,\n"..
+								" tooltip@string@amount(+)/+ - matches tooltip text.\n\n"..
+								"The optional 'amount' part could be:\n"..
+								"  a number - to purchase a static amount,\n"..
+								"  a + sign - to replenish the existing partial stack or purchase a new one,\n"..
+								"  both (e.g. 5+) - to purchase enough items to reach a specified total (in this case, 5),\n"..
+								"  ommited - defaults to 1.\n\n"..
+								"All string matches are case-insensitive and match only alphanumeric symbols.\n"..
+								"Standard Lua logic for branching (and/or/parenthesis/etc.) applies.\n\n"..
+								"Example usage (priest t8 or Shadowmourne):\n"..
+								"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."],
+						get = function()
+							if selectedSet() == 0 then
+								return db.SwiftBuy.defaultCollectionMethod
+							else
+								return selectedSetData().collectionMethod
+							end
+						end,
+						set = function(_, value)
+							if selectedSet() == 0 then
+								db.SwiftBuy.defaultCollectionMethod = value
+							else
+								selectedSetData().collectionMethod = value
+							end
+							self:Toggle(db)
+						end,
+						hidden = function() return not db.SwiftBuy.enabled end,
+					},
+					itemTypeInfo = {
+						order = 11,
+						type = "select",
+						width = "double",
+						name = L["Available Item Types"],
+						desc = L["Lists all available item subtypes for each available item type."],
+						get = function() return selectedItemType end,
+						set = function(_, value) selectedItemType = value end,
+						values = function()
+							local dropdownValues = {[1] = ""}
+							for _, itemType in ipairs({GetAuctionItemClasses()}) do
+								tinsert(dropdownValues, itemType)
+							end
+							return dropdownValues
+						end,
+						hidden = function() return not db.SwiftBuy.enabled end,
+					},
+					subTypeInfo = {
+						order = 12,
+						type = "description",
+						name = function()
+							return tconcat({GetAuctionItemSubClasses(selectedItemType-1)}, ", ")
+						end,
+						hidden = function() return not (db.SwiftBuy.enabled and selectedItemType and selectedItemType > 1) end,
 					},
 				},
 			},
@@ -126,7 +590,7 @@ function mod:LoadConfig(db)
 					enabledFillDelete = {
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
-						desc = L["Fills 'DELETE' field automatically."],
+						desc = L["Automatically fills the 'DELETE' field."],
 					},
 				},
 			},
@@ -138,7 +602,7 @@ function mod:LoadConfig(db)
 					enabledGossip = {
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
-						desc = L["Selects the first gossip option if it's the only one available unless holding a modifier.\nCareful with important event triggers, there's no fail-safe mechanism."],
+						desc = L["Selects the first gossip option if it's the only one available unless holding a modifier.\nBe careful with important event triggers; there is no fail-safe mechanism."],
 					},
 				},
 			},
@@ -183,15 +647,16 @@ function mod:Automations(db)
 		self:Unhook(GossipFrame, 'OnShow')
 	end
 
-	if db.PickupQuest.enabled then
-		local itemsToPickUp = db.PickupQuest.itemsToPickUp or {}
+	if db.AutoPickup.enabled then
+		local collectionMethod = updateCollectionMethods(db.AutoPickup.collectionMethod) or function() return end
 		self:RegisterEvent('LOOT_OPENED', function()
 			for i = 1, GetNumLootItems() do
 				local lootLink = GetLootSlotLink(i)
 				if lootLink then
 					local itemID = match(lootLink, 'item:(%d+)')
-					local itemType = select(6,GetItemInfo(itemID))
-					if (itemType and itemType == localizedQuestItemString) or itemsToPickUp[itemID] then
+					local itemInfo = getItemDetails(itemID)
+
+					if collectionMethod(itemInfo) then
 						LootSlot(i)
 					end
 				elseif i == 1 and select(4,GetLootSlotInfo(i)) == 0 then
@@ -201,6 +666,83 @@ function mod:Automations(db)
 		end)
 	else
 		self:UnregisterEvent('LOOT_OPENED')
+	end
+
+	if db.SwiftBuy.enabled then
+		local swiftBuy = db.SwiftBuy
+		local modifier = swiftBuy.modifier or 'Alt'
+		local isModDown = modifier == 'ANY'
+							and function() return IsModifierKeyDown() end
+							or function() return _G['Is'..modifier..'KeyDown']() end
+
+		methodFuncs = {['autobuy'] = updateCollectionMethods(swiftBuy.defaultCollectionMethod) or function() return end}
+
+		for _, entry in ipairs(swiftBuy.sets) do
+			local r, g, b = unpack(entry.color or {1,1,1})
+			tinsert(methodFuncs,
+					{updateCollectionMethods(entry.collectionMethod) or function() return end,
+					(not entry.icon or entry.icon == "") and "" or format("|T%s:12|t", entry.icon),
+					format("|cff%02x%02x%02x", r * 255, g * 255, b * 255),
+					})
+		end
+
+		if not swiftBuyButton then
+			swiftBuyButton = CreateFrame("Button", "SwiftBuyButton", MerchantFrame, "UIPanelButtonTemplate")
+			swiftBuyButton:Size(24)
+			swiftBuyButton:ClearAllPoints()
+			swiftBuyButton:Point("TOPLEFT", MerchantFrame, "TOPLEFT", 20, -20)
+			swiftBuyButton:SetNormalTexture(createTex(swiftBuyButton, "Interface\\GossipFrame\\VendorGossipIcon", 24))
+			swiftBuyButton:SetPushedTexture(createTex(swiftBuyButton, "Interface\\GossipFrame\\VendorGossipIcon", 24))
+			swiftBuyButton:SetHighlightTexture(createTex(swiftBuyButton, "Interface\\GossipFrame\\VendorGossipIcon", 24))
+			swiftBuyButton:SetScript("OnMouseDown", function(self)
+				self:Point("TOPLEFT", MerchantFrame, "TOPLEFT", 21, -21)
+			end)
+			swiftBuyButton:SetScript("OnMouseUp", function(self)
+				self:Point("TOPLEFT", MerchantFrame, "TOPLEFT", 20, -20)
+			end)
+			swiftBuyButton:SetScript("OnEnter", function(self)
+				for i = 1, #swiftBuy.sets do
+					if probeMerchantStuff(methodFuncs[i][1]) then
+						return
+					end
+				end
+				GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+				GameTooltip:SetText(BROWSE_NO_RESULTS)
+				GameTooltip:Show()
+			end)
+			swiftBuyButton:SetScript("OnLeave", function()
+				GameTooltip:Hide()
+			end)
+			swiftBuyButton.dropdownMenu = CreateFrame("Frame", "SwiftBuyDropdown", UIParent, "UIDropDownMenuTemplate")
+
+			local function initializeDropdown(self, level)
+				for i, entry in ipairs(swiftBuy.sets) do
+					if probeMerchantStuff(methodFuncs[i][1]) then
+						local info = UIDropDownMenu_CreateInfo()
+						info.text = format("%s%s%s", methodFuncs[i][2], methodFuncs[i][3], entry.title)
+						info.menuList = entry.title
+						info.func = function()
+							buyMerchantStuff(methodFuncs[i][1], entry.failsafe, isModDown())
+						end
+						UIDropDownMenu_AddButton(info, level)
+					end
+				end
+			end
+			UIDropDownMenu_Initialize(swiftBuyButton.dropdownMenu, initializeDropdown, "MENU")
+
+			swiftBuyButton:SetScript("OnClick", function(self)
+				ToggleDropDownMenu(1, nil, self.dropdownMenu, self, 0, 0)
+			end)
+		end
+		self:RegisterEvent('MERCHANT_SHOW', function()
+			if isModDown() then
+				buyMerchantStuff(methodFuncs['autobuy'], swiftBuy.defaultFailsafe)
+			end
+		end)
+	elseif swiftBuyButton then
+		self:UnregisterEvent('MERCHANT_SHOW')
+		swiftBuyButton:Hide()
+		swiftBuyButton = nil
 	end
 
 	if db.AcceptQuest.enabled then
@@ -216,7 +758,7 @@ function mod:Automations(db)
 		self:RegisterEvent('QUEST_ACCEPT_CONFIRM', function()
 			if IsModifierKeyDown() then
 				ConfirmAcceptQuest()
-				StaticPopup_Hide("QUEST_ACCEPT_CONFIRM")
+				StaticPopup_Hide('QUEST_ACCEPT_CONFIRM')
 			end
 		end)
 		self:RegisterEvent('QUEST_PROGRESS', function()
@@ -240,17 +782,17 @@ function mod:Automations(db)
 		self:RegisterEvent('CONFIRM_LOOT_ROLL', function(_, id, rollType)
 			if not id or not rollType then return end
 			ConfirmLootRoll(id, rollType)
-			StaticPopup_Hide("CONFIRM_LOOT_ROLL")
+			StaticPopup_Hide('CONFIRM_LOOT_ROLL')
 		end)
 		self:RegisterEvent('CONFIRM_DISENCHANT_ROLL', function(_, id, rollType)
 			if not id or not rollType then return end
 			ConfirmLootRoll(id, rollType)
-			StaticPopup_Hide("CONFIRM_LOOT_ROLL")
+			StaticPopup_Hide('CONFIRM_LOOT_ROLL')
 		end)
 		self:RegisterEvent('LOOT_BIND_CONFIRM', function(_, id, rollType)
 			if not id or not rollType then return end
 			ConfirmLootRoll(id, rollType)
-			StaticPopup_Hide("CONFIRM_LOOT_ROLL")
+			StaticPopup_Hide('CONFIRM_LOOT_ROLL')
 		end)
 	else
 		self:UnregisterEvent('CONFIRM_LOOT_ROLL')

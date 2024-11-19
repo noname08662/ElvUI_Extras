@@ -473,8 +473,8 @@ function mod:LoadConfig()
 							for id, cat in pairs(db.catList) do
 								if id == value then
 									db.catList[id] = nil
-									for cat, spellId in pairs(db.catList) do
-										if id == spellId then db.catList[cat] = nil end
+									for category, spellId in pairs(db.catList) do
+										if id == spellId then db.catList[category] = nil end
 									end
 									print(format(core.customColorAlpha..L["Category \"%s\" removed."],
 												core.customColorBeta..cat..core.customColorAlpha))
@@ -847,6 +847,9 @@ end
 
 function mod:Toggle(db)
 	setupDRUnits(db.units)
+	if core.reload then
+		twipe(framelist)
+	end
 	if next(framelist) then
 		self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", combatLogCheck)
 		self:RegisterEvent("PLAYER_TARGET_CHANGED", combatLogCheck)

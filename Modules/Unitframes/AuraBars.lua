@@ -299,7 +299,7 @@ function mod:UpdatePostUpdateAuraBars()
 	for _, frame in ipairs(units) do
 		local unitframeType = frame.unitframeType
 		if db[unitframeType] then
-			if frame.db.aurabar.enable then
+			if frame.db.aurabar and frame.db.aurabar.enable then
 				local auraBars = frame.AuraBars
 
 				auraBars.gap = db[unitframeType].enabled and -frame.db.aurabar.height or (-frame.BORDER + frame.SPACING*3)
@@ -328,8 +328,10 @@ end
 
 function mod:Toggle()
 	local enable
-	for _, enabled in pairs(E.db.Extras.unitframes[modName].units) do
-		if enabled then enable = true break end
+	if not core.reload then
+		for _, enabled in pairs(E.db.Extras.unitframes[modName].units) do
+			if enabled then enable = true break end
+		end
 	end
 	if enable then
 		if not self:IsHooked(UF, "Construct_AuraBars") then self:SecureHook(UF, "Construct_AuraBars", self.Construct_AuraBars) end

@@ -7,46 +7,53 @@ local LSM = E.Libs.LSM
 local LibProcessable = LibStub("LibProcessable")
 
 local modName = mod:GetName()
-local buttonMap, lastScan, equippedBags, tooltipInfo = {}, {}, {}, {}
-local globalSort, initialized = {}, {}
-local incombat = false
+local buttonMap, itemCounts, tooltipInfo = {}, {}, {}
+local equipmentSets = {}
+local activeFilters = {}
+local removingBag = false
+local initialized = {}
+
 mod.localhooks = {}
+mod.buttonMap = buttonMap
+mod.itemCounts = itemCounts
 
 local prospectingSpellID = 31252
 local disenchantingSpellID = 13262
 local millingSpellID = 51005
 local lockpickingSpellID = 1804
 
-local _G, unpack, pairs, ipairs, select, print = _G, unpack, pairs, ipairs, select, print
+local _G, unpack, pairs, ipairs, select, print, next = _G, unpack, pairs, ipairs, select, print, next
 local tonumber, tostring, loadstring, pcall, type = tonumber, tostring, loadstring, pcall, type
-local tinsert, tremove, tsort = table.insert, table.remove, table.sort
-local min, max, floor, ceil, huge = min, max, floor, ceil, math.huge
-local find, format, lower, match, gsub = string.find, string.format, string.lower, string.match, string.gsub
+local tinsert, tremove, twipe, tsort, tconcat = table.insert, table.remove, table.wipe, table.sort, table.concat
+local min, max, floor, ceil, huge, pi = min, max, floor, ceil, math.huge, math.pi
+local find, format, lower, match, gmatch, gsub = string.find, string.format, string.lower, string.match, string.gmatch, string.gsub
 local UIParent, GameTooltip_Hide, InCombatLockdown, UnitFactionGroup = UIParent, GameTooltip_Hide, InCombatLockdown, UnitFactionGroup
 local GetItemInfo, GetInventoryItemTexture, GetBagName = GetItemInfo, GetInventoryItemTexture, GetBagName
-local BankButtonIDToInvSlotID, ContainerIDToInventoryID, GetContainerItemID = BankButtonIDToInvSlotID, ContainerIDToInventoryID, GetContainerItemID
+local GetItemCount, GetCursorInfo = GetItemCount, GetCursorInfo
+local ContainerIDToInventoryID, GetContainerItemID = ContainerIDToInventoryID, GetContainerItemID
 local GetContainerNumSlots, GetContainerNumFreeSlots = GetContainerNumSlots, GetContainerNumFreeSlots
 local GetCurrencyListInfo, GetCurrencyListSize, GetItemQualityColor = GetCurrencyListInfo, GetCurrencyListSize, GetItemQualityColor
 local StackSplitFrame, StackSplitOkayButton = StackSplitFrame, StackSplitOkayButton
 local StackSplitRightButton, StackSplitLeftButton = StackSplitRightButton, StackSplitLeftButton
-local BuyMerchantItem, GetAuctionItemClasses, ClearCursor = BuyMerchantItem, GetAuctionItemClasses, ClearCursor
-local IsModifierKeyDown, GetSpellInfo, GetSpellLink, GetKeyRingSize = IsModifierKeyDown, GetSpellInfo, GetSpellLink, GetKeyRingSize
+local BuyMerchantItem, GetMerchantItemLink = BuyMerchantItem, GetMerchantItemLink
+local GetAuctionItemClasses, GetAuctionItemSubClasses = GetAuctionItemClasses, GetAuctionItemSubClasses
+local GetSpellInfo, GetSpellLink, GetKeyRingSize = GetSpellInfo, GetSpellLink, GetKeyRingSize
+local IsModifierKeyDown, IsAltKeyDown, IsShiftKeyDown, ClearCursor = IsModifierKeyDown, IsAltKeyDown, IsShiftKeyDown, ClearCursor
+local GetNumEquipmentSets, GetEquipmentSetInfo, GetEquipmentSetLocations = GetNumEquipmentSets, GetEquipmentSetInfo, GetEquipmentSetLocations
+local EquipmentManager_UnpackLocation, GetInventoryItemID = EquipmentManager_UnpackLocation, GetInventoryItemID
 local ERR_NOT_IN_COMBAT, ERR_INVALID_ITEM_TARGET, ERR_SPLIT_FAILED = ERR_NOT_IN_COMBAT, ERR_INVALID_ITEM_TARGET, ERR_SPLIT_FAILED
 local CURRENCY, NUM_BAG_SLOTS, EMPTY = CURRENCY, NUM_BAG_SLOTS, EMPTY
+local NUM_FREE_SLOTS, FILTERS = NUM_FREE_SLOTS, FILTERS
+local NUM_BANKBAGSLOTS = NUM_BANKBAGSLOTS
 
 local B_PickupItem, B_GetItemID, B_GetItemInfo = B.PickupItem, B.GetItemID, B.GetItemInfo
 local B_GetContainerFrame, B_SplitItem = B.GetContainerFrame, B.SplitItem
-local E_Delay, E_Flash, E_StopFlash = E.Delay, E.Flash, E.StopFlash
-local updatePending = false
 
+local holderTT = CreateFrame("GameTooltip", "ExtrasBags_DescTooltip", nil, "GameTooltipTemplate")
 local scanner = CreateFrame("GameTooltip", "ExtrasBags_ScanningTooltip", nil, "GameTooltipTemplate")
 scanner:SetOwner(WorldFrame, "ANCHOR_NONE")
 
 local Weapon, Armor, Container, Consumable, Glyph, TradeGoods, Projectile, Quiver, Recipe, Gem, Miscellaneous, Quest = GetAuctionItemClasses()
-local _, _, Leather = GetAuctionItemSubClasses(2)
-local _, _, _, MetalStone, _, Herb, Enchanting, _, Parts = GetAuctionItemSubClasses(6)
-local Arrow, Bullet = GetAuctionItemSubClasses(7)
-local Inscription = select(12,GetAuctionItemSubClasses(9))
 
 local itemTypePriority = {
     [Weapon] = 1,
@@ -109,58 +116,11 @@ local inventorySlotIDs = {
     ["INVTYPE_RELIC"] = 18,
 }
 
-local filter = {
-	id = function(item) return item.id end,
-    type = function(item) return item.type and lower(gsub(gsub(item.type, '%s+', ''), '%p+', '')) end,
-    subtype = function(item) return item.subType and lower(gsub(gsub(item.subType, '%s+', ''), '%p+', '')) end,
-    ilvl = function(item) return item.ilvl end,
-    uselevel = function(item) return item.useLevel end,
-    quality = function(item) return item.quality end,
-    name = function(item) return item.name and lower(gsub(gsub(item.name, '%s+', ''), '%p+', '')) end,
-    equipslot = function(item) return inventorySlotIDs[item.equipSlot] end,
-    maxstack = function(item) return item.maxStack end,
-    price = function(item) return item.sellPrice end,
-	tooltip = function(item) return tooltipInfo[item.id] end,
-}
-
-local specialBagFilters = {
-    [1] = "subtype@"..Arrow, -- Quiver
-    [2] = "subtype@"..Bullet, -- Ammo Pouch
-	[4] = "id@6265", -- Soul Bag
-    [8] = "subtype@"..Leather, -- Leatherworking Bag
-    [16] = "subtype@"..Inscription, -- Inscription Bag
-    [32] = "subtype@"..Herb, -- Herb Bag
-    [64] = "subtype@"..Enchanting, -- Enchanting Bag
-    [128] = "subtype@"..Parts, -- Engineering Bag
-    [512] = "type@"..Gem, -- Gem Bag
-    [1024] = "subtype@"..gsub(gsub(MetalStone, '%s+', ''), '%p+', ''), -- Mining Bag
-}
-
-
-local function getItemTooltipText(bagID, slotID)
-    scanner:ClearLines()
-    if bagID == -1 then
-        scanner:SetInventoryItem("player", BankButtonIDToInvSlotID(slotID))
-    else
-        scanner:SetBagItem(bagID, slotID)
-    end
-
-    local tooltipText = ''
-    for i = 2, scanner:NumLines() do
-        local left = _G["ExtrasBags_ScanningTooltipTextLeft"..i]:GetText()
-        local right = _G["ExtrasBags_ScanningTooltipTextRight"..i]:GetText()
-
-        tooltipText = tooltipText .. (left or '')
-        tooltipText = tooltipText .. (right or '')
-    end
-
-    return tooltipText
-end
 
 local function getItemDetails(bagID, slotID, itemID)
     if not itemID then return nil end
 
-    local itemName, _, quality, itemLevel, useLevel, itemType, itemSubType, maxStack, equipSlot, _, sellPrice = GetItemInfo(itemID)
+    local itemName, itemLink, quality, itemLevel, useLevel, itemType, itemSubType, maxStack, equipSlot, _, sellPrice = GetItemInfo(itemID)
     local stackCount = select(2, B_GetItemInfo(nil, bagID, slotID))
 
     return {
@@ -175,14 +135,65 @@ local function getItemDetails(bagID, slotID, itemID)
         stackCount = stackCount,
         maxStack = maxStack,
 		sellPrice = sellPrice,
+		itemLink = itemLink,
+		bagID = bagID,
+		slotID = slotID,
     }
 end
 
+local filter = {
+	id = function(item) return item.id end,
+    type = function(item) return item.type and lower(gsub(item.type, '[%s%p]+', '')) end,
+    subtype = function(item) return item.subType and lower(gsub(item.subType, '[%s%p]+', '')) end,
+    ilvl = function(item) return item.ilvl end,
+    uselevel = function(item) return item.useLevel end,
+    quality = function(item) return item.quality end,
+    name = function(item) return item.name and lower(gsub(item.name, '[%s%p]+', '')) end,
+    equipslot = function(item) return inventorySlotIDs[item.equipSlot] end,
+    maxstack = function(item) return item.maxStack end,
+    price = function(item) return item.sellPrice end,
+	tooltip = function(item)
+		if tooltipInfo[item.id] then
+			return tooltipInfo[item.id]
+		else
+			scanner:ClearLines()
+			scanner:SetHyperlink(item.itemLink)
+
+			local tooltipText = ''
+			for i = 2, scanner:NumLines() do
+				local left = _G["ExtrasBags_ScanningTooltipTextLeft"..i]:GetText()
+				local right = _G["ExtrasBags_ScanningTooltipTextRight"..i]:GetText()
+
+				tooltipText = tooltipText .. (left or '')
+				tooltipText = tooltipText .. (right or '')
+			end
+			tooltipText = lower(gsub(tooltipText, '[%s%p]+', ''))
+			tooltipInfo[item.id] = tooltipText
+			return tooltipText
+		end
+	end,
+	set = function(item)
+		local sets = {}
+		local setsInfo = equipmentSets[item.id]
+		if setsInfo then
+			for _, equipmentSet in ipairs(setsInfo) do
+				local _, bank, bags, setSlotID, setBagID =
+					EquipmentManager_UnpackLocation(GetEquipmentSetLocations(equipmentSet.setName)[equipmentSet.equipmentSlot])
+				if (bags and item.slotID == setSlotID and item.bagID == setBagID) or (bank and setSlotID - 39 == item.slotID) then
+					sets[equipmentSet.setNameClean] = true
+				end
+			end
+		end
+		return sets
+	end,
+}
+
+
 local function defaultSort(a, b)
 	local bagIDA, slotIDA, bagIDB, slotIDB = a.bagID, a.slotID, b.bagID, b.slotID
-	local itemIDA, itemIDB = B_GetItemID(nil, bagIDA, slotIDA), B_GetItemID(nil, bagIDB, slotIDB)
+	local itemIDA, itemIDB = a.itemID or B_GetItemID(nil, bagIDA, slotIDA), b.itemID or B_GetItemID(nil, bagIDB, slotIDB)
 
-    if not itemIDA and not itemIDB then return false end
+    if not itemIDA and not itemIDB then return (bagIDA * 100) + slotIDA < (bagIDB * 100) + slotIDB end
     if not itemIDA then return false end
     if not itemIDB then return true end
 
@@ -215,38 +226,68 @@ local function defaultSort(a, b)
 	return itemA.stackCount > itemB.stackCount
 end
 
+local function updateSetsInfo()
+	twipe(equipmentSets)
+    for i = 1, GetNumEquipmentSets() do
+        local setName = GetEquipmentSetInfo(i)
+        if setName then
+            local locations = GetEquipmentSetLocations(setName)
+            if locations then
+                for slotID, location in pairs(locations) do
+                    if location then
+						local itemID
+                        local player, bank, bags, slot, bag = EquipmentManager_UnpackLocation(location)
+                        if bags then
+                            itemID = B_GetItemID(nil, bag, slot)
+						elseif bank then
+							itemID = B_GetItemID(nil, -1, slot - 39)
+                        elseif player then
+							itemID = GetInventoryItemID("player", slot)
+                        end
+                        if itemID then
+							if not equipmentSets[itemID] then
+								equipmentSets[itemID] = {}
+							end
+                            tinsert(equipmentSets[itemID], {setName = setName,
+															setNameClean = lower(gsub(setName, '[%s%p]+', '')),
+															equipmentSlot = slotID})
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
 
 local function formatCondition(filterName, operator, value)
-	if filterName == "name" then
-		return format('string.match(string.lower(filterFuncs.%s(item) or ""), "%s")', filterName, lower(value))
+	if filterName == "set" then
+		return format('filterFuncs.%s(item)[%q]', filterName, lower(value))
+	elseif filterName == "name" or filterName == "tooltip" then
+		return format('find(filterFuncs.%s(item) or "", "%s", 1, true)', filterName, lower(value))
 	else
 		if tonumber(value) then
 			return format('(filterFuncs.%s(item) and filterFuncs.%s(item) %s %s or false)', filterName, filterName, operator, value)
 		elseif operator == '~=' then
-			return format('not string.match(string.lower(filterFuncs.%s(item) or ""), "%s")', filterName, lower(value))
+			return format('not find(filterFuncs.%s(item) or "", "%s", 1, true)', filterName, lower(value))
 		else
-			return format('string.match(string.lower(filterFuncs.%s(item) or ""), "%s")', filterName, lower(value))
+			return format('find(filterFuncs.%s(item) or "", "%s", 1, true)', filterName, lower(value))
 		end
 	end
 end
 
 local function parseCollectionString(conditions)
     local formattedConditions = conditions
-    local startIndex = 1
 
-    while true do
-        local conditionStart, conditionEnd = find(formattedConditions, '%S+@[<>=~!]*%S+', startIndex)
-        if not conditionStart then break end
+    for condition in gmatch(formattedConditions, '%S+@[<>=~!]*%S+') do
+        local pair, filterName, operator, value = match(condition, '(([^%s%p]*)@(%p*)([^%s%p]*))')
 
-        local pair, filterName, operator, value = match(formattedConditions:sub(conditionStart, conditionEnd), '(([^%s%p]*)@(%p*)([^%s%p]*))')
         if filterName and filter[filterName] and value then
             operator = operator ~= '' and operator or '=='
             local formattedCondition = formatCondition(filterName, operator, value)
             formattedConditions = gsub(formattedConditions, pair, formattedCondition)
-            startIndex = conditionStart + #formattedCondition
         else
-			core:print('FORMATTING', L["Bags"])
-			return
+            core:print('FORMATTING', L["Bags"])
+            return
         end
     end
 
@@ -270,6 +311,7 @@ local function updateCollectionMethods(section)
 	local luaFunction, errorMsg = loadstring(parsedString)
 
 	if luaFunction then
+		setfenv(luaFunction, { find = string.find })
 		local success, customFuncGenerator = pcall(luaFunction)
 		if not success then
 			core:print('FAIL', L["Bags"], customFuncGenerator)
@@ -318,67 +360,336 @@ local function updateSortMethods(section)
 end
 
 
-local function updateLayouts()
-	E_Delay(nil, 0.1, function()
-		for _, isBank in ipairs({false, true}) do
-			local f = B_GetContainerFrame(nil, isBank)
-			if f and f.currentLayout then
-				local updatedSections = {}
-				if not incombat and updatePending then
-					updatedSections = mod:ApplyBagChanges(f, mod:ScanBags(f))
-					updatePending = false
-				end
-				local buttonSize = isBank and B.db.bankSize or B.db.bagSize
-				for _, section in ipairs(f.currentLayout.sections) do
-					if incombat then
-						section.frame.minimized = false
-					else
-						section.frame.minimized = section.db.minimized
-					end
-					mod:ToggleMinimizeSection(f, section, buttonSize, incombat, updatedSections)
-				end
+local function toggleLayoutMode(f, toggle)
+	if toggle then
+		for _, section in ipairs(f.currentLayout.sections) do
+			local sectionFrame = section.frame
+			if not sectionFrame.sizeCrosshairs then
+				sectionFrame.sizeCrosshairs = CreateFrame("Frame", '$parentSizeCrosshairs', sectionFrame)
+				sectionFrame.sizeCrosshairs:Point("CENTER", sectionFrame, "RIGHT")
+				sectionFrame.sizeCrosshairs:Size(30)
+				sectionFrame.sizeCrosshairs:EnableMouse(true)
+				sectionFrame.sizeCrosshairs:RegisterForDrag("LeftButton")
+				sectionFrame.sizeCrosshairs:SetMovable(true)
+				sectionFrame.sizeCrosshairs:SetClampedToScreen(true)
+
+				sectionFrame.sizeCrosshairs.tex = sectionFrame.sizeCrosshairs:CreateTexture(nil, "BACKGROUND")
+				sectionFrame.sizeCrosshairs.tex:SetAllPoints()
+				sectionFrame.sizeCrosshairs.tex:Size(20)
+				sectionFrame.sizeCrosshairs.tex:SetTexture(E.Media.Textures.Spark)
+				sectionFrame.sizeCrosshairs.tex:SetAlpha(0)
+
+				sectionFrame.sizeCrosshairs.tex1 = sectionFrame.sizeCrosshairs:CreateTexture(nil, "ARTWORK")
+				sectionFrame.sizeCrosshairs.tex1:Point("CENTER", sectionFrame.sizeCrosshairs, "CENTER", 5, 0)
+				sectionFrame.sizeCrosshairs.tex1:Size(20)
+				sectionFrame.sizeCrosshairs.tex1:SetRotation(-pi/2)
+				sectionFrame.sizeCrosshairs.tex1:SetTexture(E.Media.Arrows.ArrowUp)
+
+				sectionFrame.sizeCrosshairs.tex2 = sectionFrame.sizeCrosshairs:CreateTexture(nil, "ARTWORK")
+				sectionFrame.sizeCrosshairs.tex2:Point("CENTER", sectionFrame.sizeCrosshairs, "CENTER", -5, 0)
+				sectionFrame.sizeCrosshairs.tex2:Size(20)
+				sectionFrame.sizeCrosshairs.tex2:SetRotation(pi/2)
+				sectionFrame.sizeCrosshairs.tex2:SetTexture(E.Media.Arrows.ArrowUp)
+
+				sectionFrame.sizeCrosshairs:SetScript("OnEnter", function(self)
+					E:UIFrameFadeIn(self.tex, 0.2, self.tex:GetAlpha(), 0.5)
+				end)
+				sectionFrame.sizeCrosshairs:SetScript("OnLeave", function(self)
+					E:UIFrameFadeOut(self.tex, 0.2, self.tex:GetAlpha(), 0)
+				end)
+				sectionFrame.sizeCrosshairs:SetScript("OnMouseDown", function()
+					sectionFrame.header.highlight.tex:SetAlpha(0.8)
+					sectionFrame.header.highlight.tex2:SetAlpha(0)
+					E:UIFrameFadeIn(sectionFrame.header.highlight, 0.2, sectionFrame.header.highlight:GetAlpha(), 1)
+				end)
+				sectionFrame.sizeCrosshairs:SetScript("OnMouseUp", function()
+					sectionFrame.header.highlight.tex:SetAlpha(0.1)
+					sectionFrame.header.highlight.tex2:SetAlpha(1)
+					E:UIFrameFadeOut(sectionFrame.header.highlight, 0.2, sectionFrame.header.highlight:GetAlpha(), 0)
+				end)
+				sectionFrame.sizeCrosshairs:SetScript("OnDragStop", function(self)
+					self.tex:SetVertexColor(1, 1, 1)
+					self:StopMovingOrSizing()
+					self:SetScript("OnUpdate", nil)
+					self:ClearAllPoints()
+					self:Point("CENTER", sectionFrame, "RIGHT")
+					sectionFrame.header.highlight.tex:SetAlpha(0.1)
+					sectionFrame.header.highlight.tex2:SetAlpha(1)
+					E:UIFrameFadeOut(sectionFrame.header.highlight, 0.2, sectionFrame.header.highlight:GetAlpha(), 0)
+				end)
+				sectionFrame.sizeCrosshairs:SetScript("OnDragStart", function(self)
+					local layout = f.currentLayout
+					local buttonSize, buttonSpacing = layout.buttonSize, layout.buttonSpacing
+					local numColumns, maxButtons = layout.numColumns, layout.maxButtons
+					local buttonOffset = buttonSize + buttonSpacing
+					self.tex:SetVertexColor(0, 0.5, 0)
+					self:StartMoving()
+					self.x = select(4, self:GetPoint())
+					self.existingColumns = section.db.numColumns
+					self:SetScript("OnUpdate", function()
+						self.totalDragged = (select(4, self:GetPoint()) - self.x)
+						self.numColumns = self.totalDragged < 0 and floor(self.totalDragged / (buttonSize + buttonSpacing))
+																or ceil(self.totalDragged / (buttonSize + buttonSpacing))
+						local newNumColumns = max(1, min(numColumns, self.existingColumns + self.numColumns))
+						sectionFrame:Width(newNumColumns * (buttonSize + buttonSpacing) - buttonSpacing)
+						section.db.numColumns = newNumColumns
+						twipe(section.db.buttonPositions)
+						for j = 1, maxButtons do
+							local col = (j - 1) % newNumColumns
+							local row = floor((j - 1) / newNumColumns)
+							tinsert(section.db.buttonPositions, {col * buttonOffset, -row * buttonOffset})
+						end
+						mod:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing, true)
+					end)
+				end)
+			end
+			sectionFrame.sizeCrosshairs:Show()
+			sectionFrame.sizeCrosshairs:SetFrameLevel(10000)
+		end
+	else
+		for _, section in ipairs(f.currentLayout.sections) do
+			if section.frame.sizeCrosshairs then
+				section.frame.sizeCrosshairs:Hide()
 			end
 		end
-	end)
+	end
 end
 
-local function wipeLayout(layout)
-	if not layout then return end
-	for _, section in ipairs(layout.sections) do
+local function updateEmptyButtonCount(f, update)
+	local emptyButton = f.emptyButton
+	if update then
+		if emptyButton.emptySlotsSelection == 0 then
+			local empty = 0
+			for _ in pairs(buttonMap[f]) do
+				empty = empty + 1
+			end
+			emptyButton.emptySlotsText:SetText(empty)
+			emptyButton.emptySlotsText:SetTextColor(1,1,1)
+		else
+			for _, section in ipairs(f.currentLayout.sections) do
+				if section.db.bagID == emptyButton.emptySlotsSelection then
+					emptyButton.emptySlotsText:SetTextColor(unpack(section.db.title.color))
+					emptyButton.emptySlotsText:SetText(GetContainerNumFreeSlots(emptyButton.emptySlotsSelection))
+					return
+				end
+			end
+			emptyButton.emptySlotsText:SetTextColor(1,1,1)
+			emptyButton.emptySlotsText:SetText(GetContainerNumFreeSlots(emptyButton.emptySlotsSelection))
+		end
+	else
+		local nextBagSlots, color
+		for _, bagID in ipairs(f.BagIDs) do
+			local bag = bagID ~= emptyButton.emptySlotsSelection and f.Bags[bagID]
+			if bag and bag.numSlots > 0 and bag.type and bag.type ~= 0 then
+				nextBagSlots = GetContainerNumFreeSlots(bagID)
+				emptyButton.emptySlotsSelection = bagID
+				for _, section in ipairs(f.currentLayout.sections) do
+					if section.db.bagID == bagID then
+						color = section.db.title.color
+					end
+				end
+				break
+			end
+		end
+		if nextBagSlots then
+			emptyButton.emptySlotsText:SetText(nextBagSlots)
+			emptyButton.emptySlotsText:SetTextColor(unpack(color or {1,1,1}))
+		else
+			local empty = 0
+			for _ in pairs(buttonMap[f]) do
+				empty = empty + 1
+			end
+			emptyButton.emptySlotsText:SetText(empty)
+			emptyButton.emptySlotsText:SetTextColor(1,1,1)
+			emptyButton.emptySlotsSelection = 0
+		end
+	end
+end
+
+local function showEmptyButtonTT(f)
+	local total, empty = 0, 0
+	for _, bagID in ipairs(f.BagIDs) do
+		local bag = f.Bags[bagID]
+		if bag and bag.numSlots > 0 then
+			empty = empty + GetContainerNumFreeSlots(bagID)
+			total = total + bag.numSlots
+		end
+	end
+	GameTooltip:SetOwner(f.emptyButton)
+	GameTooltip:ClearLines()
+	if not f.emptyButton.hideHints then
+		GameTooltip:AddLine(L["Click: Toggle layout mode."])
+		GameTooltip:AddLine(L["Alt-Click: Re-evaluate all items."])
+		GameTooltip:AddLine(L["Shift-Alt-Click: Toggle these hints."])
+		GameTooltip:AddLine(L["Mouse-Wheel: Navigate between special and normal bags."])
+		GameTooltip:AddLine(" ")
+		GameTooltip:AddLine(L["This button accepts cursor item drops."])
+		GameTooltip:AddLine(" ")
+	end
+	GameTooltip:AddLine(format(NUM_FREE_SLOTS, empty))
+	GameTooltip:Show()
+end
+
+local function handleButton(f, button)
+	if not button.highlight then
+		button.highlight = CreateFrame("Frame", nil, button)
+		button.highlight:SetAllPoints()
+
+		button.highlight.glow = CreateFrame("Frame", nil, button.highlight)
+		button.highlight.glow:SetAllPoints()
+		button.highlight.glow.tex = button.highlight.glow:CreateTexture(nil, "OVERLAY")
+		button.highlight.glow.tex:SetAllPoints()
+		button.highlight.glow.tex:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+		button.highlight.glow.tex:SetBlendMode("ADD")
+
+		button.highlight.pulse = CreateFrame("Frame", nil, button.highlight)
+		button.highlight.pulse:SetAllPoints()
+		button.highlight.pulse.tex = button.highlight.pulse:CreateTexture(nil, "OVERLAY")
+		button.highlight.pulse.tex:SetAllPoints()
+		button.highlight.pulse.tex:SetTexture("Interface\\Cooldown\\star4")
+		button.highlight.pulse.tex:SetBlendMode("ADD")
+
+		button.highlight:Hide()
+
+		button.highlight:HookScript("OnShow", function(self)
+			E:Flash(self.pulse, 1, true)
+		end)
+
+		button.highlight:HookScript("OnHide", function(self)
+			E:StopFlash(self.pulse)
+		end)
+	end
+	if not mod:IsHooked(button, "OnEnter") then
+		mod:SecureHookScript(button, "OnEnter", function(self)
+			if self.atHeader == 'evaluate' then
+				E:UIFrameFadeIn(f.emptyButton.highlight, 0.2, f.emptyButton.highlight:GetAlpha(), 1)
+				showEmptyButtonTT(f)
+			elseif self.atHeader then
+				E:UIFrameFadeIn(self.atHeader.frame.header.highlight, 0.2, self.atHeader.frame.header.highlight:GetAlpha(), 1)
+			else
+				self.highlight:Hide()
+			end
+		end)
+	end
+	if not mod:IsHooked(button, "OnLeave") then
+		mod:SecureHookScript(button, "OnLeave", function(self)
+			if self.atHeader then
+				if self.atHeader == 'evaluate' then
+					E:UIFrameFadeOut(f.emptyButton.highlight, 0.2, f.emptyButton.highlight:GetAlpha(), 0)
+					f.emptyButton.highlight:SetFrameLevel(999)
+					GameTooltip_Hide()
+				else
+					local header = self.atHeader.frame.header
+					E:UIFrameFadeOut(self.atHeader.frame.header.highlight, 0.2, self.atHeader.frame.header.highlight:GetAlpha(), 0)
+					header:SetFrameLevel(999)
+					if header.prevEmptySlotsSelection then
+						f.emptyButton.emptySlotsSelection = header.prevEmptySlotsSelection
+						header.prevEmptySlotsSelection = nil
+						updateEmptyButtonCount(f, true)
+					end
+				end
+				self:Hide()
+				self:SetAlpha(1)
+				self.atHeader = false
+			end
+		end)
+	end
+	if not mod:IsHooked(button, "OnMouseWheel") then
+		button:EnableMouseWheel(true)
+		mod:SecureHookScript(button, "OnMouseWheel", function(self)
+			if self.atHeader == 'evaluate' then
+				self:GetScript("OnLeave")(self)
+				f.emptyButton:GetScript("OnMouseWheel")(f.emptyButton)
+			end
+		end)
+	end
+	if not mod:IsHooked(button, "OnDragStart") then
+		mod:SecureHookScript(button, "OnDragStart", function(self)
+			if GetCursorInfo() then
+				f.draggedButton = button
+				f.emptyButton:SetScript("OnUpdate", function(eb)
+					if not GetCursorInfo() and not button.atHeader then
+						f.draggedButton = false
+						eb:SetScript("OnUpdate", nil)
+					end
+				end)
+			end
+		end)
+	end
+end
+
+
+local function wipeLayout(f, isBank)
+	toggleLayoutMode(f)
+	mod.localhooks[f] = nil
+	for _, section in ipairs(f.currentLayout.sections) do
+		for _, button in ipairs(section.buttons) do
+			if button.highlight then
+				button.highlight:Hide()
+				button.highlight = nil
+			end
+			if mod:IsHooked(button, "OnEnter") then
+				mod:Unhook(button, "OnEnter")
+			end
+			if mod:IsHooked(button, "OnLeave") then
+				mod:Unhook(button, "OnLeave")
+			end
+			if mod:IsHooked(button, "OnMouseWheel") then
+				mod:Unhook(button, "OnMouseWheel")
+			end
+			if mod:IsHooked(button, "OnDragStart") then
+				mod:Unhook(button, "OnDragStart")
+			end
+			if mod:IsHooked(button, "OnClick") then
+				mod:Unhook(button, "OnClick")
+			end
+		end
 		local frame = section.frame
 		if frame then
 			frame:Hide()
-			frame.concatenateButton:Hide()
-			frame.concatenateButton = nil
-			frame.expandButton:Hide()
-			frame.expandButton = nil
-			if frame.title then
-				frame.title:Hide()
-				frame.title = nil
-			end
-			if section.frame.icon then
-				frame.icon:Hide()
-				frame.icon = nil
-			end
-			if frame.minimizeHandler then
-				frame.minimizeHandler:Hide()
-				frame.minimizeHandler = nil
-				frame.minimizedLine:Hide()
-				frame.minimizedLine = nil
-			end
 			section.frame = nil
 		end
+	end
+	if f.heldCurrencies then
+		f.heldCurrencies:Hide()
+		f.heldCurrencies = nil
+	end
+	if f.qualityFilterButton then
+		f.qualityFilterButton:Hide()
+		f.qualityFilterButton = nil
+	end
+	if f.qualityFilterBar then
+		for _, bar in ipairs(f.qualityFilterBar) do
+			bar:Hide()
+		end
+		f.qualityFilterBar:Hide()
+		f.qualityFilterBar = nil
+	end
+	f.emptyButton:Hide()
+	f.emptyButton = nil
+	f.currentLayout = nil
+	f.editBox:ClearAllPoints()
+	if isBank then
+		f.editBox:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", (E.Border * 2) + 18, E.Border * 2 + 2)
+		f.editBox:Point("RIGHT", f.purchaseBagButton, "LEFT", -5, 0)
+	else
+		f.currencyButton:ClearAllPoints()
+		f.currencyButton:Point("BOTTOM", 0, 4)
+		f.currencyButton:Point("TOPLEFT", f.holderFrame, "BOTTOMLEFT", 0, 18)
+		f.currencyButton:Point("TOPRIGHT", f.holderFrame, "BOTTOMRIGHT", 0, 18)
+
+		f.editBox:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", (E.Border * 2) + 18, E.Border * 2 + 2)
+		f.editBox:Point("RIGHT", f.vendorGraysButton, "LEFT", -5, 0)
 	end
 end
 
 local function runAllScripts(self, event, ...)
 	for _, info in pairs(mod.localhooks) do
-		for type, script in pairs(info) do
-			if type == event and script then script(self, ...) end
+		for handler, script in pairs(info) do
+			if handler == event and script then script(self, ...) end
 		end
 	end
 end
-
 
 
 P["Extras"]["general"][modName] = {
@@ -390,22 +701,21 @@ P["Extras"]["general"][modName] = {
 		["enabled"] = false,
 		["modifier"] = 'Control',
 	},
-	["BagsExtended"] = {
+	["BagsExtendedV2"] = {
 		["enabled"] = false,
 		["selectedContainer"] = 'bags',
 		["containers"] = {
 			["bags"] = {
 				["selectedSection"] = 1,
-				["sectionSpacing"] = 14,
 				["iconSpacing"] = 4,
 				["specialBags"] = {},
 				["sections"] = {
 					{
-						["length"] = 999,
-						["yOffset"] = 0,
 						["sortMethod"] = '',
 						["collectionMethod"] = '',
 						["ignoreList"] = {},
+						["storedPositions"] = {},
+						["sectionSpacing"] = 14,
 						["icon"] = {
 							["enabled"] = false,
 							["texture"] = "Interface\\Icons\\INV_Potion_93",
@@ -416,21 +726,16 @@ P["Extras"]["general"][modName] = {
 							["toText"] = true,
 							["size"] = 16,
 						},
-						["minimize"] = {
-							["enabled"] = false,
-							["lineColor"] = { 1, 1, 1, 0.5 },
-						},
 						["title"] = {
-							["enabled"] = false,
-							["text"] = "Remaining",
+							["text"] = OTHER,
 							["color"] = { 1, 1, 1 },
 							["font"] = "Expressway",
 							["size"] = 13,
 							["flags"] = "OUTLINE",
 							["point"] = "BOTTOMLEFT",
-							["relativeTo"] = "TOPLEFT",
+							["relativeTo"] = "BOTTOMRIGHT",
 							["xOffset"] = 0,
-							["yOffset"] = 4,
+							["yOffset"] = 0,
 						},
 					},
 				},
@@ -440,14 +745,110 @@ P["Extras"]["general"][modName] = {
 }
 
 function mod:LoadConfig()
+	local selectedItemType = 0
 	local db = E.db.Extras.general[modName]
-    local function selectedContainer() return db.BagsExtended.selectedContainer end
+    local function selectedContainer() return db.BagsExtendedV2.selectedContainer end
     local function selectedContainerData()
-		return core:getSelected("general", modName, format("BagsExtended.containers[%s]", selectedContainer() or ""), "bags")
+		return core:getSelected("general", modName, format("BagsExtendedV2.containers[%s]", selectedContainer() or ""), "bags")
 	end
     local function selectedSection() return selectedContainerData().selectedSection or 1 end
 	local function selectedSectionData()
-		return core:getSelected("general", modName, format("BagsExtended.containers.%s.sections[%s]", selectedContainer() or "bags", selectedSection() or ""), 1)
+		return core:getSelected("general", modName, format("BagsExtendedV2.containers.%s.sections[%s]", selectedContainer() or "bags", selectedSection() or ""), 1)
+	end
+	local function setupSections(isBank)
+		local data = selectedContainerData()
+		local buttonSpacing = data.buttonSpacing or E.Border * 2
+		local buttonSize = isBank and B.db.bankSize or B.db.bagSize
+		local numColumns = floor((isBank and B.db.bankWidth or B.db.bagWidth) / (buttonSize + buttonSpacing))
+		local splitCol = floor(numColumns/3)
+		local splitColumns
+		if numColumns > 6 then
+			splitColumns = {splitCol, splitCol, numColumns - splitCol*2}
+		else
+			splitColumns = {numColumns, numColumns, numColumns}
+		end
+		local icons = {
+			"Interface\\Icons\\INV_Chest_Chain_15",
+			"Interface\\Icons\\INV_Sword_27",
+			"Interface\\Icons\\INV_Jewelcrafting_Gem_32",
+			"Interface\\Icons\\INV_Engineering_90_Gear",
+			"Interface\\Icons\\INV_Ammo_Arrow_02",
+			"Interface\\Icons\\INV_Scroll_06",
+			"Interface\\Icons\\INV_Potion_51",
+			"Interface\\Icons\\INV_Letter_05",
+			"Interface\\Icons\\INV_Misc_Rune_01",
+		}
+		for i, sectionType in ipairs({Armor, Weapon, Gem, TradeGoods, Projectile, Recipe, Consumable, Quest, Miscellaneous}) do
+			tinsert(data.sections, 1, {
+				["shouldPopulate"] = true,
+				["numColumns"] = i > 3 and splitColumns[i%3+1] or numColumns,
+				["sortMethod"] = '',
+				["collectionMethod"] = 'type@'..lower(gsub(sectionType, '[%s%p]+', '')),
+				["ignoreList"] = {},
+				["storedPositions"] = {},
+				["sectionSpacing"] = 22,
+				["title"] = {
+					["text"] = sectionType,
+					["toIcon"] = true,
+					["color"] = { 1, 1, 1 },
+					["font"] = "Expressway",
+					["size"] = 13,
+					["flags"] = "OUTLINE",
+					["point"] = "BOTTOMLEFT",
+					["relativeTo"] = "BOTTOMRIGHT",
+					["xOffset"] = 0,
+					["yOffset"] = 0,
+				},
+				["icon"] = {
+					["enabled"] = true,
+					["texture"] = icons[i],
+					["point"] = "TOPLEFT",
+					["relativeTo"] = "TOPLEFT",
+					["xOffset"] = 0,
+					["yOffset"] = 2,
+					["toText"] = false,
+					["size"] = 16,
+				},
+			})
+		end
+		for i = 1, GetNumEquipmentSets() do
+			local setName = GetEquipmentSetInfo(i)
+			if setName then
+				tinsert(data.sections, 1, {
+					["shouldPopulate"] = true,
+					["numColumns"] = numColumns,
+					["sortMethod"] = '',
+					["collectionMethod"] = 'set@'..lower(gsub(setName, '[%s%p]+', '')),
+					["ignoreList"] = {},
+					["storedPositions"] = {},
+					["sectionSpacing"] = 22,
+					["title"] = {
+						["text"] = setName,
+						["toIcon"] = true,
+						["color"] = { 1, 1, 1 },
+						["font"] = "Expressway",
+						["size"] = 13,
+						["flags"] = "OUTLINE",
+						["point"] = "BOTTOMLEFT",
+						["relativeTo"] = "BOTTOMRIGHT",
+						["xOffset"] = 0,
+						["yOffset"] = 0,
+					},
+					["icon"] = {
+						["enabled"] = true,
+						["texture"] = select(2,GetEquipmentSetInfo(i)),
+						["point"] = "TOPLEFT",
+						["relativeTo"] = "TOPLEFT",
+						["xOffset"] = 0,
+						["yOffset"] = 2,
+						["toText"] = false,
+						["size"] = 16,
+					},
+				})
+			end
+		end
+		data.selectedSection = 1
+		data.topOffset = 8
 	end
     core.general.args[modName] = {
         type = "group",
@@ -466,7 +867,7 @@ function mod:LoadConfig()
 						order = 1,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
-						desc = L["Mod-clicking an item suggest a skill/item to process it."],
+						desc = L["Mod-clicking an item suggests a skill/item to process it."],
 					},
 					modifierEasierProcessing = {
 						order = 2,
@@ -488,7 +889,7 @@ function mod:LoadConfig()
 						order = 1,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
-						desc = format(L["Holding %s while left-clicking a stack splits it in two; to combine available copies, right-click instead."..
+						desc = format(L["Holding %s while left-clicking a stack will split it in two; right-click instead to combine available copies."..
 								"\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."], db.SplitStack.modifier),
 					},
 					modifierSplitStack = {
@@ -501,7 +902,7 @@ function mod:LoadConfig()
 					},
 				},
 			},
-            BagsExtended = {
+            BagsExtendedV2 = {
 				order = 3,
                 type = "group",
                 name = L["Bags Extended"],
@@ -512,21 +913,71 @@ function mod:LoadConfig()
                         type = "toggle",
                         name = core.pluginColor..L["Enable"],
                         desc = L["Extends the bags functionality."],
-						get = function() return db.BagsExtended.enabled end,
-						set = function(_, value) db.BagsExtended.enabled = value self:Toggle(db) end,
+						get = function() return db.BagsExtendedV2.enabled end,
+						set = function(_, value) db.BagsExtendedV2.enabled = value self:Toggle(db) end,
                     },
-					selectedContainer = {
+					setupSections = {
 						order = 2,
+						type = "execute",
+						name = L["Setup Sections"],
+						desc = L["Adds default sections set to the currently selected container."],
+						func = function()
+							setupSections(selectedContainer() == 'bank')
+							self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
+						end,
+						disabled = function() return not db.BagsExtendedV2.enabled end,
+					},
+					buttonSpacing = {
+						order = 3,
+						type = "range",
+						name = L["Button Spacing"],
+						desc = "",
+						min = 0, max = 20, step = 1,
+						get = function() return selectedContainerData().buttonSpacing end,
+						set = function(_, value)
+							selectedContainerData().buttonSpacing = value
+							self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
+						end,
+						disabled = function() return not db.BagsExtendedV2.enabled end,
+					},
+					selectedContainer = {
+						order = 4,
 						type = "select",
 						name = L["Select Container Type"],
 						desc = "",
-						get = function() return db.BagsExtended.selectedContainer end,
-						set = function(_, value) db.BagsExtended.selectedContainer = value end,
+						get = function() return db.BagsExtendedV2.selectedContainer end,
+						set = function(_, value) db.BagsExtendedV2.selectedContainer = value end,
 						values = {
 							['bags'] = L['Bags'],
 							['bank'] = L['Bank'],
 						},
-						disabled = function() return not db.BagsExtended.enabled end,
+						disabled = function() return not db.BagsExtendedV2.enabled end,
+					},
+					topOffset = {
+						order = 5,
+						type = "range",
+						name = L["Top Offset"],
+						desc = "",
+						min = 0, max = 60, step = 1,
+						get = function() return selectedContainerData().topOffset end,
+						set = function(_, value)
+							selectedContainerData().topOffset = value
+							self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
+						end,
+						disabled = function() return not db.BagsExtendedV2.enabled end,
+					},
+					bottomOffset = {
+						order = 6,
+						type = "range",
+						name = L["Bottom Offset"],
+						desc = "",
+						min = 0, max = 60, step = 1,
+						get = function() return selectedContainerData().bottomOffset end,
+						set = function(_, value)
+							selectedContainerData().bottomOffset = value
+							self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
+						end,
+						disabled = function() return not db.BagsExtendedV2.enabled end,
 					},
 				},
 			},
@@ -536,9 +987,12 @@ function mod:LoadConfig()
                 name = L["Settings"],
                 guiInline = true,
 				get = function(info) return selectedSectionData()[info[#info]] end,
-				set = function(info, value) selectedSectionData()[info[#info]] = value self:UpdateAll() end,
-                disabled = function() return not db.BagsExtended.enabled end,
-				hidden = function() return not db.BagsExtended.enabled end,
+				set = function(info, value)
+					selectedSectionData()[info[#info]] = value
+					self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
+				end,
+                disabled = function() return not db.BagsExtendedV2.enabled end,
+				hidden = function() return not db.BagsExtendedV2.enabled end,
                 args = {
 					addSection = {
 						order = 1,
@@ -547,13 +1001,12 @@ function mod:LoadConfig()
 						desc = "",
 						func = function()
 							local newSection = {
-								["length"] = 8,
-								["yOffset"] = 4,
 								["sortMethod"] = '',
 								["collectionMethod"] = '',
 								["ignoreList"] = {},
+								["storedPositions"] = {},
+								["sectionSpacing"] = 14,
 								["title"] = {
-									["enabled"] = true,
 									["text"] = "New Section",
 									["toIcon"] = true,
 									["color"] = { 1, 1, 1 },
@@ -561,9 +1014,9 @@ function mod:LoadConfig()
 									["size"] = 13,
 									["flags"] = "OUTLINE",
 									["point"] = "BOTTOMLEFT",
-									["relativeTo"] = "TOPLEFT",
+									["relativeTo"] = "BOTTOMRIGHT",
 									["xOffset"] = 0,
-									["yOffset"] = 4,
+									["yOffset"] = 0,
 								},
 								["icon"] = {
 									["enabled"] = false,
@@ -575,14 +1028,10 @@ function mod:LoadConfig()
 									["toText"] = false,
 									["size"] = 16,
 								},
-								["minimize"] = {
-									["enabled"] = true,
-									["lineColor"] = { 1, 1, 1, 0.5 },
-								},
 							}
 							tinsert(selectedContainerData().sections, 1, newSection)
 							selectedContainerData().selectedSection = 1
-							self:UpdateAll()
+							self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true}, true)
 						end,
 					},
 					deleteSection = {
@@ -593,47 +1042,29 @@ function mod:LoadConfig()
 						func = function()
 							tremove(selectedContainerData().sections, selectedSection())
 							selectedContainerData().selectedSection = 1
-							self:UpdateAll()
+							self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
 						end,
 						disabled = function()
-							return not db.BagsExtended.enabled
+							return not db.BagsExtendedV2.enabled
 									or selectedSection() == #selectedContainerData().sections
 									or selectedSectionData().isSpecialBag
 						end,
 					},
-					length = {
-						order = 3,
-						type = "range",
-						name = L["Section Length"],
+                    sectionSpacing = {
+                        order = 3,
+                        type = "range",
+                        name = L["Section Spacing"],
 						desc = "",
-						min = 1, max = 28, step = 1,
-						set = function(info, value)
-							selectedSectionData()[info[#info]] = value
-							self:UpdateAll()
+                        min = 0, max = 40, step = 1,
+                        get = function() return selectedSectionData().sectionSpacing end,
+                        set = function(_, value)
+							selectedSectionData().sectionSpacing = value
+							self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
 						end,
-						disabled = function()
-							return not db.BagsExtended.enabled
-									or selectedSection() == #selectedContainerData().sections
-									or selectedSectionData().isSpecialBag
-						end,
-					},
-                    selectedSection = {
-						order = 4,
-						type = "select",
-						name = L["Select Section"],
-						desc = "",
-						get = function() return tostring(selectedSection()) end,
-						set = function(_, value) selectedContainerData().selectedSection = tonumber(value) end,
-						values = function()
-							local dropdownValues = {}
-							for i, section in ipairs(selectedContainerData().sections) do
-								dropdownValues[tostring(i)] = section.title.text
-							end
-							return dropdownValues
-						end,
-					},
+						disabled = function() return not db.BagsExtendedV2.enabled end,
+                    },
 					sectionPriority = {
-						order = 5,
+						order = 4,
 						type = "input",
 						name = L["Section Priority"],
 						desc = "",
@@ -661,64 +1092,94 @@ function mod:LoadConfig()
 								sections[currentIndex] = tempHolder
 								selectedContainerData().selectedSection = 1
 							end
-							self:UpdateAll()
+							self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
 						end,
 						disabled = function()
-							return not db.BagsExtended.enabled
+							return not db.BagsExtendedV2.enabled
 									or selectedSection() == #selectedContainerData().sections
 						end,
 					},
-                    sectionSpacing = {
-                        order = 6,
-                        type = "range",
-                        name = L["Section Spacing"],
+                    selectedSection = {
+						order = 5,
+						type = "select",
+						width = "double",
+						name = L["Select Section"],
 						desc = "",
-                        min = 0, max = 40, step = 1,
-                        get = function() return selectedContainerData().sectionSpacing end,
-                        set = function(_, value) selectedContainerData().sectionSpacing = value self:UpdateAll() end,
-						disabled = function()
-							return not db.BagsExtended.enabled
-									or selectedSection() == #selectedContainerData().sections
+						get = function() return tostring(selectedSection()) end,
+						set = function(_, value) selectedContainerData().selectedSection = tonumber(value) end,
+						values = function()
+							local dropdownValues = {}
+							for i, section in ipairs(selectedContainerData().sections) do
+								dropdownValues[tostring(i)] = section.title.text
+							end
+							return dropdownValues
 						end,
-                    },
+					},
 					collectionMethod = {
-						order = 7,
+						order = 6,
 						type = "input",
 						multiline = true,
 						width = "double",
 						name = L["Collection Method"],
-						desc = L["Handles automated repositioning of the newly received items."..
-								"\nSyntax: filter@value\n\n"..
-								"Available filters:\n"..
-								"id@number - matches itemID,\n"..
-								"name@string - matches name,\n"..
-								"subtype@string - matches subtype,\n"..
-								"ilvl@number - matches ilvl,\n"..
-								"uselevel@number - matches equip level,\n"..
-								"quality@number - matches quality,\n"..
-								"equipslot@number - matches nventorySlotID,\n"..
-								"maxstack@number - matches stack limit,\n"..
-								"price@number - matches sell price,\n\n"..
-								"tooltip@string - matches tooltip text,\n\n"..
-								"All string matches are not case sensitive and match only the alphanumeric symbols. Standart lua logic applies. "..
-								"Look up GetItemInfo API for more info on filters. "..
-								"Use GetAuctionItemClasses and GetAuctionItemSubClasses (same as on the AH) to get the localized types and subtypes values.\n\n"..
-								"Example usage (priest t8 or Shadowmourne):\n"..
-								"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne.\n\n"..
-								"Accepts custom functions (bagID, slotID, itemID are exposed)\n"..
-								"The below one notifies of the newly aquired items.\n\n"..
-								"local icon = GetContainerItemInfo(bagID, slotID)\n"..
-								"local _, link = GetItemInfo(itemID)\n"..
-								"icon = gsub(icon, '\\124', '\\124\\124')\n"..
-								"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
-								"print('Item received: ' .. string)"],
+						desc = L["Handles the automated repositioning of the newly received items."..
+						"\nSyntax: filter@value\n\n"..
+						"Available filters:\n"..
+						" id@number - matches itemID,\n"..
+						" name@string - matches name,\n"..
+						" subtype@string - matches subtype,\n"..
+						" ilvl@number - matches ilvl,\n"..
+						" uselevel@number - matches equip level,\n"..
+						" quality@number - matches quality,\n"..
+						" equipslot@number - matches inventorySlotID,\n"..
+						" maxstack@number - matches stack limit,\n"..
+						" price@number - matches sell price,\n\n"..
+						" tooltip@string - matches tooltip text,\n\n"..
+						"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
+						"Look up GetItemInfo API for more info on filters. "..
+						"Use GetAuctionItemClasses and GetAuctionItemSubClasses (same as on the AH) to get the localized types and subtypes values.\n\n"..
+						"Example usage (priest t8 or Shadowmourne):\n"..
+						"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne.\n\n"..
+						"Accepts custom functions (bagID, slotID, itemID are exposed)\n"..
+						"The below one notifies of the newly acquired items.\n\n"..
+						"local icon = GetContainerItemInfo(bagID, slotID)\n"..
+						"local _, link = GetItemInfo(itemID)\n"..
+						"icon = gsub(icon, '\\124', '\\124\\124')\n"..
+						"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
+						"print('Item received: ' .. string)"],
 						set = function(info, value)
 							selectedSectionData()[info[#info]] = value
-							self:UpdateAll()
+							selectedSectionData().shouldPopulate = true
+							self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
 						end,
+						hidden = function() return selectedSectionData().isSpecialBag end,
+					},
+					itemTypeInfo = {
+						order = 7,
+						type = "select",
+						width = "double",
+						name = L["Available Item Types"],
+						desc = L["Lists all available item subtypes for each available item type."],
+						get = function() return selectedItemType end,
+						set = function(_, value) selectedItemType = value end,
+						values = function()
+							local dropdownValues = {[1] = ""}
+							for _, itemType in ipairs({GetAuctionItemClasses()}) do
+								tinsert(dropdownValues, itemType)
+							end
+							return dropdownValues
+						end,
+						hidden = function() return selectedSectionData().isSpecialBag or selectedContainer() == 'bank' end,
+					},
+					subTypeInfo = {
+						order = 8,
+						type = "description",
+						name = function()
+							return tconcat({GetAuctionItemSubClasses(selectedItemType-1)}, ", ")
+						end,
+						hidden = function() return selectedSectionData().isSpecialBag or selectedContainer() == 'bank' end,
 					},
 					sortMethod = {
-						order = 8,
+						order = 9,
 						type = "input",
 						multiline = true,
 						width = "double",
@@ -731,11 +1192,11 @@ function mod:LoadConfig()
 								"Leave blank to go default."],
 						set = function(info, value)
 							selectedSectionData()[info[#info]] = value
-							self:UpdateAll()
+							self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
 						end,
 					},
 					addItem = {
-						order = 9,
+						order = 10,
 						type = "input",
 						width = "double",
 						name = L["Ignore Item (by ID)"],
@@ -753,7 +1214,7 @@ function mod:LoadConfig()
 						end,
 					},
 					removeItem = {
-						order = 10,
+						order = 11,
 						type = "select",
 						width = "double",
 						name = L["Remove Ignored"],
@@ -768,7 +1229,7 @@ function mod:LoadConfig()
 									texture = gsub(texture, '\124', '\124\124')
 									local string = '\124T' .. texture .. ':16:16\124t' .. link
 									core:print('REMOVED', string)
-									self:UpdateAll()
+									self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
 									break
 								end
 							end
@@ -786,45 +1247,16 @@ function mod:LoadConfig()
 					},
 				},
 			},
-			minimize = {
-                type = "group",
-                name = L["Minimize"],
-                guiInline = true,
-				disabled = function() return not db.BagsExtended.enabled end,
-				hidden = function() return not db.BagsExtended.enabled
-											or selectedSection() == #selectedContainerData().sections
-				end,
-				args = {
-					enabled = {
-						order = 1,
-						type = "toggle",
-                        name = core.pluginColor..L["Enable"],
-						desc = L["Double-click the title text to minimize the section."],
-						get = function(info) return selectedSectionData().minimize[info[#info]] end,
-						set = function(info, value) selectedSectionData().minimize[info[#info]] = value self:UpdateAll() end,
-					},
-					lineColor = {
-						order = 2,
-						type = "color",
-						hasAlpha = true,
-						name = L["Line Color"],
-						desc = L["Minimized section's line color."],
-						get = function(info) return unpack(selectedSectionData().minimize[info[#info]]) end,
-						set = function(info, r, g, b, a) selectedSectionData().minimize[info[#info]] = { r, g, b, a } self:UpdateAll() end,
-						disabled = function() return not db.BagsExtended.enabled or not selectedSectionData().minimize.enabled end,
-					},
-				},
-			},
 			title = {
                 type = "group",
                 name = L["Title"],
                 guiInline = true,
 				get = function(info) return selectedSectionData().title[info[#info]] end,
-				set = function(info, value) selectedSectionData().title[info[#info]] = value self:UpdateAll() end,
-                disabled = function() return not db.BagsExtended.enabled end,
-				hidden = function() return not db.BagsExtended.enabled
-											or selectedSection() == #selectedContainerData().sections
+				set = function(info, value)
+					selectedSectionData().title[info[#info]] = value
+					self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
 				end,
+                hidden = function() return not db.BagsExtendedV2.enabled end,
 				args = {
 					color = {
 						order = 0,
@@ -832,25 +1264,44 @@ function mod:LoadConfig()
 						name = L["Color"],
 						desc = "",
 						get = function() return unpack(selectedSectionData().title.color) end,
-						set = function(_, r, g, b) selectedSectionData().title.color = { r, g, b } self:UpdateAll() end,
+						set = function(_, r, g, b)
+							selectedSectionData().title.color = { r, g, b }
+							self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
+						end,
 					},
 					toIcon = {
 						order = 1,
 						type = "toggle",
 						name = L["Attach to Icon"],
+						desc = "",
 						set = function(info, value)
 							selectedSectionData().title[info[#info]] = value
 							selectedSectionData().icon.toText = not value
-							self:UpdateAll()
+							self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
 						end,
-						desc = "",
-						disabled = function() return not db.BagsExtended.enabled or not selectedSectionData().icon.enabled end,
+						disabled = function() return not db.BagsExtendedV2.enabled or not selectedSectionData().icon.enabled end,
 					},
 					text = {
 						order = 2,
 						type = "input",
+						width = "double",
 						name = L["Text"],
 						desc = "",
+					},
+					justify = {
+						order = 3,
+						type = "select",
+						name = L["Justify"],
+						values = {
+							["LEFT"] = L["Left"],
+							["CENTER"] = L["Center"],
+							["RIGHT"] = L["Right"],
+						},
+						desc = "",
+						disabled = function()
+							return not db.BagsExtendedV2.enabled
+									or (selectedSectionData().icon.enabled and selectedSectionData().icon.toText)
+						end,
 					},
 					size = {
 						order = 3,
@@ -886,6 +1337,7 @@ function mod:LoadConfig()
 						name = L["Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
+						hidden = function() return not selectedSectionData().icon.enabled end,
 					},
 					relativeTo = {
 						order = 7,
@@ -893,6 +1345,7 @@ function mod:LoadConfig()
 						name = L["Relative Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
+						hidden = function() return not selectedSectionData().icon.enabled end,
 					},
 					xOffset = {
 						order = 8,
@@ -915,11 +1368,11 @@ function mod:LoadConfig()
                 name = L["Icon"],
                 guiInline = true,
 				get = function(info) return selectedSectionData().icon[info[#info]] end,
-				set = function(info, value) selectedSectionData().icon[info[#info]] = value self:UpdateAll() end,
-                disabled = function() return not db.BagsExtended.enabled end,
-				hidden = function() return not db.BagsExtended.enabled
-											or selectedSection() == #selectedContainerData().sections
+				set = function(info, value)
+					selectedSectionData().icon[info[#info]] = value
+					self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
 				end,
+                hidden = function() return not db.BagsExtendedV2.enabled end,
 				args = {
 					enabled = {
 						order = 1,
@@ -935,7 +1388,7 @@ function mod:LoadConfig()
 						set = function(info, value)
 							selectedSectionData().icon[info[#info]] = value
 							selectedSectionData().title.toIcon = not value
-							self:UpdateAll()
+							self:UpdateAll(nil, selectedContainer() == 'bags' and {false} or {true})
 						end,
 						hidden = function() return not selectedSectionData().icon.enabled end,
 					},
@@ -960,7 +1413,7 @@ function mod:LoadConfig()
 						name = L["Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
-						hidden = function() return not selectedSectionData().icon.enabled end,
+						hidden = function() return not selectedSectionData().icon.enabled or not selectedSectionData().icon.toText end,
 					},
 					relativeTo = {
 						order = 6,
@@ -968,7 +1421,7 @@ function mod:LoadConfig()
 						name = L["Relative Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
-						hidden = function() return not selectedSectionData().icon.enabled end,
+						hidden = function() return not selectedSectionData().icon.enabled or not selectedSectionData().icon.toText end,
 					},
 					xOffset = {
 						order = 7,
@@ -990,212 +1443,91 @@ function mod:LoadConfig()
 			},
         },
     }
-	if not db.BagsExtended.containers['bank'] then
-		db.BagsExtended.containers['bank'] = CopyTable(db.BagsExtended.containers['bags'])
+	if not db.BagsExtendedV2.containers['bank'] then
+		db.BagsExtendedV2.containers['bank'] = CopyTable(db.BagsExtendedV2.containers['bags'])
 	end
 end
 
 
-function mod:UpdateAll(disable)
-	for _, isBank in pairs({false, true}) do
+function mod:UpdateAll(disable, containerType, highlight)
+	for _, isBank in pairs(containerType or {false, true}) do
 		local f = B_GetContainerFrame(nil, isBank)
 		if f then
 			if disable and f.currentLayout then
-				wipeLayout(f.currentLayout)
+				mod.localhooks[f] = nil
+				wipeLayout(f, isBank)
 				f.holderFrame:ClearAllPoints()
 				f.holderFrame:Point("TOP", f, "TOP", 0, -f.topOffset)
 				f.holderFrame:Point("BOTTOM", f, "BOTTOM", 0, 8)
-				f.heldCurrencies:Hide()
 				self:HandleSortButton(f, false, isBank)
+			else
+				mod.localhooks[f] = {
+					["OnClick"] = function(self)
+						if GetCursorInfo() then
+							f.draggedButton = self
+							f.emptyButton:SetScript("OnUpdate", function(emptyButton)
+								if not GetCursorInfo() and not self.atHeader then
+									f.draggedButton = false
+									emptyButton:SetScript("OnUpdate", nil)
+								end
+							end)
+						end
+					end
+				}
 			end
 			B:Layout(isBank)
+			if highlight then
+				f.emptyButton.highlight.tex:SetTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+				f.emptyButton.highlight.tex:SetVertexColor(0, 1, 1)
+				E:UIFrameFadeIn(f.emptyButton.highlight, 1, f.emptyButton.highlight:GetAlpha(), 1)
+				E:Delay(1, function()
+					E:Flash(f.emptyButton.highlight, 1, true)
+				end)
+			end
 		end
 	end
 end
 
 function mod:EvaluateItem(sections, bagID, slotID, itemID)
     for _, section in ipairs(sections) do
-		if section.collectionMethodFunc then
-			local result = section.collectionMethodFunc(bagID, slotID, itemID)
-			if result then
-				for _, button in ipairs(section.buttons) do
-					if not button.hasItem then
-						return button.bagID, button.slotID, section
-					end
-				end
-			end
-		end
+        if (section.collectionMethodFunc and section.collectionMethodFunc(bagID, slotID, itemID))
+				or (section.db.isSpecialBag and section.db.bagID == bagID) then
+			return section, true
+        end
     end
+	return sections[#sections]
 end
 
-function mod:HandleControls(f, section, buttonSize)
-	local sectionFrame, sectionButtons, db = section.frame, section.buttons, section.db
-	if not sectionFrame.concatenateButton then
-		sectionFrame.concatenateButton = CreateFrame("Button", "$parentConcatenateButton", sectionFrame, "UIPanelButtonTemplate")
-		S:HandleButton(sectionFrame.concatenateButton)
-		sectionFrame.concatenateButton:StyleButton()
-		sectionFrame.concatenateButton:SetText("-")
-		sectionFrame.concatenateButton:Show()
-		sectionFrame.concatenateButton:SetScript("OnHide", function()
-			sectionFrame.concatenateButton:SetScript('OnUpdate', nil)
-			sectionFrame.isBeingSorted = false
-		end)
-		sectionFrame.concatenateButton:SetScript("OnMouseDown", function()
-			if incombat or sectionFrame.isBeingSorted or sectionFrame.minimized then return end
-			sectionFrame.isBeingSorted = true
-			sectionFrame.expanded = false
-			local timeElapsed, buttons, stacked, positioned = 0, {}
-			if not globalSort[f] then E:StartSpinnerFrame(f) end
-			sectionFrame.concatenateButton:SetScript('OnUpdate', function(self, elapsed)
-				timeElapsed = timeElapsed + elapsed
-				if timeElapsed > 0.1 then
-					if incombat then
-						sectionFrame.isBeingSorted = false
-						sectionFrame.concatenateButton:SetScript('OnUpdate', nil)
-						mod:UpdateSection(f, section, buttonSize)
-						if not globalSort[f] then mod:ScanBags(f, true) E:StopSpinnerFrame(f) end
-						return
-					end
-					timeElapsed = 0
-					if not stacked then
-						stacked = mod:StackSection(sectionButtons)
-						if stacked then
-							local ignoreList = db.ignoreList
-							local ignored = {}
-							for i, button in ipairs(sectionButtons) do
-								local bagID, slotID = button.bagID, button.slotID
-								local itemID = B_GetItemID(nil, bagID, slotID)
-								if ignoreList[itemID] then
-									tinsert(ignored, i)
-								else
-									tinsert(buttons, {itemID = itemID, bagID = bagID, slotID = slotID})
-								end
-							end
-							tsort(buttons, section.sortMethodFunc)
-							for _, i in ipairs(ignored) do
-								tinsert(buttons, i, {positioned = true})
-							end
-						end
-					elseif not positioned then
-						positioned = mod:SortSection(buttons, sectionButtons)
-					else
-						sectionFrame.isBeingSorted = false
-						sectionFrame.concatenateButton:SetScript('OnUpdate', nil)
-						mod:UpdateSection(f, section, buttonSize)
-						if not globalSort[f] then mod:ScanBags(f, true) E:StopSpinnerFrame(f) end
-					end
-				end
-			end)
-		end)
-	end
-	sectionFrame.concatenateButton:Size(buttonSize / 2, buttonSize / 2)
-	if not sectionFrame.expandButton then
-		sectionFrame.expandButton = CreateFrame("Button", "$parentExpandButton", sectionFrame, "UIPanelButtonTemplate")
-		S:HandleButton(sectionFrame.expandButton)
-		sectionFrame.expandButton:StyleButton()
-		sectionFrame.expandButton:SetText("+")
-		sectionFrame.expandButton:Show()
-		sectionFrame.expandButton:SetScript("OnMouseDown", function()
-			if incombat then return end
-			for i, button in ipairs(sectionButtons) do
-				if not button:IsShown() and sectionButtons[i-1] then
-					sectionButtons[i-1].Count:Hide()
-				end
-				button:Show()
-			end
-			sectionFrame.expanded = true
-			mod:UpdateSection(f, section, buttonSize)
-		end)
-	end
-	sectionFrame.expandButton:Size(buttonSize / 2, buttonSize / 2)
-
-	if db.minimize.enabled then
-		section.frame.minimized = section.db.minimized
-		if not sectionFrame.minimizeHandler then
-			sectionFrame.minimizeHandler = CreateFrame("Button", nil, sectionFrame, "UIPanelButtonTemplate")
-			sectionFrame.minimizeHandler:SetAllPoints(sectionFrame.title)
-			sectionFrame.minimizeHandler:SetScript("OnDoubleClick", function()
-				if incombat then return end
-				section.db.minimized = not section.db.minimized
-				section.frame.minimized = section.db.minimized
-				mod:ToggleMinimizeSection(f, section, buttonSize)
-			end)
-			sectionFrame.minimizeHandler:SetAlpha(0)
-
-			sectionFrame.minimizedLine = sectionFrame:CreateTexture(nil, "OVERLAY")
-			sectionFrame.minimizedLine:Point("TOPLEFT", sectionButtons[1], "TOPLEFT", 0, 0)
-			sectionFrame.minimizedLine:Point("TOPRIGHT", f.holderFrame, "TOPRIGHT", 0, 0)
-			sectionFrame.minimizedLine:Height(1)
-		end
-		sectionFrame.minimizeHandler:Show()
-		sectionFrame.minimizedLine:SetTexture(unpack(db.minimize.lineColor))
-	else
-		section.frame.minimized = false
-	end
-end
-
-function mod:ToggleMinimizeSection(f, section, buttonSize, combatUpd, updatedSections)
-	local sectionFrame = section.frame
-    if not sectionFrame.minimized then
-        sectionFrame.concatenateButton:Show()
-        sectionFrame.expandButton:Show()
-		if sectionFrame.minimizedLine then
-			sectionFrame.minimizedLine:Hide()
-		end
-		if sectionFrame.title then
-			sectionFrame.minimizedCount = nil
-			sectionFrame.title:SetText(section.db.title.text)
-		end
-	else
-		for _, button in ipairs(section.buttons) do button:Hide() button.isHidden = true end
-        sectionFrame.concatenateButton:Hide()
-        sectionFrame.expandButton:Hide()
-		if sectionFrame.minimizedLine then
-			sectionFrame.minimizedLine:Show()
-		end
-    end
-	if not updatedSections or not updatedSections[section] then
-		self:UpdateSection(f, section, buttonSize, combatUpd)
-		self:ResizeFrame(f, buttonSize)
-	end
-end
-
-function mod:HandleSortButton(f, enable, isBank)
+function mod:HandleSortButton(f, enable, isBank, numColumns, buttonSize, buttonSpacing)
 	if enable then
 		f.sortButton:SetScript("OnClick", nil)
 		f.sortButton:SetScript("OnMouseDown", function()
-			if incombat then return end
-
-			local sections = {}
 			for _, section in ipairs(f.currentLayout.sections) do
-				tinsert(sections, section)
-			end
+				if not section.frame.minimized then
+					local ignoreList = section.db.ignoreList
+					local sortedButtons = {}
+					local ignoredButtons = {}
 
-			tsort(sections, function(a,b) return a.order < b.order end)
-
-			local timeElapsed, index = 0, 1
-			local section = sections[index]
-			globalSort[f] = true
-			E:StartSpinnerFrame(f)
-			section.frame.concatenateButton:GetScript("OnMouseDown")()
-
-			f.sortButton:SetScript("OnUpdate", function(self, elapsed)
-				timeElapsed = timeElapsed + elapsed
-				if timeElapsed > 0.1 then
-					if index == #sections then
-						if not section.frame or not section.frame.isBeingSorted then
-							f.sortButton:SetScript("OnUpdate", nil)
-							mod:ScanBags(f, true)
-							E:StopSpinnerFrame(f)
-							globalSort[f] = false
+					for i, button in ipairs(section.buttons) do
+						if ignoreList[button.itemID or B_GetItemID(nil, button.bagID, button.slotID)] then
+							ignoredButtons[i] = button
+						else
+							tinsert(sortedButtons, button)
 						end
-					elseif not section.frame.isBeingSorted then
-						index = index + 1
-						section = sections[index]
-						section.frame.concatenateButton:GetScript("OnMouseDown")()
 					end
+
+					tsort(sortedButtons, section.sortMethodFunc)
+					for i, ignoredButton in pairs(ignoredButtons) do
+						tinsert(sortedButtons, i, ignoredButton)
+					end
+					for i, button in ipairs(sortedButtons) do
+						section.db.storedPositions[button.bagID..'-'..button.slotID] = i
+					end
+					section.buttons = {unpack(sortedButtons)}
+
+					self:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing)
 				end
-			end)
+			end
 		end)
 	else
 		f.sortButton:SetScript("OnUpdate", nil)
@@ -1212,19 +1544,25 @@ function mod:HandleSortButton(f, enable, isBank)
 	end
 end
 
-function mod:ConfigureContainer(f, db, maxSectionWidth, numContainerColumns, buttonSize)
-    wipeLayout(f.currentLayout)
-
+function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpacing)
     local sections = db.sections
-    local yOffset = -buttonSize/2
-    local buttons, specialButtons = {}, {}
-    local specialBags = {}
+    local buttons = {}
+	local specialBags, specialButtons = {}, {}
+    local processedSections = {}
+	local minIconLeft = huge
+	local buttonOffset = buttonSize + buttonSpacing
+	local maxButtons = 0
+	local layoutSections = f.currentLayout and f.currentLayout.sections or {}
+
+	buttonMap[f] = {}
 
     for _, bagID in ipairs(f.BagIDs) do
-		buttonMap[bagID] = {}
 		specialButtons[bagID] = {}
-        local _, bagType = GetContainerNumFreeSlots(bagID)
-		if f.Bags[bagID] and f.Bags[bagID].numSlots > 0 then
+		local bag = f.Bags[bagID]
+		local bagSlots = bag and bag.numSlots
+		if bagSlots and bagSlots > 0 then
+			buttonMap[bagID] = {}
+			local bagType = bag.type
 			if bagType and bagType ~= 0 then
 				local exists = false
 				for _, section in ipairs(sections) do
@@ -1235,59 +1573,109 @@ function mod:ConfigureContainer(f, db, maxSectionWidth, numContainerColumns, but
 				end
 				if not exists or (not db.specialBags[bagID] or db.specialBags[bagID] ~= GetBagName(bagID)) then
 					specialBags[bagID] = {
-						numSlots = GetContainerNumSlots(bagID),
+						numSlots = bagSlots,
 						buttons = {},
 						bagType = bagType,
 					}
 				end
-            end
-			for slotID = 1, f.Bags[bagID].numSlots do
-				local button = f.Bags[bagID][slotID]
-                if bagType ~= 0 then
+				for slotID = 1, bagSlots do
+					local button = bag[slotID]
 					tinsert(specialButtons[bagID], button)
-				else
-					tinsert(buttons, button)
+					handleButton(f, button)
 				end
-			end
+			else
+				for slotID = 1, bagSlots do
+					local button = bag[slotID]
+					if button.hasItem then
+						local itemID = B_GetItemID(nil, bagID, slotID)
+						itemCounts[itemID] = GetItemCount(itemID)
+						button.itemID = itemID
+						tinsert(buttons, button)
+					else
+						button.itemID = false
+						button:Hide()
+						buttonMap[f][button] = true
+					end
+					handleButton(f, button)
+				end
+            end
+			maxButtons = maxButtons + bagSlots
 		end
 	end
 
-    self:HandleSortButton(f, true)
+    self:HandleSortButton(f, true, isBank, numColumns, buttonSize, buttonSpacing)
 
-    local processedSections = {}
-    if not f.Sections then f.Sections = {} end
-
-	for i, section in ipairs(sections) do
-		if section.isSpecialBag then
-			local bagID = section.bagID
-			local numSlots, bagType = GetContainerNumFreeSlots(bagID)
-			if numSlots == 0 or bagType == 0 or (db.specialBags[bagID] and db.specialBags[bagID] ~= GetBagName(bagID)) then
-				db.specialBags[bagID] = false
-				tremove(sections, i)
-				if E.RefreshGUI then E:RefreshGUI() end
+    if next(layoutSections) then
+		local cleanup = {}
+		for i, section in ipairs(sections) do
+			if section.isSpecialBag then
+				local bagID = section.bagID
+				if buttonMap[bagID] then
+					local numSlots, bagType = GetContainerNumFreeSlots(bagID)
+					if numSlots == 0 or (not bagType or bagType == 0) or (db.specialBags[bagID] and db.specialBags[bagID] ~= GetBagName(bagID)) then
+						buttonMap[bagID] = {}
+						db.specialBags[bagID] = false
+						tremove(sections, i)
+						tremove(layoutSections, i)
+						cleanup[bagID] = true
+					end
+				end
 			end
 		end
+		if next(cleanup) then
+			for _, section in ipairs(layoutSections) do
+				if section.isSpecialBag and cleanup[section.bagID] then
+					for _, button in ipairs(section.buttons) do
+						if button.highlight then
+							button.highlight:Hide()
+							button.highlight = nil
+						end
+					end
+					local frame = section.frame
+					if frame then
+						frame:Hide()
+						section.frame = nil
+					end
+				end
+			end
+			if E.RefreshGUI then E:RefreshGUI() end
+		end
+		local currentRowColumns
+		for i, section in ipairs(layoutSections) do
+			if i == 1 then
+				currentRowColumns = section.db.numColumns
+				section.db.numColumns = min(section.db.numColumns, numColumns)
+			else
+				if currentRowColumns + section.db.numColumns <= numColumns then
+					currentRowColumns = currentRowColumns + section.db.numColumns
+				else
+					section.db.numColumns = min(section.db.numColumns, numColumns)
+					currentRowColumns = section.db.numColumns
+				end
+			end
+		end
+		toggleLayoutMode(f, f.emptyButton.showSizing)
 	end
 
 	for bagID, bagInfo in pairs(specialBags) do
 		local specialSection = {
-			["length"] = bagInfo.numSlots,
-			["yOffset"] = 4,
 			["sortMethod"] = '',
-			["collectionMethod"] = specialBagFilters[bagInfo.bagType],
+			["collectionMethod"] = '',
 			["ignoreList"] = {},
+			["storedPositions"] = {},
+			["sectionSpacing"] = 14,
 			["title"] = {
 				["enabled"] = true,
 				["text"] = GetBagName(bagID) or "Special Bag",
 				["toIcon"] = true,
-				["color"] = { 1, 1, 1 },
+				["color"] = {unpack(B.ProfessionColors[bagInfo.bagType])},
 				["font"] = "Expressway",
 				["size"] = 13,
 				["flags"] = "OUTLINE",
 				["point"] = "BOTTOMLEFT",
 				["relativeTo"] = "TOPLEFT",
 				["xOffset"] = 0,
-				["yOffset"] = 4,
+				["yOffset"] = 0,
 			},
 			["icon"] = {
 				["enabled"] = false,
@@ -1299,53 +1687,252 @@ function mod:ConfigureContainer(f, db, maxSectionWidth, numContainerColumns, but
 				["toText"] = false,
 				["size"] = 16,
 			},
-			["minimize"] = {
-				["enabled"] = true,
-				["lineColor"] = { 1, 1, 1, 0.5 },
-			},
 			["isSpecialBag"] = true,
 			["bagID"] = bagID,
 		}
 		db.specialBags[bagID] = GetBagName(bagID)
 		tinsert(sections, 1, specialSection)
+		if f.emptyButton then
+			f.emptyButton.highlight.tex:SetTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+			f.emptyButton.highlight.tex:SetVertexColor(0, 1, 1)
+			E:UIFrameFadeIn(f.emptyButton.highlight, 1, f.emptyButton.highlight:GetAlpha(), 1)
+			E:Delay(1, function()
+				E:Flash(f.emptyButton.highlight, 1, true)
+			end)
+		end
 		if E.RefreshGUI then E:RefreshGUI() end
 	end
 
 	for i, section in ipairs(sections) do
-		local sectionFrame = f.Sections[i]
+		local sectionFrame = layoutSections[i] and layoutSections[i].frame
+
+		section.buttonPositions = {}
+		section.numColumns = section.numColumns or numColumns
+
+		local columns = section.numColumns
+		for j = 1, maxButtons do
+			local col = (j - 1) % columns
+			local row = floor((j - 1) / columns)
+			tinsert(section.buttonPositions, {col * buttonOffset, -row * buttonOffset})
+		end
 
 		if not sectionFrame then
 			sectionFrame = CreateFrame("Frame", "$parentSection"..i, f.holderFrame)
-			f.Sections[i] = sectionFrame
+			sectionFrame.header = CreateFrame("Button", "$parentSection"..i.."Header", sectionFrame, "UIPanelButtonTemplate")
+			sectionFrame.header:SetNormalTexture(nil)
+			sectionFrame.header:SetPushedTexture(nil)
+			sectionFrame.header:SetHighlightTexture(nil)
+
+			sectionFrame.header.highlight = CreateFrame("Frame", nil, sectionFrame)
+			sectionFrame.header.highlight:SetFrameLevel(999)
+			sectionFrame.header.highlight:SetAllPoints()
+			sectionFrame.header.highlight:Hide()
+
+			sectionFrame.header.highlight.tex = sectionFrame.header.highlight:CreateTexture(nil, "BACKGROUND")
+			sectionFrame.header.highlight.tex:Point("TOPLEFT", sectionFrame.header, "TOPLEFT")
+			sectionFrame.header.highlight.tex:Point("BOTTOMRIGHT", sectionFrame, "BOTTOMRIGHT")
+			sectionFrame.header.highlight.tex:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+			sectionFrame.header.highlight.tex:SetBlendMode("ADD")
+			sectionFrame.header.highlight.tex:SetDesaturated(true)
+			sectionFrame.header.highlight.tex:SetAlpha(0.1)
+
+			sectionFrame.header.highlight.tex2 = sectionFrame.header.highlight:CreateTexture(nil, "BACKGROUND")
+			sectionFrame.header.highlight.tex2:Point("TOPLEFT", sectionFrame.header, "TOPLEFT")
+			sectionFrame.header.highlight.tex2:Point("BOTTOMRIGHT", sectionFrame.header, "BOTTOMRIGHT")
+			sectionFrame.header.highlight.tex2:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+			sectionFrame.header.highlight.tex2:SetBlendMode("ADD")
+			sectionFrame.header.highlight.tex2:SetVertexColor(0, 0.5, 0)
+
+			sectionFrame.header:SetScript("OnDoubleClick", function()
+				local layout = f.currentLayout
+				local currentSection = f.currentLayout.sections[sectionFrame.order]
+				currentSection.db.minimized = not currentSection.db.minimized
+				if not currentSection.db.minimized then
+					sectionFrame.minimizedLine:Hide()
+					sectionFrame.title:SetText(currentSection.db.title.text)
+					for _, button in ipairs(currentSection.buttons) do
+						button.isHidden = false
+						button:Show()
+					end
+				else
+					sectionFrame.minimizedLine:Show()
+					sectionFrame:Height(1)
+				end
+				self:UpdateSection(f, 1, currentSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing, true)
+			end)
+			sectionFrame.header:SetScript("OnReceiveDrag", function()
+				if f.draggedButton then
+					f.draggedButton.atHeader = f.currentLayout.sections[sectionFrame.order]
+					ClearCursor()
+					f.draggedButton = nil
+				end
+			end)
+			sectionFrame.header:SetScript("OnMouseDown", function()
+				if f.draggedButton then
+					f.draggedButton.atHeader = f.currentLayout.sections[sectionFrame.order]
+					ClearCursor()
+					f.draggedButton = nil
+				end
+			end)
+			sectionFrame.header:SetScript("OnEnter", function(self)
+				local cursorInfo = GetCursorInfo()
+				if cursorInfo == 'item' or cursorInfo == 'merchant' then
+					local emptyButton
+					local currentSection = f.currentLayout.sections[sectionFrame.order]
+					if removingBag then
+						for button in pairs(buttonMap[f]) do
+							if button.bagID ~= removingBag then
+								emptyButton = button
+								break
+							end
+						end
+					elseif currentSection.db.isSpecialBag then
+						self.prevEmptySlotsSelection = f.emptyButton.emptySlotsSelection
+						emptyButton = mod:FindEmpty(nil, f, currentSection.db.bagID)
+						updateEmptyButtonCount(f, false)
+					else
+						emptyButton = next(buttonMap[f])
+					end
+					if emptyButton then
+						self.highlight.tex2:SetVertexColor(0, 0.5, 0)
+						self:SetFrameLevel(1)
+
+						emptyButton.atHeader = currentSection
+						emptyButton:SetAllPoints(self)
+						emptyButton:SetAlpha(0)
+						emptyButton:Show()
+					elseif f.draggedButton then
+						self.shouldFade = true
+						self.highlight.tex2:SetVertexColor(0, 0.5, 0)
+						E:UIFrameFadeIn(self.highlight, 0.2, self.highlight:GetAlpha(), 1)
+					else
+						self.shouldFade = true
+						self.highlight.tex2:SetVertexColor(0.5, 0, 0)
+						E:UIFrameFadeIn(self.highlight, 0.2, self.highlight:GetAlpha(), 1)
+					end
+				end
+			end)
+			sectionFrame.header:SetScript("OnLeave", function(self)
+				if self.shouldFade then
+					self.shouldFade = false
+					E:UIFrameFadeOut(self.highlight, 0.2, self.highlight:GetAlpha(), 0)
+					if self.prevEmptySlotsSelection then
+						f.emptyButton.emptySlotsSelection = self.prevEmptySlotsSelection
+						self.prevEmptySlotsSelection = nil
+						updateEmptyButtonCount(f, true)
+					end
+				end
+			end)
+
+			sectionFrame.minimizedLine = sectionFrame:CreateTexture(nil, "OVERLAY")
+			sectionFrame.minimizedLine:Point("TOPLEFT", sectionFrame, "TOPLEFT")
+			sectionFrame.minimizedLine:Point("TOPRIGHT", sectionFrame, "TOPRIGHT")
+			sectionFrame.minimizedLine:Height(1)
 		end
 
-		sectionFrame:ClearAllPoints()
-		sectionFrame:Point("TOPLEFT", f.holderFrame, "TOPLEFT", 0, yOffset)
-		sectionFrame:Width(maxSectionWidth)
-		sectionFrame.occupied = {}
-		sectionFrame:Show()
-
-		local sectionButtons = {}
-		if section.isSpecialBag then
-			sectionButtons = specialButtons[section.bagID]
+		if not section.minimized then
+			sectionFrame.minimizedLine:Hide()
 		else
-			for _ = 1, section.length do
-				local button = tremove(buttons, 1)
-				if not button then break end
-				tinsert(sectionButtons, button)
+			sectionFrame.minimizedLine:Show()
+		end
+		sectionFrame.order = i
+		sectionFrame:Width(section.numColumns * (buttonSize + buttonSpacing) - buttonSpacing)
+
+		local storedPositions = section.storedPositions
+		local processedSection = {
+			frame = sectionFrame,
+			buttons = {},
+			db = section,
+		}
+		updateSortMethods(processedSection)
+		updateCollectionMethods(processedSection)
+
+		if section.isSpecialBag then
+            local bagID = section.bagID
+            local buttonsSpecial = specialButtons[bagID]
+            tsort(buttonsSpecial, function(a, b)
+                return (storedPositions[a.bagID..'-'..a.slotID] or 999) < (storedPositions[b.bagID..'-'..b.slotID] or 999)
+            end)
+            for _, button in ipairs(buttonsSpecial) do
+				if button.hasItem then
+					local itemID = B_GetItemID(nil, bagID, button.slotID)
+					itemCounts[itemID] = GetItemCount(itemID)
+					button.itemID = itemID
+					tinsert(processedSection.buttons, button)
+					section.storedPositions[bagID..'-'..button.slotID] = #processedSection.buttons
+				else
+					button.itemID = false
+					button:Hide()
+				end
+				buttonMap[bagID][button.slotID] = processedSection
+            end
+        elseif section.shouldPopulate then
+			local reserved = {}
+			for j, button in ipairs(buttons) do
+				local bagID, slotID = button.bagID, button.slotID
+				local hash = bagID..'-'..slotID
+				local _, pass = self:EvaluateItem({processedSection}, bagID, slotID, button.itemID or B_GetItemID(nil, bagID, slotID))
+				if pass or i == #sections then
+					tinsert(reserved, {index = j, hash = hash})
+					tinsert(processedSection.buttons, button)
+					buttonMap[bagID][slotID] = processedSection
+					section.storedPositions[hash] = #processedSection.buttons
+				elseif section.storedPositions[hash] then
+					section.storedPositions[hash] = nil
+				end
 			end
+			tsort(reserved, function(a,b) return a.index > b.index end)
+			for _, info in ipairs(reserved) do
+				tremove(buttons, info.index)
+				for _, otherSection in ipairs(sections) do
+					if otherSection ~= section then
+						local removedPos = otherSection.storedPositions[info.hash]
+						if removedPos then
+							otherSection.storedPositions[info.hash] = nil
+							for hash, pos in pairs(otherSection.storedPositions) do
+								if pos > removedPos then
+									otherSection.storedPositions[hash] = pos - 1
+								end
+							end
+						end
+					end
+				end
+			end
+			section.shouldPopulate = nil
+		else
+			local reserved = {}
+			for j, button in ipairs(buttons) do
+				local bagID, slotID = button.bagID, button.slotID
+				local pos = storedPositions[bagID..'-'..slotID]
+				if pos then
+					tinsert(reserved, j)
+					tinsert(processedSection.buttons, button)
+					buttonMap[bagID][slotID] = processedSection
+				end
+			end
+			tsort(reserved, function(a,b) return a > b end)
+			for _, index in ipairs(reserved) do
+				tremove(buttons, index)
+			end
+			tsort(processedSection.buttons, function(a, b)
+				return (storedPositions[a.bagID..'-'..a.slotID] or 999) < (storedPositions[b.bagID..'-'..b.slotID] or 999)
+			end)
 		end
 
-		if #sectionButtons == 0 then break end
+		sectionFrame.title = sectionFrame.title or sectionFrame:CreateFontString(nil, "OVERLAY")
+		sectionFrame.title:SetFont(LSM:Fetch('font', section.title.font), section.title.size, section.title.flags)
+		sectionFrame.title:SetText(section.title.text)
+		sectionFrame.title:SetTextColor(unpack(section.title.color))
+		sectionFrame.title:SetJustifyH(section.title.justify or "LEFT")
+		sectionFrame.title:Show()
+		sectionFrame.title:ClearAllPoints()
 
-		if section.title.enabled then
-			sectionFrame.title = sectionFrame.title or sectionFrame:CreateFontString(nil, "OVERLAY")
-			sectionFrame.title:SetFont(LSM:Fetch('font', section.title.font), section.title.size, section.title.flags)
-			sectionFrame.title:SetText(section.title.text)
-			sectionFrame.title:SetTextColor(unpack(section.title.color))
-			sectionFrame.title:Show()
-			sectionFrame.title:ClearAllPoints()
-		end
+		sectionFrame.header:ClearAllPoints()
+		sectionFrame.header:Point("BOTTOMLEFT", sectionFrame, "TOPLEFT", 0, section.title.yOffset)
+		sectionFrame.header:Point("BOTTOMRIGHT", sectionFrame, "TOPRIGHT", 0, section.title.yOffset)
+		sectionFrame.header:Size(section.title.size)
+
+		sectionFrame.minimizedLine:SetTexture(unpack(section.title.color))
 
 		if section.icon.enabled then
 			sectionFrame.icon = sectionFrame.icon or sectionFrame:CreateTexture(nil, "OVERLAY")
@@ -1353,82 +1940,132 @@ function mod:ConfigureContainer(f, db, maxSectionWidth, numContainerColumns, but
 			sectionFrame.icon:Size(section.icon.size, section.icon.size)
 			sectionFrame.icon:Show()
 			sectionFrame.icon:ClearAllPoints()
-		elseif sectionFrame.icon then
-			sectionFrame.icon:Hide()
-			sectionFrame.icon = nil
-		end
-
-		if section.title.enabled and section.icon.enabled then
 			if section.icon.toText then
 				sectionFrame.icon:Point(section.icon.point, sectionFrame.title, section.icon.relativeTo, section.icon.xOffset, section.icon.yOffset)
-				sectionFrame.title:Point(section.title.point, sectionButtons[1], section.title.relativeTo, section.title.xOffset, section.title.yOffset)
+				sectionFrame.title:Point("BOTTOMLEFT", sectionFrame, "TOPLEFT", section.title.xOffset, section.title.yOffset)
+				sectionFrame.title:Point("BOTTOMRIGHT", sectionFrame, "TOPRIGHT", 0, section.title.yOffset)
 			elseif section.title.toIcon then
 				sectionFrame.title:Point(section.title.point, sectionFrame.icon, section.title.relativeTo, section.title.xOffset, section.title.yOffset)
-				sectionFrame.icon:Point(section.icon.point, sectionButtons[1], section.icon.relativeTo, section.icon.xOffset, section.icon.yOffset)
+				sectionFrame.title:Point("BOTTOMRIGHT", sectionFrame, "TOPRIGHT", 0, section.title.yOffset)
+				sectionFrame.icon:Point("BOTTOMLEFT", sectionFrame, "TOPLEFT", section.icon.xOffset, section.icon.yOffset)
 			end
-		elseif section.title.enabled then
-			sectionFrame.title:Point(section.title.point, sectionButtons[1], section.title.relativeTo, section.title.xOffset, section.title.yOffset)
-		elseif section.icon.enabled then
-			sectionFrame.icon:Point(section.icon.point, sectionButtons[1], section.icon.relativeTo, section.icon.xOffset, section.icon.yOffset)
+			minIconLeft = min(minIconLeft, section.icon.xOffset)
+		else
+			if sectionFrame.icon then
+				sectionFrame.icon:Hide()
+				sectionFrame.icon = nil
+			end
+			sectionFrame.title:Point("BOTTOMLEFT", sectionFrame, "TOPLEFT", section.title.xOffset, section.title.yOffset)
+			sectionFrame.title:Point("BOTTOMRIGHT", sectionFrame, "TOPRIGHT", -buttonSpacing, section.title.yOffset)
 		end
 
-		for i, button in ipairs(sectionButtons) do
-			sectionFrame.occupied[i] = B_GetItemID(nil, button.bagID, button.slotID)
-		end
-
-		local processedSection = {
-			frame = sectionFrame,
-			buttons = sectionButtons,
-			numColumns = numContainerColumns,
-			sectionSpacing = db.sectionSpacing,
-			db = section,
-			order = i,
-		}
-
-		self:HandleControls(f, processedSection, buttonSize)
 		tinsert(processedSections, processedSection)
+	end
+
+	for _, button in ipairs(buttons) do
+		local bagID, slotID = button.bagID, button.slotID
+		local targetSection = self:EvaluateItem(processedSections, bagID, slotID, button.itemID or B_GetItemID(nil, bagID, slotID))
+		tinsert(targetSection.buttons, button)
+		buttonMap[bagID][slotID] = targetSection
+		targetSection.db.storedPositions[bagID..'-'..slotID] = #targetSection.buttons
+	end
+
+	while #sections < #layoutSections do
+		local section = layoutSections[#layoutSections]
+		for _, button in ipairs(section.buttons) do
+			if button.highlight then
+				button.highlight:Hide()
+				button.highlight = nil
+			end
+		end
+		local frame = section.frame
+		if frame then
+			frame:Hide()
+			section.frame = nil
+		end
+		tremove(layoutSections, #layoutSections)
 	end
 
     f.currentLayout = {
         sections = processedSections,
-        buttonSize = buttonSize
+		numColumns = numColumns,
+		maxButtons = maxButtons,
+        buttonSize = buttonSize,
+        buttonSpacing = buttonSpacing,
+		filter = activeFilters,
     }
-end
 
-function mod:Layout(self, isBank)
-    if not E.private.bags.enable then return end
-    local f = B_GetContainerFrame(nil, isBank)
-    if not f then return end
-
-	local db = E.db.Extras.general[modName]
-	if db.SplitStack.enabled or db.EasierProcessing.enabled then
-		for _, bagID in ipairs(f.BagIDs) do
-			if f.Bags[bagID] then
-				for slotID = 1, f.Bags[bagID].numSlots do
-					local button = f.Bags[bagID][slotID]
-					if button then
-						for _, info in pairs(mod.localhooks) do
-							for type in pairs(info) do
-								if not mod:IsHooked(button, type) then
-									mod:SecureHookScript(button, type, function(self, ...) runAllScripts(self, type, ...) end)
+	for i = -1, NUM_BANKBAGSLOTS do
+		local holder = f.ContainerHolder[i]
+		if holder and i ~= 0 then
+			for script, val in pairs({["OnDragStart"] = true, ["OnDragStop"] = false}) do
+				if not self:IsHooked(holder, script) then
+					self:SecureHookScript(holder, script, function()
+						removingBag = val and i - 1
+					end)
+				end
+			end
+			if not self:IsHooked(holder, "OnEnter") then
+				self:SecureHookScript(holder, "OnEnter", function(self)
+					holderTT:SetTemplate()
+					holderTT:SetOwner(holder, "ANCHOR_RIGHT")
+					holderTT:AddLine(L["Alt-Click: free bag slots, if possible."])
+					holderTT:Show()
+				end)
+			end
+			if not self:IsHooked(holder, "OnLeave") then
+				self:SecureHookScript(holder, "OnLeave", function(self)
+					holderTT:Hide()
+				end)
+			end
+			if not self:IsHooked(holder, "OnMouseDown") then
+				self:SecureHookScript(holder, "OnMouseDown", function(self)
+					if IsAltKeyDown() then
+						if InCombatLockdown() then
+							print(core.customColorBad..ERR_NOT_IN_COMBAT)
+							return
+						end
+						local bagID = self.id
+						local bag = f.Bags[bagID]
+						if bag and bag.numSlots > 0 then
+							local heldButtons, emptyButtons = {}, {}
+							for slotID = 1, GetContainerNumSlots(bagID) do
+								local button = bag[slotID]
+								if button and button.hasItem then
+									tinsert(heldButtons, button)
 								end
+							end
+							for button in pairs(buttonMap[f]) do
+								if button.bagID ~= bagID then
+									tinsert(emptyButtons, button)
+								end
+							end
+							if #heldButtons > 0 and #emptyButtons > 0 then
+								self.elapsed = 0
+								self:SetScript("OnUpdate", function(self, elapsed)
+									self.elapsed = self.elapsed + elapsed
+									if self.elapsed > 0.1 then
+										local held = tremove(heldButtons)
+										local empty = tremove(emptyButtons)
+										B_PickupItem(nil, held.bagID, held.slotID)
+										B_PickupItem(nil, empty.bagID, empty.slotID)
+										if #heldButtons == 0 or #emptyButtons == 0 then
+											self:SetScript("OnUpdate", nil)
+										end
+									end
+								end)
 							end
 						end
 					end
-				end
+				end)
+			end
+			if not self:IsHooked(holder, "OnHide") then
+				self:SecureHookScript(holder, "OnHide", function(self)
+					self:SetScript("OnUpdate", nil)
+				end)
 			end
 		end
 	end
-
-	if not db.BagsExtended.enabled then return end
-
-	local buttonSpacing = E.Border * 2
-	local buttonSize = isBank and B.db.bankSize or B.db.bagSize
-	local containerWidth = (isBank and B.db.bankWidth) or B.db.bagWidth
-	local numContainerColumns = floor(containerWidth / (buttonSize + buttonSpacing))
-	local maxSectionWidth = (numContainerColumns * (buttonSize + buttonSpacing) - buttonSpacing) + buttonSize
-
-	f:Width(maxSectionWidth)
 
 	if not isBank then
 		if not f.heldCurrencies then
@@ -1446,8 +2083,10 @@ function mod:Layout(self, isBank)
 				for i = 1, numCurrencies do
 					local _, isHeader, _, _, _, count, _, icon, itemID = GetCurrencyListInfo(i)
 					if not isHeader and count > 0 then
-						if itemID == 43307 then icon = "Interface\\PVPFrame\\PVP-ArenaPoints-Icon"
-						elseif itemID == 43308 then icon = "Interface\\PVPFrame\\PVP-Currency-"..UnitFactionGroup("player")
+						if itemID == 43307 then
+							icon = "Interface\\PVPFrame\\PVP-ArenaPoints-Icon"
+						elseif itemID == 43308 then
+							icon = "Interface\\PVPFrame\\PVP-Currency-"..UnitFactionGroup("player")
 						end
 						hasCurrencies = true
 						local name, _, quality = GetItemInfo(itemID)
@@ -1496,453 +2135,660 @@ function mod:Layout(self, isBank)
 		end
 	end
 
-	mod:ConfigureContainer(f, db.BagsExtended.containers[isBank and 'bank' or 'bags'], maxSectionWidth, numContainerColumns, buttonSize)
+	if not f.emptyButton then
+		f.emptyButton = CreateFrame("Button", '$parentEmptyButton', f, "UIPanelButtonTemplate")
+		f.emptyButton:Size(24)
+		f.emptyButton:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", 0, 6)
+		f.emptyButton.showEmptySections = false
+		f.emptyButton.hideHints = db.hideHints
+		f.emptyButton:EnableMouseWheel(true)
 
-	if incombat then
-		for _, section in ipairs(f.currentLayout.sections) do
-			local sectionFrame = section.frame
-			local button = section.buttons[#section.buttons]
-			sectionFrame.concatenateButton:ClearAllPoints()
-			sectionFrame.concatenateButton:Point("TOPLEFT", button, "TOPRIGHT", buttonSpacing, 0)
-			sectionFrame.expandButton:ClearAllPoints()
-			sectionFrame.expandButton:Point("BOTTOMLEFT", button, "BOTTOMRIGHT", buttonSpacing, 0)
-			mod:UpdateEmptySlotCount(button, 0)
+		f.emptyButton.eyeTex = f.emptyButton:CreateTexture(nil, "OVERLAY")
+		f.emptyButton.eyeTex:Point("BOTTOMRIGHT", f.emptyButton, "BOTTOMRIGHT")
+		f.emptyButton.eyeTex:SetTexture("Interface\\LFGFrame\\LFG-Eye")
+		f.emptyButton.eyeTex:Size(16)
+		f.emptyButton.eyeTex:SetTexCoord(0, 0.1, 0, 0.20)
+		f.emptyButton.eyeTex:Hide()
+
+		f.emptyButton.highlight = CreateFrame("Frame", nil, f.emptyButton)
+		f.emptyButton.highlight:SetFrameLevel(999)
+		f.emptyButton.highlight:Point("CENTER", f.emptyButton, "CENTER")
+		f.emptyButton.highlight:Size(30)
+		f.emptyButton.highlight:Hide()
+
+		f.emptyButton.highlight.tex = f.emptyButton.highlight:CreateTexture(nil, "OVERLAY")
+		f.emptyButton.highlight.tex:Point("TOPLEFT", f.emptyButton.highlight, "TOPLEFT")
+		f.emptyButton.highlight.tex:Point("BOTTOMRIGHT", f.emptyButton.highlight, "BOTTOMRIGHT")
+		f.emptyButton.highlight.tex:SetBlendMode("ADD")
+
+		f.emptyButton.normalTex = f.emptyButton:CreateTexture(nil, "ARTWORK")
+		f.emptyButton.normalTex:SetTexture("Interface\\Minimap\\Tracking\\Banker")
+		f.emptyButton.normalTex:Point("CENTER")
+		f.emptyButton.normalTex:Size(24)
+
+		f.emptyButton.pushedTex = f.emptyButton:CreateTexture(nil, "ARTWORK")
+		f.emptyButton.pushedTex:SetTexture("Interface\\Minimap\\Tracking\\Banker")
+		f.emptyButton.pushedTex:Point("CENTER")
+		f.emptyButton.pushedTex:Size(24)
+
+		f.emptyButton.highlightTex = f.emptyButton:CreateTexture(nil, "ARTWORK")
+		f.emptyButton.highlightTex:SetTexture("Interface\\Minimap\\Tracking\\Banker")
+		f.emptyButton.highlightTex:Point("CENTER")
+		f.emptyButton.highlightTex:SetAlpha(0.25)
+		f.emptyButton.highlightTex:Size(24)
+
+		f.emptyButton:SetNormalTexture(f.emptyButton.normalTex)
+		f.emptyButton:SetPushedTexture(f.emptyButton.pushedTex)
+		f.emptyButton:SetHighlightTexture(f.emptyButton.highlightTex)
+
+		f.emptyButton.emptySlotsText = f.emptyButton:CreateFontString(nil, "OVERLAY")
+		f.emptyButton.emptySlotsText:Point("BOTTOMLEFT", f.emptyButton.totalEmptySlotsText, "BOTTOMLEFT")
+		f.emptyButton.emptySlotsText:FontTemplate()
+		local empty = 0
+		for _ in pairs(buttonMap[f]) do
+			empty = empty + 1
 		end
-		mod:RegisterEvent("PLAYER_REGEN_ENABLED", function()
-			for _, section in ipairs(f.currentLayout.sections) do
-				for _, button in ipairs(section.buttons) do
-					RegisterStateDriver(button, "visibility", "[combat] show")
+		f.emptyButton.emptySlotsText:SetText(empty)
+
+		f.emptyButton.emptySlotsSelection = 0
+		f.emptyButton:SetScript("OnMouseWheel", function(self)
+			updateEmptyButtonCount(f)
+			self:GetScript("OnEnter")(self)
+		end)
+		f.emptyButton:SetScript("OnReceiveDrag", function(self)
+			if f.draggedButton then
+				f.draggedButton.atHeader = 'evaluate'
+				ClearCursor()
+				f.draggedButton = nil
+			end
+		end)
+		f.emptyButton:SetScript("OnEnter", function(self)
+			local cursorInfo = GetCursorInfo()
+			if cursorInfo == 'item' or cursorInfo == 'merchant' then
+				local _, itemID, itemLink
+				if cursorInfo == 'item' then
+					_, _, itemLink = GetCursorInfo()
+				else
+					_, itemID = GetCursorInfo()
+					itemLink = GetMerchantItemLink(itemID)
+				end
+
+				if itemLink then
+					local emptyButton
+					if removingBag then
+						for button in pairs(buttonMap[f]) do
+							if button.bagID ~= removingBag then
+								emptyButton = button
+								break
+							end
+						end
+					elseif self.emptySlotsSelection ~= 0 then
+						emptyButton = mod:FindEmpty(nil, f, self.emptySlotsSelection)
+					else
+						emptyButton = next(buttonMap[f])
+					end
+					if emptyButton then
+						self.highlight.tex:SetTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+						self.highlight.tex:SetVertexColor(0, 1, 0)
+						self.highlight:SetFrameLevel(f.emptyButton:GetFrameLevel())
+
+						emptyButton.atHeader = 'evaluate'
+						emptyButton:SetAllPoints(self)
+						emptyButton:SetAlpha(0)
+						emptyButton:Show()
+					elseif f.draggedButton then
+						self.highlight.shouldFade = true
+						self.highlight.tex:SetTexture("Interface\\Buttons\\UI-Common-MouseHilight")
+						self.highlight.tex:SetVertexColor(0, 1, 0)
+						E:UIFrameFadeIn(self.highlight, 0.2, self.highlight:GetAlpha(), 1)
+					else
+						self.highlight.shouldFade = true
+						self.highlight.tex:SetTexture("Interface\\Buttons\\UI-GROUPLOOT-PASS-HIGHLIGHT")
+						self.highlight.tex:SetVertexColor(1, 0, 0)
+						E:UIFrameFadeIn(self.highlight, 0.2, self.highlight:GetAlpha(), 1)
+					end
 				end
 			end
-			incombat = false
-			updateLayouts()
-			mod:RegisterEvent("PLAYER_REGEN_ENABLED", function() incombat = false updateLayouts() end)
+			showEmptyButtonTT(f)
+		end)
+		f.emptyButton.highlight:SetScript("OnLeave", function(self)
+			if self.shouldFade then
+				self.shouldFade = false
+				E:UIFrameFadeOut(self.highlight, 0.2, self.highlight:GetAlpha(), 0)
+			end
+		end)
+		f.emptyButton:SetScript("OnLeave", function(self)
+			if self.highlight.shouldFade then
+				self.highlight.shouldFade = false
+				E:UIFrameFadeOut(self.highlight, 0.2, self.highlight:GetAlpha(), 0)
+			end
+			GameTooltip_Hide()
+		end)
+		f.emptyButton:SetScript("OnMouseUp", function(self)
+			self:ClearAllPoints()
+			self:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", 0, 6)
+		end)
+		f.emptyButton:SetScript("OnMouseDown", function(self)
+			self:ClearAllPoints()
+			self:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", 1, 5)
+			local draggingItem = GetCursorInfo()
+			if f.draggedButton then
+				f.draggedButton.atHeader = 'evaluate'
+				ClearCursor()
+				f.draggedButton = nil
+			end
+			local layout = f.currentLayout
+			if IsAltKeyDown() then
+				if IsShiftKeyDown() then
+					f.emptyButton.hideHints = not f.emptyButton.hideHints
+					db.hideHints = f.emptyButton.hideHints
+					showEmptyButtonTT(f)
+				elseif not draggingItem then
+					for _, section in ipairs(layout.sections) do
+						section.db.storedPositions = {}
+					end
+					mod:Layout(B, f.isBank)
+				end
+			elseif not draggingItem then
+				self.showEmptySections = not self.showEmptySections
+				self.showSizing = not self.showSizing
+				toggleLayoutMode(f, self.showSizing)
+				if self.showEmptySections then
+					f.emptyButton.eyeTex:Show()
+					for i, section in ipairs(layout.sections) do
+						f.forceShow = true
+						db.forceShow = true
+						mod:UpdateSection(f, #section.buttons, section,
+											layout.numColumns, layout.buttonSize, layout.buttonSpacing, i == #layout.sections)
+					end
+				else
+					f.emptyButton.eyeTex:Hide()
+					for i, section in ipairs(layout.sections) do
+						f.forceShow = false
+						db.forceShow = false
+						mod:UpdateSection(f, #section.buttons, section,
+											layout.numColumns, layout.buttonSize, layout.buttonSpacing, i == #layout.sections)
+					end
+				end
+				E:StopFlash(self.highlight)
+				E:UIFrameFadeOut(self.highlight, 1, self.highlight:GetAlpha(), 0)
+			end
 		end)
 	end
 
-	local minIconLeft = huge
-	for _, section in ipairs(f.currentLayout.sections) do
-		local prevButton
-        for i, button in ipairs(section.buttons) do
-            buttonMap[button.bagID][button.slotID] = section
+	if not f.qualityFilterBar then
+		f.qualityFilterBar = CreateFrame("Frame", '$parentQualityFilterBar', f)
+		f.qualityFilterBar:Point("BOTTOMLEFT", f.holderFrame, "BOTTOMLEFT")
+		f.qualityFilterBar:Point("BOTTOMRIGHT", f.holderFrame, "BOTTOMRIGHT")
+		f.qualityFilterBar:Height(5)
 
-			if not incombat then
-				RegisterStateDriver(button, "visibility", "[combat] show")
+		if not isBank then
+			f.currencyButton:ClearAllPoints()
+			f.currencyButton:Point("TOPLEFT", f.qualityFilterBar, "BOTTOMLEFT", 0, db.qualityFilterShown and 28 or 18)
+			f.currencyButton:Point("TOPRIGHT", f.qualityFilterBar, "BOTTOMRIGHT", 0, db.qualityFilterShown and 28 or 18)
+		end
+
+		local barWidth = (((buttonSize + buttonSpacing) * numColumns) - buttonSpacing - 30)/7
+		for i = 6, 0, -1 do
+			local color = ITEM_QUALITY_COLORS[i]
+			local bar = CreateFrame("Button", nil, f.qualityFilterBar)
+			bar:Size(barWidth, 5)
+			bar:Point("TOPLEFT", f.qualityFilterBar, "TOPLEFT", i * (barWidth+5), 0)
+			bar:CreateBackdrop()
+			bar:StyleButton()
+			bar:RegisterForClicks("LeftButtonDown", "RightButtonDown")
+			bar.isActive = true
+			bar.quality = i
+
+			if not db.qualityFilterShown then
+				bar:Hide()
 			end
 
-			local col = (i - 1) % section.numColumns
-			local row = floor((i - 1) / section.numColumns)
+			bar.bg = bar:CreateTexture(nil, "ARTWORK")
+			bar.bg:SetAllPoints(bar)
+			bar.bg:SetTexture(color.r, color.g, color.b)
 
-			if not button.highlight then
-				button.highlight = CreateFrame("Frame", nil, button)
-				button.highlight:SetAllPoints()
-
-				button.highlight.glow = CreateFrame("Frame", nil, button.highlight)
-				button.highlight.glow:SetAllPoints()
-				button.highlight.glow.tex = button.highlight.glow:CreateTexture(nil, "OVERLAY")
-				button.highlight.glow.tex:SetAllPoints()
-				button.highlight.glow.tex:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
-				button.highlight.glow.tex:SetBlendMode("ADD")
-
-				button.highlight.pulse = CreateFrame("Frame", nil, button.highlight)
-				button.highlight.pulse:SetAllPoints()
-				button.highlight.pulse.tex = button.highlight.pulse:CreateTexture(nil, "OVERLAY")
-				button.highlight.pulse.tex:SetAllPoints()
-				button.highlight.pulse.tex:SetTexture("Interface\\Cooldown\\star4")
-				button.highlight.pulse.tex:SetBlendMode("ADD")
-
-				button.highlight:Hide()
-
-				button.highlight:HookScript("OnShow", function(self)
-					E_Flash(nil, self.pulse, 1, true)
-				end)
-
-				button.highlight:HookScript("OnHide", function(self)
-					E_StopFlash(nil, self.pulse)
-				end)
-			end
-
-			if not mod:IsHooked(button, "OnEnter") then
-				mod:SecureHookScript(button, "OnEnter", function(self)
-					self.highlight:Hide()
-				end)
-			end
-
-			button:ClearAllPoints()
-			if col == 0 then
-				if row == 0 then
-					button:Point("TOPLEFT", section.frame, "TOPLEFT", buttonSpacing, -(section.sectionSpacing or 0)/2 - buttonSpacing*2)
+			bar:SetScript("OnClick", function(self, clickButton)
+				if clickButton == "RightButton" then
+					for j = 0, 6 do
+						local filterBar = f.qualityFilterBar[j+1]
+						if filterBar then
+							local filterColor = ITEM_QUALITY_COLORS[j]
+							if filterBar == self then
+								filterBar.bg:SetTexture(filterColor.r, filterColor.g, filterColor.b)
+								filterBar.isActive = true
+								activeFilters[j] = true
+							else
+								filterBar.bg:SetTexture(filterColor.r * 0.5, filterColor.g * 0.5, filterColor.b * 0.5)
+								filterBar.isActive = false
+								activeFilters[j] = false
+							end
+						end
+					end
+					for j, section in ipairs(f.currentLayout.sections) do
+						for _, button in ipairs(section.buttons) do
+							local rarity = button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.bagID, button.slotID)))
+							button.isHidden = (rarity ~= i)
+							if button.isHidden then
+								button:Hide()
+							else
+								button:Show()
+							end
+						end
+						mod:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing, j == #f.currentLayout.sections)
+					end
+				elseif self.isActive then
+					self.bg:SetTexture(color.r * 0.5, color.g * 0.5, color.b * 0.5)
+					self.isActive = false
+					activeFilters[i] = false
+					for j, section in ipairs(f.currentLayout.sections) do
+						for _, button in ipairs(section.buttons) do
+							local rarity = button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.bagID, button.slotID)))
+							if rarity == i then
+								button.isHidden = true
+								button:Hide()
+							end
+						end
+						mod:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing, j == #f.currentLayout.sections)
+					end
 				else
-					button:Point("TOP", section.buttons[i - section.numColumns], "BOTTOM", 0, -buttonSpacing)
+					self.bg:SetTexture(color.r, color.g, color.b)
+					self.isActive = true
+					activeFilters[i] = true
+					for j, section in ipairs(f.currentLayout.sections) do
+						for _, button in ipairs(section.buttons) do
+							local rarity = button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.bagID, button.slotID)))
+							if rarity == i then
+								button.isHidden = false
+								button:Show()
+							end
+						end
+						mod:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing, j == #f.currentLayout.sections)
+					end
 				end
+			end)
+			f.qualityFilterBar[i+1] = bar
+			activeFilters[i] = true
+		end
+		f.qualityFilterButton = CreateFrame("Button", '$parentQualityFilterButton', f.holderFrame)
+		f.qualityFilterButton:Size(16 + E.Border)
+		f.qualityFilterButton:SetTemplate()
+		f.qualityFilterButton:Point("RIGHT", isBank and f.purchaseBagButton or f.vendorGraysButton, "LEFT", -5, 0)
+		f.qualityFilterButton:SetNormalTexture("Interface\\Icons\\INV_Misc_Gear_01")
+		f.qualityFilterButton:GetNormalTexture():SetTexCoord(unpack(E.TexCoords))
+		f.qualityFilterButton:GetNormalTexture():SetInside()
+		f.qualityFilterButton:SetPushedTexture("Interface\\Icons\\INV_Misc_Gear_01")
+		f.qualityFilterButton:GetPushedTexture():SetTexCoord(unpack(E.TexCoords))
+		f.qualityFilterButton:GetPushedTexture():SetInside()
+		f.qualityFilterButton:StyleButton(nil, true)
+		f.qualityFilterButton.ttText = FILTERS
+		f.qualityFilterButton:SetScript("OnEnter", B.Tooltip_Show)
+		f.qualityFilterButton:SetScript("OnLeave", GameTooltip_Hide)
+		f.qualityFilterButton:SetScript("OnClick", function(self)
+			if db.qualityFilterShown then
+				for _, bar in ipairs(f.qualityFilterBar) do
+					bar:Hide()
+				end
+				f.currencyButton:ClearAllPoints()
+				f.currencyButton:Point("TOPLEFT", f.qualityFilterBar, "BOTTOMLEFT", 0, 18)
+				f.currencyButton:Point("TOPRIGHT", f.qualityFilterBar, "BOTTOMRIGHT", 0, 18)
+				f.bottomOffset = f.bottomOffset - 10
 			else
-				button:Point("LEFT", prevButton, "RIGHT", buttonSpacing, 0)
+				for _, bar in ipairs(f.qualityFilterBar) do
+					bar:Show()
+				end
+				f.currencyButton:ClearAllPoints()
+				f.currencyButton:Point("TOPLEFT", f.qualityFilterBar, "BOTTOMLEFT", 0, 28)
+				f.currencyButton:Point("TOPRIGHT", f.qualityFilterBar, "BOTTOMRIGHT", 0, 28)
+				f.bottomOffset = f.bottomOffset + 10
 			end
-
-			prevButton = button
-        end
-		mod:ToggleMinimizeSection(f, section, buttonSize)
-		if section.db.icon.enabled then
-			minIconLeft = min(minIconLeft, section.frame.icon:GetLeft())
-		end
-		updateSortMethods(section)
-		updateCollectionMethods(section)
+			local section = f.currentLayout.sections[#f.currentLayout.sections]
+			mod:UpdateSection(f, #section.buttons, section, numColumns, buttonSize, buttonSpacing, true)
+			db.qualityFilterShown = not db.qualityFilterShown
+		end)
 	end
 
-	if minIconLeft < f.holderFrame:GetLeft() then
-		local offset = f.holderFrame:GetLeft() - minIconLeft
-		local point, parent, relativeTo, _, y = f.holderFrame:GetPoint()
-		f.holderFrame:Point(point, parent, relativeTo, offset/2 - buttonSize/4, y)
-		f:Width(maxSectionWidth + offset)
+	f.editBox:ClearAllPoints()
+	if (isBank and B.db.bankWidth or B.db.bagWidth) < 250 then
+		if not isBank then
+			f.editBox:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", E.Border * 2 + 18, E.Border * 2 - 32)
+			f.editBox:Point("TOPRIGHT", f.sortButton, "BOTTOMRIGHT", 0, -E.Border * 2 - 2)
+			f.sortButton:ClearAllPoints()
+			f.sortButton:Point("TOPRIGHT", f.goldText, "BOTTOMRIGHT", 0, -E.Border * 2)
+		else
+			f.editBox:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", E.Border * 2 + 18, E.Border * 2 - 32)
+			f.editBox:Point("TOPRIGHT", f.sortButton, "BOTTOMRIGHT", 0, -E.Border * 2 - 2)
+			f.sortButton:ClearAllPoints()
+			f.sortButton:Point("TOPRIGHT", f.bagText, "BOTTOMRIGHT", 0, -E.Border * 2)
+		end
 	else
-		f.holderFrame:ClearAllPoints()
-		f.holderFrame:Point("TOP", f, "TOP", -buttonSize/4, -f.topOffset)
-		f.holderFrame:Point("BOTTOM", f, "BOTTOM", 0, 8)
+		f.editBox:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", E.Border * 2 + 48, E.Border * 2 + 2 + E.Border)
+		f.editBox:Point("TOPRIGHT", f.qualityFilterButton, "TOPLEFT", -5, -2)
+		if not isBank then
+			f.sortButton:ClearAllPoints()
+			f.sortButton:Point("RIGHT", f.goldText, "LEFT", -5, E.Border * 2)
+		else
+			f.sortButton:ClearAllPoints()
+			f.sortButton:Point("RIGHT", f.bagText, "LEFT", -5, E.Border * 2)
+		end
 	end
 
-    mod:ScanBags(f, true)
+	local offset1, offset2 = 8
+	if minIconLeft < 0 then
+		offset2 = offset1 - minIconLeft
+	end
+
+	f.holderFrame:ClearAllPoints()
+	f.holderFrame:Point("TOPLEFT", f, "TOPLEFT", offset2 or offset1, -f.topOffset+(buttonSize/4))
+	f.holderFrame:Point("BOTTOMRIGHT", f, "BOTTOMRIGHT", -offset1, 8)
+
+	f:Width(numColumns * (buttonSize + buttonSpacing) + (offset2 or offset1) * 2 - buttonSpacing)
+
+	for _, section in ipairs(f.currentLayout.sections) do
+		self:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing)
+	end
 end
 
-function mod:ResizeFrame(f, buttonSize)
-    local yOffset = -buttonSize/4
-    local totalHeight = f.topOffset + f.bottomOffset
-	local layout = f.currentLayout
+function mod:Layout(self, isBank)
+    if not E.private.bags.enable then return end
+    local f = B_GetContainerFrame(nil, isBank)
+    if not f then return end
 
-    for i, section in ipairs(layout.sections) do
-		local sectionFrame = section.frame
-        local sectionHeight = 0
-		if not incombat then
-			sectionFrame:ClearAllPoints()
-			sectionFrame:Point("TOPLEFT", f.holderFrame, "TOPLEFT", 0, yOffset)
-			sectionHeight = sectionFrame:GetHeight()
-		else
-			sectionHeight = sectionFrame.height
-		end
-
-        yOffset = yOffset - sectionHeight
-		if i == #layout.sections then
-			totalHeight = totalHeight + buttonSize/2
-		else
-            yOffset = yOffset - section.sectionSpacing
-            totalHeight = totalHeight + section.sectionSpacing
-        end
-        totalHeight = totalHeight + sectionHeight
-    end
-
-    f:Height(totalHeight)
-end
-
-function mod:ScanBags(f, updateLast)
-    local changes, inventory = {}, {}
-    for _, bagID in ipairs(f.BagIDs) do
-        local bag = f.Bags[bagID]
-        if bag and bag.numSlots > 0 then
-			changes[bagID] = {}
-            for slotID = 1, bag.numSlots do
-                local button = bag[slotID]
-                local itemID = B_GetItemID(nil, bagID, slotID)
-                if button and itemID then
-                    if not inventory[itemID] then
-						local _, _, _, _, _, _, _, maxStack = GetItemInfo(itemID)
-                        inventory[itemID] = { positions = {}, count = 0, maxStack = maxStack or 1 }
-                    end
-                    tinsert(inventory[itemID].positions, {bagID = bagID, slotID = slotID})
-                    inventory[itemID].count = inventory[itemID].count + button.count/inventory[itemID].maxStack
-                    if not tooltipInfo[itemID] then
-						tooltipInfo[itemID] = lower(gsub(gsub(getItemTooltipText(bagID, slotID), '%s+', ''), '%p+', ''))
-					end
-                end
-            end
-        end
-    end
-
-	if not updateLast then
-		for itemID, info in pairs(inventory) do
-			local lastInfo = lastScan[f][itemID]
-			if not lastInfo then
-				for _, pos in ipairs(info.positions) do
-					changes[pos.bagID][pos.slotID] = itemID
-				end
-			elseif info.count > lastInfo.count then
-				for _, pos in ipairs(info.positions) do
-					local isNewPosition = true
-					for _, lastPos in ipairs(lastInfo.positions) do
-						if pos.bagID == lastPos.bagID and pos.slotID == lastPos.slotID then
-							isNewPosition = false
-							break
+	if not f.SplitStackHandler then
+		f.SplitStackHandler = CreateFrame("Frame", nil, f)
+		f.SplitStackHandler:SetScript("OnHide", function(self)
+			self.isStacking = false
+			self:SetScript("OnUpdate", nil)
+		end)
+	end
+	for _, bagID in ipairs(f.BagIDs) do
+		local bag = f.Bags[bagID]
+		if bag then
+			for slotID = 1, bag.numSlots do
+				local button = bag[slotID]
+				if button then
+					for _, info in pairs(mod.localhooks) do
+						for event in pairs(info) do
+							if not mod:IsHooked(button, event) then
+								mod:SecureHookScript(button, event, function(self, ...) runAllScripts(self, event, ...) end)
+							end
 						end
-					end
-					if isNewPosition then
-						changes[pos.bagID][pos.slotID] = itemID
 					end
 				end
 			end
 		end
 	end
 
-    lastScan[f] = inventory
+	if not E.db.Extras.general[modName].BagsExtendedV2.enabled then return end
+	local db = E.db.Extras.general[modName].BagsExtendedV2.containers[isBank and 'bank' or 'bags']
 
-    return changes
-end
+	local buttonSpacing = db.buttonSpacing or E.Border * 2
+	local buttonSize = isBank and B.db.bankSize or B.db.bagSize
+	local numColumns = floor((isBank and B.db.bankWidth or B.db.bagWidth) / (buttonSize + buttonSpacing))
 
-function mod:ApplyBagChanges(f, changes)
-	local updatedSections = {}
-	local occupied = {}
-	local layout = f.currentLayout
-    for bagID, slots in pairs(changes) do
-        for slotID, itemID in pairs(slots) do
-            local targetBagID, targetSlotID, section = mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
-            if targetBagID and targetSlotID then
-				if occupied[targetBagID..'-'..targetSlotID] then
-					for _, button in ipairs(section.buttons) do
-						local bagID, slotID = button.bagID, button.slotID
-						if not occupied[bagID..'-'..slotID] and not button.hasItem then
-							targetBagID, targetSlotID = bagID, slotID
-							break
-						end
-					end
-				end
-                local currentSection = buttonMap[bagID][slotID]
-                local targetSection = buttonMap[targetBagID][targetSlotID]
-                if currentSection ~= targetSection then
-                    B_PickupItem(nil, bagID, slotID)
-                    B_PickupItem(nil, targetBagID, targetSlotID)
-                    mod:UpdateSection(f, section, layout.buttonSize)
-					occupied[targetBagID..'-'..targetSlotID] = true
-					updatedSections[section] = true
-                end
-            end
-        end
-    end
-	return updatedSections
-end
-
-function mod:UpdateBagSlots(self, f, bagID)
-    local layout = f.currentLayout
-    if not layout then return end
-
-	if not equippedBags[bagID] then equippedBags[bagID] = GetBagName(bagID) end
-
-	for _, section in ipairs(layout.sections) do
-		mod:UpdateSection(f, section, layout.buttonSize)
+	if db.qualityFilterShown then
+		f.newbottomOffset = (db.bottomOffset or 0) + 10
+	else
+		f.newbottomOffset = db.bottomOffset or 0
+	end
+	if (isBank and B.db.bankWidth or B.db.bagWidth) < 250 then
+		f.newtopOffset = (db.topOffset or 0) + 42
+	else
+		f.newtopOffset = db.topOffset or 0
 	end
 
-	if updatePending then return end
-	updatePending = true
-
-	E_Delay(nil, 0.1, function()
-		if not incombat then
-			mod:ApplyBagChanges(f, mod:ScanBags(f))
-			for bagID, bagName in pairs(equippedBags) do
-				if bagName ~= GetBagName(bagID) then
-					-- due to increased load (i guess?) introduced by this plugin, real bag removal isn't being registered properly
-					equippedBags[bagID] = GetBagName(bagID)
-					B:UpdateAll()
-				end
-			end
-			updatePending = false
-		end
-	end)
+	updateSetsInfo()
+	mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpacing)
 end
 
 function mod:UpdateSlot(self, f, bagID, slotID)
-	if not f.currentLayout
-		or (f.Bags[bagID] and f.Bags[bagID].numSlots ~= GetContainerNumSlots(bagID))
-		or not f.Bags[bagID] or not f.Bags[bagID][slotID] then return end
+	local bag = f.Bags[bagID]
+	local bagMap = buttonMap[bagID]
+	if not bag or not bag[slotID] or not bagMap or (bag.numSlots ~= GetContainerNumSlots(bagID)) then return end
 
-    local button = f.Bags[bagID][slotID]
-	if not incombat and button.isHidden then button:Hide() end
+	local layout = f.currentLayout
+    local button = bag[slotID]
+	local bagType = bag.type
+
+	if not button.hasItem then
+		button:Hide()
+		local itemID = button.itemID
+		if itemID then
+			itemCounts[itemID] = GetItemCount(itemID)
+			button.itemID = false
+			local targetSection = bagMap[slotID]
+			if targetSection then
+				local buttonPos = targetSection.db.storedPositions[bagID..'-'..slotID] or 1
+				targetSection.db.storedPositions[bagID..'-'..slotID] = nil
+				tremove(targetSection.buttons, buttonPos)
+				if not bagType or bagType == 0 then
+					buttonMap[f][button] = true
+					bagMap[slotID] = nil
+				end
+				local buttons = targetSection.buttons
+				local buttonsLen = #buttons
+				for i = buttonPos, buttonsLen do
+					local button = buttons[i]
+					if button then
+						targetSection.db.storedPositions[button.bagID..'-'..button.slotID] = i
+					end
+				end
+				mod:UpdateSection(f, min(buttonsLen, buttonPos), targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+				updateEmptyButtonCount(f, true)
+			end
+		end
+	else
+		local oldID = button.itemID
+		local itemID = B_GetItemID(nil, bagID, slotID)
+		local itemCount = GetItemCount(itemID)
+		if button.isHidden then
+			button:Hide()
+		elseif not oldID then
+			local targetSection
+			buttonMap[f][button] = nil
+			if itemCounts[itemID] ~= itemCount then
+				if not button:IsVisible() then
+					button.highlight:Show()
+				end
+			end
+			if button.atHeader then
+				if button.atHeader == 'evaluate' then
+					targetSection = (bagType and bagType ~= 0) and bagMap[slotID] or mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
+					f.emptyButton.highlight:SetFrameLevel(999)
+					E:UIFrameFadeOut(f.emptyButton.highlight, 0.2, f.emptyButton.highlight:GetAlpha(), 0)
+				else
+					local header = button.atHeader.frame.header
+					targetSection = button.atHeader
+					header:SetFrameLevel(999)
+					E:UIFrameFadeOut(header.highlight, 0.2, header.highlight:GetAlpha(), 0)
+					if header.prevEmptySlotsSelection then
+						f.emptyButton.emptySlotsSelection = header.prevEmptySlotsSelection
+						header.prevEmptySlotsSelection = nil
+					end
+				end
+				button:SetAlpha(1)
+				button.atHeader = false
+			else
+				targetSection = mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
+			end
+			if targetSection then
+				local buttons = targetSection.buttons
+				tinsert(buttons, button)
+				bagMap[slotID] = targetSection
+				targetSection.db.storedPositions[bagID..'-'..slotID] = #buttons
+				local rarity = button.rarity or select(3,GetItemInfo(itemID))
+				if not layout.filter[rarity] then
+					button.isHidden = true
+					button:Hide()
+				else
+					mod:UpdateSection(f, #buttons, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+				end
+			end
+			updateEmptyButtonCount(f, true)
+		elseif button.shouldEvaluate then
+			local currentSection = bagMap[slotID]
+			local targetSection = mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
+			if currentSection then
+				local buttonPos = currentSection.db.storedPositions[bagID..'-'..slotID] or 1
+				currentSection.db.storedPositions[bagID..'-'..slotID] = nil
+				tremove(currentSection.buttons, buttonPos)
+				local buttons = currentSection.buttons
+				local buttonsLen = #buttons
+				for i = buttonPos, buttonsLen do
+					local button = buttons[i]
+					if button then
+						currentSection.db.storedPositions[button.bagID..'-'..button.slotID] = i
+					end
+				end
+				mod:UpdateSection(f, min(buttonsLen, buttonPos), currentSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+			end
+			if targetSection then
+				local buttons = targetSection.buttons
+				tinsert(buttons, button)
+				bagMap[slotID] = targetSection
+				targetSection.db.storedPositions[bagID..'-'..slotID] = #buttons
+				local rarity = button.rarity or select(3,GetItemInfo(itemID))
+				if not layout.filter[rarity] then
+					button.isHidden = true
+					button:Hide()
+				else
+					mod:UpdateSection(f, #buttons, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+				end
+			end
+			button.shouldEvaluate = nil
+		elseif f.draggedButton == button then
+			local currentSection = bagMap[slotID]
+			if currentSection and button.atHeader then
+				local targetSection
+				if button.atHeader == 'evaluate' then
+					targetSection = (bagType and bagType ~= 0) and currentSection or mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
+					E:UIFrameFadeOut(f.emptyButton.highlight, 0.2, f.emptyButton.highlight:GetAlpha(), 0)
+				else
+					local header = button.atHeader.frame.header
+					targetSection = button.atHeader
+					E:UIFrameFadeOut(header.highlight, 0.2, header.highlight:GetAlpha(), 0)
+					if header.prevEmptySlotsSelection then
+						f.emptyButton.emptySlotsSelection = header.prevEmptySlotsSelection
+						header.prevEmptySlotsSelection = nil
+					end
+				end
+				if targetSection then
+					local buttonPos = currentSection.db.storedPositions[bagID..'-'..slotID] or 1
+					local buttonsT = targetSection.buttons
+					local buttonsC = currentSection.buttons
+					for i = buttonPos, #buttonsC do
+						local button = buttonsC[i]
+						if button then
+							currentSection.db.storedPositions[button.bagID..'-'..button.slotID] = i
+						end
+					end
+					tinsert(buttonsT, button)
+					tremove(buttonsC, buttonPos)
+					targetSection.db.storedPositions[bagID..'-'..slotID] = #buttonsT
+					currentSection.db.storedPositions[bagID..'-'..slotID] = nil
+					bagMap[slotID] = targetSection
+					mod:UpdateSection(f, min(#buttonsC, buttonPos), currentSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+					mod:UpdateSection(f, #buttonsT, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+				end
+			end
+			button.atHeader = false
+		end
+		if oldID and oldID ~= itemID then
+			itemCounts[oldID] = GetItemCount(oldID)
+		end
+		itemCounts[itemID] = itemCount
+		button.itemID = itemID
+	end
 end
 
-function mod:UpdateSection(f, section, buttonSize, combatUpd)
+function mod:UpdateSection(f, index, section, numColumns, buttonSize, buttonSpacing, resize)
     local sectionFrame = section.frame
 	local buttons = section.buttons
+	local numRows
+	local sectionHeight = 1
 
-	if incombat and not combatUpd then
-		if f:IsShown() then
-			sectionFrame.newUnshown = sectionFrame.newUnshown or {}
-			for i in ipairs(buttons) do
-				sectionFrame.newUnshown[i] = true
+	if not f.forceShow and #buttons < 1 then
+		sectionFrame:Hide()
+	elseif section.db.minimized then
+		local minimizedCount = 0
+		for _, button in ipairs(buttons) do
+			if button.highlight:IsShown() then
+				minimizedCount = minimizedCount + 1
 			end
+			button:Hide()
+			button.isHidden = true
 		end
-		return
-	end
-
-    local buttonSpacing = E.Border * 2
-    local sectionHeaderHeight = section.sectionSpacing or 0
-    local visibleButtons, lastEmpty = 0, 0
-    local oldNumRows = section.numRows or 0
-
-	if sectionFrame.minimized and not incombat then
-        sectionFrame:Height(section.sectionSpacing)
-		buttons[1]:Point("TOPLEFT", sectionFrame, "TOPLEFT", buttonSpacing, -sectionHeaderHeight/2 - buttonSpacing*2)
-		if sectionFrame.title then
-			local minimizedCount = sectionFrame.minimizedCount or 0
-			sectionFrame.newUnshown = sectionFrame.newUnshown or {}
-			for i, button in ipairs(buttons) do
-				local occupied, unshown = sectionFrame.occupied[i], sectionFrame.newUnshown[i]
-				local itemID = B_GetItemID(nil, button.bagID, button.slotID)
-				if not occupied or (itemID and occupied ~= itemID) then
-					sectionFrame.occupied[i] = itemID
-					if not unshown and itemID then
-						minimizedCount = minimizedCount + 1
-						sectionFrame.newUnshown[i] = true
-						button.highlight:Show()
-					elseif unshown and not itemID then
-						minimizedCount = minimizedCount - 1
-						sectionFrame.newUnshown[i] = false
-					end
-				elseif sectionFrame.newUnshown[i] and not itemID then
-					sectionFrame.occupied[i] = false
-					sectionFrame.newUnshown[i] = false
-					minimizedCount = minimizedCount - 1
-				end
-			end
-			sectionFrame.title:SetText(section.db.title.text .. (minimizedCount > 0 and " (+" .. minimizedCount .. ")" or ""))
-			sectionFrame.minimizedCount = max(0, minimizedCount)
-		end
-		return
-    end
-
-	if sectionFrame.expanded then
-        visibleButtons = #buttons
+		sectionFrame.title:SetText(section.db.title.text..(minimizedCount > 0 and " (+" .. minimizedCount .. ")" or ""))
+		sectionFrame:Show()
 	else
-		for i, button in ipairs(buttons) do
-			if button.hasItem then
-				visibleButtons = i
+		local pos = index
+		local buttonPos = section.db.buttonPositions
+		local isEmpty = true
+		for i = index, #buttons do
+			local button = buttons[i]
+			if button and not button.isHidden then
+				button:ClearAllPoints()
+				button:SetPoint("TOPLEFT", section.frame, "TOPLEFT", unpack(buttonPos[pos]))
+				pos = pos + 1
+				isEmpty = false
 			end
 		end
-    end
-
-	if incombat then
-        self:UpdateEmptySlotCount(buttons[visibleButtons + 1], 0)
-		lastEmpty = #buttons
-	else
-		for i, button in ipairs(buttons) do
-			local itemID = B_GetItemID(nil, button.bagID, button.slotID)
-			sectionFrame.occupied[i] = itemID
-
-			if not itemID and i > visibleButtons + 1 then
-				button:Hide()
+		if isEmpty then
+			if not f.forceShow then
+				sectionFrame:Hide()
 			else
-				lastEmpty = i
-				button:Show()
-				button.isHidden = false
+				sectionFrame:Show()
 			end
-		end
-		local emptyCount = #buttons - lastEmpty + 1
-		if lastEmpty and emptyCount > 0 and not sectionFrame.expanded then
-			self:UpdateEmptySlotCount(buttons[lastEmpty], emptyCount)
-		end
-	end
-
-	if sectionFrame.concatenateButton and sectionFrame.expandButton then
-		sectionFrame.concatenateButton:ClearAllPoints()
-		sectionFrame.concatenateButton:Point("TOPLEFT", buttons[lastEmpty], "TOPRIGHT", buttonSpacing, 0)
-		sectionFrame.expandButton:ClearAllPoints()
-		sectionFrame.expandButton:Point("BOTTOMLEFT", buttons[lastEmpty], "BOTTOMRIGHT", buttonSpacing, 0)
-	end
-
-    local numRows = ceil(lastEmpty / section.numColumns)
-	local totalSectionHeight = sectionHeaderHeight + numRows * (buttonSize + buttonSpacing) - buttonSpacing
-	sectionFrame.height = totalSectionHeight
-
-	if not incombat then
-		sectionFrame:Height(totalSectionHeight)
-	end
-
-    if f.currentLayout and numRows ~= oldNumRows then
-        self:ResizeFrame(f, buttonSize)
-    end
-
-	section.numRows = numRows
-end
-
-function mod:SortSection(sortMap, sectionButtons)
-    for i, info in ipairs(sortMap) do
-        local targetButton = sectionButtons[i]
-        local currentItemID = B_GetItemID(nil, targetButton.bagID, targetButton.slotID)
-
-        if currentItemID ~= info.itemID then
-            for j, button in ipairs(sectionButtons) do
-                local itemID = B_GetItemID(nil, button.bagID, button.slotID)
-                if not sortMap[j].positioned and itemID and itemID == info.itemID then
-                    B_PickupItem(nil, button.bagID, button.slotID)
-                    B_PickupItem(nil, targetButton.bagID, targetButton.slotID)
-					ClearCursor()
-
-                    info.bagID = targetButton.bagID
-                    info.slotID = targetButton.slotID
-                    break
-                end
-            end
-        else
-            info.positioned = true
-        end
-    end
-
-    local allPositioned = true
-    for _, info in ipairs(sortMap) do
-        if not info.positioned then
-            allPositioned = false
-            break
-        end
-    end
-
-    return allPositioned
-end
-
-function mod:StackSection(buttons)
-	local complete = true
-	local stacks = {}
-	for _, button in ipairs(buttons) do
-		local bagID, slotID = button.bagID, button.slotID
-		local itemID = B_GetItemID(nil, bagID, slotID)
-		if itemID then
-			local stackCount = select(2, B_GetItemInfo(nil, bagID, slotID))
-			local _, _, _, _, _, _, _, maxStack = GetItemInfo(itemID)
-			if not stacks[itemID] then
-				stacks[itemID] = {}
-			end
-			tinsert(stacks[itemID], {button = button, count = stackCount, maxStack = maxStack})
+		else
+			numRows = ceil((pos - 1) / section.db.numColumns)
+			sectionHeight = ceil(numRows * (buttonSize + buttonSpacing) - buttonSpacing)
+			sectionFrame:Show()
 		end
 	end
 
-	for _, stack in pairs(stacks) do
-		if #stack > 1 then
-			tsort(stack, function(a, b) return a.count > b.count end)
-			local targetIndex = 1
-			for sourceIndex = 2, #stack do
-				local target = stack[targetIndex]
-				local source = stack[sourceIndex]
-				local spaceInTarget = target.maxStack - target.count
-				if target.count == target.maxStack then
-					targetIndex = targetIndex + 1
+	sectionFrame:Height(sectionHeight)
+	sectionFrame.height = sectionHeight
+
+	if resize or numRows ~= (section.numRows or 0) then
+		local offsetY = buttonSize/4
+		local lastVisibleSection
+		local currentRowColumns = 0
+		local currentRowBottom = 0
+
+		for _, section in ipairs(f.currentLayout.sections) do
+			local sectionFrame = section.frame
+			sectionFrame:ClearAllPoints()
+
+			if sectionFrame:IsShown() then
+				local sectionHeight = sectionFrame.height or sectionFrame:GetHeight()
+
+				if not lastVisibleSection then
+					sectionFrame:Point("TOPLEFT", f.holderFrame, "TOPLEFT", 0, -(offsetY + f.newtopOffset))
+					currentRowColumns = section.db.numColumns
+					currentRowBottom = offsetY + sectionHeight
+				else
+					if currentRowColumns + section.db.numColumns <= numColumns then
+						sectionFrame:Point("TOPLEFT", lastVisibleSection.frame, "TOPRIGHT", buttonSpacing, 0)
+						currentRowColumns = currentRowColumns + section.db.numColumns
+						currentRowBottom = max(currentRowBottom, offsetY + sectionHeight)
+					else
+						offsetY = currentRowBottom + (section.db.sectionSpacing or 14)
+						sectionFrame:Point("TOPLEFT", f.holderFrame, "TOPLEFT", 0, -(offsetY + f.newtopOffset))
+						currentRowColumns = section.db.numColumns
+						currentRowBottom = offsetY + sectionHeight
+					end
 				end
-				if spaceInTarget > 0 then
-					local amountToMove = min(spaceInTarget, source.count)
-					B_SplitItem(nil, source.button.bagID, source.button.slotID, amountToMove)
-					B_PickupItem(nil, target.button.bagID, target.button.slotID)
-					target.count = target.count + amountToMove
-					source.count = source.count - amountToMove
-					complete = false
-				end
+				lastVisibleSection = section
 			end
 		end
+
+		if lastVisibleSection then
+			f:Height(f.topOffset + f.bottomOffset + f.newtopOffset + f.newbottomOffset + currentRowBottom - buttonSize/4)
+		else
+			f:Height(f.topOffset + f.bottomOffset + f.newtopOffset + f.newbottomOffset)
+		end
+		section.numRows = numRows
 	end
-
-	return complete
-end
-
-function mod:UpdateEmptySlotCount(button, count)
-	if not button then return end
-
-    if count > 1 then
-        button.Count:SetText(count)
-        button.Count:Show()
-    elseif not button.count or button.count < 2 then
-        button.Count:Hide()
-    end
 end
 
 function mod:SetSlotAlphaForBag(self, f)
@@ -1965,36 +2811,68 @@ function mod:ResetSlotAlphaForBags(self, f)
 	end
 end
 
-function mod:BagsExtended(db)
-	if db.BagsExtended.enabled then
-		E.db.bags.reverseSlots = false
-		for _, func in pairs({'Layout', 'UpdateSlot', 'UpdateBagSlots', 'SetSlotAlphaForBag', 'ResetSlotAlphaForBags'}) do
-			if not self:IsHooked(B, func) then self:SecureHook(B, func) end
-		end
-		if E.Options.args.bags then
-			E.Options.args.bags.args.general.args.reverseSlots.hidden = true
-		else
-			if not self:IsHooked(E, 'ToggleOptionsUI') then
-				self:SecureHook(E, 'ToggleOptionsUI', function()
-					if not E.Options.args.bags then return end
 
-					E.Options.args.bags.args.general.args.reverseSlots.hidden = true
-					E:RefreshGUI()
-				end)
+function mod:BagsExtendedV2(db)
+	if db.BagsExtendedV2.enabled then
+		self:Unhook(B, 'Layout')
+		self:SecureHook(B, 'Layout', function(self, isBank)
+			mod:Unhook(B, 'Layout')
+			mod:Layout(self, isBank)
+			for _, func in ipairs({'Layout', 'UpdateSlot', 'SetSlotAlphaForBag', 'ResetSlotAlphaForBags'}) do
+				if not mod:IsHooked(B, func) then mod:SecureHook(B, func) end
 			end
+		end)
+		if not self:IsHooked(E, 'ToggleOptionsUI') then
+			self:SecureHook(E, 'ToggleOptionsUI', function()
+				if not E.Options.args.bags then
+					return
+				end
+				E:RefreshGUI()
+			end)
 		end
-		self:RegisterEvent("PLAYER_REGEN_DISABLED", function() incombat = true updateLayouts() end)
-		self:RegisterEvent("PLAYER_REGEN_ENABLED", function() incombat = false updateLayouts() end)
+		if not self:IsHooked("EquipmentManager_EquipSet") then
+			self:SecureHook("EquipmentManager_EquipSet", function(setName)
+				local locations = GetEquipmentSetLocations(setName)
+				if locations then
+					for _, location in pairs(locations) do
+						if location then
+							local _, bank, bags, slot, bag = EquipmentManager_UnpackLocation(location)
+							if bank then
+								local f = B_GetContainerFrame(nil, true)
+								local button = f and f.Bags[-1] and f.Bags[-1][slot-39]
+								if button then
+									button.shouldEvaluate = true
+								end
+							elseif bags then
+								local f = B_GetContainerFrame(nil, bag < 0 or bag > NUM_BAG_SLOTS)
+								local button = f and f.Bags[bag] and f.Bags[bag][slot]
+								if button then
+									button.shouldEvaluate = true
+								end
+							end
+						end
+					end
+				end
+			end)
+		end
 		self:UpdateAll()
-		initialized.BagsExtended = true
-	elseif initialized.BagsExtended then
-		if E.Options.args.bags then E.Options.args.bags.args.general.args.reverseSlots.hidden = false end
-		if self:IsHooked(E, 'ToggleOptionsUI') then self:Unhook(E, 'ToggleOptionsUI') end
-		for _, func in pairs({'Layout', 'UpdateSlot', 'UpdateBagSlots', 'SetSlotAlphaForBag', 'ResetSlotAlphaForBags'}) do
+		self:RegisterEvent("EQUIPMENT_SETS_CHANGED", updateSetsInfo)
+		self:RegisterEvent("EQUIPMENT_SWAP_FINISHED", updateSetsInfo)
+		initialized.BagsExtendedV2 = true
+	elseif initialized.BagsExtendedV2 then
+		for _, func in pairs({'UpdateSlot', 'SetSlotAlphaForBag', 'ResetSlotAlphaForBags'}) do
 			if self:IsHooked(B, func) then self:Unhook(B, func) end
 		end
+		if self:IsHooked(B, 'Layout') and not (db.EasierProcessing.enabled or db.SplitStack.enabled) then
+			self:Unhook(B, 'Layout')
+		end
+		if self:IsHooked(E, 'ToggleOptionsUI') then
+			self:Unhook(E, 'ToggleOptionsUI')
+		end
 		self:UpdateAll(true)
-		initialized.BagsExtended = false
+		self:UnregisterEvent("EQUIPMENT_SETS_CHANGED")
+		self:UnregisterEvent("EQUIPMENT_SWAP_FINISHED")
+		initialized.BagsExtendedV2 = false
 	end
 end
 
@@ -2088,24 +2966,41 @@ function mod:Process(self, modifier)
 			local x, y = self:GetCenter()
 			ProcessButton:Point("CENTER", UIParent, "BOTTOMLEFT", x, y + self:GetHeight())
 			ProcessButton:Show()
+			ProcessButton:SetScript("OnUpdate", function()
+				ProcessButton:ClearAllPoints()
+				x, y = self:GetCenter()
+				ProcessButton:Point("CENTER", UIParent, "BOTTOMLEFT", x, y + self:GetHeight())
+			end)
 		end
 	end
 end
 
-function mod:FindEmpty(isBagsExtended, bagSpace)
-	if isBagsExtended then
-		for _, button in ipairs(bagSpace.buttons) do
-			local bagID, slotID = button.bagID, button.slotID
-			if not B_GetItemInfo(nil, bagID, slotID) then
-				return bagID, slotID
+function mod:FindEmpty(isBagsExtendedV2, bagSpace, bagID)
+	if isBagsExtendedV2 then
+		for i, button in ipairs(bagSpace.buttons) do
+			if not button.hasItem then
+				return button, button.bagID, button.slotID, i
 			end
 		end
 	else
-		for _, bagID in ipairs(bagSpace.BagIDs) do
-			if bagSpace.Bags[bagID] and bagSpace.Bags[bagID].numSlots > 0 then
-				for slotID = 1, GetContainerNumSlots(bagID) do
-					if not B_GetItemInfo(nil, bagID, slotID) then
-						return bagID, slotID
+		local targetBag = bagSpace.Bags[bagID]
+		if targetBag and targetBag.numSlots > 0 then
+			for slotID = 1, targetBag.numSlots do
+				local button = targetBag[slotID]
+				if button and not button.hasItem then
+					return button, bagID, slotID, slotID
+				end
+			end
+		else
+			for _, bagID in ipairs(bagSpace.BagIDs) do
+				local bag = bagSpace.Bags[bagID]
+				local bagSlots = bag and bag.numSlots
+				if bagSlots and bagSlots > 0 and (not bag.type or bag.type == 0) then
+					for slotID = 1, bagSlots do
+						local button = bag[slotID]
+						if button and not button.hasItem then
+							return button, bagID, slotID, slotID
+						end
 					end
 				end
 			end
@@ -2115,21 +3010,27 @@ end
 
 function mod:SplitHandler(self, button)
     local modifier = E.db.Extras.general[modName].SplitStack.modifier
-    local isBagsExtended = E.db.Extras.general[modName].BagsExtended.enabled
+    local isBagsExtendedV2 = E.db.Extras.general[modName].BagsExtendedV2.enabled
 
     if IsModifierKeyDown() and (modifier == 'ANY' or _G['Is'..modifier..'KeyDown']()) then
         local bagID, slotID = self.bagID, self.slotID
-        local bagSpace = isBagsExtended and buttonMap[bagID][slotID] or B_GetContainerFrame(nil, bagID < 0 or bagID > NUM_BAG_SLOTS)
-
-		if not bagSpace then return end
+		local f = B_GetContainerFrame(nil, bagID < 0 or bagID > NUM_BAG_SLOTS)
 
         if button == 'LeftButton' then
             local stackCount = select(2, B_GetItemInfo(nil, bagID, slotID))
             if not stackCount or stackCount == 1 then return end
-
             local split = floor(stackCount / 2)
-            local freeBagID, freeSlotID = mod:FindEmpty(isBagsExtended, bagSpace)
+            local _, freeBagID, freeSlotID
 
+			if isBagsExtendedV2 then
+				local section = buttonMap[bagID][slotID]
+				local emptyButton = section.isSpecialBag and mod:FindEmpty(nil, f, section.bagID) or next(buttonMap[f])
+				if emptyButton then
+					freeBagID, freeSlotID = emptyButton.bagID, emptyButton.slotID
+				end
+			else
+				_, freeBagID, freeSlotID = mod:FindEmpty(nil, f)
+			end
             if freeSlotID then
                 B_SplitItem(nil, bagID, slotID, split)
                 B_PickupItem(nil, freeBagID, freeSlotID)
@@ -2137,26 +3038,31 @@ function mod:SplitHandler(self, button)
                 print(core.customColorBad..ERR_SPLIT_FAILED)
             end
         elseif button == 'RightButton' then
-            if not self.isStacking then
+			local handler = f.SplitStackHandler
+            if not handler.isStacking then
                 local itemID = B_GetItemID(nil, bagID, slotID)
 				if not itemID then return end
 
-                self.isStacking = true
+                handler.isStacking = true
                 local timeElapsed, partialStacks = 0, {}
 
-                if isBagsExtended then
-                    for _, button in ipairs(bagSpace.buttons) do
-                        local buttonBagID, buttonSlotID = button.bagID, button.slotID
-                        if B_GetItemID(nil, buttonBagID, buttonSlotID) == itemID then
-							tinsert(partialStacks, button)
-                        end
-                    end
+                if isBagsExtendedV2 then
+					local section = buttonMap[bagID][slotID]
+					if section then
+						for _, button in ipairs(section.buttons) do
+							if B_GetItemID(nil, button.bagID, button.slotID) == itemID then
+								tinsert(partialStacks, button)
+							end
+						end
+					end
                 else
-					for _, bagID in ipairs(bagSpace.BagIDs) do
-						if bagSpace.Bags[bagID] and bagSpace.Bags[bagID].numSlots > 0 then
-							for slotID = 1, GetContainerNumSlots(bagID) do
-								if bagSpace.Bags[bagID][slotID] and B_GetItemID(nil, bagID, slotID) == itemID then
-									tinsert(partialStacks, bagSpace.Bags[bagID][slotID])
+					for _, bagID in ipairs(f.BagIDs) do
+						local bag = f.Bags[bagID]
+						if bag and bag.numSlots > 0 then
+							for slotID = 1, bag.numSlots do
+								local bagButton = bag[slotID]
+								if bagButton and B_GetItemID(nil, bagID, slotID) == itemID then
+									tinsert(partialStacks, bagButton)
 								end
 							end
 						end
@@ -2164,8 +3070,20 @@ function mod:SplitHandler(self, button)
                 end
 				if #partialStacks == 0 then return end
 
-				local stacked, positioned
-                self:SetScript('OnUpdate', function(self, elapsed)
+				local stacks = {}
+				for _, button in ipairs(partialStacks) do
+					local bagID, slotID = button.bagID, button.slotID
+					local itemID = B_GetItemID(nil, bagID, slotID)
+					if itemID then
+						local stackCount = select(2, B_GetItemInfo(nil, bagID, slotID))
+						local _, _, _, _, _, _, _, maxStack = GetItemInfo(itemID)
+						if not stacks[itemID] then
+							stacks[itemID] = {}
+						end
+						tinsert(stacks[itemID], {button = button, count = stackCount, maxStack = maxStack})
+					end
+				end
+                handler:SetScript('OnUpdate', function(self, elapsed)
                     timeElapsed = timeElapsed + elapsed
                     if timeElapsed > 0.1 then
                         if InCombatLockdown() then
@@ -2176,32 +3094,38 @@ function mod:SplitHandler(self, button)
                         end
                         timeElapsed = 0
 
-                        stacked = mod:StackSection(partialStacks)
-						ClearCursor()
-
-                        if stacked then
-							positioned = true
-							for i = #partialStacks, 1, -1 do
-								local button = partialStacks[i]
-								local buttonBagID, buttonSlotID = button.bagID, button.slotID
-								local buttonItemID = B_GetItemID(nil, buttonBagID, buttonSlotID)
-								if buttonItemID then
-									local freeBagID, freeSlotID = mod:FindEmpty(isBagsExtended, bagSpace)
-									if freeBagID and freeSlotID and (freeBagID ~= buttonBagID or freeSlotID < buttonSlotID) then
-										B_PickupItem(nil, buttonBagID, buttonSlotID)
-										B_PickupItem(nil, freeBagID, freeSlotID)
-										positioned = false
-										break
+						local complete = true
+						for _, stack in pairs(stacks) do
+							if #stack > 1 then
+								tsort(stack, function(a, b) return a.count > b.count end)
+								local targetIndex = 1
+								for sourceIndex = 2, #stack do
+									local target = stack[targetIndex]
+									local source = stack[sourceIndex]
+									if source.count >= 0 then
+										local spaceInTarget = target.maxStack - target.count
+										while targetIndex < sourceIndex and target.count >= target.maxStack do
+											targetIndex = targetIndex + 1
+											target = stack[targetIndex]
+											spaceInTarget = target.maxStack - target.count
+										end
+										if source.button ~= target.button and spaceInTarget > 0 and source.count > 0 then
+											local amountToMove = min(spaceInTarget, source.count)
+											B_SplitItem(nil, source.button.bagID, source.button.slotID, amountToMove)
+											B_PickupItem(nil, target.button.bagID, target.button.slotID)
+											target.count = target.count + amountToMove
+											source.count = source.count - amountToMove
+											ClearCursor()
+											complete = false
+											break
+										end
 									end
-								else
-									tremove(partialStacks, i)
 								end
 							end
-
-							if positioned or #partialStacks == 0 then
-								self.isStacking = false
-								self:SetScript('OnUpdate', nil)
-							end
+						end
+                        if complete then
+							self.isStacking = false
+							self:SetScript('OnUpdate', nil)
                         end
                     end
                 end)
@@ -2293,7 +3217,11 @@ function mod:EasierProcessing(db)
 				self.ProcessButton = self.ProcessButton and self.ProcessButton or self:CreateProcessingButton()
 				self.localhooks.EasierProcessing = {
 					["OnClick"] = function(self) mod:Process(self, db.EasierProcessing.modifier) end,
-					["OnHide"] = function() if self.ProcessButton:IsShown() then self.ProcessButton:Hide() end end
+					["OnHide"] = function() if self.ProcessButton:IsShown() then
+												self.ProcessButton:Hide()
+												self.ProcessButton:SetScript("OnUpdate", nil)
+											end
+										end
 				}
 				self:Hide()
 				self = nil
@@ -2302,13 +3230,19 @@ function mod:EasierProcessing(db)
 			self.ProcessButton = self.ProcessButton and self.ProcessButton or self:CreateProcessingButton()
 			self.localhooks.EasierProcessing = {
 				["OnClick"] = function(self) mod:Process(self, db.EasierProcessing.modifier) end,
-				["OnHide"] = function() if self.ProcessButton:IsShown() then self.ProcessButton:Hide() end end
+				["OnHide"] = function() if self.ProcessButton:IsShown() then
+												self.ProcessButton:Hide()
+												self.ProcessButton:SetScript("OnUpdate", nil)
+											end
+										end
 			}
 		end
 
 		initialized.EasierProcessing = true
 	elseif initialized.EasierProcessing then
-		if self:IsHooked(B, 'Layout') and not (db.BagsExtended.enabled or db.SplitStack.enabled) then self:Unhook(B, 'Layout') end
+		if self:IsHooked(B, 'Layout') and not (db.BagsExtendedV2.enabled or db.SplitStack.enabled) then
+			self:Unhook(B, 'Layout')
+		end
 		self.localhooks.EasierProcessing["OnClick"] = false
 		self.localhooks.EasierProcessing["OnHide"] = false
 		self.ProcessButton:Hide()
@@ -2328,7 +3262,9 @@ function mod:SplitStack(db)
 		self:ModifyStackSplitFrame(true)
 		initialized.SplitStack = true
 	elseif initialized.SplitStack then
-		if self:IsHooked(B, 'Layout') and not (db.BagsExtended.enabled or db.EasierProcessing.enabled) then self:Unhook(B, 'Layout') end
+		if self:IsHooked(B, 'Layout') and not (db.BagsExtendedV2.enabled or db.EasierProcessing.enabled) then
+			self:Unhook(B, 'Layout')
+		end
 		self.localhooks.SplitStack["OnClick"] = false
 		self:ModifyStackSplitFrame(false)
 		initialized.SplitStack = false
@@ -2337,9 +3273,16 @@ end
 
 
 function mod:Toggle(db)
-	self:EasierProcessing(db)
-	self:SplitStack(db)
-	self:BagsExtended(db)
+	if core.reload then
+		local reload = {BagsExtendedV2 = {}, EasierProcessing = {}, SplitStack = {}}
+		self:BagsExtendedV2(reload)
+		self:EasierProcessing(reload)
+		self:SplitStack(reload)
+	else
+		self:BagsExtendedV2(db)
+		self:EasierProcessing(db)
+		self:SplitStack(db)
+	end
 end
 
 function mod:InitializeCallback()

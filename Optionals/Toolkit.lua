@@ -79,12 +79,8 @@ local function SetInside(obj, anchor, xOffset, yOffset, anchor2)
 	obj:Point("BOTTOMRIGHT", anchor2 or anchor, "BOTTOMRIGHT", -xOffset, yOffset)
 end
 
-function E:CreateGlobalShadow(db, frame)
-	if frame.globalShadow or not db.enabled then return end
-
-	local size = db.size
-	local r, g, b, a =  unpack(db.color or {0,0,0,0.8})
-
+function E:CreateGlobalShadow(frame, size, r, g, b, a)
+	if frame.globalShadow then return end
 	local shadow = CreateFrame("Frame", nil, frame)
 	local strata = frame:GetFrameStrata()
 
@@ -163,7 +159,7 @@ local function SetTemplate(frame, template, glossTex, ignoreUpdates, forcePixelM
 	local db = E.globalShadow
 
 	if db then
-		E:CreateGlobalShadow(db, frame)
+		E:CreateGlobalShadow(frame, db.size, unpack(db.color))
 	elseif E.pendingShadowUpdate then
 		E.pendingShadowUpdate[frame] = true
 	end

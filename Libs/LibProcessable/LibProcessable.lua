@@ -349,7 +349,7 @@ end
 -- modified to work with 3.3.5 api
 local Handler = CreateFrame('Frame')
 Handler:RegisterEvent('SKILL_LINES_CHANGED')
-Handler:SetScript('OnEvent', function(s, event)
+Handler:SetScript('OnEvent', function()
     for i = 1, GetNumSkillLines() do
         local professionName, _, isHeader, skillLevel = GetSkillLineInfo(i)
         if not isHeader then

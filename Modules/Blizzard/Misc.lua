@@ -153,7 +153,7 @@ function mod:LoadConfig()
 					enabledLessTooltips = {
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
-						desc = L["Unless holding a modifier, hovering units, items, and spells draws no tooltip.\nModifies cursor tooltips only."],
+						desc = L["Tooltips will not display when hovering over units, items, and spells unless a modifier is held.\nModifies cursor tooltips only."],
 					},
 				},
 			},
@@ -218,11 +218,11 @@ function mod:PlayerPings(enable)
 			self.PlayerPingFrame = self:CreatePingFrame()
 			initialized.PlayerPings = true
 		end
-		self:RegisterEvent("MINIMAP_PING", function(_, _, unitTarget, x, y)
-			mod:ShowPlayerPing(UnitName(unitTarget))
-		end, x, y)
+		self:RegisterEvent("MINIMAP_PING", function(_, unit)
+			self:ShowPlayerPing(UnitName(unit))
+		end)
 	elseif initialized.PlayerPings then
-		mod.PlayerPingFrame.PingText:Hide()
+		self.PlayerPingFrame.PingText:Hide()
 		self:UnregisterEvent("MINIMAP_PING")
 	end
 end
@@ -312,6 +312,7 @@ end
 
 function mod:HideErrors(enable)
 	if enable then
+		local db = E.db.Extras.blizzard[modName].HideErrors
 		UIErrorsFrame:SetScript('OnEvent', function (self, event, err, ...)
 			if event == 'UI_ERROR_MESSAGE' then
 				if 	err == ERR_INV_FULL or
@@ -328,11 +329,8 @@ function mod:HideErrors(enable)
 					err:find(format(ERR_PARTY_LFG_BOOT_NOT_ELIGIBLE_S, ".+")) then
 					return OrigErrHandler(self, event, err, ...)
 				end
-			end
-			if E.db.Extras.blizzard[modName].HideErrors.showQuestUpdates then
-				if event == 'UI_INFO_MESSAGE' then
-					return OrigErrHandler(self, event, err, ...)
-				end
+			elseif db.showQuestUpdates and event == 'UI_INFO_MESSAGE' then
+				return OrigErrHandler(self, event, err, ...)
 			end
 		end)
 	else
@@ -374,8 +372,8 @@ end
 
 
 function mod:Toggle()
-	for mod, info in pairs(E.db.Extras.blizzard[modName]) do
-		self[mod](self, info.enabled)
+	for subMod, info in pairs(E.db.Extras.blizzard[modName]) do
+		self[subMod](self, core.reload and false or info.enabled)
 	end
 end
 

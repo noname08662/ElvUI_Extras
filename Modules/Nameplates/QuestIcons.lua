@@ -13,7 +13,7 @@ local _G, pairs, ipairs, unpack, tonumber = _G, pairs, ipairs, unpack, tonumber
 local find, match, format, lower = string.find, string.match, string.format, string.lower
 local tinsert, twipe = table.insert, table.wipe
 local UnitName, UnitIsPlayer = UnitName, UnitIsPlayer
-local GetQuestLink, GetQuestLogLeaderBoard, GetQuestLogTitle = GetQuestLink, GetQuestLogLeaderBoard, GetQuestLogTitle
+local GetQuestLogLeaderBoard, GetQuestLogTitle = GetQuestLogLeaderBoard, GetQuestLogTitle
 local GetNumQuestLogEntries, GetNumQuestLeaderBoards = GetNumQuestLogEntries, GetNumQuestLeaderBoards
 local THREAT_TOOLTIP = gsub(THREAT_TOOLTIP, '%%d', '%%d-')
 
@@ -117,9 +117,9 @@ function mod:LoadConfig()
 	local db = E.db.Extras.nameplates[modName]
 	local function populateModifierValues(othervala, othervalb)
 		local modsList = {}
-		for mod, val in pairs(E.db.Extras.modifiers) do
-			if mod ~= 'ANY' and db.modifiers[othervala] ~= mod and db.modifiers[othervalb] ~= mod then
-				modsList[mod] = val
+		for modifier, val in pairs(E.db.Extras.modifiers) do
+			if modifier ~= 'ANY' and db.modifiers[othervala] ~= modifier and db.modifiers[othervalb] ~= modifier then
+				modsList[modifier] = val
 			end
 		end
 		if db.modifiers[othervala] ~= 'NONE' and db.modifiers[othervalb] ~= 'NONE' then
@@ -721,7 +721,7 @@ function mod:Toggle(db)
 	self:UnregisterAllEvents()
 	twipe(markedUnits)
 
-    if db.enabled then
+    if not core.reload and db.enabled then
 		core.plateAnchoring['questIcon'] = function() return db end
 
 		SLASH_QMARK1 = "/qmark"

@@ -1,6 +1,6 @@
 local E, L, _, P = unpack(ElvUI)
 local core = E:GetModule("Extras")
-local mod = core:NewModule("FCF", "AceHook-3.0")
+local mod = core:NewModule("FCFV2", "AceHook-3.0")
 local ElvUF = E.oUF
 local LSM = E.Libs.LSM
 
@@ -26,6 +26,7 @@ end
 local testing = false
 local testindex = 1
 local playerGUID = E.myguid or UnitGUID("player")
+local schools = { heal = {2,8,32}, wound = {1,2,4,8,16,32,64} }
 
 local testEvents = {
     ["WOUND"] = {
@@ -35,15 +36,15 @@ local testEvents = {
         function()
 			local val = random()
             return {
-                random(500, 2000),     				-- amount
-                random(0, 500),       				-- overkill
-                1,                     				-- school (physical)
-                val < 0.5 and random(100, 500),		-- resisted
-                val < 0.25 and random(100, 500),	-- blocked
-                val > 0.75 and random(100, 500),	-- absorbed
-                val > 0.5,							-- critical
-                val > 0.25 and val < 0.5,			-- glancing
-                val < 0.75 and val > 0.5			-- crushing
+                random(500, 2000),     								-- amount
+                random(0, 500),       								-- overkill
+                schools.wound[random(1,#schools.wound)],			-- school (physical)
+                val < 0.15 and random(100, 500),					-- resisted
+                val > 0.85 and random(100, 500),					-- blocked
+                (val > 0.70 and val < 0.85) and random(100, 500),	-- absorbed
+                val > 0.50 and val < 0.70,							-- critical
+                val > 0.15 and val < 0.30,							-- glancing
+                val > 0.30 and val < 0.50							-- crushing
             }
         end
     },
@@ -121,13 +122,15 @@ local testEvents = {
         "SPELL_HEAL",
         playerGUID, "Player", 0x511,
         playerGUID, "Player", 0x511,
-        48089, "Circle of Healing", 0x1,
+        48089, "Circle of Healing",
         function()
+			local val = random(3000, 6000)
             return {
-                random(3000, 6000),                    -- amount
-                random(0, 1000),                       -- overhealing
-                random() < 0.2 and random(100, 500),   -- absorbed
-                random() < 0.3 and 1                   -- critical
+				schools.heal[random(1, 3)],				-- school
+                val,									-- amount
+                val,									-- amount
+                random() < 0.2 and random(0, 1000),		-- overhealing
+                random() < 0.3 and 1					-- critical
             }
         end
     },
@@ -182,7 +185,7 @@ local testEvents = {
 }
 
 local function testMode(db)
-	E:Delay(db.scrollTime+0.1, function()
+	E:Delay(db.scrollTime/3, function()
 		if not testing or not ElvUF.CLEUDispatcher then return end
 
 		local events = {}
@@ -243,56 +246,47 @@ P["Extras"]["unitframes"][modName] = {
 		["player"] = {
 			["enabled"] = false,
 			["animation"] = "fountain",
-			["font"] = "Expressway",
-			["fontSize"] = 18,
-			["fontFlags"] = "",
-			["textPoint"] = 'BOTTOM',
-			["textRelativeTo"] = 'TOP',
 			["textLevel"] = 85,
 			["textStrata"] = 'LOW',
-			["textX"] = 0,
-			["textY"] = 24,
 			["scrollTime"] = 1.2,
 			["fadeTime"] = 3,
-			["showIcon"] = false,
-			["iconPosition"] = "before",
 			["blacklist"] = {},
 			["events"] = {
-				["ABSORB"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["BLOCK"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["DEFLECT"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["DODGE"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["ENERGIZE"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {105, 204, 240}, ["tryToColorBySchool"] = false },
-				["EVADE"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["HEAL"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {26, 204, 26}, ["tryToColorBySchool"] = false },
-				["IMMUNE"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["INTERRUPT"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["MISS"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["PARRY"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["REFLECT"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["RESIST"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["WOUND"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {179, 26, 26}, ["tryToColorBySchool"] = false },
-				["DEBUFF"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["BUFF"] = { ["disabled"] = false, ["customAnimation"] = '', ["animation"] = 'fountain', ["colors"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["ABSORB"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["BLOCK"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["DEFLECT"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["DODGE"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["ENERGIZE"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {105, 204, 240}, ["tryToColorBySchool"] = false },
+				["EVADE"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["HEAL"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {26, 204, 26}, ["tryToColorBySchool"] = false },
+				["IMMUNE"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["INTERRUPT"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["MISS"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["PARRY"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["REFLECT"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["RESIST"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["WOUND"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {179, 26, 26}, ["tryToColorBySchool"] = false },
+				["DEBUFF"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["BUFF"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
 			},
 			["school"] = {
-				[SCHOOL_MASK_ARCANE] = {255, 128, 255},
-				[SCHOOL_MASK_FIRE] = {255, 128, 000},
-				[SCHOOL_MASK_FROST] = {128, 255, 255},
-				[SCHOOL_MASK_HOLY] = {255, 230, 128},
-				[SCHOOL_MASK_NATURE] = {77, 255, 77},
-				[SCHOOL_MASK_NONE] = {255, 255, 255},
-				[SCHOOL_MASK_PHYSICAL] = {179, 26, 26},
-				[SCHOOL_MASK_SHADOW] = {128, 128, 255},
+				[SCHOOL_MASK_ARCANE] = {1, 128/255, 1},
+				[SCHOOL_MASK_FIRE] = {1, 128/255, 0},
+				[SCHOOL_MASK_FROST] = {128/255, 1, 1},
+				[SCHOOL_MASK_HOLY] = {1, 230/255, 128/255},
+				[SCHOOL_MASK_NATURE] = {77/255, 1, 77/255},
+				[SCHOOL_MASK_NONE] = {1, 1, 1},
+				[SCHOOL_MASK_PHYSICAL] = {179/255, 26/255, 26/255},
+				[SCHOOL_MASK_SHADOW] = {128/255, 128/255, 1},
 				-- multi-schools
-				[72] = {166, 192, 166}, -- SCHOOL_MASK_ASTRAL
-				[127] = {182, 164, 142}, -- SCHOOL_MASK_CHAOS
-				[28] = {153, 212, 111}, -- SCHOOL_MASK_ELEMENTAL
-				[126] = {183, 187, 162}, -- SCHOOL_MASK_MAGIC
-				[40] = {103, 192, 166}, -- SCHOOL_MASK_PLAGUE
-				[6] = {255, 178, 64}, -- SCHOOL_MASK_RADIANT
-				[36] = {192, 128, 128}, -- SCHOOL_MASK_SHADOWFLAME
-				[48] = {128, 192, 255}, -- SCHOOL_MASK_SHADOWFROST
+				[72] = {166/255, 192/255, 166/255}, -- SCHOOL_MASK_ASTRAL
+				[127] = {182/255, 164/255, 142/255}, -- SCHOOL_MASK_CHAOS
+				[28] = {153/255, 212/255, 111/255}, -- SCHOOL_MASK_ELEMENTAL
+				[126] = {183/255, 187/255, 162/255}, -- SCHOOL_MASK_MAGIC
+				[40] = {103/255, 192/255, 166/255}, -- SCHOOL_MASK_PLAGUE
+				[6] = {1, 178/255, 64/255}, -- SCHOOL_MASK_RADIANT
+				[36] = {192/255, 128/255, 128/255}, -- SCHOOL_MASK_SHADOWFLAME
+				[48] = {128/255, 192/255, 1}, -- SCHOOL_MASK_SHADOWFROST
 			},
 			["flags"] = {
 				["ABSORB"] = { ["customAnimation"] = '', ["animationsByFlag"] = false, ["animation"] = 'fountain', ["fontMult"] = 0.75 },
@@ -301,6 +295,10 @@ P["Extras"]["unitframes"][modName] = {
 				["CRUSHING"] = { ["customAnimation"] = '', ["animationsByFlag"] = false, ["animation"] = 'fountain', ["fontMult"] = 1.25 },
 				["GLANCING"] = { ["customAnimation"] = '', ["animationsByFlag"] = false, ["animation"] = 'fountain', ["fontMult"] = 0.75 },
 				["RESIST"] = { ["customAnimation"] = '', ["animationsByFlag"] = false, ["animation"] = 'fountain', ["fontMult"] = 0.75 },
+				["PERIODICWOUND"] = { ["customAnimation"] = '', ["animationsByFlag"] = false, ["animation"] = 'fountain', ["fontMult"] = 0.75 },
+				["PERIODICHEAL"] = { ["customAnimation"] = '', ["animationsByFlag"] = false, ["animation"] = 'fountain', ["fontMult"] = 0.75 },
+				["NOFLAGHEAL"] = { ["customAnimation"] = '', ["animationsByFlag"] = false, ["animation"] = 'fountain', ["fontMult"] = 0.75 },
+				["NOFLAGWOUND"] = { ["customAnimation"] = '', ["animationsByFlag"] = false, ["animation"] = 'fountain', ["fontMult"] = 0.75 },
 			},
 		},
 	},
@@ -322,9 +320,9 @@ function mod:LoadConfig()
 	end
 	core.unitframes.args[modName] = {
 		type = "group",
-		name = modName,
+		name = "FCF",
 		args = {
-			FCF = {
+			FCFV2 = {
 				order = 1,
 				type = "group",
 				name = L["Floating Combat Feedback"],
@@ -404,91 +402,19 @@ function mod:LoadConfig()
 				set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 				disabled = function() return not selectedUnitData().enabled end,
 				args = {
-					font = {
-						order = 1,
-						type = "select",
-						name = L["Font"],
-						desc = "",
-						dialogControl = "LSM30_Font",
-						values = function() return AceGUIWidgetLSMlists.font end,
-					},
-					fontSize = {
-						order = 2,
-						type = "range",
-						name = L["Font Size"],
-						desc = L["There seems to be a font size limit?"],
-						min = 10, max = 25, step = 1,
-					},
-					fontFlags = {
-						order = 3,
-						type = "select",
-						name = L["Font Flags"],
-						desc = "",
-						values = {
-							[""] = L["None"],
-							["OUTLINE"] = "OUTLINE",
-							["THINOUTLINE"] = "THINOUTLINE",
-							["MONOCHROME"] = "MONOCHROME",
-						},
-					},
-					scrollTime = {
-						order = 4,
-						type = "range",
-						name = L["Scroll Time"],
-						desc = "",
-						min = 0.6, max = 6, step = 0.1,
-					},
-					--[[
-					fadeTime = {
-						order = 5,
-						type = "range",
-						name = L["Fade Time"],
-						desc = "",
-						min = 0.1, max = 3, step = 0.1,
-						get = function(info)
-					},
-					]]--
-					textPoint = {
-						order = 6,
-						type = "select",
-						name = L["Point"],
-						desc = "",
-						values = E.db.Extras.pointOptions,
-					},
-					textRelativeTo = {
-						order = 7,
-						type = "select",
-						name = L["Relative Point"],
-						desc = "",
-						values = E.db.Extras.pointOptions,
-					},
 					textLevel = {
-						order = 8,
+						order = 1,
 						type = "range",
 						name = L["Level"],
 						desc = "",
 						min = 1, max = 200, step = 1
 					},
 					textStrata = {
-						order = 9,
+						order = 2,
 						type = "select",
 						name = L["Strata"],
 						desc = "",
 						values = E.db.Extras.frameStrata,
-					},
-					textX = {
-						order = 10,
-						type = "range",
-						name = L["X Offset"],
-						desc = "",
-						min = -80, max = 80, step = 1,
-					},
-					textY = {
-						order = 11,
-						type = "range",
-						name = L["Y Offset"],
-						desc = "",
-						min = -80, max = 80, step = 1,
 					},
 				},
 			},
@@ -508,7 +434,11 @@ function mod:LoadConfig()
 						desc = "",
 						disabled = false,
 						get = function() return selectedEvent() end,
-						set = function(_, value) db.selectedEvent = value end,
+						set = function(_, value)
+							db.selectedEvent = value
+							db.selectedFlag = "CRITICAL"
+							db.selectedSchool = SCHOOL_MASK_SHADOW
+						end,
 						values = {
 							["ABSORB"] = L["ABSORB"],
 							["BLOCK"] = L["BLOCK"],
@@ -542,46 +472,63 @@ function mod:LoadConfig()
 						desc = "",
 						get = function() return db.selectedSchool end,
 						set = function(_, value) db.selectedSchool = value end,
-						values = {
-							[SCHOOL_MASK_NONE] = L["None"],
-							[SCHOOL_MASK_PHYSICAL] = L["Physical"],
-							[SCHOOL_MASK_HOLY] = L["Holy"],
-							[SCHOOL_MASK_FIRE] = L["Fire"],
-							[SCHOOL_MASK_NATURE] = L["Nature"],
-							[SCHOOL_MASK_FROST] = L["Frost"],
-							[SCHOOL_MASK_SHADOW] = L["Shadow"],
-							[SCHOOL_MASK_ARCANE] = L["Arcane"],
-							[72] = L["Astral"],
-							[127] = L["Chaos"],
-							[28] = L["Elemental"],
-							[126] = L["Magic"],
-							[40] = L["Plague"],
-							[6] = L["Radiant"],
-							[36] = L["Shadowflame"],
-							[48] = L["Shadowfrost"],
-						},
+						values = function()
+							if selectedEvent() == 'WOUND' then
+								return {
+									[SCHOOL_MASK_NONE] = L["None"],
+									[SCHOOL_MASK_PHYSICAL] = L["Physical"],
+									[SCHOOL_MASK_HOLY] = L["Holy"],
+									[SCHOOL_MASK_FIRE] = L["Fire"],
+									[SCHOOL_MASK_NATURE] = L["Nature"],
+									[SCHOOL_MASK_FROST] = L["Frost"],
+									[SCHOOL_MASK_SHADOW] = L["Shadow"],
+									[SCHOOL_MASK_ARCANE] = L["Arcane"],
+									[72] = L["Astral"],
+									[127] = L["Chaos"],
+									[28] = L["Elemental"],
+									[126] = L["Magic"],
+									[40] = L["Plague"],
+									[6] = L["Radiant"],
+									[36] = L["Shadowflame"],
+									[48] = L["Shadowfrost"],
+								}
+							else
+								return {
+									[SCHOOL_MASK_HOLY] = L["Holy"],
+									[SCHOOL_MASK_NATURE] = L["Nature"],
+									[SCHOOL_MASK_SHADOW] = L["Shadow"],
+								}
+							end
+						end,
+						hidden = function() return selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL' end,
 					},
 					tryToColorBySchool = {
 						order = 4,
 						type = "toggle",
 						name = L["Use School Colors"],
 						desc = L["Not every event is eligible for this. But some are."],
+						hidden = function() return selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL' end,
 					},
-					colors = {
+					color = {
 						order = 5,
 						type = "color",
-						name = L["Colors"],
+						name = L["Color"],
 						desc = "",
-						get = function() local color = selectedEventData().colors return color[1], color[2], color[3] end,
-						set = function(_, r, g, b) selectedEventData().colors = {r, g, b} self:Toggle() end,
+						get = function() return unpack(selectedEventData().color or {}) end,
+						set = function(_, r, g, b) selectedEventData().color = {r, g, b} self:Toggle() end,
 					},
-					colorsSchool = {
+					colorSchool = {
 						order = 6,
 						type = "color",
-						name = L["Colors (School)"],
+						name = L["Color (School)"],
 						desc = "",
-						get = function() local color = selectedUnitData().school[db.selectedSchool] return color[1], color[2], color[3] end,
+						get = function() return unpack(selectedUnitData().school[db.selectedSchool]) end,
 						set = function(_, r, g, b) selectedUnitData().school[db.selectedSchool] = {r, g, b} self:Toggle() end,
+						disabled = function()
+							return not selectedUnitData().enabled
+									or selectedEventData().disabled
+									or (selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL')
+						end,
 					},
 					animation = {
 						order = 7,
@@ -597,8 +544,30 @@ function mod:LoadConfig()
 							return animations
 						end,
 					},
-					customAnimation = {
+					xDirection = {
 						order = 8,
+						type = "select",
+						name = L["X Direction"],
+						desc = "",
+						values = {
+							[true] = L["Bounce"],
+							[1] = L["Right"],
+							[-1] = L["Left"],
+						}
+					},
+					yDirection = {
+						order = 9,
+						type = "select",
+						name = L["Y Direction"],
+						desc = "",
+						values = {
+							[true] = L["Bounce"],
+							[1] = L["Top"],
+							[-1] = L["Bottom"],
+						}
+					},
+					customAnimation = {
+						order = 10,
 						type = "input",
 						width = "double",
 						multiline = true,
@@ -606,6 +575,105 @@ function mod:LoadConfig()
 						desc = L["Define your custom animation as a lua function.\n\nExample:\nfunction(self)"..
 								"\nreturn self.x + self.xDirection * self.radius * (1 - m_cos(m_pi / 2 * self.progress)),"..
 								"\nself.y + self.yDirection * self.radius * m_sin(m_pi / 2 * self.progress) end"],
+					},
+					showIcon = {
+						order = 11,
+						type = "toggle",
+						width = "full",
+						name = L["Show Icon"],
+						desc = "",
+					},
+					iconPosition = {
+						order = 12,
+						type = "select",
+						name = L["Icon Position"],
+						desc = "",
+						values = {
+							["before"] = L["Before Text"],
+							["after"] = L["After Text"],
+						},
+						disabled = function()
+							return not selectedUnitData().enabled or selectedEventData().disabled or not selectedEventData().showIcon end,
+					},
+					iconBounce = {
+						order = 13,
+						type = "toggle",
+						name = L["Bounce"],
+						desc = L["Flip position left-right."],
+						disabled = function()
+							return not selectedUnitData().enabled or selectedEventData().disabled or not selectedEventData().showIcon end,
+					},
+					font = {
+						order = 14,
+						type = "select",
+						name = L["Font"],
+						desc = "",
+						dialogControl = "LSM30_Font",
+						values = function() return AceGUIWidgetLSMlists.font end,
+					},
+					fontSize = {
+						order = 15,
+						type = "range",
+						name = L["Font Size"],
+						desc = L["There seems to be a font size limit?"],
+						min = 10, max = 25, step = 1,
+					},
+					fontFlags = {
+						order = 16,
+						type = "select",
+						name = L["Font Flags"],
+						desc = "",
+						values = {
+							[""] = L["None"],
+							["OUTLINE"] = "OUTLINE",
+							["THINOUTLINE"] = "THINOUTLINE",
+							["MONOCHROME"] = "MONOCHROME",
+						},
+					},
+					scrollTime = {
+						order = 17,
+						type = "range",
+						name = L["Scroll Time"],
+						desc = "",
+						min = 0.6, max = 6, step = 0.1,
+					},
+					--[[
+					fadeTime = {
+						order = 16,
+						type = "range",
+						name = L["Fade Time"],
+						desc = "",
+						min = 0.1, max = 3, step = 0.1,
+						get = function(info)
+					},
+					]]--
+					textPoint = {
+						order = 18,
+						type = "select",
+						name = L["Point"],
+						desc = "",
+						values = E.db.Extras.pointOptions,
+					},
+					textRelativeTo = {
+						order = 19,
+						type = "select",
+						name = L["Relative Point"],
+						desc = "",
+						values = E.db.Extras.pointOptions,
+					},
+					textX = {
+						order = 20,
+						type = "range",
+						name = L["X Offset"],
+						desc = "",
+						min = -80, max = 80, step = 1,
+					},
+					textY = {
+						order = 21,
+						type = "range",
+						name = L["Y Offset"],
+						desc = "",
+						min = -80, max = 80, step = 1,
 					},
 				},
 			},
@@ -616,23 +684,51 @@ function mod:LoadConfig()
 				inline = true,
 				get = function(info) return selectedFlagData()[info[#info]] end,
 				set = function(info, value) selectedFlagData()[info[#info]] = value self:Toggle() end,
-				disabled = function() return not selectedUnitData().enabled or selectedEventData().disabled end,
+				disabled = function() return not selectedUnitData().enabled or selectedEventData().disabled or selectedFlagData().disabled end,
+				hidden = function() return selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL' end,
 				args = {
+					disabled = {
+						order = 0,
+						type = "toggle",
+						width = "full",
+						name = L["Disable"],
+						desc = "",
+						disabled = function() return not selectedUnitData().enabled or selectedEventData().disabled end,
+					},
 					flag = {
 						order = 1,
 						type = "select",
 						name = L["Flag"],
 						desc = "",
 						get = function() return db.selectedFlag end,
-						set = function(_, value) db.selectedFlag = value end,
-						values = {
-							["ABSORB"  ] = L["ABSORB"],
-							["BLOCK"   ] = L["BLOCK"],
-							["CRITICAL"] = L["CRITICAL"],
-							["CRUSHING"] = L["CRUSHING"],
-							["GLANCING"] = L["GLANCING"],
-							["RESIST"  ] = L["RESIST"],
-						},
+						set = function(_, value)
+							db.selectedFlag = value
+							if not selectedUnitData().flags[value] then
+								selectedUnitData().flags[value] = CopyTable(selectedUnitData().flags["CRITICAL"])
+							end
+						end,
+						values = function()
+							if selectedEvent() == 'WOUND' then
+								return {
+									["ABSORB"       ] = L["ABSORB"],
+									["BLOCK"        ] = L["BLOCK"],
+									["CRITICAL"     ] = L["CRITICAL"],
+									["CRUSHING"     ] = L["CRUSHING"],
+									["GLANCING"     ] = L["GLANCING"],
+									["RESIST"       ] = L["RESIST"],
+									["PERIODICWOUND"] = L["PERIODIC"],
+									["NOFLAGWOUND"  ] = L["None"],
+								}
+							else
+								return {
+									["ABSORB"		] = L["ABSORB"],
+									["CRITICAL"		] = L["CRITICAL"],
+									["PERIODICHEAL"	] = L["PERIODIC"],
+									["NOFLAGHEAL"  	] = L["None"],
+								}
+							end
+						end,
+						disabled = function() return not selectedUnitData().enabled or selectedEventData().disabled end,
 					},
 					fontMult = {
 						order = 2,
@@ -641,14 +737,8 @@ function mod:LoadConfig()
 						desc = L["There seems to be a font size limit?"],
 						min = 0, max = 3, step = 0.25,
 					},
-					animationsByFlag = {
-						order = 3,
-						type = "toggle",
-						name = L["Animation by Flag"],
-						desc = L["Toggle to have this section handle flag animations instead.\n\nNot every event has flags."],
-					},
 					animation = {
-						order = 4,
+						order = 3,
 						type = "select",
 						name = L["Animation Type"],
 						desc = "",
@@ -660,8 +750,36 @@ function mod:LoadConfig()
 							return animations
 						end,
 					},
-					customAnimation = {
+					animationsByFlag = {
+						order = 4,
+						type = "toggle",
+						name = L["Animation by Flag"],
+						desc = L["Toggle to have this section handle flag animations instead.\n\nNot every event has flags."],
+					},
+					xDirection = {
 						order = 5,
+						type = "select",
+						name = L["X Direction"],
+						desc = "",
+						values = {
+							[true] = L["Bounce"],
+							[1] = L["Right"],
+							[-1] = L["Left"],
+						}
+					},
+					yDirection = {
+						order = 6,
+						type = "select",
+						name = L["Y Direction"],
+						desc = "",
+						values = {
+							[true] = L["Bounce"],
+							[1] = L["Top"],
+							[-1] = L["Bottom"],
+						}
+					},
+					customAnimation = {
+						order = 7,
 						type = "input",
 						multiline = true,
 						width = "double",
@@ -672,46 +790,8 @@ function mod:LoadConfig()
 					},
 				},
 			},
-			iconSettings = {
-				order = 5,
-				type = "group",
-				name = L["Icon Settings"],
-				inline = true,
-				get = function(info) return selectedUnitData()[info[#info]] end,
-				set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
-				disabled = function() return not selectedUnitData().enabled or selectedEventData().disabled end,
-				args = {
-					showIcon = {
-						order = 1,
-						type = "toggle",
-						width = "full",
-						name = L["Show Icon"],
-						desc = "",
-					},
-					iconPosition = {
-						order = 2,
-						type = "select",
-						name = L["Icon Position"],
-						desc = "",
-						values = {
-							["before"] = L["Before Text"],
-							["after"] = L["After Text"],
-						},
-						disabled = function()
-							return not selectedUnitData().enabled or selectedEventData().disabled or not selectedUnitData().showIcon end,
-					},
-					iconBounce = {
-						order = 3,
-						type = "toggle",
-						name = L["Bounce"],
-						desc = L["Flip position left-right."],
-						disabled = function()
-							return not selectedUnitData().enabled or selectedEventData().disabled or not selectedUnitData().showIcon end,
-					},
-				},
-			},
 			blacklist = {
-				order = 6,
+				order = 5,
 				type = "group",
 				name = L["Blacklist"],
 				inline = true,
@@ -834,8 +914,9 @@ function mod:ConstructFCF(frame, info)
 	fcf = CreateFrame("Frame", nil, frame)
 	fcf:SetFrameStrata(info.textStrata)
 	fcf:SetFrameLevel(info.textLevel)
-	fcf:Size(32, 32)
-	fcf:SetPoint("CENTER")
+	fcf:SetAllPoints(frame)
+
+	fcf.useCLEU = true
 
 	for i = 1, 6 do
 		-- give names to these font strings to avoid breaking /fstack and /tinspect
@@ -848,58 +929,80 @@ function mod:ConstructFCF(frame, info)
 end
 
 function mod:UpdateFCFSettings(frame)
-	frame:DisableElement('FloatingCombatFeedback')
-
+	if not core.reload then
+		frame:DisableElement('FloatingCombatFeedback')
+	end
 	local db = E.db.Extras.unitframes[modName]
-	for unit, info in pairs(db.units) do
+	for unit, data in pairs(db.units) do
 		if frame.unitframeType == unit then
-			local fcf = frame.FloatingCombatFeedback
-			if info.enabled then
-				self:ConstructFCF(frame, info)
-				fcf = frame.FloatingCombatFeedback
-				fcf.useCLEU = true
-				fcf:ClearAllPoints()
-				fcf:Point(info.textPoint, frame, info.textRelativeTo, info.textX, info.textY)
+			if not core.reload and data.enabled then
+				self:ConstructFCF(frame, data)
+				local fcf = frame.FloatingCombatFeedback
 
 				frame:EnableElement('FloatingCombatFeedback')
 
-				fcf.font = LSM:Fetch("font", info.font)
-				fcf.fontHeight = info.fontSize
-				fcf.fontFlags = info.fontFlags
-				fcf.scrollTime = info.scrollTime
-				fcf.playerOnly = info.playerOnly
-				--fcf.fadeTime = info.fadeTime
+				fcf.playerOnly = data.playerOnly
+				fcf.blacklist = CopyTable(data.blacklist)
 
-				fcf.format = info.showIcon and (info.iconPosition == 'before' and "|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s" or "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t") or '%1$s'
-				fcf.iconBounce = info.showIcon and info.iconBounce or false
-
-				fcf.blacklist = CopyTable(info.blacklist)
-
-				for event, info in pairs(info.events) do
-					fcf.animationsByEvent[event] = not info.disabled and info.animation or false
-
-					if info.tryToColorBySchool then
-						fcf.tryToColorBySchool[event] = true
+				for event, info in pairs(data.events) do
+					if not info.disabled then
+						if info.showIcon then
+							fcf.iconBounce[event] = info.iconBounce
+							if info.iconPosition == 'before' then
+								fcf.formats[event] = "|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s"
+								fcf.iconFormats[event]= {"|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s", "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t"}
+							else
+								fcf.formats[event] = "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t"
+								fcf.iconFormats[event] = {"%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t", "|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s"}
+							end
+						end
+						if info.tryToColorBySchool then
+							fcf.tryToColorBySchool[event] = true
+						else
+							local color = info.color or {1,1,1}
+							fcf.tryToColorBySchool[event] = false
+							fcf.colors[event] = { r = color[1], g = color[2], b = color[3] }
+						end
+						fcf.animationsByEvent[event] = {	info.animation,
+															tonumber(info.xDirection) or 1,
+															tonumber(info.yDirection) or 1,
+															not tonumber(info.xDirection),
+															info.yDirection and not tonumber(info.yDirection) or false,
+														}
+						fcf.fontData[event] = {	point = info.textPoint or "CENTER",
+												relativeTo = info.textRelativeTo or "CENTER",
+												x = info.textX or 0,
+												y = info.textY or 24,
+												fontSize = info.fontSize or 18,
+												fontFlags = info.fontFlags or "",
+												font = LSM:Fetch("font", info.font or "Expressway"),
+												scrollTime = info.scrollTime or 1.2,
+											}
+						self:CustomAnim(frame, info.customAnimation, event)
+					end
+				end
+				for school, color in pairs(data.school) do
+					fcf.schoolColors[school] = { r = color[1] or 1, g = color[2] or 1, b = color[3] or 1 }
+				end
+				for flag, info in pairs(data.flags) do
+					if not info.disabled then
+						fcf.multipliersByFlag[flag] = info.fontMult
+						if info.animationsByFlag then
+							fcf.animationsByFlag[flag] = {	info.animation,
+															tonumber(info.xDirection) or 1,
+															tonumber(info.yDirection) or 1,
+															not tonumber(info.xDirection),
+															info.yDirection and not tonumber(info.yDirection) or false,
+														}
+							self:CustomAnim(frame, info.customAnimation, nil, flag)
+						else
+							fcf.animationsByFlag[flag] = nil
+						end
 					else
-						fcf.tryToColorBySchool[event] = false
-						fcf.colors[event] = { r = info.colors[1], g = info.colors[2], b = info.colors[3] }
-					end
-
-					self:CustomAnim(frame, info.customAnimation, event)
-				end
-				for school, colors in pairs(info.school) do
-					fcf.schoolColors[school] = { r = colors[1], g = colors[2], b = colors[3] }
-				end
-				for flag, info in pairs(info.flags) do
-					fcf.multipliersByFlag[flag] = info.fontMult
-					if info.animationsByFlag then
-						fcf.animationsByFlag[flag] = info.animation
-						self:CustomAnim(frame, info.customAnimation, nil, flag)
-					elseif fcf then
-						fcf.animationsByFlag[flag] = nil
+						fcf.multipliersByFlag[flag] = nil
 					end
 				end
-			elseif fcf then
+			elseif frame.FloatingCombatFeedback then
 				core:Untag("fcf")
 			end
 		end

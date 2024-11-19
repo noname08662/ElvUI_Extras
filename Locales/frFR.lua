@@ -2,16 +2,16 @@ local E = unpack(ElvUI); --Import: Engine, Locales, PrivateDB, ProfileDB, Global
 local L = E.Libs.ACL:NewLocale("ElvUI", "frFR")
 
 L["Hits the 'Confirm' button automatically."] = "Appuie automatiquement sur le bouton 'Confirmer'."
-L["Picks up quest items and money automatically."] = "Ramasse automatiquement les objets de quête et l'argent."
-L["Fills 'DELETE' field automatically."] = "Remplit automatiquement le champ 'SUPPRIMER'."
-L["Selects the first gossip option if it's the only one available unless holding a modifier.\nCareful with important event triggers, there's no fail-safe mechanism."] = "Sélectionne la première option de dialogue si c'est la seule disponible, sauf si un modificateur est maintenu.\nAttention aux déclencheurs d'événements importants, il n'y a pas de mécanisme de sécurité."
+L["Picks up items and money automatically."] = "Ramasse automatiquement les objets et l'argent."
+L["Automatically fills the 'DELETE' field."] = "Remplit automatiquement le champ 'SUPPRIMER'."
+L["Selects the first gossip option if it's the only one available unless holding a modifier.\nBe careful with important event triggers; there is no fail-safe mechanism."] = "Sélectionne la première option de dialogue si c'est la seule disponible, sauf si un modificateur est maintenu.\nAttention aux déclencheurs d'événements importants, il n'y a pas de mécanisme de sécurité."
 L["Accepts and turns in quests automatically while holding a modifier."] = "Accepte et rend les quêtes automatiquement en maintenant un modificateur."
 L["Loot info wiped."] = "Informations de butin effacées."
 L["/lootinfo slash command to get a quick rundown of the recent lootings.\n\nUsage: /lootinfo Apple 60\n'Apple' - item/player name \n(search @self to get player loot)\n'60' - \ntime limit (<60 seconds ago), optional,\n/lootinfo !wipe - purge loot cache."] = "Commande /lootinfo pour obtenir un résumé rapide des butins récents.\n\nUtilisation: /lootinfo Pomme 60\n'Pomme' - nom de l'objet/joueur \n(rechercher @self pour obtenir le butin du joueur)\n'60' - \nlimite de temps (<60 secondes), optionnel,\n/lootinfo !wipe - purger le cache de butin."
-L["Colors online friends' and guildmates' names in some of the messages and styles the rolls.\nAlready handled chat bubbles will not get styled before you /reload."] = "Colore les noms des amis en ligne et des membres de la guilde dans certains messages et stylise les jets.\nLes bulles de discussion déjà traitées ne seront pas stylisées avant un /reload."
+L["Colors the names of online friends and guildmates in some messages and styles the rolls.\nAlready handled chat bubbles will not get styled before you /reload."] = "Colore les noms des amis en ligne et des membres de la guilde dans certains messages et stylise les jets.\nLes bulles de discussion déjà traitées ne seront pas stylisées avant un /reload."
 L["Colors loot roll messages for you and other players."] = "Colore les messages de jets de butin pour vous et les autres joueurs."
 L["Loot rolls icon size."] = "Taille de l'icône des jets de butin."
-L["Restyles loot bars.\nRequires 'Loot Roll' (General -> BlizzUI Improvements -> Loot Roll) to be enabled (toggling this module enables it automatically)."] = "Restyler les barres de butin.\nNécessite que 'Jet de butin' (Général -> Améliorations BlizzUI -> Jet de butin) soit activé (activer ce module l'active automatiquement)."
+L["Restyles the loot bars.\nRequires 'Loot Roll' (General -> BlizzUI Improvements -> Loot Roll) to be enabled (toggling this module enables it automatically)."] = "Restyler les barres de butin.\nNécessite que 'Jet de butin' (Général -> Améliorations BlizzUI -> Jet de butin) soit activé (activer ce module l'active automatiquement)."
 L["Displays the name of the player pinging the minimap."] = "Affiche le nom du joueur qui ping la minicarte."
 L["Displays the currently held currency amount next to the item prices."] = "Affiche le montant de la monnaie actuellement détenue à côté des prix des objets."
 L["Narrows down the World(..Frame)."] = "Réduit le World(..Frame)."
@@ -27,7 +27,7 @@ L["Adds shadows to all of the frames.\nDoes nothing unless you replace your ElvU
 L["Combat state notification alerts."] = "Alertes de notification d'état de combat."
 L["Custom editbox position and size."] = "Position et taille personnalisées de la zone de saisie."
 L["Usage:"..
-	"\n/tnote list - returns all eixting notes"..
+	"\n/tnote list - returns all existing notes"..
 	"\n/tnote wipe - clears all existing notes"..
 	"\n/tnote 1 icon Interface\\Path\\ToYourIcon - same as set (except for the lua part)"..
 	"\n/tnote 1 get - same as set, returns existing notes"..
@@ -68,29 +68,26 @@ L["Usage:"..
 			"\n  (1-percentage)*255, percentage*255)"
 L["Adds an icon next to chat hyperlinks."] = "Ajoute une icône à côté des hyperliens du chat."
 L["A new action bar that collects usable quest items from your bag.\n\nDue to state actions limit, this module overrides bar10 created by ElvUI Extra Action Bars."] = "Une nouvelle barre d'action qui collecte les objets de quête utilisables de votre sac.\n\nEn raison de la limite d'actions d'état, ce module remplace la barre 10 créée par ElvUI Extra Action Bars."
-L["Toggles the display of the actionbars backdrop."] = "Active/désactive l'affichage de l'arrière-plan des barres d'action."
-L["The frame won't show unless you mouse over it."] = "Le cadre ne s'affichera que lorsque vous passez la souris dessus."
-L["Inherit the global fade, mousing over, targetting, setting focus, losing health, entering combat will set the remove transparency. Otherwise it will use the transparency level in the general actionbar settings for global fade alpha."] = "Hérite du fondu global, passer la souris dessus, cibler, définir le focus, perdre de la santé, entrer en combat supprimera la transparence. Sinon, il utilisera le niveau de transparence dans les paramètres généraux de la barre d'action pour le fondu global alpha."
+L["Toggles the display of the actionbar's backdrop."] = "Active/désactive l'affichage de l'arrière-plan des barres d'action."
+L["The frame will not be displayed unless hovered over."] = "Le cadre ne s'affichera que lorsque vous passez la souris dessus."
+L["Inherit the global fade; mousing over, targetting, setting focus, losing health, entering combat will set the remove transparency. Otherwise it will use the transparency level in the general actionbar settings for global fade alpha."] = "Hérite du fondu global, passer la souris dessus, cibler, définir le focus, perdre de la santé, entrer en combat supprimera la transparence. Sinon, il utilisera le niveau de transparence dans les paramètres généraux de la barre d'action pour le fondu global alpha."
 L["The first button anchors itself to this point on the bar."] = "Le premier bouton s'ancre à ce point sur la barre."
 L["Right-click the item while holding the modifier to blacklist it. Blacklisted items will not show up on the bar.\nUse /questbarRestore to purge the blacklist."] = "Faites un clic droit sur l'objet tout en maintenant le modificateur pour le mettre sur liste noire. Les objets sur liste noire n'apparaîtront pas sur la barre.\nUtilisez /questbarRestore pour purger la liste noire."
-L["The amount of buttons to display."] = "Le nombre de boutons à afficher."
-L["The amount of buttons to display per row."] = "Le nombre de boutons à afficher par ligne."
+L["The number of buttons to display."] = "Le nombre de boutons à afficher."
+L["The number of buttons to display per row."] = "Le nombre de boutons à afficher par ligne."
 L["The size of the action buttons."] = "La taille des boutons d'action."
-L["The spacing between buttons."] = "L'espacement entre les boutons."
-L["The spacing between the backdrop and the buttons."] = "L'espacement entre l'arrière-plan et les boutons."
-L["Multiply the backdrops height or width by this value. This is usefull if you wish to have more than one bar behind a backdrop."] = "Multiplie la hauteur ou la largeur de l'arrière-plan par cette valeur. C'est utile si vous souhaitez avoir plus d'une barre derrière un arrière-plan."
-L["This works like a macro, you can run different situations to get the actionbar to show/hide differently.\n Example: '[combat] showhide'"] = "Cela fonctionne comme une macro, vous pouvez exécuter différentes situations pour faire apparaître/disparaître la barre d'action différemment.\n Exemple : '[combat] showhide'"
-L["Adds anchoring options to movers' nudges."] = "Ajoute des options d'ancrage aux déplacements des mouveurs."
-L["Mod-clicking an item suggest a skill/item to process it."] = "Cliquer avec le modificateur sur un objet suggère une compétence/objet pour le traiter."
-L["Holding %s while left-clicking a stack splits it in two; to combine available copies, right-click instead.\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."] =
+L["Spacing between the buttons."] = "L'espacement entre les boutons."
+L["Spacing between the backdrop and the buttons."] = "L'espacement entre l'arrière-plan et les boutons."
+L["Multiply the backdrop's height or width by this value. This is useful if you wish to have more than one bar behind a backdrop."] = "Multiplie la hauteur ou la largeur de l'arrière-plan par cette valeur. C'est utile si vous souhaitez avoir plus d'une barre derrière un arrière-plan."
+L["This works like a macro; you can run different conditions to show or hide the action bar.\n Example: '[combat] showhide'"] = "Cela fonctionne comme une macro, vous pouvez exécuter différentes situations pour faire apparaître/disparaître la barre d'action différemment.\n Exemple : '[combat] showhide'"
+L["Adds anchoring options to the movers' nudges."] = "Ajoute des options d'ancrage aux déplacements des mouveurs."
+L["Mod-clicking an item suggests a skill/item to process it."] = "Cliquer avec le modificateur sur un objet suggère une compétence/objet pour le traiter."
+L["Holding %s while left-clicking a stack will split it in two; right-click instead to combine available copies.\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."] =
 	"Maintenir %s tout en faisant un clic gauche sur une pile la divise en deux; pour combiner les copies disponibles, faites un clic droit à la place."..
     "\n\nModifie également le SplitStackFrame pour utiliser une zone de saisie au lieu de flèches."
 L["Extends the bags functionality."] = "Étend la fonctionnalité des sacs."
-L["Handles automated repositioning of the newly received items."] = "Gère le repositionnement automatique des objets nouvellement reçus."
-L["Default method: type > inventoryslotid > ilvl > name."] = "Méthode par défaut : type > id d'emplacement d'inventaire > niveau d'objet > nom."
+L["Default method: type > inventory slot ID > item level > name."] = "Méthode par défaut : type > id d'emplacement d'inventaire > niveau d'objet > nom."
 L["Listed ItemIDs will not get sorted."] = "Les ID d'objets listés ne seront pas triés."
-L["Double-click the title text to minimize the section."] = "Double-cliquez sur le texte du titre pour minimiser la section."
-L["Minimized section's line color."] = "Couleur de ligne de la section minimisée."
 L["E.g. Interface\\Icons\\INV_Misc_QuestionMark"] = "Ex. Interface\\Icons\\INV_Misc_QuestionMark"
 L["Invalid condition format: "] = "Format de condition invalide : "
 L["The generated custom sorting method did not return a function."] = "La méthode de tri personnalisée générée n'a pas retourné de fonction."
@@ -98,26 +95,26 @@ L["The loaded custom sorting method did not return a function."] = "La méthode 
 L["Item received: "] = "Objet reçu : "
 L[" added."] = " ajouté."
 L[" removed."] = " supprimé."
-L["Handles automated repositioning of the newly received items."..
+L["Handles the automated repositioning of the newly received items."..
 	"\nSyntax: filter@value\n\n"..
 	"Available filters:\n"..
-	"id@number - matches itemID,\n"..
-	"name@string - matches name,\n"..
-	"subtype@string - matches subtype,\n"..
-	"ilvl@number - matches ilvl,\n"..
-	"uselevel@number - matches equip level,\n"..
-	"quality@number - matches quality,\n"..
-	"equipslot@number - matches nventorySlotID,\n"..
-	"maxstack@number - matches stack limit,\n"..
-	"price@number - matches sell price,\n\n"..
-	"tooltip@string - matches tooltip text,\n\n"..
-	"All string matches are not case sensitive and match only the alphanumeric symbols. Standart lua logic applies. "..
+	" id@number - matches itemID,\n"..
+	" name@string - matches name,\n"..
+	" subtype@string - matches subtype,\n"..
+	" ilvl@number - matches ilvl,\n"..
+	" uselevel@number - matches equip level,\n"..
+	" quality@number - matches quality,\n"..
+	" equipslot@number - matches inventorySlotID,\n"..
+	" maxstack@number - matches stack limit,\n"..
+	" price@number - matches sell price,\n\n"..
+	" tooltip@string - matches tooltip text,\n\n"..
+	"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
 	"Look up GetItemInfo API for more info on filters. "..
 	"Use GetAuctionItemClasses and GetAuctionItemSubClasses (same as on the AH) to get the localized types and subtypes values.\n\n"..
 	"Example usage (priest t8 or Shadowmourne):\n"..
 	"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne.\n\n"..
 	"Accepts custom functions (bagID, slotID, itemID are exposed)\n"..
-	"The below one notifies of the newly aquired items.\n\n"..
+	"The below one notifies of the newly acquired items.\n\n"..
 	"local icon = GetContainerItemInfo(bagID, slotID)\n"..
 	"local _, link = GetItemInfo(itemID)\n"..
 	"icon = gsub(icon, '\\124', '\\124\\124')\n"..
@@ -126,16 +123,16 @@ L["Handles automated repositioning of the newly received items."..
 		"Gère le repositionnement automatique des objets nouvellement reçus."..
 		"\nSyntaxe: filtre@valeur\n\n"..
 		"Filtres disponibles:\n"..
-		"id@nombre - correspond à l'ID de l'objet,\n"..
-		"name@chaîne - correspond au nom,\n"..
-		"subtype@chaîne - correspond au sous-type,\n"..
-		"ilvl@nombre - correspond au niveau d'objet,\n"..
-		"uselevel@nombre - correspond au niveau d'équipement,\n"..
-		"quality@nombre - correspond à la qualité,\n"..
-		"equipslot@nombre - correspond à l'ID d'emplacement d'inventaire,\n"..
-		"maxstack@nombre - correspond à la limite de pile,\n"..
-		"price@nombre - correspond au prix de vente,\n\n"..
-		"tooltip@chaîne - correspond au texte de l'infobulle,\n\n"..
+		" id@nombre - correspond à l'ID de l'objet,\n"..
+		" name@chaîne - correspond au nom,\n"..
+		" subtype@chaîne - correspond au sous-type,\n"..
+		" ilvl@nombre - correspond au niveau d'objet,\n"..
+		" uselevel@nombre - correspond au niveau d'équipement,\n"..
+		" quality@nombre - correspond à la qualité,\n"..
+		" equipslot@nombre - correspond à l'ID d'emplacement d'inventaire,\n"..
+		" maxstack@nombre - correspond à la limite de pile,\n"..
+		" price@nombre - correspond au prix de vente,\n\n"..
+		" tooltip@chaîne - correspond au texte de l'infobulle,\n\n"..
 		"Toutes les correspondances de chaînes ne sont pas sensibles à la casse et ne correspondent qu'aux symboles alphanumériques. La logique Lua standard s'applique. "..
 		"Consultez l'API GetItemInfo pour plus d'informations sur les filtres. "..
 		"Utilisez GetAuctionItemClasses et GetAuctionItemSubClasses (comme dans l'HV) pour obtenir les valeurs localisées des types et sous-types.\n\n"..
@@ -148,6 +145,47 @@ L["Handles automated repositioning of the newly received items."..
 		"icon = gsub(icon, '\\124', '\\124\\124')\n"..
 		"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
 		"print('Objet reçu: ' .. string)"
+L["Syntax: filter@value\n\n"..
+	"Available filters:\n"..
+	" id@number - matches itemID,\n"..
+	" name@string - matches name,\n"..
+	" type@string - matches type,\n"..
+	" subtype@string - matches subtype,\n"..
+	" ilvl@number - matches ilvl,\n"..
+	" uselevel@number - matches equip level,\n"..
+	" quality@number - matches quality,\n"..
+	" equipslot@number - matches inventorySlotID,\n"..
+	" maxstack@number - matches stack limit,\n"..
+	" price@number - matches sell price,\n"..
+	" tooltip@string - matches tooltip text.\n\n"..
+	"All string matches are case-insensitive and match only alphanumeric symbols.\n"..
+	"Standard Lua logic for branching (and/or/parenthesis/etc.) applies.\n\n"..
+	"Example usage (priest t8 or Shadowmourne):\n"..
+	"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."] =
+		"Syntaxe: filtre@valeur\n\n"..
+			"Filtres disponibles:\n"..
+			" id@nombre - correspond à l'ID de l'objet,\n"..
+			" name@texte - correspond au nom,\n"..
+			" type@texte - correspond au type,\n"..
+			" subtype@texte - correspond au sous-type,\n"..
+			" ilvl@nombre - correspond au niveau d'objet,\n"..
+			" uselevel@nombre - correspond au niveau d'équipement,\n"..
+			" quality@nombre - correspond à la qualité,\n"..
+			" equipslot@nombre - correspond à l'ID d'emplacement d'inventaire,\n"..
+			" maxstack@nombre - correspond à la limite de pile,\n"..
+			" price@nombre - correspond au prix de vente,\n"..
+			" tooltip@texte - correspond au texte de l'infobulle.\n\n"..
+			"Toutes les correspondances de texte ne sont pas sensibles à la casse et ne correspondent qu'aux symboles alphanumériques.\n"..
+			"La logique lua standard pour les branchements (et/ou/parenthèses/etc.) s'applique.\n\n"..
+			"Exemple d'utilisation (prêtre t8 ou Deuillelombre):\n"..
+			"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."
+L["Available Item Types"] = "Types d'objets disponibles"
+L["Lists all available item subtypes for each available item type."] =
+	"Liste tous les sous-types d'objets disponibles pour chaque type d'objet disponible."
+L["Holding this key while interacting with a merchant buys all items that pass the Auto Buy set method.\n"..
+	"Hold the modifier key and click the buyout list entry to purchase a single item, regardless of the '@amount' rule."] =
+		"Maintenir cette touche en interagissant avec un marchand achète tous les articles qui passent le filtre d'Achat automatique.\n"..
+			"Mod-cliquez sur une entrée de la liste pour acheter un seul des articles, peu importe la règle '@quantité'."
 L["Default method: type > inventoryslotid > ilvl > name.\n\n"..
 	"Accepts custom functions (bagID and slotID are available at the a/b.bagID/slotID).\n\n"..
 	"function(a,b)\n"..
@@ -171,7 +209,7 @@ L["Syntax:"..
 	"\n[k~=@@UnitName('player')]"..
 	"\n@@@commands@@@"..
 	"\n\n'EVENT' - Event from the events section above"..
-	"\n'n, m, k' - indexex of the desired payload args (number)"..
+	"\n'n, m, k' - indexes of the desired payload args (number)"..
 	"\n'nil/value/boolean/lua code' - desired output of n arg"..
 	"\n'@@' - lua arg flag, must go before the lua code within the args' value section"..
 	"\n'~' - negate flag, add before the equals sign to have the code executed if n/m/k is not mathing the set value instead"..
@@ -181,13 +219,13 @@ L["Syntax:"..
 	"\n\nUNIT_AURA[1=player]@@@"..
 	"\nprint(player has gained/lost an aura)@@@"..
 	"\n\nCHAT_MSG_WHISPER"..
-	"\n[5~=UnitName('player')]"..
+	"\n[5~=@@UnitName('player')]"..
 	"\n[14=false]@@@"..
 	"\nPlaySound('LEVELUPSOUND', 'master')@@@"..
 	"\n\nCOMBAT_LOG_EVENT_"..
 	"\nUNFILTERED"..
-	"\n[5=UnitName('arena1')]"..
-	"\n[5=UnitName('arena2')]@@@"..
+	"\n[5=@@UnitName('arena1')]"..
+	"\n[5=@@UnitName('arena2')]@@@"..
 	"\nfor i = 1, 2 do"..
 	"\nif UnitDebuff('party'..i, 'Bad Spell')"..
 	"\nthen print(UnitName('party'..i)..' is afflicted!')"..
@@ -210,13 +248,13 @@ L["Syntax:"..
 		"\n\nUNIT_AURA[1=player]@@@"..
 		"\nprint(le joueur a gagné/perdu une aura)@@@"..
 		"\n\nCHAT_MSG_WHISPER"..
-		"\n[5~=UnitName('player')]"..
+		"\n[5~=@@UnitName('player')]"..
 		"\n[14=false]@@@"..
 		"\nPlaySound('LEVELUPSOUND', 'master')@@@"..
 		"\n\nCOMBAT_LOG_EVENT_"..
 		"\nUNFILTERED"..
-		"\n[5=UnitName('arena1')]"..
-		"\n[5=UnitName('arena2')]@@@"..
+		"\n[5=@@UnitName('arena1')]"..
+		"\n[5=@@UnitName('arena2')]@@@"..
 		"\nfor i = 1, 2 do"..
 		"\nif UnitDebuff('party'..i, 'Mauvais sort')"..
 		"\nthen print(UnitName('party'..i)..' est affecté!')"..
@@ -224,7 +262,7 @@ L["Syntax:"..
 		"\n\nCe module analyse les chaînes, donc essayez de faire suivre strictement la syntaxe à votre code, sinon il pourrait ne pas fonctionner."
 L["Highlights auras."] = "Met en surbrillance les auras."
 L["E.g. 42292"] = "Par exemple, 42292"
-L["Aplies highlights to all auras passing the selected filter."] = "Met en surbrillance toutes les auras passant le filtre sélectionné."
+L["Applies highlights to all auras passing the selected filter."] = "Met en surbrillance toutes les auras passant le filtre sélectionné."
 L["Priority: spell, filter, curable/stealable."] = "Priorité : sort, filtre, soignable/volable."
 L["If toggled, the GLOBAL Spell or Filter entry values would be used."] = "Si activé, les valeurs GLOBAL de Sort ou Filtre seront utilisées."
 L["Makes auras grow sideswise."] = "Fait croître les auras latéralement."
@@ -236,7 +274,15 @@ L["Right-click a player buff to cancel it."] = "Cliquez avec le bouton droit sur
 L["Disables debuffs desaturation."] = "Désactive la désaturation des débuffs."
 L["Saturated Debuffs"] = "Débuffs Saturés"
 L["Confirm Rolls"] = "Confirmer les jets"
-L["Quest Items and Money"] = "Objets de quête et argent"
+L["Auto Pickup"] = "Ramassage automatique"
+L["Swift Buy"] = "Achat rapide"
+L["Buys out items automatically."] = "Achète automatiquement des articles."
+L["Failsafe"] = "Sécurité"
+L["Enables popup confirmation dialog."] = "Active la boîte de dialogue de confirmation."
+L["Add Set"] = "Ajouter un ensemble"
+L["Delete Set"] = "Supprimer l'ensemble"
+L["Select Set"] = "Sélectionner un ensemble"
+L["Auto Buy"] = "Achat automatique"
 L["Fill Delete"] = "Remplir suppression"
 L["Gossip"] = "Dialogue"
 L["Accept Quest"] = "Accepter quête"
@@ -272,7 +318,6 @@ L["Select Container Type"] = "Sélectionner le type de conteneur"
 L["Settings"] = "Paramètres"
 L["Add Section"] = "Ajouter une section"
 L["Delete Section"] = "Supprimer la section"
-L["Section Length"] = "Longueur de la section"
 L["Select Section"] = "Sélectionner la section"
 L["Section Priority"] = "Priorité de la section"
 L["Section Spacing"] = "Espacement des sections"
@@ -280,8 +325,6 @@ L["Collection Method"] = "Méthode de collecte"
 L["Sorting Method"] = "Méthode de tri"
 L["Ignore Item (by ID)"] = "Ignorer l'objet (par ID)"
 L["Remove Ignored"] = "Supprimer les ignorés"
-L["Minimize"] = "Réduire"
-L["Line Color"] = "Couleur de ligne"
 L["Title"] = "Titre"
 L["Color"] = "Couleur"
 L["Attach to Icon"] = "Attacher à l'icône"
@@ -447,13 +490,10 @@ L["Add Texture Path"] = "Ajouter un chemin de texture"
 L["Remove Selected Texture"] = "Supprimer la texture sélectionnée"
 L["Titles"] = "Titres"
 L["Reaction Color"] = "Couleur de réaction"
-L["Hold this while using /addOccupation command to clear the list of the current target/mouseover occupation.\nDon't forget to unbind the modifier+key bind!"] =
-	"Maintenez ceci tout en utilisant la commande /addOccupation pour effacer la liste de l'occupation actuelle de la cible/survol.\nN'oubliez pas de délier la combinaison modificateur+touche !"
 L["Color based on reaction type."] = "Couleur basée sur le type de réaction."
 L["Nameplates"] = "Barres d'informations"
 L["Unitframes"] = "Cadres d'unité"
-L["An icon similar to the minimap search.\n\nTooltip scanning, might not be precise.\n\nFor consistency reasons, no keywards are added by defult, use /addOccupation command to mark the appropriate ones yourself (only need to do it once per unique occupation text)."] =
-	"Une icône similaire à la recherche sur la minicarte.\n\nAnalyse des infobulles, peut ne pas être précise.\n\nPour des raisons de cohérence, aucun mot-clé n'est ajouté par défaut, utilisez la commande /addOccupation pour marquer vous-même les appropriés (à faire une seule fois par texte d'occupation unique)."
+L["An icon similar to the minimap search."] = "Une icône similaire à la recherche sur la minicarte."
 L["Displays player guild text."] = "Affiche le texte de guilde du joueur."
 L["Displays NPC occupation text."] = "Affiche le texte d'occupation du PNJ."
 L["Strata"] = "Strate"
@@ -476,40 +516,6 @@ L["Unmark all plates."] = "Démarque toutes les barres d'informations."
 L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"] =
 	"Utilisation : macro '/qmark' liée à une touche de votre choix.\n\nN'oubliez pas de délier également vos raccourcis de modificateur !"
 L["Use Backdrop"] = "Utiliser l'arrière-plan"
-L["Usage:\n%%d=%%s\n\n%%d - index from the list below\n%%s - keywords to look for\n\nIndexes of icons:"..
-	"\n1 - %s"..
-	"\n2 - %s"..
-	"\n3 - %s"..
-	"\n4 - %s"..
-	"\n5 - %s"..
-	"\n6 - %s"..
-	"\n7 - %s"..
-	"\n8 - %s"..
-	"\n9 - %s"..
-	"\n10 - %s"..
-	"\n11 - %s"..
-	"\n12 - %s"..
-	"\n13 - %s"..
-	"\n14 - %s"..
-	"\n\n\nAlso available as a '/addOccupation %%d' slash command where %%d is an optional icon index. "..
-	"If no index is provided, this command will cycle through all of the available icons. Works on either TARGET or MOUSEOVER, prioritising the latter."] =
-		"Utilisation :\n%%d=%%s\n\n%%d - index de la liste ci-dessous\n%%s - mots-clés à rechercher\n\nIndices des icônes :"..
-			"\n1 - %s"..
-			"\n2 - %s"..
-			"\n3 - %s"..
-			"\n4 - %s"..
-			"\n5 - %s"..
-			"\n6 - %s"..
-			"\n7 - %s"..
-			"\n8 - %s"..
-			"\n9 - %s"..
-			"\n10 - %s"..
-			"\n11 - %s"..
-			"\n12 - %s"..
-			"\n13 - %s"..
-			"\n14 - %s"..
-			"\n\n\nÉgalement disponible en tant que commande '/addOccupation %%d' où %%d est un indice d'icône facultatif."..
-			"Si aucun indice n'est fourni, cette commande parcourra toutes les icônes disponibles. Fonctionne sur TARGET ou MOUSEOVER, en priorisant ce dernier."
 L["Linked Style Filter Triggers"] = "Déclencheurs de filtre de style lié"
 L["Select Link"] = "Sélectionner le lien"
 L["New Link"] = "Nouveau lien"
@@ -614,7 +620,7 @@ L["Disable Event"] = "Désactiver l'événement"
 L["School"] = "École"
 L["Use School Colors"] = "Utiliser les couleurs d'école"
 L["Colors"] = "Couleurs"
-L["Colors (School)"] = "Couleurs (École)"
+L["Color (School)"] = "Couleur (École)"
 L["Animation Type"] = "Type d'animation"
 L["Custom Animation"] = "Animation personnalisée"
 L["Flag Settings"] = "Paramètres de drapeau"
@@ -700,7 +706,7 @@ L["Rare Elite"] = "Élite Rare"
 L["Class Spec Icons"] = "Icônes de Spécialisation de Classe"
 L["Classification Textures"] = "Textures de Classification"
 L["Use Nameplates' Icons"] = "Utiliser les Icônes des Barres de Nom"
-L["Color enemy npc icon based on the unit type."] = "Colorer l'icône du PNJ ennemi en fonction du type d'unité."
+L["Color enemy NPC icon based on the unit type."] = "Colorer l'icône du PNJ ennemi en fonction du type d'unité."
 L["Strata and Level"] = "Strate et Niveau"
 L["Warrior"] = "Guerrier"
 L["Warlock"] = "Démoniste"
@@ -772,7 +778,6 @@ L["On meeting multiple conditions, colors from the tab with the highest priority
 L["Copy Tab"] = "Copier l'Onglet"
 L["Select a tab to copy its settings onto the current tab."] = "Sélectionnez un onglet pour copier ses paramètres sur l'onglet actuel."
 L["Flash"] = "Flash"
-L["Toggle color flash for the current tab."] = "Basculer le flash de couleur pour l'onglet actuel."
 L["Speed"] = "Vitesse"
 L["Glow"] = "Lueur"
 L["Determines which glow to apply when statusbars are not detached from frame."] = "Détermine quelle lueur appliquer lorsque les barres d'état ne sont pas détachées du cadre."
@@ -789,7 +794,7 @@ L["Disabled unless classbar is enabled."] = "Désactivé sauf si la barre de cla
 L["InfoPanel Color"] = "Couleur du Panneau d'Information"
 L["Disabled unless infopanel is enabled."] = "Désactivé sauf si le panneau d'information est activé."
 L["ClassBar Adapt To"] = "Adapter la Barre de Classe À"
-L["Copies color of the selected bar."] = "Copie la couleur de la barre sélectionnée."
+L["Copies the color of the selected bar."] = "Copie la couleur de la barre sélectionnée."
 L["InfoPanel Adapt To"] = "Adapter le Panneau d'Information À"
 L["Override Mode"] = "Mode de Remplacement"
 L["'None' - threat borders highlight will be prioritized over this one"..
@@ -807,33 +812,43 @@ L["Handle only player combat log events."] = "Gérer uniquement les événements
 L["Rotate Icon"] = "Faire pivoter l'icône"
 L["Usage example:"..
 	"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
-	"\nif UnitIsUnit(@unit, 'target') then return true end"..
-	"\n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
-	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group (more than 5 in the example above)"..
-	"\n\n'return {bR=1,f=false}' - you can dynamically color the frames by returning the colors in a table format:"..
+	"\n    local r, g, b = ElvUF_Target.Health:GetStatusBarColor()"..
+	"\n    return true, {mR = r, mG = g, mB = b}"..
+	"\nelseif UnitIsUnit(unit, 'target') then"..
+	"\n    return true"..
+	"\nend"..
+	"\n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question "..
+	"(in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not"..
+	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group "..
+	"(more than 5 in the example above)"..
+	"\n\n'return true, {bR=1,f=false}' - you can dynamically color the frames by returning the colors in a table format:"..
 	"\n  to apply to the statusbar, assign your rgb values to mR, mG and mB respectively"..
 	"\n  to apply the glow - to gR, gG, gB, gA (alpha)"..
 	"\n  for borders - bR, bG, bB"..
 	"\n  and for the flash - fR, fG, fB, fA"..
 	"\n  to prevent the elements styling, return {m = false, g = false, b = false, f = false}"..
-	"\n\nFeel free to use '@unit' to register current unit like this: UnitBuff(@unit, 'player')."..
+	"\n\nFrame and unitID are available at 'frame' and 'unit' respectively: UnitBuff(unit, 'player')/frame.Health:IsVisible()."..
 	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"Exemple d'utilisation :"..
 			"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
-			"\nif UnitIsUnit(@unit, 'target') then return true end"..
-			"\n\n@@[raid, Health, 2, >5]@@ - renvoie vrai/faux selon que l'onglet en question (dans l'exemple ci-dessus : 'player' - unité cible ; 'Power' - barre d'état cible ; '3' - onglet cible) est actif ou non (la mention de la même unité/groupe est désactivée ; n'est pas récursif)"..
-			"\n(>/>=/<=/</~= num) - (optionnel, unités de groupe uniquement) correspond à un nombre particulier de cadres déclenchés dans le groupe (plus de 5 dans l'exemple ci-dessus)"..
-			"\n\n'return {bR=1,f=false}' - vous pouvez colorer dynamiquement les cadres en renvoyant les couleurs dans un format de table :"..
+			"\n    local r, g, b = ElvUF_Target.Health:GetStatusBarColor()"..
+			"\n    return true, {mR = r, mG = g, mB = b}"..
+			"\nelseif UnitIsUnit(unit, 'target') then"..
+			"\n    return true"..
+			"\nend"..
+			"\n\n@@[raid, Health, 2, >5]@@ - renvoie vrai/faux selon que l'onglet en question "..
+			"(dans l'exemple ci-dessus : 'player' - unité cible ; 'Power' - barre d'état cible ; '3' - onglet cible) est actif ou non"..
+			"\n(>/>=/<=/</~= num) - (optionnel, unités de groupe uniquement) "..
+			"correspond à un nombre particulier de cadres déclenchés dans le groupe (plus de 5 dans l'exemple ci-dessus)"..
+			"\n\n'return true, {bR=1,f=false}' - vous pouvez colorer dynamiquement les cadres en renvoyant les couleurs dans un format de table :"..
 			"\n  pour appliquer à la barre d'état, attribuez vos valeurs rvb à mR, mG et mB respectivement"..
 			"\n  pour appliquer la lueur - à gR, gG, gB, gA (alpha)"..
 			"\n  pour les bordures - bR, bG, bB"..
 			"\n  et pour le flash - fR, fG, fB, fA"..
 			"\n  pour empêcher le style des éléments, renvoyez {m = false, g = false, b = false, f = false}"..
-			"\n\nN'hésitez pas à utiliser '@unit' pour enregistrer l'unité actuelle comme ceci : UnitBuff(@unit, 'player')."..
+			"\n\nLe cadre et l'ID de l'unité sont disponibles respectivement dans 'frame' et 'unit': UnitBuff(unit, 'player')/frame.Health:IsVisible()."..
 			"\n\nCe module analyse les chaînes de caractères, alors essayez de faire suivre strictement la syntaxe à votre code, sinon il pourrait ne pas fonctionner."
-L["Unless holding a modifier, hovering units, items, and spells draws no tooltip.\nModifies cursor tooltips only."] = "À moins de maintenir un modificateur, survoler des unités, objets et sorts n'affiche aucun tooltip.\nModifie uniquement les tooltips du curseur."
+L["Tooltips will not display when hovering over units, items, and spells unless a modifier is held.\nModifies cursor tooltips only."] = "À moins de maintenir un modificateur, survoler des unités, objets et sorts n'affiche aucun tooltip.\nModifie uniquement les tooltips du curseur."
 L["Pick a..."] = "Choisissez un..."
 L["...mover to anchor to."] = "...élément pour ancrer."
 L["...mover to anchor."] = "...élément à ancrer."
@@ -949,3 +964,123 @@ L["To Level"] = "Jusqu'au Niveau"
 L["Names will be shortened based on level text position."] = "Les noms seront raccourcis en fonction de la position du texte de niveau."
 L["Add Item (by ID)"] = "Ajouter un objet (par ID)"
 L["Remove Item"] = "Retirer l'objet"
+L["Pre-Load"] = "Pré-chargement"
+L["Executes commands during the addon's initialization process."] = "Exécute des commandes pendant le processus d'initialisation de l'addon."
+L["Justify"] = "Justifier"
+L["Alt-Click: free bag slots, if possible."] = "Alt-Clic : emplacements de sac libres, si possible."
+L["Click: Toggle layout mode."] = "Clic : basculer le mode de mise en page."
+L["Alt-Click: Re-evaluate all items."] = "Alt-Clic : réévaluer tous les objets."
+L["Drag-and-Drop: Evaluate and position the cursor item."] = "Glisser-Déposer : évaluer et positionner l'objet du curseur."
+L["Mouse-Wheel: Navigate between special and normal bags."] = "Molette de la souris : naviguer entre les sacs spéciaux et normaux."
+L["Setup Sections"] = "Configurer les Sections"
+L["Adds default sections set to the currently selected container."] = "Ajoute des sections par défaut au conteneur actuellement sélectionné."
+L["Handles the automated repositioning of the newly received items."..
+	"\nSyntax: filter@value\n\n"..
+	"Available filters:\n"..
+	" id@number - matches itemID,\n"..
+	" name@string - matches name,\n"..
+	" subtype@string - matches subtype,\n"..
+	" ilvl@number - matches ilvl,\n"..
+	" uselevel@number - matches equip level,\n"..
+	" quality@number - matches quality,\n"..
+	" equipslot@number - matches inventorySlotID,\n"..
+	" maxstack@number - matches stack limit,\n"..
+	" price@number - matches sell price,\n\n"..
+	" tooltip@string - matches tooltip text,\n\n"..
+	"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
+	"Look up GetItemInfo API for more info on filters. "..
+	"Use GetAuctionItemClasses and GetAuctionItemSubClasses (same as on the AH) to get the localized types and subtypes values.\n\n"..
+	"Example usage (priest t8 or Shadowmourne):\n"..
+	"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne.\n\n"..
+	"Accepts custom functions (bagID, slotID, itemID are exposed)\n"..
+	"The below one notifies of the newly acquired items.\n\n"..
+	"local icon = GetContainerItemInfo(bagID, slotID)\n"..
+	"local _, link = GetItemInfo(itemID)\n"..
+	"icon = gsub(icon, '\\124', '\\124\\124')\n"..
+	"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
+	"print('Item received: ' .. string)"] =
+		"Gère le positionnement automatique des objets.\n"..
+			"Syntaxe : filter@value\n\n"..
+			"Filtres disponibles :\n"..
+			" id@number - correspond à itemID,\n"..
+			" name@string - correspond au nom,\n"..
+			" type@string - correspond au type,\n"..
+			" subtype@string - correspond au sous-type,\n"..
+			" ilvl@number - correspond à ilvl,\n"..
+			" uselevel@number - correspond au niveau d'équipement,\n"..
+			" quality@number - correspond à la qualité,\n"..
+			" equipslot@number - correspond à InventorySlotID,\n"..
+			" maxstack@number - correspond à la limite de pile,\n"..
+			" price@number - correspond au prix de vente,\n"..
+			" tooltip@string - correspond au texte de l'info-bulle,\n"..
+			" set@setName - correspond aux objets de l'ensemble d'équipement.\n\n"..
+			"Toutes les correspondances de chaînes ne sont pas sensibles à la casse et ne correspondent qu'aux symboles alphanumériques.\n"..
+			"La logique standard de Lua pour les branches (et/ou/parenthèses/etc.) s'applique.\n\n"..
+			"Exemple d'utilisation (prêtre t8 ou Shadowmourne) :\n"..
+			"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne.\n\n"..
+			"Accepte des fonctions personnalisées (bagID, slotID, itemID sont exposés)\n"..
+			"Le suivant notifie des objets nouvellement acquis.\n\n"..
+			"local icon = GetContainerItemInfo(bagID, slotID)\n"..
+			"local _, link = GetItemInfo(itemID)\n"..
+			"icon = gsub(icon, '\\124', '\\124\\124')\n"..
+			"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
+			"print('Objet reçu : ' .. string)"
+L["Syntax: filter@value@amount\n\n"..
+	"Available filters:\n"..
+	" id@number@amount(+)/+ - matches itemID,\n"..
+	" name@string@amount(+)/+ - matches name,\n"..
+	" type@string@amount(+)/+ - matches type,\n"..
+	" subtype@string@amount(+)/+ - matches subtype,\n"..
+	" ilvl@number@amount(+)/+ - matches ilvl,\n"..
+	" uselevel@number@amount(+)/+ - matches equip level,\n"..
+	" quality@number@amount(+)/+ - matches quality,\n"..
+	" equipslot@number@amount(+)/+ - matches inventorySlotID,\n"..
+	" maxstack@number@amount(+)/+ - matches stack limit,\n"..
+	" price@number@amount(+)/+ - matches sell price,\n"..
+	" tooltip@string@amount(+)/+ - matches tooltip text.\n\n"..
+	"The optional 'amount' part could be:\n"..
+	"  a number - to purchase a static amount,\n"..
+	"  a + sign - to replenish the existing partial stack or purchase a new one,\n"..
+	"  both (e.g. 5+) - to purchase enough items to reach a specified total (in this case, 5),\n"..
+	"  ommited - defaults to 1.\n\n"..
+	"All string matches are case-insensitive and match only alphanumeric symbols.\n"..
+	"Standard Lua logic for branching (and/or/parenthesis/etc.) applies.\n\n"..
+	"Example usage (priest t8 or Shadowmourne):\n"..
+	"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."] =
+		"Syntaxe : filter@value@amount\n\n"..
+			"Filtres disponibles :\n"..
+			" id@number@amount(+)/+ - correspond à itemID,\n"..
+			" name@string@amount(+)/+ - correspond au nom,\n"..
+			" type@string@amount(+)/+ - correspond au type,\n"..
+			" subtype@string@amount(+)/+ - correspond au sous-type,\n"..
+			" ilvl@number@amount(+)/+ - correspond à ilvl,\n"..
+			" uselevel@number@amount(+)/+ - correspond au niveau d'équipement,\n"..
+			" quality@number@amount(+)/+ - correspond à la qualité,\n"..
+			" equipslot@number@amount(+)/+ - correspond à InventorySlotID,\n"..
+			" maxstack@number@amount(+)/+ - correspond à la limite de pile,\n"..
+			" price@number@amount(+)/+ - correspond au prix de vente,\n"..
+			" tooltip@string@amount(+)/+ - correspond au texte de l'info-bulle.\n\n"..
+			"La partie optionnelle 'amount' peut être :\n"..
+			" un nombre - pour acheter une quantité statique,\n"..
+			" un signe + - pour reconstituer la pile partielle existante ou acheter une nouvelle,\n"..
+			" les deux (par exemple, 5+) - pour acheter suffisamment d'objets pour atteindre un total spécifié (dans ce cas, 5),\n"..
+			" omis - par défaut à 1.\n\n"..
+			"Toutes les correspondances de chaînes ne sont pas sensibles à la casse et ne correspondent qu'aux symboles alphanumériques.\n"..
+			"La logique standard de Lua pour les branches (et/ou/parenthèses/etc.) s'applique.\n\n"..
+			"Exemple d'utilisation (prêtre t8 ou Shadowmourne) :\n"..
+			"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."
+L["PERIODIC"] = "PÉRIODIQUE"
+L["Hold this key while using /addOccupation command to clear the list of the current target/mouseover NPC."] = "Maintenez cette touche enfoncée tout en utilisant la commande /addOccupation pour effacer la liste de l'NPC cible/survolé actuel."
+L["Use /addOccupation slash command while targeting/hovering over a NPC to add it to the list. Use again to cycle."] = "Utilisez la commande de barre oblique /addOccupation tout en ciblant/survolant un NPC pour l'ajouter à la liste. Utilisez à nouveau pour faire défiler."
+L["Style Filter Icons"] = "Icônes de Filtre de Style"
+L["Custom icons for the style filter."] = "Icônes personnalisées pour le filtre de style."
+L["Whitelist"] = "Liste blanche"
+L["X Direction"] = "Direction X"
+L["Y Direction"] = "Direction Y"
+L["Create Icon"] = "Créer une icône"
+L["Delete Icon"] = "Supprimer l'icône"
+L["0 to match frame width."] = "0 pour correspondre à la largeur du cadre."
+L["Remove a NPC"] = "Supprimer un PNJ"
+L["Change a NPC's Occupation"] = "Changer la profession d'un PNJ"
+L["...to the currently selected one."] = "...à celui actuellement sélectionné."
+L["Select Occupation"] = "Sélectionner la profession"

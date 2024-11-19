@@ -212,8 +212,8 @@ local rollIcons = {
 }
 
 local rollMsgsProcessed = {}
-for type, messages in ipairs(rollMsgs) do
-    rollMsgsProcessed[type] = {}
+for rollType, messages in ipairs(rollMsgs) do
+    rollMsgsProcessed[rollType] = {}
     for i, message in ipairs(messages) do
         local processedMessage = {}
         local formattedMsg = format(message, 1, 1, 1, 1, 1)
@@ -224,14 +224,14 @@ for type, messages in ipairs(rollMsgs) do
                 tinsert(processedMessage, part)
             end
         end
-        rollMsgsProcessed[type][i] = processedMessage
+        rollMsgsProcessed[rollType][i] = processedMessage
     end
 end
 
 local function parseEventMsg(msg)
     msg = gsub(gsub(gsub(msg, '|[tT].+|[tT]', ''), '|%x%x%x%x%x%x%x%x%x.+|[hH]|[rR][%w-]*', ''), '[%s%p%d]', '')
 
-	for type, messages in pairs(rollMsgsProcessed) do
+	for rollType, messages in pairs(rollMsgsProcessed) do
         for _, processedMessage in ipairs(messages) do
             local tempMsg = msg
             local matched = true
@@ -243,7 +243,7 @@ local function parseEventMsg(msg)
                 tempMsg = gsub(tempMsg, part, "", 1)
             end
             if matched then
-                return type, tempMsg
+                return rollType, tempMsg
             end
         end
     end
@@ -349,7 +349,7 @@ function mod:LoadConfig()
 						order = 1,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
-						desc = L["Colors online friends' and guildmates' names in some of the messages and styles the rolls.\nAlready handled chat bubbles will not get styled before you /reload."],
+						desc = L["Colors the names of online friends and guildmates in some messages and styles the rolls.\nAlready handled chat bubbles will not get styled before you /reload."],
 						get = function() return db.StyledMsgs.enabled end,
 						set = function(_, value)
 							db.StyledMsgs.enabled = value
@@ -439,7 +439,7 @@ function mod:LoadConfig()
 						order = 1,
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
-						desc = L["Restyles loot bars.\nRequires 'Loot Roll' (General -> BlizzUI Improvements -> Loot Roll) to be enabled (toggling this module enables it automatically)."],
+						desc = L["Restyles the loot bars.\nRequires 'Loot Roll' (General -> BlizzUI Improvements -> Loot Roll) to be enabled (toggling this module enables it automatically)."],
 					},
 					sizeIcon = {
 						order = 2,
@@ -480,7 +480,7 @@ function mod:StyledMsgs(enable)
 
 		if not initialized.StyledMsgs then
 			local myname, myclass = E.myname, E.myclass
-			local playerName = lower(myname)
+			local mynameLower = lower(myname)
 			local friendOnlineMsgProcessed = gsub(tconcat({split(1, format(gsub(ERR_FRIEND_ONLINE_SS, '[%[%]]',''), 1, 1))}), "|H.+|h", "")
 			local _, playerJoinsGuild = split(1, format(ERR_GUILD_JOIN_S, 1))
 			local _, part1, part2, part3 = split(1, format(RANDOM_ROLL_RESULT, 1, 1, 1, 1))
@@ -505,7 +505,7 @@ function mod:StyledMsgs(enable)
 			end
 
 			function mod:GetPlayerRelationship(name)
-				if name == playerName then
+				if name == mynameLower then
 					return "self", myclass
 				elseif friendMap[name] then
 					return "friend", friendMap[name]
@@ -551,10 +551,10 @@ function mod:StyledMsgs(enable)
 
 				if isPlayer then
 					_, relClass = "self", myclass
-					local db = indicators["self"]
-					if db.indicator ~= "NONE" then
-						indicatorColor = db.color
-						indicator = db.indicator
+					local data = indicators["self"]
+					if data.indicator ~= "NONE" then
+						indicatorColor = data.color
+						indicator = data.indicator
 					end
 				else
 					_, relClass, indicator, indicatorColor = mod:GetPlayerInfo(lower(playerName))
@@ -656,9 +656,9 @@ function mod:StyledMsgs(enable)
 				local strippedMsg, msgMap = stripMsg(msg)
 				local strippedLower = lower(strippedMsg)
 				local replacements = {}
-				local handledNames = {[playerName] = true}
+				local handledNames = {[mynameLower] = true}
 
-				for _, rep in ipairs(handleFound(strippedMsg, strippedLower, playerName, msgMap, true)) do
+				for _, rep in ipairs(handleFound(strippedMsg, strippedLower, mynameLower, msgMap, true)) do
 					tinsert(replacements, rep)
 				end
 
@@ -826,8 +826,8 @@ function mod:StyledMsgs(enable)
 			initialized.StyledMsgs = true
 		end
 
-        for _, type in ipairs(chatMsgs) do
-            ChatFrame_AddMessageEventFilter(type, mod.StyledMsgsFilter)
+        for _, msgType in ipairs(chatMsgs) do
+            ChatFrame_AddMessageEventFilter(msgType, mod.StyledMsgsFilter)
         end
 
 		if not E.db.Extras.blizzard[modName].StyledLootings.enabled then
@@ -880,14 +880,14 @@ function mod:StyledMsgs(enable)
 		end
 
 		if not self:IsHooked(M, "AddChatBubbleName") then
-			self:RawHook(M, "AddChatBubbleName", function(self, chatBubble, guid, name)
+			self:RawHook(M, "AddChatBubbleName", function(self, chatBubble, _, name)
 				if not name then return end
 				chatBubble.Name:SetFormattedText("%s", mod:StyleName(name))
 			end)
 		end
     elseif initialized.StyledMsgs then
-        for _, type in ipairs(chatMsgs) do
-            ChatFrame_RemoveMessageEventFilter(type, mod.StyledMsgsFilter)
+        for _, msgType in ipairs(chatMsgs) do
+            ChatFrame_RemoveMessageEventFilter(msgType, mod.StyledMsgsFilter)
         end
 
 		if filterApplied then
@@ -1236,8 +1236,8 @@ end
 
 
 function mod:Toggle()
-	for mod, info in pairs(E.db.Extras.blizzard[modName]) do
-		self[mod](self, info.enabled)
+	for subMod, info in pairs(E.db.Extras.blizzard[modName]) do
+		self[subMod](self, core.reload and false or info.enabled)
 	end
 end
 

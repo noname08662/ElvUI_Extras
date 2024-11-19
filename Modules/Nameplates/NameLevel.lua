@@ -414,9 +414,9 @@ function mod:Toggle(db)
 		end
 		for i, element in ipairs({'Name', 'Level'}) do
 			if db[type][element].enabled then
-				enabled[element] = true
+				enabled[element] = not core.reload
 				if i == 1 and not db[type][element].toLevel then
-					enabled['nameshorten'] = true
+					enabled['nameshorten'] = not core.reload
 				end
 			end
 		end

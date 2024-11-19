@@ -1106,14 +1106,14 @@ function mod:UpdatePlates(playerName)
 	end
 end
 
-function mod:AttachCooldownsToPlate(plate, cooldowns, testMode)
+function mod:AttachCooldownsToPlate(plate, cooldowns, inTestMode)
 	local unitType
-	if not testMode then
+	if not inTestMode then
 		unitType = plate.UnitType and (find(plate.UnitType, 'ENEMY') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER')
 		if not unitType then return end
 	end
 
-    local db = testMode and E.db.Extras.nameplates[modName][E.db.Extras.nameplates[modName].selectedType] or E.db.Extras.nameplates[modName][unitType]
+    local db = E.db.Extras.nameplates[modName][inTestMode and E.db.Extras.nameplates[modName].selectedType or unitType]
 
 	if not db.enabled then return end
 
@@ -1355,8 +1355,12 @@ function mod:Toggle()
 	twipe(highlightedSpells)
 	twipe(petSpells)
 
-	if db['FRIENDLY_PLAYER'].enabled or db['ENEMY_PLAYER'].enabled then
-		core.plateAnchoring['CDTracker'] = function(unitType) return db[unitType].header end
+	if not core.reload and (db['FRIENDLY_PLAYER'].enabled or db['ENEMY_PLAYER'].enabled) then
+		core.plateAnchoring['CDTracker'] = function(unitType)
+			if unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER' then
+				return db[unitType].header
+			end
+		end
 
 		if not self:IsHooked(NP, "OnShow") then
 			self:SecureHook(NP, "OnShow", function(self)

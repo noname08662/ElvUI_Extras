@@ -193,7 +193,7 @@ function mod:LoadConfig()
 						get = function() return selectedNPCsData().texture end,
 						set = function(_, value) selectedNPCsData().texture = value NP:ConfigureAll() end,
 						hidden = function() return selectedSubSection() ~= 'NPCs' or selectedNPCsData().keepOrigTex end,
-						values = function(info)
+						values = function()
 							local type = db.NPCs.selectedTexList
 							local list = type == 'CLASSIFICATION' and 'texClassificaion' or 'texGeneral'
 							return core:GetIconList(E.db.Extras[list])
@@ -315,7 +315,7 @@ function mod:LoadConfig()
 						desc = "",
 						get = function() return selectedPlayersData().classes[db.Players.selectedClass].texture end,
 						set = function(_, value) selectedPlayersData().classes[db.Players.selectedClass].texture = value NP:ConfigureAll() end,
-						values = function(info)
+						values = function()
 							local type = db.Players.selectedTexList
 							local list = (type == 'CLASS' and 'texClass')
 										or (type == 'VECTOR' and 'texClassVector')
@@ -575,14 +575,16 @@ function mod:Toggle(db)
 			end
 		end
 	end
-	NP:ConfigureAll()
+	if not core.reload then
+		NP:ConfigureAll()
+	end
 end
 
 function mod:InitializeCallback()
 	if not E.private.nameplates.enable then return end
 
 	mod:LoadConfig()
-	mod:Toggle(E.db.Extras.nameplates[modName])
+	mod:Toggle(core.reload and {NPCs = {types = {Elite = {}, Boss = {}}}, Players = {}} or E.db.Extras.nameplates[modName])
 end
 
 core.modules[modName] = mod.InitializeCallback

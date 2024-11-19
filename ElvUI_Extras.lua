@@ -380,8 +380,6 @@ if isAwesome then
 	core:RegisterEvent('NAME_PLATE_CREATED', function(_, plate)
 		local onShow, onHide = plate:GetScript("OnShow"), plate:GetScript("OnHide")
 		NP:OnCreated(plate)
-		plate.UnitFrame.Name:FontTemplate()
-		plate.UnitFrame.Level:FontTemplate()
 		plate:SetScript("OnShow", onShow)
 		plate:SetScript("OnHide", onHide)
 	end)
@@ -510,12 +508,6 @@ if isAwesome then
 		return core.hooks[NP].GetUnitInfo(self, frame)
 	end
 
-	function core:OnShow(self, isConfig, dontHideHighlight)
-		if self.unit then
-			core.hooks[NP].OnShow(self, isConfig, dontHideHighlight)
-		end
-	end
-
 	function core:UnitDetailedThreatSituation(self, frame)
 		local plate = frame:GetParent()
 		if plate.unit then return UnitThreatSituation("player", plate.unit) end
@@ -529,12 +521,12 @@ if isAwesome then
 			--highest possible should be level 880 and we add 1 to all so 881
 			--local leveledCount = NP.CollectedFrameLevelCount or 1
 			--level = (frame.FrameLevelChanged*(40*NP.levelStep)) + (leveledCount*NP.levelStep)
-			local level = #GetNamePlates() + frame.FrameLevelChanged * 10
+			local level = #GetNamePlates() + frame.FrameLevelChanged * 10 + 100
 
-			frame:SetFrameLevel(level+1)
+			frame:SetFrameLevel(level)
 			frame.Shadow:SetFrameLevel(level-1)
-			frame.Buffs:SetFrameLevel(level+1)
-			frame.Debuffs:SetFrameLevel(level+1)
+			frame.Buffs:SetFrameLevel(level)
+			frame.Debuffs:SetFrameLevel(level)
 			frame.LevelHandled = true
 
 			local targetPlate = GetNamePlateForUnit('target')
@@ -546,11 +538,11 @@ if isAwesome then
 				end
 			end
 		elseif frame.LevelHandled then
-			local level = #GetNamePlates()
-			frame:SetFrameLevel(level-1)
-			frame.Shadow:SetFrameLevel(level-2)
-			frame.Buffs:SetFrameLevel(level-1)
-			frame.Debuffs:SetFrameLevel(level-1)
+			local level = #GetNamePlates() + 100
+			frame:SetFrameLevel(level)
+			frame.Shadow:SetFrameLevel(level-1)
+			frame.Buffs:SetFrameLevel(level)
+			frame.Debuffs:SetFrameLevel(level)
 			frame.LevelHandled = false
 		end
 	end
@@ -568,17 +560,24 @@ function core:OnShowHide(frame, health)
 	if not healthEnabled[unitType] then
 		local name = frame.Name
 		for e, func in pairs(core.plateAnchoring) do
-			local element = frame[e]
-			local caller = func(unitType, frame)
-			if element then
+			local data, frames, target = func(unitType, frame)
+			local element = frame[e] or target
+			if data and element then
 				local point, relativeTo, x, y
-				if caller then
-					point, relativeTo, x, y = caller.point, caller.relativeTo, caller.xOffset, caller.yOffset
+				if data then
+					point, relativeTo, x, y = data.point, data.relativeTo, data.xOffset, data.yOffset
 				else
 					point, _, relativeTo, x, y = frame:GetPoint()
 				end
 				element:ClearAllPoints()
 				element:Point(point, health or name, relativeTo, x, y)
+			elseif frames then
+				for _, values in ipairs(frames or {}) do
+					for _, f in pairs(values or {}) do
+						f:ClearAllPoints()
+						f:Point(f.point or "CENTER", health or name, f.relativeTo or "CENTER", f.xOffset or 0, f.yOffset or 0)
+					end
+				end
 			end
 		end
 		if unitType == "ENEMY_NPC" or unitType == "FRIENDLY_NPC" then
@@ -609,6 +608,8 @@ core:SecureHook(NP, "OnCreated", function(self, plate)
 				end
 			end)
 		end
+		frame.Name:FontTemplate()
+		frame.Level:FontTemplate()
 	end
 end)
 
@@ -817,7 +818,7 @@ do
 			local func = "Update_"..type.."Frame"
 			local groupFunc = "Update_"..type.."Frames"
 			if (UF[func] or UF[groupFunc]) and not core:IsHooked(UF, UF[func] and func or groupFunc) then
-				core:SecureHook(UF, UF[func] and func or groupFunc, function(self, frame, db)
+				core:SecureHook(UF, UF[func] and func or groupFunc, function(self, frame, uf_db)
 					if not taggedFrames[frame] then
 						frame.updatesHandler = frame:CreateFontString(nil, "OVERLAY")
 						frame.updatesHandler:FontTemplate()
@@ -826,15 +827,15 @@ do
 
 						taggedFrames[frame] = true
 
-						for _, func in ipairs(core.frameUpdates) do
-							func(self, frame, db)
+						for _, updateFunc in ipairs(core.frameUpdates) do
+							updateFunc(self, frame, uf_db)
 						end
 					elseif not updatePending then
 						updatePending = true
 
 						E_Delay(nil, 0.1, function()
-							for _, func in ipairs(core.frameUpdates) do
-								func(self, frame, db)
+							for _, updateFunc in ipairs(core.frameUpdates) do
+								updateFunc(self, frame, uf_db)
 							end
 							updatePending = false
 						end)
@@ -1602,7 +1603,7 @@ function core:Initialize()
 	self.customColorAlpha = E.db.Extras.customColorAlpha
 	self.customColorBeta = E.db.Extras.customColorBeta
 
-	core:SecureHook(NP, "UpdateAllFrame", function()
+	self:SecureHook(NP, "UpdateAllFrame", function()
 		local FRIENDLY_NPC = healthEnabled["FRIENDLY_NPC"]
 		local ENEMY_NPC = healthEnabled["ENEMY_NPC"]
 		healthEnabled["FRIENDLY_NPC"] = NP.db.units["FRIENDLY_NPC"].health.enable
@@ -1610,7 +1611,7 @@ function core:Initialize()
 
 		if FRIENDLY_NPC ~= healthEnabled["FRIENDLY_NPC"] or ENEMY_NPC ~= healthEnabled["ENEMY_NPC"] then
 			for frame in pairs(NP.VisiblePlates) do
-				core:OnShowHide(frame, frame.Health and frame.Health:IsVisible())
+				self:OnShowHide(frame, frame.Health and frame.Health:IsVisible())
 			end
 		end
 	end)
@@ -1625,7 +1626,7 @@ function core:Initialize()
 		NP:UnregisterEvent("UNIT_NAME_UPDATE")
 
 		for _, func in pairs({'UnitClass', 'GetUnitInfo', 'GetUnitByName', 'SetTargetFrame',
-								'OnShow', 'ResetNameplateFrameLevel', 'UnitDetailedThreatSituation'}) do
+								'ResetNameplateFrameLevel', 'UnitDetailedThreatSituation'}) do
 			if not self:IsHooked(NP, func) then self:RawHook(NP, func) end
 		end
 	end
@@ -1636,19 +1637,46 @@ function core:Initialize()
         module()
     end
 
-	local shadow_db = E.globalShadow
+	self:SecureHook(E, "SetMoversClampedToScreen", function(_, toggle)
+		E.globalShadow = nil
+		twipe(self.plateAnchoring)
+		self.reload = not toggle
+		if not toggle then
+			if self:IsHooked(NP, "UpdateAllFrame") then
+				self:Unhook(NP, "UpdateAllFrame")
+			end
+		elseif not self:IsHooked(NP, "UpdateAllFrame") then
+			self:SecureHook(NP, "UpdateAllFrame", function()
+				local FRIENDLY_NPC = healthEnabled["FRIENDLY_NPC"]
+				local ENEMY_NPC = healthEnabled["ENEMY_NPC"]
+				healthEnabled["FRIENDLY_NPC"] = NP.db.units["FRIENDLY_NPC"].health.enable
+				healthEnabled["ENEMY_NPC"] = NP.db.units["ENEMY_NPC"].health.enable
 
+				if FRIENDLY_NPC ~= healthEnabled["FRIENDLY_NPC"] or ENEMY_NPC ~= healthEnabled["ENEMY_NPC"] then
+					for frame in pairs(NP.VisiblePlates) do
+						self:OnShowHide(frame, frame.Health and frame.Health:IsVisible())
+					end
+				end
+			end)
+		end
+		for _, module in pairs(self.modules) do
+			module()
+		end
+	end)
+
+	local shadow_db = E.globalShadow
 	if shadow_db then
 		local M = E:GetModule("Misc")
 		local chatBubbles = E.private.general.chatBubbles
 		local createShadow = E.CreateGlobalShadow
 		local size = shadow_db.size
+		local r, g, b, a = unpack(shadow_db.color)
 
-		createShadow(nil, shadow_db, _G["Minimap"])
+		createShadow(nil, _G["Minimap"], size, r, g, b, a)
 
 		for _, frame in ipairs({WorldFrame:GetChildren()}) do
 			if frame.isSkinnedElvUI then
-				createShadow(nil, shadow_db, frame)
+				createShadow(nil, frame, size, r, g, b, a)
 				if chatBubbles == "backdrop_noborder" then
 					frame.globalShadow:SetOutside(frame.backdrop, size, size)
 				elseif frame.globalShadow and chatBubbles == "nobackdrop" then
@@ -1659,13 +1687,13 @@ function core:Initialize()
 
 		if E.pendingShadowUpdate then
 			for frame in pairs(E.pendingShadowUpdate) do
-				createShadow(nil, shadow_db, frame)
+				createShadow(nil, frame, size, r, g, b, a)
 			end
 		end
 
 		if not self:IsHooked(M, "SkinBubble") then
 			self:SecureHook(M, "SkinBubble", function(_, frame)
-				createShadow(nil, shadow_db, frame)
+				createShadow(nil, frame, size, r, g, b, a)
 				if chatBubbles == "backdrop_noborder" then
 					frame.globalShadow:SetOutside(frame.backdrop, size, size)
 				elseif frame.globalShadow and chatBubbles == "nobackdrop" then
@@ -1676,13 +1704,13 @@ function core:Initialize()
 
 		if not self:IsHooked(NP, "StyleFrame") then
 			self:SecureHook(NP, "StyleFrame", function(_, frame)
-				createShadow(nil, shadow_db, frame)
+				createShadow(nil, frame, size, r, g, b, a)
 			end)
 		end
 
 		if not self:IsHooked(M, "SkinBubble") then
 			self:SecureHook(M, "SkinBubble", function(_, frame)
-				createShadow(nil, shadow_db, frame)
+				createShadow(nil, frame, size, r, g, b, a)
 			end)
 		end
 

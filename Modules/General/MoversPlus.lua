@@ -74,7 +74,7 @@ function mod:LoadConfig()
 					enabled = {
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
-						desc = L["Adds anchoring options to movers' nudges."],
+						desc = L["Adds anchoring options to the movers' nudges."],
 					},
 				},
 			},
@@ -273,7 +273,7 @@ end
 
 
 function mod:Toggle(enable)
-	if enable then
+	if not core.reload and enable then
 		for _, func in pairs({'UpdateNudgeFrame', 'NudgeMover', 'ResetMovers'}) do
 			if not self:IsHooked(E, func) then self:SecureHook(E, func) end
 		end

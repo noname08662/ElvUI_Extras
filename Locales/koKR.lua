@@ -2,16 +2,16 @@ local E = unpack(ElvUI); --Import: Engine, Locales, PrivateDB, ProfileDB, Global
 local L = E.Libs.ACL:NewLocale("ElvUI", "koKR")
 
 L["Hits the 'Confirm' button automatically."] = "'확인' 버튼을 자동으로 클릭합니다."
-L["Picks up quest items and money automatically."] = "퀘스트 아이템과 돈을 자동으로 획득합니다."
-L["Fills 'DELETE' field automatically."] = "'삭제' 필드를 자동으로 채웁니다."
-L["Selects the first gossip option if it's the only one available unless holding a modifier.\nCareful with important event triggers, there's no fail-safe mechanism."] = "수정자 키를 누르지 않는 한, 대화 옵션이 하나만 있을 경우 자동으로 선택합니다.\n중요한 이벤트 트리거에 주의하세요. 안전장치가 없습니다."
+L["Picks up items and money automatically."] = "아이템과 돈을 자동으로 줍습니다."
+L["Automatically fills the 'DELETE' field."] = "'삭제' 필드를 자동으로 채웁니다."
+L["Selects the first gossip option if it's the only one available unless holding a modifier.\nBe careful with important event triggers; there is no fail-safe mechanism."] = "수정자 키를 누르지 않는 한, 대화 옵션이 하나만 있을 경우 자동으로 선택합니다.\n중요한 이벤트 트리거에 주의하세요. 안전장치가 없습니다."
 L["Accepts and turns in quests automatically while holding a modifier."] = "수정자 키를 누른 상태에서 퀘스트를 자동으로 수락하고 완료합니다."
 L["Loot info wiped."] = "전리품 정보가 지워졌습니다."
 L["/lootinfo slash command to get a quick rundown of the recent lootings.\n\nUsage: /lootinfo Apple 60\n'Apple' - item/player name \n(search @self to get player loot)\n'60' - \ntime limit (<60 seconds ago), optional,\n/lootinfo !wipe - purge loot cache."] = "/lootinfo 명령어로 최근 획득한 아이템을 빠르게 요약해줍니다.\n\n사용법: /lootinfo 사과 60\n'사과' - 아이템/플레이어 이름 \n(플레이어의 전리품을 얻으려면 @self 검색)\n'60' - \n시간 제한 (<60초 전), 선택 사항,\n/lootinfo !wipe - 전리품 캐시 삭제."
-L["Colors online friends' and guildmates' names in some of the messages and styles the rolls.\nAlready handled chat bubbles will not get styled before you /reload."] = "일부 메시지에서 온라인 친구와 길드원의 이름에 색을 입히고 주사위 굴림을 스타일링합니다.\n이미 처리된 채팅 말풍선은 /reload 전까지 스타일이 적용되지 않습니다."
+L["Colors the names of online friends and guildmates in some messages and styles the rolls.\nAlready handled chat bubbles will not get styled before you /reload."] = "일부 메시지에서 온라인 친구와 길드원의 이름에 색을 입히고 주사위 굴림을 스타일링합니다.\n이미 처리된 채팅 말풍선은 /reload 전까지 스타일이 적용되지 않습니다."
 L["Colors loot roll messages for you and other players."] = "당신과 다른 플레이어의 전리품 주사위 메시지에 색을 입힙니다."
 L["Loot rolls icon size."] = "전리품 주사위 아이콘 크기."
-L["Restyles loot bars.\nRequires 'Loot Roll' (General -> BlizzUI Improvements -> Loot Roll) to be enabled (toggling this module enables it automatically)."] = "전리품 바의 스타일을 변경합니다.\n'전리품 주사위' (일반 -> BlizzUI 개선 -> 전리품 주사위)가 활성화되어야 합니다 (이 모듈을 토글하면 자동으로 활성화됩니다)."
+L["Restyles the loot bars.\nRequires 'Loot Roll' (General -> BlizzUI Improvements -> Loot Roll) to be enabled (toggling this module enables it automatically)."] = "전리품 바의 스타일을 변경합니다.\n'전리품 주사위' (일반 -> BlizzUI 개선 -> 전리품 주사위)가 활성화되어야 합니다 (이 모듈을 토글하면 자동으로 활성화됩니다)."
 L["Displays the name of the player pinging the minimap."] = "미니맵을 핑한 플레이어의 이름을 표시합니다."
 L["Displays the currently held currency amount next to the item prices."] = "아이템 가격 옆에 현재 보유 중인 화폐 금액을 표시합니다."
 L["Narrows down the World(..Frame)."] = "월드(..프레임)를 좁힙니다."
@@ -27,7 +27,7 @@ L["Adds shadows to all of the frames.\nDoes nothing unless you replace your ElvU
 L["Combat state notification alerts."] = "전투 상태 알림 경고."
 L["Custom editbox position and size."] = "사용자 정의 편집 상자 위치 및 크기."
 L["Usage:"..
-	"\n/tnote list - returns all eixting notes"..
+	"\n/tnote list - returns all existing notes"..
 	"\n/tnote wipe - clears all existing notes"..
 	"\n/tnote 1 icon Interface\\Path\\ToYourIcon - same as set (except for the lua part)"..
 	"\n/tnote 1 get - same as set, returns existing notes"..
@@ -68,29 +68,26 @@ L["Usage:"..
 			"\n  (1-percentage)*255, percentage*255)"
 L["Adds an icon next to chat hyperlinks."] = "채팅 하이퍼링크 옆에 아이콘을 추가합니다."
 L["A new action bar that collects usable quest items from your bag.\n\nDue to state actions limit, this module overrides bar10 created by ElvUI Extra Action Bars."] = "가방에서 사용 가능한 퀘스트 아이템을 수집하는 새로운 액션 바입니다.\n\n상태 액션 제한으로 인해 이 모듈은 ElvUI Extra Action Bars에서 생성한 bar10을 덮어씁니다."
-L["Toggles the display of the actionbars backdrop."] = "액션 바 배경 표시를 전환합니다."
-L["The frame won't show unless you mouse over it."] = "마우스를 올리지 않으면 프레임이 표시되지 않습니다."
-L["Inherit the global fade, mousing over, targetting, setting focus, losing health, entering combat will set the remove transparency. Otherwise it will use the transparency level in the general actionbar settings for global fade alpha."] = "전역 페이드를 상속받아 마우스 오버, 대상 지정, 주시 설정, 체력 손실, 전투 진입 시 투명도를 제거합니다. 그렇지 않으면 전역 페이드 알파에 대한 일반 액션 바 설정의 투명도 레벨을 사용합니다."
+L["Toggles the display of the actionbar's backdrop."] = "액션 바 배경 표시를 전환합니다."
+L["The frame will not be displayed unless hovered over."] = "마우스를 올리지 않으면 프레임이 표시되지 않습니다."
+L["Inherit the global fade; mousing over, targetting, setting focus, losing health, entering combat will set the remove transparency. Otherwise it will use the transparency level in the general actionbar settings for global fade alpha."] = "전역 페이드를 상속받아 마우스 오버, 대상 지정, 주시 설정, 체력 손실, 전투 진입 시 투명도를 제거합니다. 그렇지 않으면 전역 페이드 알파에 대한 일반 액션 바 설정의 투명도 레벨을 사용합니다."
 L["The first button anchors itself to this point on the bar."] = "첫 번째 버튼이 바의 이 지점에 고정됩니다."
 L["Right-click the item while holding the modifier to blacklist it. Blacklisted items will not show up on the bar.\nUse /questbarRestore to purge the blacklist."] = "수정자를 누른 상태에서 아이템을 우클릭하여 블랙리스트에 추가합니다. 블랙리스트에 있는 아이템은 바에 표시되지 않습니다.\n블랙리스트를 제거하려면 /questbarRestore를 사용하세요."
-L["The amount of buttons to display."] = "표시할 버튼의 수입니다."
-L["The amount of buttons to display per row."] = "행당 표시할 버튼의 수입니다."
+L["The number of buttons to display."] = "표시할 버튼의 수입니다."
+L["The number of buttons to display per row."] = "행당 표시할 버튼의 수입니다."
 L["The size of the action buttons."] = "액션 버튼의 크기입니다."
-L["The spacing between buttons."] = "버튼 사이의 간격입니다."
-L["The spacing between the backdrop and the buttons."] = "배경과 버튼 사이의 간격입니다."
-L["Multiply the backdrops height or width by this value. This is usefull if you wish to have more than one bar behind a backdrop."] = "배경의 높이나 너비에 이 값을 곱합니다. 배경 뒤에 여러 개의 바를 두고 싶을 때 유용합니다."
-L["This works like a macro, you can run different situations to get the actionbar to show/hide differently.\n Example: '[combat] showhide'"] = "이것은 매크로처럼 작동하며, 다양한 상황에서 액션 바를 다르게 표시/숨길 수 있습니다.\n 예: '[combat] showhide'"
-L["Adds anchoring options to movers' nudges."] = "이동기의 미세 조정에 고정 옵션을 추가합니다."
-L["Mod-clicking an item suggest a skill/item to process it."] = "수정자 키를 누른 채 아이템을 클릭하면 처리할 기술/아이템을 제안합니다."
-L["Holding %s while left-clicking a stack splits it in two; to combine available copies, right-click instead.\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."] =
+L["Spacing between the buttons."] = "버튼 사이의 간격입니다."
+L["Spacing between the backdrop and the buttons."] = "배경과 버튼 사이의 간격입니다."
+L["Multiply the backdrop's height or width by this value. This is useful if you wish to have more than one bar behind a backdrop."] = "배경의 높이나 너비에 이 값을 곱합니다. 배경 뒤에 여러 개의 바를 두고 싶을 때 유용합니다."
+L["This works like a macro; you can run different conditions to show or hide the action bar.\n Example: '[combat] showhide'"] = "이것은 매크로처럼 작동하며, 다양한 상황에서 액션 바를 다르게 표시/숨길 수 있습니다.\n 예: '[combat] showhide'"
+L["Adds anchoring options to the movers' nudges."] = "이동기의 미세 조정에 고정 옵션을 추가합니다."
+L["Mod-clicking an item suggests a skill/item to process it."] = "수정자 키를 누른 채 아이템을 클릭하면 처리할 기술/아이템을 제안합니다."
+L["Holding %s while left-clicking a stack will split it in two; right-click instead to combine available copies.\n\nAlso modifies the SplitStackFrame to use editbox instead of arrows."] =
 	"%s 를 누른 상태에서 스택을 왼쪽 클릭하면 두 개로 나뉩니다; 사용 가능한 복사본을 결합하려면 대신 오른쪽 클릭하세요."..
     "\n\n또한 SplitStackFrame을 수정하여 화살표 대신 편집 상자를 사용합니다."
 L["Extends the bags functionality."] = "가방 기능을 확장합니다."
-L["Handles automated repositioning of the newly received items."] = "새로 받은 아이템의 자동 재배치를 처리합니다."
-L["Default method: type > inventoryslotid > ilvl > name."] = "기본 방식: 유형 > 인벤토리 슬롯 ID > 아이템 레벨 > 이름."
+L["Default method: type > inventory slot ID > item level > name."] = "기본 방식: 유형 > 인벤토리 슬롯 ID > 아이템 레벨 > 이름."
 L["Listed ItemIDs will not get sorted."] = "나열된 아이템 ID는 정렬되지 않습니다."
-L["Double-click the title text to minimize the section."] = "제목 텍스트를 더블클릭하여 섹션을 최소화합니다."
-L["Minimized section's line color."] = "최소화된 섹션의 선 색상."
 L["E.g. Interface\\Icons\\INV_Misc_QuestionMark"] = "예: Interface\\Icons\\INV_Misc_QuestionMark"
 L["Invalid condition format: "] = "잘못된 조건 형식: "
 L["The generated custom sorting method did not return a function."] = "생성된 사용자 정의 정렬 방식이 함수를 반환하지 않았습니다."
@@ -98,26 +95,26 @@ L["The loaded custom sorting method did not return a function."] = "로드된 �
 L["Item received: "] = "아이템 받음: "
 L[" added."] = " 추가됨."
 L[" removed."] = " 제거됨."
-L["Handles automated repositioning of the newly received items."..
+L["Handles the automated repositioning of the newly received items."..
 	"\nSyntax: filter@value\n\n"..
 	"Available filters:\n"..
-	"id@number - matches itemID,\n"..
-	"name@string - matches name,\n"..
-	"subtype@string - matches subtype,\n"..
-	"ilvl@number - matches ilvl,\n"..
-	"uselevel@number - matches equip level,\n"..
-	"quality@number - matches quality,\n"..
-	"equipslot@number - matches nventorySlotID,\n"..
-	"maxstack@number - matches stack limit,\n"..
-	"price@number - matches sell price,\n\n"..
-	"tooltip@string - matches tooltip text,\n\n"..
-	"All string matches are not case sensitive and match only the alphanumeric symbols. Standart lua logic applies. "..
+	" id@number - matches itemID,\n"..
+	" name@string - matches name,\n"..
+	" subtype@string - matches subtype,\n"..
+	" ilvl@number - matches ilvl,\n"..
+	" uselevel@number - matches equip level,\n"..
+	" quality@number - matches quality,\n"..
+	" equipslot@number - matches inventorySlotID,\n"..
+	" maxstack@number - matches stack limit,\n"..
+	" price@number - matches sell price,\n\n"..
+	" tooltip@string - matches tooltip text,\n\n"..
+	"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
 	"Look up GetItemInfo API for more info on filters. "..
 	"Use GetAuctionItemClasses and GetAuctionItemSubClasses (same as on the AH) to get the localized types and subtypes values.\n\n"..
 	"Example usage (priest t8 or Shadowmourne):\n"..
 	"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne.\n\n"..
 	"Accepts custom functions (bagID, slotID, itemID are exposed)\n"..
-	"The below one notifies of the newly aquired items.\n\n"..
+	"The below one notifies of the newly acquired items.\n\n"..
 	"local icon = GetContainerItemInfo(bagID, slotID)\n"..
 	"local _, link = GetItemInfo(itemID)\n"..
 	"icon = gsub(icon, '\\124', '\\124\\124')\n"..
@@ -126,16 +123,16 @@ L["Handles automated repositioning of the newly received items."..
 		"새로 받은 아이템의 자동 재배치를 처리합니다."..
 		"\n구문: 필터@값\n\n"..
 		"사용 가능한 필터:\n"..
-		"id@숫자 - 아이템 ID와 일치,\n"..
-		"name@문자열 - 이름과 일치,\n"..
-		"subtype@문자열 - 하위 유형과 일치,\n"..
-		"ilvl@숫자 - 아이템 레벨과 일치,\n"..
-		"uselevel@숫자 - 장비 레벨과 일치,\n"..
-		"quality@숫자 - 품질과 일치,\n"..
-		"equipslot@숫자 - 인벤토리 슬롯 ID와 일치,\n"..
-		"maxstack@숫자 - 최대 중첩 수와 일치,\n"..
-		"price@숫자 - 판매 가격과 일치,\n\n"..
-		"tooltip@문자열 - 툴팁 텍스트와 일치,\n\n"..
+		" id@숫자 - 아이템 ID와 일치,\n"..
+		" name@문자열 - 이름과 일치,\n"..
+		" subtype@문자열 - 하위 유형과 일치,\n"..
+		" ilvl@숫자 - 아이템 레벨과 일치,\n"..
+		" uselevel@숫자 - 장비 레벨과 일치,\n"..
+		" quality@숫자 - 품질과 일치,\n"..
+		" equipslot@숫자 - 인벤토리 슬롯 ID와 일치,\n"..
+		" maxstack@숫자 - 최대 중첩 수와 일치,\n"..
+		" price@숫자 - 판매 가격과 일치,\n\n"..
+		" tooltip@문자열 - 툴팁 텍스트와 일치,\n\n"..
 		"모든 문자열 일치는 대소문자를 구분하지 않으며 알파벳과 숫자 기호만 일치합니다. 표준 Lua 논리가 적용됩니다. "..
 		"필터에 대한 자세한 정보는 GetItemInfo API를 참조하세요. "..
 		"현지화된 유형 및 하위 유형 값을 얻으려면 GetAuctionItemClasses 및 GetAuctionItemSubClasses(경매장과 동일)를 사용하세요.\n\n"..
@@ -148,6 +145,47 @@ L["Handles automated repositioning of the newly received items."..
 		"icon = gsub(icon, '\\124', '\\124\\124')\n"..
 		"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
 		"print('아이템 획득: ' .. string)"
+L["Syntax: filter@value\n\n"..
+	"Available filters:\n"..
+	" id@number - matches itemID,\n"..
+	" name@string - matches name,\n"..
+	" type@string - matches type,\n"..
+	" subtype@string - matches subtype,\n"..
+	" ilvl@number - matches ilvl,\n"..
+	" uselevel@number - matches equip level,\n"..
+	" quality@number - matches quality,\n"..
+	" equipslot@number - matches inventorySlotID,\n"..
+	" maxstack@number - matches stack limit,\n"..
+	" price@number - matches sell price,\n"..
+	" tooltip@string - matches tooltip text.\n\n"..
+	"All string matches are case-insensitive and match only alphanumeric symbols.\n"..
+	"Standard Lua logic for branching (and/or/parenthesis/etc.) applies.\n\n"..
+	"Example usage (priest t8 or Shadowmourne):\n"..
+	"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."] =
+		"구문: 필터@값\n\n"..
+			"사용 가능한 필터:\n"..
+			" id@숫자 - 아이템ID와 일치,\n"..
+			" name@문자열 - 이름과 일치,\n"..
+			" type@문자열 - 유형과 일치,\n"..
+			" subtype@문자열 - 하위 유형과 일치,\n"..
+			" ilvl@숫자 - 아이템 레벨과 일치,\n"..
+			" uselevel@숫자 - 장비 레벨과 일치,\n"..
+			" quality@숫자 - 품질과 일치,\n"..
+			" equipslot@숫자 - 인벤토리 슬롯ID와 일치,\n"..
+			" maxstack@숫자 - 최대 중첩 수와 일치,\n"..
+			" price@숫자 - 판매 가격과 일치,\n"..
+			" tooltip@문자열 - 툴팁 텍스트와 일치.\n\n"..
+			"모든 문자열 일치는 대소문자를 구분하지 않으며 영숫자 기호만 일치합니다.\n"..
+			"분기에 대한 표준 lua 로직(and/or/괄호/등)이 적용됩니다.\n\n"..
+			"사용 예시 (사제 t8 또는 섀도몬):\n"..
+			"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."
+L["Available Item Types"] = "사용 가능한 아이템 유형"
+L["Lists all available item subtypes for each available item type."] =
+	"사용 가능한 각 아이템 유형에 대한 모든 하위 유형을 나열합니다."
+L["Holding this key while interacting with a merchant buys all items that pass the Auto Buy set method.\n"..
+	"Hold the modifier key and click the buyout list entry to purchase a single item, regardless of the '@amount' rule."] =
+		"이 키를 누른 상태로 상인과 상호작용하면 자동 구매 설정에 맞는 모든 아이템을 구매합니다.\n"..
+			"목록 항목을 모드 클릭하면 '@수량' 규칙에 관계없이 해당 아이템 하나만 구매합니다."
 L["Default method: type > inventoryslotid > ilvl > name.\n\n"..
 	"Accepts custom functions (bagID and slotID are available at the a/b.bagID/slotID).\n\n"..
 	"function(a,b)\n"..
@@ -171,7 +209,7 @@ L["Syntax:"..
 	"\n[k~=@@UnitName('player')]"..
 	"\n@@@commands@@@"..
 	"\n\n'EVENT' - Event from the events section above"..
-	"\n'n, m, k' - indexex of the desired payload args (number)"..
+	"\n'n, m, k' - indexes of the desired payload args (number)"..
 	"\n'nil/value/boolean/lua code' - desired output of n arg"..
 	"\n'@@' - lua arg flag, must go before the lua code within the args' value section"..
 	"\n'~' - negate flag, add before the equals sign to have the code executed if n/m/k is not mathing the set value instead"..
@@ -181,13 +219,13 @@ L["Syntax:"..
 	"\n\nUNIT_AURA[1=player]@@@"..
 	"\nprint(player has gained/lost an aura)@@@"..
 	"\n\nCHAT_MSG_WHISPER"..
-	"\n[5~=UnitName('player')]"..
+	"\n[5~=@@UnitName('player')]"..
 	"\n[14=false]@@@"..
 	"\nPlaySound('LEVELUPSOUND', 'master')@@@"..
 	"\n\nCOMBAT_LOG_EVENT_"..
 	"\nUNFILTERED"..
-	"\n[5=UnitName('arena1')]"..
-	"\n[5=UnitName('arena2')]@@@"..
+	"\n[5=@@UnitName('arena1')]"..
+	"\n[5=@@UnitName('arena2')]@@@"..
 	"\nfor i = 1, 2 do"..
 	"\nif UnitDebuff('party'..i, 'Bad Spell')"..
 	"\nthen print(UnitName('party'..i)..' is afflicted!')"..
@@ -210,13 +248,13 @@ L["Syntax:"..
 		"\n\nUNIT_AURA[1=player]@@@"..
 		"\nprint(플레이어가 오라를 얻거나 잃었습니다)@@@"..
 		"\n\nCHAT_MSG_WHISPER"..
-		"\n[5~=UnitName('player')]"..
+		"\n[5~=@@UnitName('player')]"..
 		"\n[14=false]@@@"..
 		"\nPlaySound('LEVELUPSOUND', 'master')@@@"..
 		"\n\nCOMBAT_LOG_EVENT_"..
 		"\nUNFILTERED"..
-		"\n[5=UnitName('arena1')]"..
-		"\n[5=UnitName('arena2')]@@@"..
+		"\n[5=@@UnitName('arena1')]"..
+		"\n[5=@@UnitName('arena2')]@@@"..
 		"\nfor i = 1, 2 do"..
 		"\nif UnitDebuff('party'..i, 'Bad Spell')"..
 		"\nthen print(UnitName('party'..i)..'가 영향을 받았습니다!')"..
@@ -224,7 +262,7 @@ L["Syntax:"..
 		"\n\n이 모듈은 문자열을 구문 분석하므로 코드가 구문을 엄격히 따르도록 하십시오. 그렇지 않으면 작동하지 않을 수 있습니다."
 L["Highlights auras."] = "오라를 강조합니다."
 L["E.g. 42292"] = "예: 42292"
-L["Aplies highlights to all auras passing the selected filter."] = "선택한 필터를 통과하는 모든 오라를 강조합니다."
+L["Applies highlights to all auras passing the selected filter."] = "선택한 필터를 통과하는 모든 오라를 강조합니다."
 L["Priority: spell, filter, curable/stealable."] = "우선순위: 주문, 필터, 치료 가능/도둑질 가능."
 L["If toggled, the GLOBAL Spell or Filter entry values would be used."] = "활성화되면 전역 주문 또는 필터 값이 사용됩니다."
 L["Makes auras grow sideswise."] = "오라가 옆으로 성장하게 합니다."
@@ -236,7 +274,15 @@ L["Right-click a player buff to cancel it."] = "플레이어의 버프를 오른
 L["Disables debuffs desaturation."] = "디버프의 색상 탈색을 비활성화합니다."
 L["Saturated Debuffs"] = "채도가 높은 디버프"
 L["Confirm Rolls"] = "주사위 굴림 확인"
-L["Quest Items and Money"] = "퀘스트 아이템 및 돈"
+L["Auto Pickup"] = "자동 획득"
+L["Swift Buy"] = "빠른 구매"
+L["Buys out items automatically."] = "아이템을 자동으로 구매합니다."
+L["Failsafe"] = "안전 장치"
+L["Enables popup confirmation dialog."] = "팝업 확인 대화 상자를 활성화합니다."
+L["Add Set"] = "세트 추가"
+L["Delete Set"] = "세트 삭제"
+L["Select Set"] = "세트 선택"
+L["Auto Buy"] = "자동 구매"
 L["Fill Delete"] = "삭제 필드 채우기"
 L["Gossip"] = "대화"
 L["Accept Quest"] = "퀘스트 수락"
@@ -272,7 +318,6 @@ L["Select Container Type"] = "컨테이너 유형 선택"
 L["Settings"] = "설정"
 L["Add Section"] = "섹션 추가"
 L["Delete Section"] = "섹션 삭제"
-L["Section Length"] = "섹션 길이"
 L["Select Section"] = "섹션 선택"
 L["Section Priority"] = "섹션 우선순위"
 L["Section Spacing"] = "섹션 간격"
@@ -280,8 +325,6 @@ L["Collection Method"] = "수집 방법"
 L["Sorting Method"] = "정렬 방법"
 L["Ignore Item (by ID)"] = "아이템 무시 (ID별)"
 L["Remove Ignored"] = "무시된 항목 제거"
-L["Minimize"] = "최소화"
-L["Line Color"] = "선 색상"
 L["Title"] = "제목"
 L["Color"] = "색상"
 L["Attach to Icon"] = "아이콘에 첨부"
@@ -447,13 +490,10 @@ L["Add Texture Path"] = "텍스처 경로 추가"
 L["Remove Selected Texture"] = "선택한 텍스처 제거"
 L["Titles"] = "칭호"
 L["Reaction Color"] = "반응 색상"
-L["Hold this while using /addOccupation command to clear the list of the current target/mouseover occupation.\nDon't forget to unbind the modifier+key bind!"] =
-	"/addOccupation 명령을 사용하여 현재 대상/마우스오버 직업 목록을 지우려면 이것을 누르고 있으세요.\n수정자+키 바인딩을 해제하는 것을 잊지 마세요!"
 L["Color based on reaction type."] = "반응 유형에 따른 색상."
 L["Nameplates"] = "이름표"
 L["Unitframes"] = "유닛프레임"
-L["An icon similar to the minimap search.\n\nTooltip scanning, might not be precise.\n\nFor consistency reasons, no keywards are added by defult, use /addOccupation command to mark the appropriate ones yourself (only need to do it once per unique occupation text)."] =
-	"미니맵 검색과 유사한 아이콘입니다.\n\n툴팁 스캔, 정확하지 않을 수 있습니다.\n\n일관성을 위해 기본적으로 키워드가 추가되지 않습니다. /addOccupation 명령어를 사용하여 적절한 키워드를 직접 표시하세요 (고유한 직업 텍스트마다 한 번만 수행하면 됩니다)."
+L["An icon similar to the minimap search."] = "미니맵 검색과 유사한 아이콘입니다."
 L["Displays player guild text."] = "플레이어의 길드 텍스트를 표시합니다."
 L["Displays NPC occupation text."] = "NPC의 직업 텍스트를 표시합니다."
 L["Strata"] = "계층"
@@ -476,40 +516,6 @@ L["Unmark all plates."] = "모든 이름표의 표시를 해제합니다."
 L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"] =
 	"사용법: '/qmark' 매크로를 원하는 키에 바인딩하세요.\n\n수정자 키 바인딩도 해제하는 것을 잊지 마세요!"
 L["Use Backdrop"] = "배경 사용"
-L["Usage:\n%%d=%%s\n\n%%d - index from the list below\n%%s - keywords to look for\n\nIndexes of icons:"..
-	"\n1 - %s"..
-	"\n2 - %s"..
-	"\n3 - %s"..
-	"\n4 - %s"..
-	"\n5 - %s"..
-	"\n6 - %s"..
-	"\n7 - %s"..
-	"\n8 - %s"..
-	"\n9 - %s"..
-	"\n10 - %s"..
-	"\n11 - %s"..
-	"\n12 - %s"..
-	"\n13 - %s"..
-	"\n14 - %s"..
-	"\n\n\nAlso available as a '/addOccupation %%d' slash command where %%d is an optional icon index. "..
-	"If no index is provided, this command will cycle through all of the available icons. Works on either TARGET or MOUSEOVER, prioritising the latter."] =
-		"사용 방법:\n%%d=%%s\n\n%%d - 아래 목록에서 인덱스\n%%s - 찾을 키워드\n\n아이콘 인덱스:"..
-			"\n1 - %s"..
-			"\n2 - %s"..
-			"\n3 - %s"..
-			"\n4 - %s"..
-			"\n5 - %s"..
-			"\n6 - %s"..
-			"\n7 - %s"..
-			"\n8 - %s"..
-			"\n9 - %s"..
-			"\n10 - %s"..
-			"\n11 - %s"..
-			"\n12 - %s"..
-			"\n13 - %s"..
-			"\n14 - %s"..
-			"\n\n\n또한 '/addOccupation %%d' 명령어로도 사용 가능하며, 여기서 %%d는 선택적 아이콘 인덱스입니다. "..
-			"인덱스가 제공되지 않으면 이 명령어는 사용 가능한 모든 아이콘을 순환합니다. TARGET 또는 MOUSEOVER에서 작동하며 후자를 우선합니다."
 L["Linked Style Filter Triggers"] = "연결된 스타일 필터 트리거"
 L["Select Link"] = "링크 선택"
 L["New Link"] = "새 링크"
@@ -614,7 +620,7 @@ L["Disable Event"] = "이벤트 비활성화"
 L["School"] = "계열"
 L["Use School Colors"] = "계열 색상 사용"
 L["Colors"] = "색상"
-L["Colors (School)"] = "색상 (계열)"
+L["Color (School)"] = "색상 (계열)"
 L["Animation Type"] = "애니메이션 유형"
 L["Custom Animation"] = "사용자 정의 애니메이션"
 L["Flag Settings"] = "플래그 설정"
@@ -700,7 +706,7 @@ L["Rare Elite"] = "희귀 정예"
 L["Class Spec Icons"] = "클래스 전문화 아이콘"
 L["Classification Textures"] = "분류 텍스처"
 L["Use Nameplates' Icons"] = "이름표 아이콘 사용"
-L["Color enemy npc icon based on the unit type."] = "유닛 유형에 따라 적 NPC 아이콘 색상 지정."
+L["Color enemy NPC icon based on the unit type."] = "유닛 유형에 따라 적 NPC 아이콘 색상 지정."
 L["Strata and Level"] = "계층 및 레벨"
 L["Warrior"] = "전사"
 L["Warlock"] = "흑마법사"
@@ -772,7 +778,6 @@ L["On meeting multiple conditions, colors from the tab with the highest priority
 L["Copy Tab"] = "탭 복사"
 L["Select a tab to copy its settings onto the current tab."] = "현재 탭에 설정을 복사할 탭을 선택하세요."
 L["Flash"] = "플래시"
-L["Toggle color flash for the current tab."] = "현재 탭의 색상 플래시를 토글합니다."
 L["Speed"] = "속도"
 L["Glow"] = "발광"
 L["Determines which glow to apply when statusbars are not detached from frame."] = "상태 바가 프레임에서 분리되지 않았을 때 적용할 발광을 결정합니다."
@@ -789,7 +794,7 @@ L["Disabled unless classbar is enabled."] = "클래스바가 활성화되지 않
 L["InfoPanel Color"] = "정보 패널 색상"
 L["Disabled unless infopanel is enabled."] = "정보 패널이 활성화되지 않으면 비활성화됩니다."
 L["ClassBar Adapt To"] = "클래스바 적응"
-L["Copies color of the selected bar."] = "선택한 바의 색상을 복사합니다."
+L["Copies the color of the selected bar."] = "선택한 바의 색상을 복사합니다."
 L["InfoPanel Adapt To"] = "정보 패널 적응"
 L["Override Mode"] = "오버라이드 모드"
 L["'None' - threat borders highlight will be prioritized over this one"..
@@ -807,33 +812,42 @@ L["Handle only player combat log events."] = "플레이어 전투 로그 이벤�
 L["Rotate Icon"] = "아이콘 회전"
 L["Usage example:"..
 	"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-	"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
-	"\nif UnitIsUnit(@unit, 'target') then return true end"..
-	"\n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question (in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not (mentioning the same unit/group is disabled; isn't recursive)"..
-	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group (more than 5 in the example above)"..
-	"\n\n'return {bR=1,f=false}' - you can dynamically color the frames by returning the colors in a table format:"..
+	"\n    local r, g, b = ElvUF_Target.Health:GetStatusBarColor()"..
+	"\n    return true, {mR = r, mG = g, mB = b}"..
+	"\nelseif UnitIsUnit(unit, 'target') then"..
+	"\n    return true"..
+	"\nend"..
+	"\n\n@@[raid, Health, 2, >5]@@ - returns true/false based on whether the tab in question "..
+	"(in the example above: 'player' - target unit; 'Power' - target statusbar; '3' - target tab) is active or not"..
+	"\n(>/>=/<=/</~= num) - (optional, group units only) match against a particular count of triggered frames within the group "..
+	"(more than 5 in the example above)"..
+	"\n\n'return true, {bR=1,f=false}' - you can dynamically color the frames by returning the colors in a table format:"..
 	"\n  to apply to the statusbar, assign your rgb values to mR, mG and mB respectively"..
 	"\n  to apply the glow - to gR, gG, gB, gA (alpha)"..
 	"\n  for borders - bR, bG, bB"..
 	"\n  and for the flash - fR, fG, fB, fA"..
 	"\n  to prevent the elements styling, return {m = false, g = false, b = false, f = false}"..
-	"\n\nFeel free to use '@unit' to register current unit like this: UnitBuff(@unit, 'player')."..
+	"\n\nFrame and unitID are available at 'frame' and 'unit' respectively: UnitBuff(unit, 'player')/frame.Health:IsVisible()."..
 	"\n\nThis module parses strings, so try to have your code follow the syntax strictly, or else it might not work."] =
 		"사용 예시:"..
 			"\n\nif UnitBuff('player', 'Stealth') or @@[player, Power, 3]@@ then"..
-			"\nlocal r, g, b = ElvUF_Target.Health:GetStatusBarColor() return true, {mR = r, mG = g, mB = b} end"..
-			"\nif UnitIsUnit(@unit, 'target') then return true end"..
-			"\n\n@@[raid, Health, 2, >5]@@ - 해당 탭(위 예시에서: 'player' - 대상 유닛; 'Power' - 대상 상태 바; '3' - 대상 탭)이 활성화되어 있는지 여부에 따라 true/false를 반환합니다 (동일한 유닛/그룹 언급은 비활성화됨; 재귀적이지 않음)"..
+			"\n    local r, g, b = ElvUF_Target.Health:GetStatusBarColor()"..
+			"\n    return true, {mR = r, mG = g, mB = b}"..
+			"\nelseif UnitIsUnit(unit, 'target') then"..
+			"\n    return true"..
+			"\nend"..
+			"\n\n@@[raid, Health, 2, >5]@@ - 해당 탭 (위 예시에서: 'player' - 대상 유닛; 'Power' - 대상 상태 바; '3' - 대상 탭) "..
+			"이 활성화되어 있는지 여부에 따라 true/false를 반환합니다"..
 			"\n(>/>=/<=/</~= num) - (선택적, 그룹 유닛만 해당) 그룹 내에서 트리거된 프레임의 특정 개수와 일치 (위 예시에서는 5개 초과)"..
-			"\n\n'return {bR=1,f=false}' - 색상을 테이블 형식으로 반환하여 프레임을 동적으로 색칠할 수 있습니다:"..
+			"\n\n'return true, {bR=1,f=false}' - 색상을 테이블 형식으로 반환하여 프레임을 동적으로 색칠할 수 있습니다:"..
 			"\n  상태 바에 적용하려면 rgb 값을 각각 mR, mG, mB에 할당하세요"..
 			"\n  발광 효과를 적용하려면 gR, gG, gB, gA(알파)에 할당하세요"..
 			"\n  테두리는 bR, bG, bB에 할당하세요"..
 			"\n  그리고 플래시는 fR, fG, fB, fA에 할당하세요"..
 			"\n  요소 스타일링을 방지하려면 {m = false, g = false, b = false, f = false}를 반환하세요"..
-			"\n\n'@unit'을 사용하여 현재 유닛을 다음과 같이 등록할 수 있습니다: UnitBuff(@unit, 'player')."..
+			"\n\n'frame'과 'unit'에서 각각 Frame 및 unitID 사용 가능: UnitBuff(unit, 'player')/frame.Health:IsVisible()."..
 			"\n\n이 모듈은 문자열을 분석하므로 코드가 구문을 엄격히 따르도록 하세요. 그렇지 않으면 작동하지 않을 수 있습니다."
-L["Unless holding a modifier, hovering units, items, and spells draws no tooltip.\nModifies cursor tooltips only."] = "수정 키를 누르지 않으면 유닛, 아이템, 주문에 마우스를 올려도 툴팁이 표시되지 않습니다.\n커서 툴팁만 수정됩니다."
+L["Tooltips will not display when hovering over units, items, and spells unless a modifier is held.\nModifies cursor tooltips only."] = "수정 키를 누르지 않으면 유닛, 아이템, 주문에 마우스를 올려도 툴팁이 표시되지 않습니다.\n커서 툴팁만 수정됩니다."
 L["Pick a..."] = "...선택하세요"
 L["...mover to anchor to."] = "...고정할 요소를 선택하세요."
 L["...mover to anchor."] = "...고정할 요소."
@@ -949,3 +963,123 @@ L["To Level"] = "레벨까지"
 L["Names will be shortened based on level text position."] = "레벨 텍스트 위치에 따라 이름이 축소됩니다."
 L["Add Item (by ID)"] = "아이템 추가 (ID로)"
 L["Remove Item"] = "아이템 제거"
+L["Pre-Load"] = "미리 로드"
+L["Executes commands during the addon's initialization process."] = "애드온 초기화 과정에서 명령을 실행합니다."
+L["Justify"] = "정렬"
+L["Alt-Click: free bag slots, if possible."] = "Alt-클릭: 가능한 경우 가방 슬롯 비우기."
+L["Click: Toggle layout mode."] = "클릭: 레이아웃 모드 전환."
+L["Alt-Click: Re-evaluate all items."] = "Alt-클릭: 모든 아이템 다시 평가."
+L["Drag-and-Drop: Evaluate and position the cursor item."] = "드래그 앤 드롭: 커서 아이템 평가 및 위치 지정."
+L["Mouse-Wheel: Navigate between special and normal bags."] = "마우스 휠: 특수 가방과 일반 가방 간 이동."
+L["Setup Sections"] = "섹션 설정"
+L["Adds default sections set to the currently selected container."] = "현재 선택된 컨테이너에 기본 섹션을 추가합니다."
+L["Handles the automated repositioning of the newly received items."..
+	"\nSyntax: filter@value\n\n"..
+	"Available filters:\n"..
+	" id@number - matches itemID,\n"..
+	" name@string - matches name,\n"..
+	" subtype@string - matches subtype,\n"..
+	" ilvl@number - matches ilvl,\n"..
+	" uselevel@number - matches equip level,\n"..
+	" quality@number - matches quality,\n"..
+	" equipslot@number - matches inventorySlotID,\n"..
+	" maxstack@number - matches stack limit,\n"..
+	" price@number - matches sell price,\n\n"..
+	" tooltip@string - matches tooltip text,\n\n"..
+	"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
+	"Look up GetItemInfo API for more info on filters. "..
+	"Use GetAuctionItemClasses and GetAuctionItemSubClasses (same as on the AH) to get the localized types and subtypes values.\n\n"..
+	"Example usage (priest t8 or Shadowmourne):\n"..
+	"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne.\n\n"..
+	"Accepts custom functions (bagID, slotID, itemID are exposed)\n"..
+	"The below one notifies of the newly acquired items.\n\n"..
+	"local icon = GetContainerItemInfo(bagID, slotID)\n"..
+	"local _, link = GetItemInfo(itemID)\n"..
+	"icon = gsub(icon, '\\124', '\\124\\124')\n"..
+	"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
+	"print('Item received: ' .. string)"] =
+		"자동 아이템 배치 처리.\n"..
+			"문법: filter@value\n\n"..
+			"사용 가능한 필터:\n"..
+			" id@number - itemID 일치,\n"..
+			" name@string - 이름 일치,\n"..
+			" type@string - 유형 일치,\n"..
+			" subtype@string - 하위 유형 일치,\n"..
+			" ilvl@number - 아이템 레벨 일치,\n"..
+			" uselevel@number - 착용 레벨 일치,\n"..
+			" quality@number - 품질 일치,\n"..
+			" equipslot@number - 인벤토리 슬롯 ID 일치,\n"..
+			" maxstack@number - 최대 스택 크기 일치,\n"..
+			" price@number - 판매 가격 일치,\n"..
+			" tooltip@string - 툴팁 텍스트 일치,\n"..
+			" set@setName - 장비 세트 아이템 일치.\n\n"..
+			"모든 문자열 일치는 대소문자를 구분하지 않으며, 영숫자 기호만 일치합니다.\n"..
+			"표준 Lua 논리 연산자(and/or/괄호 등) 사용 가능합니다.\n\n"..
+			"사용 예시 (사제 t8 또는 섀도우모른):\n"..
+			"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne.\n\n"..
+			"사용자 지정 함수 허용 (bagID, slotID, itemID 노출됨)\n"..
+			"아래 함수는 새로 획득한 아이템을 알립니다.\n\n"..
+			"local icon = GetContainerItemInfo(bagID, slotID)\n"..
+			"local _, link = GetItemInfo(itemID)\n"..
+			"icon = gsub(icon, '\\124', '\\124\\124')\n"..
+			"local string = '\\124T' .. icon .. ':16:16\\124t' .. link\n"..
+			"print('아이템 획득: ' .. string)"
+L["Syntax: filter@value@amount\n\n"..
+	"Available filters:\n"..
+	" id@number@amount(+)/+ - matches itemID,\n"..
+	" name@string@amount(+)/+ - matches name,\n"..
+	" type@string@amount(+)/+ - matches type,\n"..
+	" subtype@string@amount(+)/+ - matches subtype,\n"..
+	" ilvl@number@amount(+)/+ - matches ilvl,\n"..
+	" uselevel@number@amount(+)/+ - matches equip level,\n"..
+	" quality@number@amount(+)/+ - matches quality,\n"..
+	" equipslot@number@amount(+)/+ - matches inventorySlotID,\n"..
+	" maxstack@number@amount(+)/+ - matches stack limit,\n"..
+	" price@number@amount(+)/+ - matches sell price,\n"..
+	" tooltip@string@amount(+)/+ - matches tooltip text.\n\n"..
+	"The optional 'amount' part could be:\n"..
+	"  a number - to purchase a static amount,\n"..
+	"  a + sign - to replenish the existing partial stack or purchase a new one,\n"..
+	"  both (e.g. 5+) - to purchase enough items to reach a specified total (in this case, 5),\n"..
+	"  ommited - defaults to 1.\n\n"..
+	"All string matches are case-insensitive and match only alphanumeric symbols.\n"..
+	"Standard Lua logic for branching (and/or/parenthesis/etc.) applies.\n\n"..
+	"Example usage (priest t8 or Shadowmourne):\n"..
+	"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."] =
+		"문법: filter@value@amount\n\n"..
+			"사용 가능한 필터:\n"..
+			" id@number@amount(+)/+ - itemID 일치,\n"..
+			" name@string@amount(+)/+ - 이름 일치,\n"..
+			" type@string@amount(+)/+ - 유형 일치,\n"..
+			" subtype@string@amount(+)/+ - 하위 유형 일치,\n"..
+			" ilvl@number@amount(+)/+ - 아이템 레벨 일치,\n"..
+			" uselevel@number@amount(+)/+ - 착용 레벨 일치,\n"..
+			" quality@number@amount(+)/+ - 품질 일치,\n"..
+			" equipslot@number@amount(+)/+ - 인벤토리 슬롯 ID 일치,\n"..
+			" maxstack@number@amount(+)/+ - 최대 스택 크기 일치,\n"..
+			" price@number@amount(+)/+ - 판매 가격 일치,\n"..
+			" tooltip@string@amount(+)/+ - 툴팁 텍스트 일치.\n\n"..
+			"선택적 'amount' 부분:\n"..
+			" 숫자 - 고정된 수량 구매,\n"..
+			" + 기호 - 기존 스택을 보충하거나 새로운 스택 구매,\n"..
+			" 둘 다 (예: 5+) - 지정된 총 수량(이 경우 5)에 도달하도록 구매,\n"..
+			" 생략 - 기본값은 1.\n\n"..
+			"모든 문자열 일치는 대소문자를 구분하지 않으며, 영숫자 기호만 일치합니다.\n"..
+			"표준 Lua 논리 연산자(and/or/괄호 등) 사용 가능합니다.\n\n"..
+			"사용 예시 (사제 t8 또는 섀도우모른):\n"..
+			"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."
+L["PERIODIC"] = "주기적"
+L["Hold this key while using /addOccupation command to clear the list of the current target/mouseover NPC."] = "/addOccupation 명령어를 사용할 때 이 키를 누르고 있으면 현재 대상/마우스오버 NPC 목록이 삭제됩니다."
+L["Use /addOccupation slash command while targeting/hovering over a NPC to add it to the list. Use again to cycle."] = "NPC를 대상으로 하거나 마우스오버 중일 때 /addOccupation 명령어를 사용하여 목록에 추가하세요. 다시 사용하면 순환합니다."
+L["Style Filter Icons"] = "스타일 필터 아이콘"
+L["Custom icons for the style filter."] = "스타일 필터용 사용자 정의 아이콘."
+L["Whitelist"] = "허용 목록"
+L["X Direction"] = "X 방향"
+L["Y Direction"] = "Y 방향"
+L["Create Icon"] = "아이콘 만들기"
+L["Delete Icon"] = "아이콘 삭제"
+L["0 to match frame width."] = "프레임 너비에 맞추기 위한 0."
+L["Remove a NPC"] = "NPC 제거"
+L["Change a NPC's Occupation"] = "NPC의 직업 변경"
+L["...to the currently selected one."] = "...현재 선택된 것으로."
+L["Select Occupation"] = "직업 선택"

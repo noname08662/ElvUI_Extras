@@ -198,7 +198,7 @@ function mod:LoadConfig()
 						order = 9,
 						type = "toggle",
 						name = L["Color by Type"],
-						desc = L["Color enemy npc icon based on the unit type."],
+						desc = L["Color enemy NPC icon based on the unit type."],
 						hidden = function() local type = selectedUnitData().selectedEnemyType return type ~= lower(type) end,
 					},
 					texListSelector = {
@@ -524,7 +524,7 @@ local function manageIndicators()
 	local db = E.db.Extras.unitframes[modName].units
 	for _, frame in ipairs(units) do
 		local unitframeType = frame.unitframeType
-		if db[unitframeType] and db[unitframeType].enabled then
+		if not core.reload and db[unitframeType] and db[unitframeType].enabled then
 			manageClassificationIndicator(frame, unitframeType)
 			mod:UpdateElement(frame, frame.unit, db[unitframeType])
 		elseif frame.classificationIndicator then

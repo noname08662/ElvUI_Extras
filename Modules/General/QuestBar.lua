@@ -69,7 +69,7 @@ function mod:LoadConfig(db)
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["A new action bar that collects usable quest items from your bag.\n\nDue to state actions limit, this module overrides bar10 created by ElvUI Extra Action Bars."],
-						set = function(info, value) db[info[#info]] = value mod:Toggle(value) end,
+						set = function(info, value) db[info[#info]] = value self:Toggle(db) end,
 					},
 				},
 			},
@@ -85,7 +85,7 @@ function mod:LoadConfig(db)
 						type = "toggle",
 						width = "full",
 						name = L["Backdrop"],
-						desc = L["Toggles the display of the actionbars backdrop."],
+						desc = L["Toggles the display of the actionbar's backdrop."],
 					},
 					showGrid = {
 						order = 2,
@@ -104,13 +104,13 @@ function mod:LoadConfig(db)
 						order = 3,
 						type = "toggle",
 						name = L["Mouse Over"],
-						desc = L["The frame won't show unless you mouse over it."],
+						desc = L["The frame will not be displayed unless hovered over."],
 					},
 					inheritGlobalFade = {
 						order = 4,
 						type = "toggle",
 						name = L["Inherit Global Fade"],
-						desc = L["Inherit the global fade, mousing over, targetting, setting focus, losing health, entering combat will set the remove transparency. Otherwise it will use the transparency level in the general actionbar settings for global fade alpha."],
+						desc = L["Inherit the global fade; mousing over, targetting, setting focus, losing health, entering combat will set the remove transparency. Otherwise it will use the transparency level in the general actionbar settings for global fade alpha."],
 					},
 					point = {
 						order = 5,
@@ -130,7 +130,7 @@ function mod:LoadConfig(db)
 						order = 7,
 						type = "range",
 						name = L["Buttons"],
-						desc = L["The amount of buttons to display."],
+						desc = L["The number of buttons to display."],
 
 							hidden = function() return true end,
 
@@ -140,7 +140,7 @@ function mod:LoadConfig(db)
 						order = 8,
 						type = "range",
 						name = L["Buttons Per Row"],
-						desc = L["The amount of buttons to display per row."],
+						desc = L["The number of buttons to display per row."],
 
 							hidden = function() return true end,
 
@@ -157,28 +157,28 @@ function mod:LoadConfig(db)
 						order = 10,
 						type = "range",
 						name = L["Button Spacing"],
-						desc = L["The spacing between buttons."],
+						desc = L["Spacing between the buttons."],
 						min = -1, max = 10, step = 1,
 					},
 					backdropSpacing = {
 						order = 11,
 						type = "range",
 						name = L["Backdrop Spacing"],
-						desc = L["The spacing between the backdrop and the buttons."],
+						desc = L["Spacing between the backdrop and the buttons."],
 						min = 0, max = 10, step = 1,
 					},
 					heightMult = {
 						order = 12,
 						type = "range",
 						name = L["Height Multiplier"],
-						desc = L["Multiply the backdrops height or width by this value. This is usefull if you wish to have more than one bar behind a backdrop."],
+						desc = L["Multiply the backdrop's height or width by this value. This is useful if you wish to have more than one bar behind a backdrop."],
 						min = 1, max = 5, step = 1,
 					},
 					widthMult = {
 						order = 13,
 						type = "range",
 						name = L["Width Multiplier"],
-						desc = L["Multiply the backdrops height or width by this value. This is usefull if you wish to have more than one bar behind a backdrop."],
+						desc = L["Multiply the backdrop's height or width by this value. This is useful if you wish to have more than one bar behind a backdrop."],
 						min = 1, max = 5, step = 1,
 					},
 					alpha = {
@@ -193,7 +193,7 @@ function mod:LoadConfig(db)
 						order = 15,
 						type = "input",
 						name = L["Visibility State"],
-						desc = L["This works like a macro, you can run different situations to get the actionbar to show/hide differently.\n Example: '[combat] showhide'"],
+						desc = L["This works like a macro; you can run different conditions to show or hide the action bar.\n Example: '[combat] showhide'"],
 						width = "double",
 						multiline = true,
 						set = function(info, value)
@@ -293,7 +293,7 @@ end
 
 
 function mod:Toggle(db)
-    if db.enabled then
+    if not core.reload and db.enabled then
         local bar = AB.handledBars["bar"..modName]
         if bar then
 			bar.db.enabled = true

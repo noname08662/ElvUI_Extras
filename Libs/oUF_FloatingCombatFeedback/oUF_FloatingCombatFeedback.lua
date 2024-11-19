@@ -119,8 +119,7 @@ local colors = {
 	["REFLECT"  ] = rgb(255, 255, 255),
 	["RESIST"   ] = rgb(255, 255, 255),
 	["WOUND"    ] = rgb(179, 26, 26),
-	-- modified
-	["AURA"    ] = rgb(255, 255, 255),
+	["AURA"    	] = rgb(255, 255, 255),
 }
 
 local schoolColors = {
@@ -158,6 +157,7 @@ local tryToColorBySchool = {
 	["REFLECT"  ] = false,
 	["RESIST"   ] = false,
 	["WOUND"    ] = true,
+	["AURA"    	] = false,
 }
 
 local animations = {
@@ -190,41 +190,48 @@ local animations = {
 }
 
 local animationsByEvent = {
-	["ABSORB"   ] = "fountain",
-	["BLOCK"    ] = "fountain",
-	["DEFLECT"  ] = "fountain",
-	["DODGE"    ] = "fountain",
-	["ENERGIZE" ] = "fountain",
-	["EVADE"    ] = "fountain",
-	["HEAL"     ] = "fountain",
-	["IMMUNE"   ] = "fountain",
-	["INTERRUPT"] = "fountain",
-	["MISS"     ] = "fountain",
-	["PARRY"    ] = "fountain",
-	["REFLECT"  ] = "fountain",
-	["RESIST"   ] = "fountain",
-	["WOUND"    ] = "fountain",
-	-- modified
-	["AURA"    ] = "fountain",
+	["ABSORB"   ] = {"fountain", true, true},
+	["BLOCK"    ] = {"fountain", true, true},
+	["DEFLECT"  ] = {"fountain", true, true},
+	["DODGE"    ] = {"fountain", true, true},
+	["ENERGIZE" ] = {"fountain", true, true},
+	["EVADE"    ] = {"fountain", true, true},
+	["HEAL"     ] = {"fountain", true, true},
+	["IMMUNE"   ] = {"fountain", true, true},
+	["INTERRUPT"] = {"fountain", true, true},
+	["MISS"     ] = {"fountain", true, true},
+	["PARRY"    ] = {"fountain", true, true},
+	["REFLECT"  ] = {"fountain", true, true},
+	["RESIST"   ] = {"fountain", true, true},
+	["WOUND"    ] = {"fountain", true, true},
+	["AURA"    	] = {"fountain", true, true},
 }
 
 local animationsByFlag = {
-	["ABSORB"  ] = false,
-	["BLOCK"   ] = false,
-	["CRITICAL"] = false,
-	["CRUSHING"] = false,
-	["GLANCING"] = false,
-	["RESIST"  ] = false,
+	["ABSORB"  		] = {false, false, false},
+	["BLOCK"   		] = {false, false, false},
+	["CRITICAL"		] = {false, false, false},
+	["CRUSHING"		] = {false, false, false},
+	["GLANCING"		] = {false, false, false},
+	["RESIST"  		] = {false, false, false},
+	["PERIODICWOUND"] = {false, false, false},
+	["NOFLAGWOUND"  ] = {false, false, false},
+	["PERIODICHEAL" ] = {false, false, false},
+	["NOFLAGHEAL"   ] = {false, false, false},
 }
 
 local multipliersByFlag = {
-	[""        ] = 1,
-	["ABSORB"  ] = 0.75,
-	["BLOCK"   ] = 0.75,
-	["CRITICAL"] = 1.25,
-	["CRUSHING"] = 1.25,
-	["GLANCING"] = 0.75,
-	["RESIST"  ] = 0.75,
+	[""       		] = 1,
+	["ABSORB"  		] = 0.75,
+	["BLOCK"  		] = 0.75,
+	["CRITICAL"		] = 1.25,
+	["CRUSHING"		] = 1.25,
+	["GLANCING"		] = 0.75,
+	["RESIST"  		] = 0.75,
+	["PERIODICWOUND"] = 0.75,
+	["NOFLAGWOUND"  ] = 1,
+	["PERIODICHEAL" ] = 0.75,
+	["NOFLAGHEAL"   ] = 1,
 }
 
 local xOffsetsByAnimation = {
@@ -266,14 +273,15 @@ end
 
 local function onUpdate(self, elapsed)
 	for index, string in next, self.FeedbackToAnimate do
-		if string.elapsed >= self.scrollTime then
+		if string.elapsed >= string.scrollTime then
 			removeString(self, index, string)
 		else
-			string.progress = string.elapsed / self.scrollTime
-			string:SetPoint("CENTER", self, "CENTER", string:GetXY())
+			string.progress = string.elapsed / string.scrollTime
+			local x, y = string:GetXY()
+			string:SetPoint(string.point, self, string.relativeTo, x + string.fontX, y + string.fontY)
 
 			string.elapsed = string.elapsed + elapsed
-			string:SetAlpha(clamp(1 - (string.elapsed - self.fadeTime) / (self.scrollTime - self.fadeTime)))
+			string:SetAlpha(clamp(1 - (string.elapsed - string.fadeTime) / (string.scrollTime - string.fadeTime)))
 		end
 	end
 
@@ -292,12 +300,11 @@ local function flush(self)
 	end
 end
 
--- modified
-local iconFormats = {
-}
 local function Update(self, _, unit, event, flag, amount, school, texture)
 	if self.unit ~= unit then return end
 	local element = self.FloatingCombatFeedback
+	local flagMult = element.multipliersByFlag[flag]
+	if event ~= "BUFF" and event ~= "DEBUFF" and not flagMult then return end
 
 	local unitGUID = UnitGUID(unit)
 	if unitGUID ~= element.unitGUID then
@@ -305,17 +312,14 @@ local function Update(self, _, unit, event, flag, amount, school, texture)
 		element.unitGUID = unitGUID
 	end
 
-	local animation = element.animationsByEvent[event]
-	if not animation then return end
-
-	animation = element.animationsByFlag[flag] or animation
+	local animation, fontData = element.animationsByEvent[event], element.fontData[event]
+	if not animation or not fontData then return end
 
 	local color = element.tryToColorBySchool[event] and element.schoolColors[school] or element.colors[event]
-
 	local text
 
 	if event == "WOUND" then
-		if amount ~= 0	then
+		if amount ~= 0 then
 			text = element.abbreviateNumbers and AbbreviateNumbers(amount) or BreakUpLargeNumbers(amount)
 		elseif flag ~= "" and flag ~= "CRITICAL" and flag ~= "CRUSHING" and flag ~= "GLANCING" then
 			text = _G[flag]
@@ -330,22 +334,52 @@ local function Update(self, _, unit, event, flag, amount, school, texture)
 
 	if text then
 		local string = getString(element)
+		local flagAnimation = element.animationsByFlag[flag]
+		local xDirection, yDirection
+
+		if flagAnimation then
+			xDirection, yDirection = flagAnimation[2], flagAnimation[3]
+			if flagAnimation[4] then
+				flagAnimation[2] = flagAnimation[2] * -1
+			end
+			if flagAnimation[5] then
+				flagAnimation[3] = flagAnimation[3] * -1
+			end
+			animation = flagAnimation[1]
+		else
+			xDirection, yDirection = animation[2], animation[3]
+			if animation[4] then
+				animation[2] = animation[2] * -1
+			end
+			if animation[5] then
+				animation[3] = animation[3] * -1
+			end
+			animation = animation[1]
+		end
 
 		string.elapsed = 0
+		string.point = fontData.point
+		string.relativeTo = fontData.relativeTo
+		string.fontX = fontData.x
+		string.fontY = fontData.y
+		string.scrollTime = fontData.scrollTime
+		string.fadeTime = fontData.scrollTime / 3
 		string.GetXY = element.animations[animation]
 		string.radius = element.radius
-		string.xDirection = element.xDirection
-		string.yDirection = element.yDirection
+		string.xDirection = xDirection
+		string.yDirection = yDirection
 		string.x = string.xDirection * element.xOffsetsByAnimation[animation]
 		string.y = string.yDirection * element.yOffsetsByAnimation[animation]
 
 		-- modified
-		if element.iconBounce then element.bounce = not element.bounce end
+		element.bounce[event] = not element.bounce[event]
 
-		string:SetFont(element.font, element.fontHeight * (element.multipliersByFlag[flag] or element.multipliersByFlag[""]), element.fontFlags)
-		string:SetFormattedText(element.iconBounce and (element.bounce and iconFormats[1] or iconFormats[2]) or element.format, text, texture or "")
+		string:SetFont(fontData.font, fontData.fontSize * (element.multipliersByFlag[flag] or element.multipliersByFlag[""]), fontData.fontFlags)
+		string:SetFormattedText(element.iconBounce[event] and (element.bounce[event] and element.iconFormats[event][1] or element.iconFormats[event][2])
+								or element.formats[event] or "%1$s", text, texture or "")
 		string:SetTextColor(color.r, color.g, color.b)
-		string:SetPoint("CENTER", element, "CENTER", string.x, string.y)
+		string:ClearAllPoints()
+		string:Point(fontData.point, element, fontData.relativeTo, fontData.x + string.x, fontData.y + string.y)
 		string:SetAlpha(0)
 		string:Show()
 
@@ -353,14 +387,6 @@ local function Update(self, _, unit, event, flag, amount, school, texture)
 
 		if not element:GetScript("OnUpdate") then
 			element:SetScript("OnUpdate", onUpdate)
-		end
-
-		if element.alternateX then
-			element.xDirection = element.xDirection * -1
-		end
-
-		if element.alternateY then
-			element.yDirection = element.yDirection * -1
 		end
 	end
 end
@@ -397,7 +423,7 @@ local function getEventFlag(resisted, blocked, absorbed, critical, glancing, cru
 		or critical and "CRITICAL"
 		or glancing and "GLANCING"
 		or crushing and "CRUSHING"
-		or ""
+		or nil
 end
 
 -- modified
@@ -411,20 +437,20 @@ local function prep(event, _, ...)
 		event = auraType
 	elseif event == "ENVIRONMENTAL_DAMAGE" then
 		_, amount, _, school = ...
-		flag = getEventFlag(select(4, ...))
+		flag = getEventFlag(select(4, ...)) or "NOFLAGWOUND"
 		event = "WOUND"
-		elseif event == "RANGE_DAMAGE" or event == "SPELL_DAMAGE" or event == "SPELL_PERIODIC_DAMAGE" then
+	elseif event == "RANGE_DAMAGE" or event == "SPELL_DAMAGE" or event == "SPELL_PERIODIC_DAMAGE" then
 		spellId, _, _, amount, _, school = ...
-		flag = getEventFlag(select(7, ...))
+		flag = event == "SPELL_PERIODIC_DAMAGE" and "PERIODICWOUND" or getEventFlag(select(7, ...)) or "NOFLAGWOUND"
 		texture = getTexture(spellId)
 		event = "WOUND"
     elseif event == "SWING_DAMAGE" then
 		amount, _, school = ...
-		flag = getEventFlag(select(4, ...))
+		flag = getEventFlag(select(4, ...)) or "NOFLAGWOUND"
 		event = "WOUND"
     elseif event == "SPELL_HEAL" or event == "SPELL_PERIODIC_HEAL" then
 		spellId, _, school, amount = ...
-		flag = getEventFlag(nil, nil, select(6, ...))
+		flag = event == "SPELL_PERIODIC_HEAL" and "PERIODICHEAL" or getEventFlag(nil, nil, select(6, ...)) or "NOFLAGHEAL"
 		texture = getTexture(spellId)
 		event = "HEAL"
     elseif event == "RANGE_MISSED" or event == "SPELL_MISSED" or event == "SPELL_PERIODIC_MISSED" then
@@ -432,8 +458,8 @@ local function prep(event, _, ...)
 		texture = getTexture(...)
 		event = flag
     elseif event == "SWING_MISSED" then
-		flag = ...
-		event = flag
+		flag = ""
+		event = ...
     elseif event == "SPELL_INTERRUPT" then
 		spellId, _, _, _, _, school = ...
 		flag = ""
@@ -584,33 +610,16 @@ local function Enable(self)
 		element.EnableCLEU = EnableCLEU
 		element.FeedbackToAnimate = {}
 
-		element.scrollTime = element.scrollTime or 1.2
-		element.fadeTime = element.fadeTime or element.scrollTime / 3
-		element.format = element.format or "%1$s" -- "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t"
-
-		-- modified
-		iconFormats[1] = element.format == "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t" and "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t" or "|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s"
-		iconFormats[2] = iconFormats[1] == "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t" and "|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s" or "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t"
+		element.formats = {}
+		element.iconFormats = {}
+		element.bounce = {}
+		element.iconBounce = {}
+		element.fontData = {}
 
 		element.radius = element.radius or 65
-		element.xDirection = element.xDirection or 1
-		element.yDirection = element.yDirection or 1
-
-		local font, _, fontFlags = element[1]:GetFont()
-		element.font = element.font or font or "Fonts\\FRIZQT__.TTF"
-		element.fontHeight = element.fontHeight or 18
-		element.fontFlags = element.fontFlags or fontFlags or ""
-
-		if element.alternateX == nil then
-			element.alternateX = true
-		end
-
-		if element.alternateY == nil then
-			element.alternateY = false
-		end
 
 		for i = 1, #element do
-			element[i]:SetFont(element.font, element.fontHeight, element.fontFlags)
+			element[i]:SetFont("Fonts\\FRIZQT__.TTF", 18, "")
 			element[i]:Hide()
 		end
 
