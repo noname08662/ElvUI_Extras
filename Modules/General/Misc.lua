@@ -729,7 +729,12 @@ function mod:ItemIcons(enable)
 			function mod:ItemIconsFilter(_, msg, ...)
 				msg = gsub(msg, "(\124%x%x%x%x%x%x%x%x%x\124[Hh]item:.-\124[hH]\124[rR])", function(link)
 					local texture = GetItemIcon(link)
-					return (db.orientation == "left") and "\124T" .. texture .. ":" .. db.size .. "\124t" .. link or link .. "\124T" .. texture .. ":" .. db.size .. "\124t"
+					if texture then
+						return (db.orientation == "left") and "\124T" .. texture .. ":" .. db.size .. "\124t" .. link
+													or link .. "\124T" .. texture .. ":" .. db.size .. "\124t"
+					else
+						return link
+					end
 				end)
 				return false, msg, ...
 			end
