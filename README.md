@@ -25,7 +25,7 @@ What's inside:
 		       auto-confirm the rolls;
 		       auto-pickup;
 		       auto-accept quests;
-		       auto-purchase;
+		       auto-purchase and auto-sell;
 	(LootStyle) - /lootinfo slash command displaying recent lootings;
 		      restyled lootbars;
 		      styled player names and rolls;
