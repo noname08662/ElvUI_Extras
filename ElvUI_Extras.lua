@@ -302,34 +302,35 @@ if isAwesome then
 	core:RegisterEvent('PLAYER_TARGET_CHANGED', function()
 		if not UnitExists('target') then return end
 		if target.exists then
-			for _, np in pairs(GetNamePlates()) do
+			for _, np in ipairs(GetNamePlates()) do
 				NP:SetTargetFrame(np.UnitFrame)
 				NP:ResetNameplateFrameLevel(np.UnitFrame)
 			end
 		else
 			target.exists = true
 			target:SetScript('OnUpdate', function()
-				for _, np in pairs(GetNamePlates()) do
-					local frame = np.UnitFrame
-					if not frame.isTarget then
-						frame.alpha = np:GetAlpha()
-						np:SetAlpha(1)
-						NP:PlateFade(frame, NP.db.fadeIn and 1 or 0, frame:GetAlpha(), NP.db.nonTargetTransparency)
-					end
-				end
 				if not UnitExists('target') then
-					for _, np in pairs(GetNamePlates()) do
+					for _, np in ipairs(GetNamePlates()) do
 						NP:SetTargetFrame(np.UnitFrame)
 					end
 					target.exists = false
 					target:SetScript('OnUpdate', nil)
+				else
+					for _, np in ipairs(GetNamePlates()) do
+						local frame = np.UnitFrame
+						if not frame.isTarget then
+							frame.alpha = np:GetAlpha()
+							np:SetAlpha(1)
+							NP:PlateFade(frame, NP.db.fadeIn and 1 or 0, frame:GetAlpha(), NP.db.nonTargetTransparency)
+						end
+					end
 				end
 			end)
 			local plate = GetNamePlateForUnit('target')
 			if not plate or not plate.UnitFrame then return end
 			local frame = plate.UnitFrame
 			NP:SetTargetFrame(frame)
-			for _, np in pairs(GetNamePlates()) do
+			for _, np in ipairs(GetNamePlates()) do
 				NP:ResetNameplateFrameLevel(np.UnitFrame)
 			end
 		end
@@ -338,7 +339,7 @@ if isAwesome then
 	core:RegisterEvent('UPDATE_MOUSEOVER_UNIT', function()
 		local plate = GetNamePlateForUnit('mouseover')
 		if plate and plate.UnitFrame then
-			for _, np in pairs(GetNamePlates()) do
+			for _, np in ipairs(GetNamePlates()) do
 				local unitframe = np.UnitFrame
 				if unitframe and unitframe.isMouseover then
 					if unitframe.oldHighlight:IsShown() then
@@ -353,7 +354,7 @@ if isAwesome then
 			NP:SetMouseoverFrame(plate.UnitFrame)
 			mouseover:SetScript("OnUpdate", function()
 				if not UnitExists('mouseover') then
-					for _, np in pairs(GetNamePlates()) do
+					for _, np in ipairs(GetNamePlates()) do
 						local unitframe = np.UnitFrame
 						if unitframe and unitframe.isMouseover then
 							unitframe.isMouseover = nil
@@ -367,9 +368,9 @@ if isAwesome then
 	end)
 
 	core:RegisterEvent('UNIT_THREAT_LIST_UPDATE', function(_, unit)
-		if not unit then return end
+		if not unit or not find(unit, 'nameplate', 1, true) then return end
 		local plate = GetNamePlateForUnit(unit)
-		if not plate or not plate.UnitFrame or not find(unit, 'nameplate') then return end
+		if not plate or not plate.UnitFrame then return end
 		local status = UnitThreatSituation("player", unit)
 		if plate.UnitFrame.ThreatStatus ~= status then
 			plate.UnitFrame.ThreatStatus = status
@@ -414,7 +415,8 @@ if isAwesome then
 	end
 
 	function core:SetTargetFrame(_, frame)
-		local unit = frame:GetParent().unit
+		local parent = frame:GetParent()
+		local unit = parent.unit
 		if not unit then return end
 		local isTargetUnit = UnitGUID(unit) == UnitGUID("target")
 
@@ -446,17 +448,11 @@ if isAwesome then
 				if NP.db.useTargetScale then
 					NP:SetFrameScale(frame, (frame.ThreatScale or 1))
 				end
-				if not frame.isGroupUnit then
-					if frame.isEventsRegistered then
-						NP:UnregisterAllEvents(frame)
-						NP:Update_CastBar(frame)
-					end
-				end
 				if not NP.db.units[frame.UnitType].health.enable then
 					NP:UpdateAllFrame(frame, nil, true)
 				end
 				NP:Update_CPoints(frame)
-				frame:SetFrameLevel(#GetNamePlates())
+				frame:SetFrameLevel(parent:GetFrameLevel() + 1)
 			end
 			NP:StyleFilterUpdate(frame, "PLAYER_TARGET_CHANGED")
 		end
@@ -521,7 +517,7 @@ if isAwesome then
 			--highest possible should be level 880 and we add 1 to all so 881
 			--local leveledCount = NP.CollectedFrameLevelCount or 1
 			--level = (frame.FrameLevelChanged*(40*NP.levelStep)) + (leveledCount*NP.levelStep)
-			local level = #GetNamePlates() + frame.FrameLevelChanged * 10 + 100
+			local level = (frame:GetParent():GetFrameLevel() + 1) + frame.FrameLevelChanged * 10
 
 			frame:SetFrameLevel(level)
 			frame.Shadow:SetFrameLevel(level-1)
@@ -532,13 +528,11 @@ if isAwesome then
 			local targetPlate = GetNamePlateForUnit('target')
 			local plate = targetPlate and targetPlate.UnitFrame
 
-			if plate and plate:IsShown() and frame ~= plate then
-				if level > plate:GetFrameLevel() then
-					plate:SetFrameLevel(frame:GetFrameLevel() + 10)
-				end
+			if plate and plate:IsShown() and frame ~= plate and level > plate:GetFrameLevel() then
+				plate:SetFrameLevel(level + 10)
 			end
 		elseif frame.LevelHandled then
-			local level = #GetNamePlates() + 100
+			local level = frame:GetParent():GetFrameLevel() + 1
 			frame:SetFrameLevel(level)
 			frame.Shadow:SetFrameLevel(level-1)
 			frame.Buffs:SetFrameLevel(level)
@@ -591,7 +585,7 @@ function core:OnShowHide(frame, health)
 	end
 end
 
-core:SecureHook(NP, "OnCreated", function(self, plate)
+core:SecureHook(NP, "OnCreated", function(_, plate)
 	local frame = plate.UnitFrame
 	local frameHealth = frame and frame.Health
 
@@ -611,7 +605,7 @@ core:SecureHook(NP, "OnCreated", function(self, plate)
 	end
 end)
 
-core:SecureHook(NP, "Configure_Elite", function(self, frame)
+core:SecureHook(NP, "Configure_Elite", function(_, frame)
 	local unitType = frame.UnitType
 	local db = NP.db.units[unitType].eliteIcon
 

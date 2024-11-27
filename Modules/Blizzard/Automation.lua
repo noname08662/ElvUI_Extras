@@ -1,10 +1,11 @@
 local E, L, _, P = unpack(ElvUI)
 local core = E:GetModule("Extras")
 local mod = core:NewModule("Automation", "AceHook-3.0", "AceEvent-3.0")
+local B = E:GetModule("Bags")
 
 local modName = mod:GetName()
 
-local _G, ipairs, select, type, unpack = _G, ipairs, select, type, unpack
+local _G, ipairs, select, type, unpack, next, setfenv = _G, ipairs, select, type, unpack, next, setfenv
 local loadstring, pcall, tonumber, tostring = loadstring, pcall, tonumber, tostring
 local tinsert, tremove, tconcat = table.insert, table.remove, table.concat
 local gmatch, match, gsub, format, find, lower = string.gmatch, string.match, string.gsub, string.format, string.find, string.lower
@@ -15,11 +16,12 @@ local GetNumQuestChoices, IsQuestCompletable, CompleteQuest, GetQuestReward = Ge
 local GossipFrame, GetNumGossipOptions, GetGossipAvailableQuests = GossipFrame, GetNumGossipOptions, GetGossipAvailableQuests
 local GetGossipActiveQuests, SelectGossipOption = GetGossipActiveQuests, SelectGossipOption
 local StaticPopupDialogs, StaticPopup_Hide, StaticPopup_Show = StaticPopupDialogs, StaticPopup_Hide, StaticPopup_Show
-local IsModifierKeyDown, GetItemInfo, GetItemCount = IsModifierKeyDown, GetItemInfo, GetItemCount
+local IsModifierKeyDown, InCombatLockdown = IsModifierKeyDown, InCombatLockdown
+local GetItemInfo, GetItemCount, UseContainerItem = GetItemInfo, GetItemCount, UseContainerItem
 local GetMerchantItemLink, BuyMerchantItem = GetMerchantItemLink, BuyMerchantItem
 local GetAuctionItemClasses, GetAuctionItemSubClasses = GetAuctionItemClasses, GetAuctionItemSubClasses
-local BROWSE_NO_RESULTS, BANKSLOTPURCHASE, DELETE_ITEM_CONFIRM_STRING = BROWSE_NO_RESULTS, BANKSLOTPURCHASE, DELETE_ITEM_CONFIRM_STRING
-local YES, NO = YES, NO
+local BROWSE_NO_RESULTS, PURCHASE, DELETE_ITEM_CONFIRM_STRING = BROWSE_NO_RESULTS, PURCHASE, DELETE_ITEM_CONFIRM_STRING
+local YES, NO, ERR_NOT_IN_COMBAT = YES, NO, ERR_NOT_IN_COMBAT
 
 local methodFuncs, swiftBuyButton = {}
 local scanner = CreateFrame("GameTooltip", "ExtrasAutomation_ScanningTooltip", nil, "GameTooltipTemplate")
@@ -74,7 +76,7 @@ local filter = {
 			tooltipText = tooltipText .. (left or '')
 			tooltipText = tooltipText .. (right or '')
 		end
-		return tooltipText
+		return lower(gsub(tooltipText, '[%s%p]+', ''))
 	end,
 }
 
@@ -124,7 +126,7 @@ local function updateCollectionMethods(collectionMethod)
 
 	local luaFunction, errorMsg = loadstring(parsedString)
 	if luaFunction then
-		setfenv(luaFunction, {find = string.find})
+		setfenv(luaFunction, {find = find})
 		local success, customFuncGenerator = pcall(luaFunction)
 		if not success then
 			core:print('FAIL', L["Automations"], customFuncGenerator)
@@ -171,13 +173,17 @@ local function createTex(button, texture, size)
 end
 
 
-local function updatePopupDialog(pending, popupsCount, index, itemLink, amount)
+local function updatePopupDialog(pending, popupsCount, index, itemLink, amount, bagID, slotID)
 	StaticPopupDialogs["CONFIRM_BUY_ITEM"..popupsCount] = {
-		text = format("%s %s x%s?", BANKSLOTPURCHASE, itemLink, amount),
+		text = format("%s %s x%s?", index and PURCHASE or L["Sell"], itemLink, amount),
 		button1 = YES,
 		button2 = NO,
 		OnAccept = function()
-			BuyMerchantItem(index, amount)
+			if index then
+				BuyMerchantItem(index, amount)
+			else
+				UseContainerItem(bagID, slotID)
+			end
 			if #pending > 0 then
 				StaticPopup_Hide("CONFIRM_BUY_ITEM"..popupsCount)
 				updatePopupDialog(pending, popupsCount, unpack(tremove(pending)))
@@ -261,6 +267,46 @@ local function buyMerchantStuff(collectionMethod, failsafe, buyOne)
 	end
 end
 
+local function sellMerchantStuff(collectionMethod, failsafe)
+	if InCombatLockdown() then
+		print(core.customColorBad..ERR_NOT_IN_COMBAT)
+		return
+	end
+	local f = B:GetContainerFrame()
+	if f then
+		local staticOffset = 1
+		local pending = {}
+		for _, bagID in ipairs(f.BagIDs) do
+			local bag = f.Bags[bagID]
+			local bagSlots = bag and bag.numSlots
+			if bagSlots and bagSlots > 0 then
+				for slotID = 1, bagSlots do
+					local button = bag[slotID]
+					if button then
+						local itemID = B:GetItemID(bagID, slotID)
+						if itemID then
+							local _, itemLink, _, _, _, _, _, _, _, _, sellPrice = GetItemInfo(itemID)
+							if sellPrice > 0 and collectionMethod(getItemDetails(itemID)) then
+								if failsafe then
+									if staticOffset > 4 then
+										tinsert(pending, 1, {nil, itemLink, button.count, bagID, slotID})
+									else
+										updatePopupDialog(pending, staticOffset, nil, itemLink, button.count, bagID, slotID)
+										StaticPopup_Show("CONFIRM_BUY_ITEM"..staticOffset)
+									end
+									staticOffset = staticOffset + 1
+								else
+									UseContainerItem(bagID, slotID)
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
 local function probeMerchantStuff(collectionMethod)
 	local index = 1
 	local itemLink = GetMerchantItemLink(index)
@@ -272,6 +318,29 @@ local function probeMerchantStuff(collectionMethod)
 		else
 			index = index + 1
 			itemLink = GetMerchantItemLink(index)
+		end
+	end
+end
+
+local function probeBagsStuff(collectionMethod)
+	local f = B:GetContainerFrame()
+	if f then
+		for _, bagID in ipairs(f.BagIDs) do
+			local bag = f.Bags[bagID]
+			local bagSlots = bag and bag.numSlots
+			if bagSlots and bagSlots > 0 then
+				for slotID = 1, bagSlots do
+					local button = bag[slotID]
+					if button then
+						local itemID = B:GetItemID(bagID, slotID)
+						if itemID then
+							if select(11,GetItemInfo(itemID)) > 0 and collectionMethod(getItemDetails(itemID)) then
+								return true
+							end
+						end
+					end
+				end
+			end
 		end
 	end
 end
@@ -449,6 +518,7 @@ function mod:LoadConfig(db)
 						func = function()
 							tinsert(db.SwiftBuy.sets, 1,
 									{["failsafe"] = true,
+									["actionType"] = "SELL",
 									["title"] = "",
 									["collectionMethod"] = "",
 									["icon"] = "",
@@ -500,7 +570,6 @@ function mod:LoadConfig(db)
 					icon = {
 						order = 9,
 						type = "input",
-						width = "double",
 						name = L["Icon"],
 						desc = "",
 						get = function() return selectedSet() == 0 and "" or selectedSetData().icon end,
@@ -510,13 +579,30 @@ function mod:LoadConfig(db)
 						end,
 						hidden = function() return not db.SwiftBuy.enabled end,
 					},
-					collectionMethod = {
+					actionType = {
 						order = 10,
+						type = "select",
+						name = L["Action Type"],
+						desc = "",
+						get = function() return selectedSetData().actionType end,
+						set = function(_, value) selectedSetData().actionType = value self:Toggle(db) end,
+						values = {
+							["BUY"] = PURCHASE,
+							["SELL"] = L["Sell"],
+						},
+						disabled = function() return selectedSet() == 0 end,
+						hidden = function() return not db.SwiftBuy.enabled end,
+					},
+					collectionMethod = {
+						order = 11,
 						type = "input",
 						multiline = true,
 						width = "double",
 						name = L["Collection Method"],
-						desc = L["Syntax: filter@value@amount\n\n"..
+						desc = function()
+							local actionType = selectedSetData().actionType
+							return not actionType or actionType == "BUY" and
+							L["Syntax: filter@value@amount\n\n"..
 								"Available filters:\n"..
 								" id@number@amount(+)/+ - matches itemID,\n"..
 								" name@string@amount(+)/+ - matches name,\n"..
@@ -537,7 +623,25 @@ function mod:LoadConfig(db)
 								"All string matches are case-insensitive and match only alphanumeric symbols.\n"..
 								"Standard Lua logic for branching (and/or/parenthesis/etc.) applies.\n\n"..
 								"Example usage (priest t8 or Shadowmourne):\n"..
-								"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."],
+								"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."]
+							or L["Syntax: filter@value\n\n"..
+								"Available filters:\n"..
+								" id@number - matches itemID,\n"..
+								" name@string - matches name,\n"..
+								" type@string - matches type,\n"..
+								" subtype@string - matches subtype,\n"..
+								" ilvl@number - matches ilvl,\n"..
+								" uselevel@number - matches equip level,\n"..
+								" quality@number - matches quality,\n"..
+								" equipslot@number - matches inventorySlotID,\n"..
+								" maxstack@number - matches stack limit,\n"..
+								" price@number - matches sell price,\n"..
+								" tooltip@string - matches tooltip text.\n\n"..
+								"All string matches are case-insensitive and match only alphanumeric symbols.\n"..
+								"Standard Lua logic for branching (and/or/parenthesis/etc.) applies.\n\n"..
+								"Example usage (priest t8 or Shadowmourne):\n"..
+								"(quality@4 and ilvl@>=219 and ilvl@<=245 and subtype@cloth and name@ofSanctification) or name@shadowmourne."]
+						end,
 						get = function()
 							if selectedSet() == 0 then
 								return db.SwiftBuy.defaultCollectionMethod
@@ -556,7 +660,7 @@ function mod:LoadConfig(db)
 						hidden = function() return not db.SwiftBuy.enabled end,
 					},
 					itemTypeInfo = {
-						order = 11,
+						order = 12,
 						type = "select",
 						width = "double",
 						name = L["Available Item Types"],
@@ -573,7 +677,7 @@ function mod:LoadConfig(db)
 						hidden = function() return not db.SwiftBuy.enabled end,
 					},
 					subTypeInfo = {
-						order = 12,
+						order = 13,
 						type = "description",
 						name = function()
 							return tconcat({GetAuctionItemSubClasses(selectedItemType-1)}, ", ")
@@ -683,6 +787,7 @@ function mod:Automations(db)
 					{updateCollectionMethods(entry.collectionMethod) or function() return end,
 					(not entry.icon or entry.icon == "") and "" or format("|T%s:12|t", entry.icon),
 					format("|cff%02x%02x%02x", r * 255, g * 255, b * 255),
+					entry.actionType or "BUY",
 					})
 		end
 
@@ -702,7 +807,8 @@ function mod:Automations(db)
 			end)
 			swiftBuyButton:SetScript("OnEnter", function(self)
 				for i = 1, #swiftBuy.sets do
-					if probeMerchantStuff(methodFuncs[i][1]) then
+					local data = methodFuncs[i]
+					if data[4] == "BUY" and probeMerchantStuff(methodFuncs[i][1]) or probeBagsStuff(methodFuncs[i][1]) then
 						return
 					end
 				end
@@ -710,19 +816,52 @@ function mod:Automations(db)
 				GameTooltip:SetText(BROWSE_NO_RESULTS)
 				GameTooltip:Show()
 			end)
-			swiftBuyButton:SetScript("OnLeave", function()
+			swiftBuyButton:SetScript("OnLeave", function(self)
 				GameTooltip:Hide()
 			end)
 			swiftBuyButton.dropdownMenu = CreateFrame("Frame", "SwiftBuyDropdown", UIParent, "UIDropDownMenuTemplate")
 
 			local function initializeDropdown(self, level)
+				local sellEntries = {}
+				local purchaseEntries = {}
 				for i, entry in ipairs(swiftBuy.sets) do
-					if probeMerchantStuff(methodFuncs[i][1]) then
+					local data = methodFuncs[i]
+					if data[4] == "BUY" then
+						if probeMerchantStuff(data[1]) then
+							tinsert(purchaseEntries, {data = data, entry = entry})
+						end
+					elseif probeBagsStuff(data[1]) then
+						tinsert(sellEntries, {data = data, entry = entry})
+					end
+				end
+				if next(purchaseEntries) then
+					local header = UIDropDownMenu_CreateInfo()
+					header.text = PURCHASE
+					header.isTitle = true
+					header.notCheckable = true
+					UIDropDownMenu_AddButton(header, level)
+					for _, values in ipairs(purchaseEntries) do
 						local info = UIDropDownMenu_CreateInfo()
-						info.text = format("%s%s%s", methodFuncs[i][2], methodFuncs[i][3], entry.title)
-						info.menuList = entry.title
+						info.text = format("%s%s%s", values.data[2], values.data[3], values.entry.title)
+						info.menuList = values.entry.title
 						info.func = function()
-							buyMerchantStuff(methodFuncs[i][1], entry.failsafe, isModDown())
+							buyMerchantStuff(values.data[1], values.entry.failsafe, isModDown())
+						end
+						UIDropDownMenu_AddButton(info, level)
+					end
+				end
+				if next(sellEntries) then
+					local header = UIDropDownMenu_CreateInfo()
+					header.text = L["Sell"]
+					header.isTitle = true
+					header.notCheckable = true
+					UIDropDownMenu_AddButton(header, level)
+					for _, values in ipairs(sellEntries) do
+						local info = UIDropDownMenu_CreateInfo()
+						info.text = format("%s%s%s", values.data[2], values.data[3], values.entry.title)
+						info.menuList = values.entry.title
+						info.func = function()
+							sellMerchantStuff(values.data[1], values.entry.failsafe)
 						end
 						UIDropDownMenu_AddButton(info, level)
 					end

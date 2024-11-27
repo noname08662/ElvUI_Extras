@@ -82,7 +82,7 @@ L["Handles the automated repositioning of the newly received items."..
 	" ilvl@number - matches ilvl,\n"..
 	" uselevel@number - matches equip level,\n"..
 	" quality@number - matches quality,\n"..
-	" equipslot@number - matches InventorySlotID,\n"..
+	" equipslot@number - matches inventorySlotID,\n"..
 	" maxstack@number - matches stack limit,\n"..
 	" price@number - matches sell price,\n\n"..
 	" tooltip@string - matches tooltip text,\n\n"..
@@ -806,10 +806,12 @@ L["Pre-Load"] = true
 L["Executes commands during the addon's initialization process."] = true
 L["Justify"] = true
 L["Alt-Click: free bag slots, if possible."] = true
-L["Click: Toggle layout mode."] = true
-L["Alt-Click: Re-evaluate all items."] = true
-L["Drag-and-Drop: Evaluate and position the cursor item."] = true
-L["Mouse-Wheel: Navigate between special and normal bags."] = true
+L["Click: toggle layout mode."] = true
+L["Alt-Click: re-evaluate all items."] = true
+L["Drag-and-Drop: evaluate and position the cursor item."] = true
+L["Shift-Alt-Click: toggle these hints."] = true
+L["Mouse-Wheel: navigate between special and normal bags."] = true
+L["This button accepts cursor item drops."] = true
 L["Setup Sections"] = true
 L["Adds default sections set to the currently selected container."] = true
 L["Handles the automated repositioning of the newly received items."..
@@ -821,7 +823,7 @@ L["Handles the automated repositioning of the newly received items."..
 	" ilvl@number - matches ilvl,\n"..
 	" uselevel@number - matches equip level,\n"..
 	" quality@number - matches quality,\n"..
-	" equipslot@number - matches InventorySlotID,\n"..
+	" equipslot@number - matches inventorySlotID,\n"..
 	" maxstack@number - matches stack limit,\n"..
 	" price@number - matches sell price,\n\n"..
 	" tooltip@string - matches tooltip text,\n\n"..
@@ -874,3 +876,6 @@ L["Remove a NPC"] = true
 L["Change a NPC's Occupation"] = true
 L["...to the currently selected one."] = true
 L["Select Occupation"] = true
+L["Sell"] = true
+L["Action Type"] = true
+

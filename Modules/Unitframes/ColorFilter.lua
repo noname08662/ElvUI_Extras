@@ -8,6 +8,7 @@ local modName = mod:GetName()
 local metaFrame = CreateFrame("Frame")
 local metaTable = { units = {}, statusbars = {}, events = {} }
 local updatePending = false
+local conditionsFuncs = {}
 
 mod.metaTable = metaTable
 mod.metaFrame = metaFrame
@@ -1466,7 +1467,7 @@ function mod:ParseTabs(frame, statusbar, unit, tabs, isPostUpdate)
 		-- if colored already, do not check tabs with lower priority
 		if targetBar.appliedColorTabIndex and tabIndex > targetBar.appliedColorTabIndex then break end
 
-		local result, colors = tab.conditionsFunc(frame, unit, statusCheck, countCheck)
+		local result, colors = conditionsFuncs[tab](frame, unit, statusCheck, countCheck)
 		if result then
 			-- no retriggering please
 			local flash = tab.flash
@@ -1661,6 +1662,7 @@ local function update(self)
 	twipe(metaTable.units)
 	twipe(metaTable.events)
 	twipe(metaTable.statusbars)
+	twipe(conditionsFuncs)
 
 	for _, frame in ipairs(core:AggregateUnitFrames()) do
 		local unit = frame.unitframeType
@@ -1738,14 +1740,14 @@ local function update(self)
 									]], conditions))
 									if not luaFunction then
 										core:print('LUA', L["Color Filter"], errorMsg)
-										tab.conditionsFunc = function() return end
+										conditionsFuncs[tab] = function() return end
 									else
 										local success, result = pcall(luaFunction, frame, unit, statusCheck, countCheck)
 										if not success then
 											core:print('FAIL', L["Color Filter"], result)
-											tab.conditionsFunc = function() return end
+											conditionsFuncs[tab] = function() return end
 										else
-											tab.conditionsFunc = luaFunction
+											conditionsFuncs[tab] = luaFunction
 										end
 									end
 									tab.fetchedTexture = LSM:Fetch("statusbar", tab.texture)

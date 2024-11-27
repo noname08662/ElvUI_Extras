@@ -9,7 +9,7 @@ local initialized
 
 local tostring, tonumber = tostring, tonumber
 local pairs, ipairs, loadstring, pcall, print, select = pairs, ipairs, loadstring, pcall, print, select
-local tinsert, tremove = table.insert, table.remove
+local tinsert, tremove, twipe = table.insert, table.remove, table.wipe
 local sub, find, upper, match, gmatch = string.sub, string.find, string.upper, string.match, string.gmatch
 local GetTime = GetTime
 
@@ -79,7 +79,7 @@ function mod:LoadConfig()
 						name = L["Pre-Load"],
 						desc = L["Executes commands during the addon's initialization process."],
 						get = function() return db.tabs[db.selected].preLoad end,
-						set = function(_, value) db.tabs[db.selected].preLoad = value end,
+						set = function(_, value) db.tabs[db.selected].preLoad = value self:Toggle(db) end,
 					},
 					throttleTime = {
 						order = 3,
@@ -88,7 +88,7 @@ function mod:LoadConfig()
 						name = L["Throttle Time"],
 						desc = L["Minimal time gap between two consecutive executions."],
 						get = function() return db.tabs[db.selected].throttleEvents[db.tabs[db.selected].selectedEvent] or 0.3 end,
-						set = function(_, value) db.tabs[db.selected].throttleEvents[db.tabs[db.selected].selectedEvent] = value end,
+						set = function(_, value) db.tabs[db.selected].throttleEvents[db.tabs[db.selected].selectedEvent] = value self:Toggle(db) end,
 						disabled = function() return not db.enabled or db.tabs[db.selected].selectedEvent == '' or db.tabs[db.selected].preLoad end,
 					},
 					tabSelection = {
@@ -340,10 +340,11 @@ function mod:SetupHandler(db)
     for _, tab in ipairs(db.tabs) do
         if tab.enabled and not tab.preLoad and tab.commands and tab.commands ~= "" and tab.events and tab.events ~= "" then
             self:SortEvents(tab)
-            tinsert(eventTabs, tab)
+            tinsert(eventTabs, CopyTable(tab))
             if find(tab.events, 'ONUPDATE') then
-                tinsert(onUpdTabs, tab)
+                tinsert(onUpdTabs, {throttleTime = tab.throttleEvents.ONUPDATE, func = tab.eventCommandsPairs.ONUPDATE})
             end
+			twipe(tab.eventCommandsPairs)
         end
     end
 
@@ -351,8 +352,8 @@ function mod:SetupHandler(db)
         local lastTime = GetTime()
         handler:SetScript('OnUpdate', function()
             for _, tab in ipairs(onUpdTabs) do
-                if GetTime() > lastTime + tab.throttleEvents.ONUPDATE then
-                    tab.eventCommandsPairs.ONUPDATE()
+                if GetTime() > lastTime + tab.throttleTime then
+                    tab.func()
                     lastTime = GetTime()
                 end
             end

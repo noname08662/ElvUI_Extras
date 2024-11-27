@@ -568,7 +568,7 @@ function mod:LoadConfig()
 						order = 11,
 						type = "select",
 						width = "double",
-						name = L["Remove NPC"],
+						name = L["Remove a NPC"],
 						desc = "",
 						values = function()
 							local list = {}
@@ -596,7 +596,7 @@ function mod:LoadConfig()
 						order = 12,
 						type = "select",
 						width = "double",
-						name = L["Change NPC's Occupation"],
+						name = L["Change a NPC's Occupation"],
 						desc = L["...to the currently selected one."],
 						values = function()
 							local list = {}

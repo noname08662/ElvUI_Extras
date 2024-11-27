@@ -364,10 +364,11 @@ end
 
 function mod:TooltipNotes(enable)
 	if enable then
+		mod.ttfuncs = {}
 		local notes = E.db.Extras.general[modName].TooltipNotes.notes
 		local notesIndex = {}
 
-		local function manageFuncNotes(data)
+		local function manageFuncNotes(data, key)
 			if data then
 				local luaFunction, errorMsg = loadstring(data.text)
 				if luaFunction then
@@ -376,14 +377,14 @@ function mod:TooltipNotes(enable)
 						core:print('FAIL', L["TooltipNotes"], func)
 						return
 					else
-						data.func = luaFunction
+						mod.ttfuncs[key] = luaFunction
 					end
-				elseif data.func then
+				elseif mod.ttfuncs[key] then
 					core:print('LUA', L["TooltipNotes"], errorMsg)
-					data.func = nil
+					mod.ttfuncs[key] = nil
 				end
 			else
-				for _, noteData in pairs(notes) do
+				for noteKey, noteData in pairs(notes) do
 					local luaFunction = loadstring(noteData.text)
 					if luaFunction then
 						local success, func = pcall(luaFunction)
@@ -391,7 +392,7 @@ function mod:TooltipNotes(enable)
 							core:print('FAIL', L["TooltipNotes"], func)
 							return
 						else
-							noteData.func = luaFunction
+							mod.ttfuncs[noteKey] = luaFunction
 						end
 					end
 				end
@@ -475,7 +476,7 @@ function mod:TooltipNotes(enable)
 				notes[key] = notes[key] or {}
 				notes[key].text = note
 				updateNotesIndex()
-				manageFuncNotes(notes[key])
+				manageFuncNotes(notes[key], key)
 				print(core.customColorAlpha..L["Note set for "]..(texture and ("|T"..texture..":0|t ") or "")..link.."|r:", icon and "|T"..icon..":0|t "..(note or "") or note)
 			elseif notes[key] then
 				if not notes[key].icon then notes[key] = nil else notes[key].text = nil end
@@ -624,7 +625,7 @@ function mod:TooltipNotes(enable)
 		local function handler(tt)
 			local key = getTooltipKey()
 			if not key or not notes[key] then return end
-			local icon, text, func = notes[key].icon, notes[key].text, notes[key].func
+			local icon, text, func = notes[key].icon, notes[key].text, mod.ttfuncs[key]
 			local iconString = icon and ("|T"..icon..":0|t ") or ""
 			tt:AddLine(" ")
 			if text then

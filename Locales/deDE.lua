@@ -103,7 +103,7 @@ L["Handles the automated repositioning of the newly received items."..
 	" ilvl@number - matches ilvl,\n"..
 	" uselevel@number - matches equip level,\n"..
 	" quality@number - matches quality,\n"..
-	" equipslot@number - matches InventorySlotID,\n"..
+	" equipslot@number - matches inventorySlotID,\n"..
 	" maxstack@number - matches stack limit,\n"..
 	" price@number - matches sell price,\n\n"..
 	" tooltip@string - matches tooltip text,\n\n"..
@@ -963,10 +963,11 @@ L["Pre-Load"] = "Vor-Laden"
 L["Executes commands during the addon's initialization process."] = "Führt Befehle während des Initialisierungsprozesses des Addons aus."
 L["Justify"] = "Rechtfertigen"
 L["Alt-Click: free bag slots, if possible."] = "Alt-Klick: Freie Taschenplätze, wenn möglich."
-L["Click: Toggle layout mode."] = "Klicken: Layout-Modus umschalten."
-L["Alt-Click: Re-evaluate all items."] = "Alt-Klick: Alle Gegenstände neu bewerten."
-L["Drag-and-Drop: Evaluate and position the cursor item."] = "Ziehen und Ablegen: Bewerten und Positionieren des Cursor-Gegenstands."
-L["Mouse-Wheel: Navigate between special and normal bags."] = "Mausrad: Zwischen speziellen und normalen Taschen navigieren."
+L["Click: toggle layout mode."] = "Klicken: Layout-Modus umschalten."
+L["Alt-Click: re-evaluate all items."] = "Alt-Klick: Alle Gegenstände neu bewerten."
+L["Shift-Alt-Click: toggle these hints."] = "Shift-Alt-Klick: Diese Hinweise umschalten."
+L["Mouse-Wheel: navigate between special and normal bags."] = "Mausrad: Zwischen speziellen und normalen Taschen navigieren."
+L["This button accepts cursor item drops."] = "Dieser Button nimmt Gegenstände vom Cursor an."
 L["Setup Sections"] = "Abschnitte einrichten"
 L["Adds default sections set to the currently selected container."] = "Fügt Standardabschnitte zum aktuell ausgewählten Container hinzu."
 L["Handles the automated repositioning of the newly received items."..
@@ -978,7 +979,7 @@ L["Handles the automated repositioning of the newly received items."..
 	" ilvl@number - matches ilvl,\n"..
 	" uselevel@number - matches equip level,\n"..
 	" quality@number - matches quality,\n"..
-	" equipslot@number - matches InventorySlotID,\n"..
+	" equipslot@number - matches inventorySlotID,\n"..
 	" maxstack@number - matches stack limit,\n"..
 	" price@number - matches sell price,\n\n"..
 	" tooltip@string - matches tooltip text,\n\n"..
@@ -1079,3 +1080,5 @@ L["Remove a NPC"] = "Einen NPC entfernen"
 L["Change a NPC's Occupation"] = "Beruf eines NPC ändern"
 L["...to the currently selected one."] = "...zum aktuell ausgewählten."
 L["Select Occupation"] = "Beruf auswählen"
+L["Sell"] = "Verkaufen"
+L["Action Type"] = "Aktionstyp"

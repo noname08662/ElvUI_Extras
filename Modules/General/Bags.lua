@@ -9,7 +9,6 @@ local LibProcessable = LibStub("LibProcessable")
 local modName = mod:GetName()
 local buttonMap, itemCounts, tooltipInfo = {}, {}, {}
 local equipmentSets = {}
-local activeFilters = {}
 local removingBag = false
 local initialized = {}
 
@@ -22,7 +21,7 @@ local disenchantingSpellID = 13262
 local millingSpellID = 51005
 local lockpickingSpellID = 1804
 
-local _G, unpack, pairs, ipairs, select, print, next = _G, unpack, pairs, ipairs, select, print, next
+local _G, unpack, pairs, ipairs, select, print, next, setfenv = _G, unpack, pairs, ipairs, select, print, next, setfenv
 local tonumber, tostring, loadstring, pcall, type = tonumber, tostring, loadstring, pcall, type
 local tinsert, tremove, twipe, tsort, tconcat = table.insert, table.remove, table.wipe, table.sort, table.concat
 local min, max, floor, ceil, huge, pi = min, max, floor, ceil, math.huge, math.pi
@@ -311,7 +310,7 @@ local function updateCollectionMethods(section)
 	local luaFunction, errorMsg = loadstring(parsedString)
 
 	if luaFunction then
-		setfenv(luaFunction, { find = string.find })
+		setfenv(luaFunction, {find = find})
 		local success, customFuncGenerator = pcall(luaFunction)
 		if not success then
 			core:print('FAIL', L["Bags"], customFuncGenerator)
@@ -422,24 +421,25 @@ local function toggleLayoutMode(f, toggle)
 					local buttonSize, buttonSpacing = layout.buttonSize, layout.buttonSpacing
 					local numColumns, maxButtons = layout.numColumns, layout.maxButtons
 					local buttonOffset = buttonSize + buttonSpacing
+					local currentSection = f.currentLayout.sections[sectionFrame.order]
 					self.tex:SetVertexColor(0, 0.5, 0)
 					self:StartMoving()
 					self.x = select(4, self:GetPoint())
-					self.existingColumns = section.db.numColumns
+					self.existingColumns = currentSection.db.numColumns
 					self:SetScript("OnUpdate", function()
 						self.totalDragged = (select(4, self:GetPoint()) - self.x)
 						self.numColumns = self.totalDragged < 0 and floor(self.totalDragged / (buttonSize + buttonSpacing))
 																or ceil(self.totalDragged / (buttonSize + buttonSpacing))
 						local newNumColumns = max(1, min(numColumns, self.existingColumns + self.numColumns))
 						sectionFrame:Width(newNumColumns * (buttonSize + buttonSpacing) - buttonSpacing)
-						section.db.numColumns = newNumColumns
-						twipe(section.db.buttonPositions)
+						currentSection.db.numColumns = newNumColumns
+						twipe(currentSection.db.buttonPositions)
 						for j = 1, maxButtons do
 							local col = (j - 1) % newNumColumns
 							local row = floor((j - 1) / newNumColumns)
-							tinsert(section.db.buttonPositions, {col * buttonOffset, -row * buttonOffset})
+							tinsert(currentSection.db.buttonPositions, {col * buttonOffset, -row * buttonOffset})
 						end
-						mod:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing, true)
+						mod:UpdateSection(f, 1, currentSection, numColumns, buttonSize, buttonSpacing, true)
 					end)
 				end)
 			end
@@ -518,10 +518,10 @@ local function showEmptyButtonTT(f)
 	GameTooltip:SetOwner(f.emptyButton)
 	GameTooltip:ClearLines()
 	if not f.emptyButton.hideHints then
-		GameTooltip:AddLine(L["Click: Toggle layout mode."])
-		GameTooltip:AddLine(L["Alt-Click: Re-evaluate all items."])
-		GameTooltip:AddLine(L["Shift-Alt-Click: Toggle these hints."])
-		GameTooltip:AddLine(L["Mouse-Wheel: Navigate between special and normal bags."])
+		GameTooltip:AddLine(L["Click: toggle layout mode."])
+		GameTooltip:AddLine(L["Alt-Click: re-evaluate all items."])
+		GameTooltip:AddLine(L["Shift-Alt-Click: toggle these hints."])
+		GameTooltip:AddLine(L["Mouse-Wheel: navigate between special and normal bags."])
 		GameTooltip:AddLine(" ")
 		GameTooltip:AddLine(L["This button accepts cursor item drops."])
 		GameTooltip:AddLine(" ")
@@ -1654,7 +1654,6 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 				end
 			end
 		end
-		toggleLayoutMode(f, f.emptyButton.showSizing)
 	end
 
 	for bagID, bagInfo in pairs(specialBags) do
@@ -1751,8 +1750,11 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 					sectionFrame.minimizedLine:Hide()
 					sectionFrame.title:SetText(currentSection.db.title.text)
 					for _, button in ipairs(currentSection.buttons) do
-						button.isHidden = false
-						button:Show()
+						local rarity = button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.bagID, button.slotID)))
+						if layout.filter[rarity] then
+							button.isHidden = false
+							button:Show()
+						end
 					end
 				else
 					sectionFrame.minimizedLine:Show()
@@ -1986,13 +1988,20 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 		tremove(layoutSections, #layoutSections)
 	end
 
+	if not db.activeFilters then
+		db.activeFilters = {
+			[0] = true, [1] = true, [2] = true,
+			[3] = true, [4] = true, [5] = true, [6] = true,
+		}
+	end
+
     f.currentLayout = {
         sections = processedSections,
 		numColumns = numColumns,
 		maxButtons = maxButtons,
         buttonSize = buttonSize,
         buttonSpacing = buttonSpacing,
-		filter = activeFilters,
+		filter = db.activeFilters,
     }
 
 	for i = -1, NUM_BANKBAGSLOTS do
@@ -2288,6 +2297,32 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 						section.db.storedPositions = {}
 					end
 					mod:Layout(B, f.isBank)
+					for _, section in ipairs(layout.sections) do
+						if not section.frame.minimized then
+							local ignoreList = section.db.ignoreList
+							local sortedButtons = {}
+							local ignoredButtons = {}
+
+							for i, button in ipairs(section.buttons) do
+								if ignoreList[button.itemID or B_GetItemID(nil, button.bagID, button.slotID)] then
+									ignoredButtons[i] = button
+								else
+									tinsert(sortedButtons, button)
+								end
+							end
+
+							tsort(sortedButtons, section.sortMethodFunc)
+							for i, ignoredButton in pairs(ignoredButtons) do
+								tinsert(sortedButtons, i, ignoredButton)
+							end
+							for i, button in ipairs(sortedButtons) do
+								section.db.storedPositions[button.bagID..'-'..button.slotID] = i
+							end
+							section.buttons = {unpack(sortedButtons)}
+
+							mod:UpdateSection(f, 1, section, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+						end
+					end
 				end
 			elseif not draggingItem then
 				self.showEmptySections = not self.showEmptySections
@@ -2337,7 +2372,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 			bar:CreateBackdrop()
 			bar:StyleButton()
 			bar:RegisterForClicks("LeftButtonDown", "RightButtonDown")
-			bar.isActive = true
+			bar.isActive = db.activeFilters[i]
 			bar.quality = i
 
 			if not db.qualityFilterShown then
@@ -2346,7 +2381,11 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 
 			bar.bg = bar:CreateTexture(nil, "ARTWORK")
 			bar.bg:SetAllPoints(bar)
-			bar.bg:SetTexture(color.r, color.g, color.b)
+			if not bar.isActive then
+				bar.bg:SetTexture(color.r * 0.5, color.g * 0.5, color.b * 0.5)
+			else
+				bar.bg:SetTexture(color.r, color.g, color.b)
+			end
 
 			bar:SetScript("OnClick", function(self, clickButton)
 				if clickButton == "RightButton" then
@@ -2357,11 +2396,11 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 							if filterBar == self then
 								filterBar.bg:SetTexture(filterColor.r, filterColor.g, filterColor.b)
 								filterBar.isActive = true
-								activeFilters[j] = true
+								db.activeFilters[j] = true
 							else
 								filterBar.bg:SetTexture(filterColor.r * 0.5, filterColor.g * 0.5, filterColor.b * 0.5)
 								filterBar.isActive = false
-								activeFilters[j] = false
+								db.activeFilters[j] = false
 							end
 						end
 					end
@@ -2380,7 +2419,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 				elseif self.isActive then
 					self.bg:SetTexture(color.r * 0.5, color.g * 0.5, color.b * 0.5)
 					self.isActive = false
-					activeFilters[i] = false
+					db.activeFilters[i] = false
 					for j, section in ipairs(f.currentLayout.sections) do
 						for _, button in ipairs(section.buttons) do
 							local rarity = button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.bagID, button.slotID)))
@@ -2394,7 +2433,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 				else
 					self.bg:SetTexture(color.r, color.g, color.b)
 					self.isActive = true
-					activeFilters[i] = true
+					db.activeFilters[i] = true
 					for j, section in ipairs(f.currentLayout.sections) do
 						for _, button in ipairs(section.buttons) do
 							local rarity = button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.bagID, button.slotID)))
@@ -2408,7 +2447,23 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 				end
 			end)
 			f.qualityFilterBar[i+1] = bar
-			activeFilters[i] = true
+
+			local hiddenRarities = {}
+			for _, bar in ipairs(f.qualityFilterBar) do
+				if not bar.isActive then
+					hiddenRarities[bar.quality] = true
+				end
+			end
+			for j, section in ipairs(f.currentLayout.sections) do
+				for _, button in ipairs(section.buttons) do
+					local rarity = button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.bagID, button.slotID)))
+					if hiddenRarities[rarity] then
+						button.isHidden = true
+						button:Hide()
+					end
+				end
+				mod:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing, j == #f.currentLayout.sections)
+			end
 		end
 		f.qualityFilterButton = CreateFrame("Button", '$parentQualityFilterButton', f.holderFrame)
 		f.qualityFilterButton:Size(16 + E.Border)
@@ -2487,6 +2542,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 	for _, section in ipairs(f.currentLayout.sections) do
 		self:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing)
 	end
+	toggleLayoutMode(f, f.emptyButton.showSizing)
 end
 
 function mod:Layout(self, isBank)
@@ -2586,10 +2642,8 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 		elseif not oldID then
 			local targetSection
 			buttonMap[f][button] = nil
-			if itemCounts[itemID] ~= itemCount then
-				if not button:IsVisible() then
-					button.highlight:Show()
-				end
+			if itemCounts[itemID] ~= itemCount and not button:IsVisible() then
+				button.highlight:Show()
 			end
 			if button.atHeader then
 				if button.atHeader == 'evaluate' then
@@ -2620,6 +2674,7 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 				if not layout.filter[rarity] then
 					button.isHidden = true
 					button:Hide()
+					button.highlight:Show()
 				else
 					mod:UpdateSection(f, #buttons, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 				end
@@ -2651,6 +2706,7 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 				if not layout.filter[rarity] then
 					button.isHidden = true
 					button:Hide()
+					button.highlight:Show()
 				else
 					mod:UpdateSection(f, #buttons, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 				end
@@ -2711,8 +2767,10 @@ function mod:UpdateSection(f, index, section, numColumns, buttonSize, buttonSpac
 		sectionFrame:Hide()
 	elseif section.db.minimized then
 		local minimizedCount = 0
+		local layoutFilter = f.currentLayout.filter
 		for _, button in ipairs(buttons) do
-			if button.highlight:IsShown() then
+			local rarity = button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.bagID, button.slotID)))
+			if layoutFilter[rarity] and button.highlight:IsShown() then
 				minimizedCount = minimizedCount + 1
 			end
 			button:Hide()
