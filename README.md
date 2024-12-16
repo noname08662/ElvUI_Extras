@@ -49,7 +49,8 @@ What's inside:
 			 occupation icons for any npc;
 	(NameLevel) - color and positioning for the name and level texts;
 	(QuestIcons) - self-explanatory;
-	(StyleFilter) - filter linking, arbitrary icons;
+	(StyleFilter) - filter linking, arbitrary icons, additional triggers (Lua);
+	(Targets) - target names with optional highlights;
 [Unitframes]:
 	(AuraBars) - texts, icon;
 	(Auras) - flexible aura highlighting;
