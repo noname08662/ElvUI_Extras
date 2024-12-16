@@ -432,7 +432,7 @@ function mod:UpdateCenteredAuras(enable)
 			firstInRowPoint = 'LEFT',
 			subsequentPoint = 'TOPLEFT',
 			framePoint = 'LEFT',
-			growthX = -1,
+			growthX = 1,
 		},
 		["TOPLEFT"] = {
 			isVertical = true,
