@@ -91,8 +91,7 @@ P["Extras"]["nameplates"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.nameplates[modName]
+function mod:LoadConfig(db)
 	local function selectedType() return db.Highlights.selectedType or "FRIENDLY" end
 	local function selectedSpellorFilter() return db.Highlights.types[selectedType()].selected or "GLOBAL" end
 	local function getHighlightSettings(selected, spellOrFilter)
@@ -704,9 +703,9 @@ end
 
 function mod:InitializeCallback()
 	if not E.private.nameplates.enable then return end
-
-	mod:LoadConfig()
-	mod:Toggle(E.db.Extras.nameplates[modName])
+	local db = E.db.Extras.nameplates[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

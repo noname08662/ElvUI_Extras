@@ -497,11 +497,6 @@ L["Mark"] = "Markieren"
 L["Mark the target/mouseover plate."] = "Markiert die Ziel-/Mouseover-Plakette."
 L["Unmark"] = "Entmarkieren"
 L["Unmark the target/mouseover plate."] = "Entmarkiert die Ziel-/Mouseover-Plakette."
-L["FRIENDLY_PLAYER"] = "Freundlicher Spieler"
-L["FRIENDLY_NPC"] = "Freundlicher NPC"
-L["ENEMY_PLAYER"] = "Feindlicher Spieler"
-L["ENEMY_NPC"] = "Feindlicher NPC"
-L["Handles positioning and color."] = "Handhabt die Positionierung und Farbe."
 L["Selected Type"] = "Ausgewählter Typ"
 L["Reaction based coloring for non-cached characters."] = "Reaktionsbasierte Färbung für nicht zwischengespeicherte Charaktere."
 L["Apply Custom Color"] = "Benutzerdefinierte Farbe anwenden"
@@ -1082,3 +1077,28 @@ L["...to the currently selected one."] = "...zum aktuell ausgewählten."
 L["Select Occupation"] = "Beruf auswählen"
 L["Sell"] = "Verkaufen"
 L["Action Type"] = "Aktionstyp"
+L["Style Filter Additional Triggers"] = "Stilfilter Zusätzliche Auslöser"
+L["Triggers"] = "Auslöser"
+L["Example usage:"..
+    "\n local frame, filter, trigger = ..."..
+    "\n return frame.UnitName == 'Shrek'"..
+    "\n         or (frame.unit"..
+    "\n             and UnitName(frame.unit) == 'Fiona')"] =
+		"Beispielnutzung:"..
+			"\n local frame, filter, trigger = ..."..
+			"\n return frame.UnitName == 'Shrek'"..
+			"\n         or (frame.unit"..
+			"\n             and UnitName(frame.unit) == 'Fiona')"
+L["Abbreviate Name"] = "Abgekürzter Name"
+L["Highlight Self"] = "Sich selbst hervorheben"
+L["Highlight Others"] = "Andere hervorheben"
+L["Self Inherit Name Color"] = "Eigene Namensfarbe übernehmen"
+L["Self Texture"] = "Eigene Textur"
+L["Whitespace to disable, empty to default."] = "Leerzeichen zum Deaktivieren, leer für Standard."
+L["Self Color"] = "Eigene Farbe"
+L["Self Scale"] = "Eigener Maßstab"
+L["Others Inherit Name Color"] = "Andere Namensfarbe übernehmen"
+L["Others Texture"] = "Andere Textur"
+L["Others Color"] = "Andere Farbe"
+L["Others Scale"] = "Anderer Maßstab"
+L["Targets"] = "Ziele"

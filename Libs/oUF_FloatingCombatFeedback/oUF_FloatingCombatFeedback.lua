@@ -1,7 +1,7 @@
 local _, ns = ...
 -- modified
 local E = unpack(ElvUI)
-local oUF = E.oUF or ns.oUF or oUF
+local oUF = E.oUF or ns.oUF
 assert(oUF, "oUF FloatingCombatFeedback was unable to locate oUF install")
 
 local _G = getfenv(0)

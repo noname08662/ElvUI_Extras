@@ -7,34 +7,65 @@ local EP = E.Libs.EP
 local LSM = E.Libs.LSM
 local ElvUF = E.oUF
 
-local AddOnName = ...
-local isAwesome = C_NamePlate and E.private.nameplates.enable
-local healthEnabled = {["FRIENDLY_NPC"] = false, ["ENEMY_NPC"] = false}
-local taggedFrames, tags = {}, {}
-local printing = false
-
 core.modules = {}
 core.nameUpdates = {}
+core.areaUpdates = {}
 core.frameUpdates = {}
-core.plateAnchoring = {}
+core.taggedFrames = {}
+core.healthEnabled = {}
+core.plateAnchoring = {
+	["Elite"] = function(unitType, frame, element)
+		if unitType == "ENEMY_NPC" or unitType == "FRIENDLY_NPC" then
+			local points = NP.db.units[unitType].eliteIcon
+			frame.Elite:ClearAllPoints()
+			frame.Elite:Point(points.position, element, points.xOffset, points.yOffset)
+		end
+	end
+}
+
+core.PurgeList = {
+	MAGE = true,
+	PRIEST = true,
+	SHAMAN = true,
+	WARLOCK = true,
+}
+
+core.DispellList = {
+	PRIEST = {Magic = true, Disease = true},
+	SHAMAN = {Poison = true, Disease = true, Curse = false},
+	PALADIN = {Poison = true, Magic = true, Disease = true},
+	MAGE = {Curse = true},
+	DRUID = {Curse = true, Poison = true},
+	WARLOCK = {Magic = true},
+}
+
+
+local AddOnName = ...
+local isAwesome = C_NamePlate and E.private.nameplates.enable
+local printing = false
+
+local nameUpdates = core.nameUpdates
+local frameUpdates = core.frameUpdates
+local healthEnabled = core.healthEnabled
+local plateAnchoring = core.plateAnchoring
+local taggedFrames = core.taggedFrames
+local areaUpdates = core.areaUpdates
 
 local CreateFrame, UIParent, UIDropDownMenu_Refresh = CreateFrame, UIParent, UIDropDownMenu_Refresh
 local _G, unpack, pairs, ipairs, select, tonumber, print = _G, unpack, pairs, ipairs, select, tonumber, print
 local gsub, find, sub, lower, upper = string.gsub, string.find, string.sub, string.lower, string.upper
 local format, match, gmatch = string.format, string.match, string.gmatch
 local max, ceil, floor = math.max, math.ceil, math.floor
-local tinsert, tremove, twipe, tsort = table.insert, table.remove, table.wipe, table.sort
+local tinsert, twipe, tsort = table.insert, table.wipe, table.sort
 local UnitGUID, UnitClass, UnitExists = UnitGUID, UnitClass, UnitExists
 local UnitThreatSituation, GetThreatStatusColor = UnitThreatSituation, GetThreatStatusColor
-local UnitReaction, UnitIsPlayer = UnitReaction, UnitIsPlayer
+local UnitReaction, UnitIsPlayer, UnitCanAttack = UnitReaction, UnitIsPlayer, UnitCanAttack
 local GetNumMacroIcons, GetMacroIconInfo, GameTooltip = GetNumMacroIcons, GetMacroIconInfo, GameTooltip
 local UnitPopupMenus, UnitPopupShown = UnitPopupMenus, UnitPopupShown
 local GetRaidRosterInfo, IsPartyLeader, IsRaidOfficer = GetRaidRosterInfo, IsPartyLeader, IsRaidOfficer
 local InCombatLockdown, IsControlKeyDown = InCombatLockdown, IsControlKeyDown
+local IsInInstance, IsResting = IsInInstance, IsResting
 local LUA_ERROR, FORMATTING, ERROR_CAPS = LUA_ERROR, FORMATTING, ERROR_CAPS
-
-local E_Delay = E.Delay
-local updatePending = false
 
 local function colorConvert(r, g, b)
 	if tonumber(r) then
@@ -48,6 +79,17 @@ local function colorConvert(r, g, b)
 
 		return r, g, b
 	end
+end
+
+local function getEntry(tbl, path)
+    for key in gmatch(path, "[^%.]+") do
+		local index = tonumber(key)
+        if type(tbl) ~= "table" or (tbl[index] == nil and tbl[key] == nil) then
+            return nil
+        end
+        tbl = tbl[index or key]
+    end
+    return tbl
 end
 
 
@@ -205,34 +247,6 @@ function core:getAllFrameTypes()
 	}
 end
 
-function core:print(type, ...)
-	if type == 'LUA' then
-		print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
-					core.customColorBeta.." %s "..core.customColorBad..LUA_ERROR..core.customColorAlpha..":|r %s", ...))
-	elseif type == 'FORMATTING' then
-		print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
-					core.customColorBeta.." %s"..core.customColorAlpha..":|r "..core.customColorBad..FORMATTING.." "..ERROR_CAPS, ...))
-	elseif type == 'FAIL' then
-		print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
-					core.customColorBeta.." %s"..core.customColorAlpha..":|r %s", ...))
-	elseif type == 'ADDED' then
-		print(format(core.customColorAlpha.."%s"..core.customColorBeta..(select(2,...) and "%s" or L[" added."]), ...))
-	elseif type == 'REMOVED' then
-		print(format(core.customColorAlpha.."%s"..core.customColorBeta..(select(2,...) and "%s" or L[" removed."]), ...))
-	end
-end
-
-local function getEntry(tbl, path)
-    for key in gmatch(path, "[^%.]+") do
-		local index = tonumber(key)
-        if type(tbl) ~= "table" or (tbl[index] == nil and tbl[key] == nil) then
-            return nil
-        end
-        tbl = tbl[index or key]
-    end
-    return tbl
-end
-
 function core:getSelected(cat, modName, path, fallback)
     local base, selected = match(path, "(.-)%[(.-)%]")
     local baseTable = getEntry(E.db.Extras[cat][modName], base)
@@ -243,10 +257,10 @@ function core:getSelected(cat, modName, path, fallback)
             printing = true
             E:Delay(0.1, function()
                 printing = false
-                print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
-                            core.customColorBeta.." %s"..core.customColorAlpha..":|r %s", modName, core.customColorBad..ERROR_CAPS))
-                print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
-                            core.customColorBeta.." %s"..core.customColorAlpha..":|r ??? -> %s.%s.%s", modName, cat, modName, path))
+                print(format(self.customColorAlpha.."ElvUI "..self.pluginColor.."Extras"..self.customColorAlpha..","..
+                            self.customColorBeta.." %s"..self.customColorAlpha..":|r %s", modName, self.customColorBad..ERROR_CAPS))
+                print(format(self.customColorAlpha.."ElvUI "..self.pluginColor.."Extras"..self.customColorAlpha..","..
+                            self.customColorBeta.." %s"..self.customColorAlpha..":|r ??? -> %s.%s.%s", modName, cat, modName, path))
             end)
         end
         return
@@ -259,10 +273,10 @@ function core:getSelected(cat, modName, path, fallback)
 			printing = true
 			E:Delay(0.1, function()
 				printing = false
-				print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
-							core.customColorBeta.." %s"..core.customColorAlpha..":|r %s", modName, core.customColorBad..ERROR_CAPS))
-				print(format(core.customColorAlpha.."ElvUI "..core.pluginColor.."Extras"..core.customColorAlpha..","..
-							core.customColorBeta.." %s"..core.customColorAlpha..":|r ??? -> %s.%s.%s", modName, cat, modName, path))
+				print(format(self.customColorAlpha.."ElvUI "..self.pluginColor.."Extras"..self.customColorAlpha..","..
+							self.customColorBeta.." %s"..self.customColorAlpha..":|r %s", modName, self.customColorBad..ERROR_CAPS))
+				print(format(self.customColorAlpha.."ElvUI "..self.pluginColor.."Extras"..self.customColorAlpha..","..
+							self.customColorBeta.." %s"..self.customColorAlpha..":|r ??? -> %s.%s.%s", modName, cat, modName, path))
 			end)
 		end
 		if not baseTable[fallback] then
@@ -272,22 +286,22 @@ function core:getSelected(cat, modName, path, fallback)
 	end
 end
 
-
-core.PurgeList = {
-	MAGE = true,
-	PRIEST = true,
-	SHAMAN = true,
-	WARLOCK = true,
-}
-
-core.DispellList = {
-	PRIEST = {Magic = true, Disease = true},
-	SHAMAN = {Poison = true, Disease = true, Curse = false},
-	PALADIN = {Poison = true, Magic = true, Disease = true},
-	MAGE = {Curse = true},
-	DRUID = {Curse = true, Poison = true},
-	WARLOCK = {Magic = true},
-}
+function core:print(type, ...)
+	if type == 'LUA' then
+		print(format(self.customColorAlpha.."ElvUI "..self.pluginColor.."Extras"..self.customColorAlpha..","..
+					self.customColorBeta.." %s "..self.customColorBad..LUA_ERROR..self.customColorAlpha..":|r %s", ...))
+	elseif type == 'FORMATTING' then
+		print(format(self.customColorAlpha.."ElvUI "..self.pluginColor.."Extras"..self.customColorAlpha..","..
+					self.customColorBeta.." %s"..self.customColorAlpha..":|r "..self.customColorBad..FORMATTING.." "..ERROR_CAPS, ...))
+	elseif type == 'FAIL' then
+		print(format(self.customColorAlpha.."ElvUI "..self.pluginColor.."Extras"..self.customColorAlpha..","..
+					self.customColorBeta.." %s"..self.customColorAlpha..":|r %s", ...))
+	elseif type == 'ADDED' then
+		print(format(self.customColorAlpha.."%s"..self.customColorBeta..(select(2,...) and "%s" or L[" added."]), ...))
+	elseif type == 'REMOVED' then
+		print(format(self.customColorAlpha.."%s"..self.customColorBeta..(select(2,...) and "%s" or L[" removed."]), ...))
+	end
+end
 
 
 -- Awesome WOTLK
@@ -299,105 +313,84 @@ if isAwesome then
 	local LAI = E.Libs.LAI
 
 
-	core:RegisterEvent('PLAYER_TARGET_CHANGED', function()
-		if not UnitExists('target') then return end
+	core:RegisterEvent("PLAYER_TARGET_CHANGED", function()
+		local exists = UnitExists("target")
 		if target.exists then
-			for _, np in ipairs(GetNamePlates()) do
-				NP:SetTargetFrame(np.UnitFrame)
-				NP:ResetNameplateFrameLevel(np.UnitFrame)
+			if not exists then
+				target.exists = false
+				target:SetScript("OnUpdate", nil)
 			end
-		else
+		elseif exists then
 			target.exists = true
-			target:SetScript('OnUpdate', function()
-				if not UnitExists('target') then
-					for _, np in ipairs(GetNamePlates()) do
-						NP:SetTargetFrame(np.UnitFrame)
-					end
-					target.exists = false
-					target:SetScript('OnUpdate', nil)
-				else
-					for _, np in ipairs(GetNamePlates()) do
-						local frame = np.UnitFrame
-						if not frame.isTarget then
-							frame.alpha = np:GetAlpha()
-							np:SetAlpha(1)
-							NP:PlateFade(frame, NP.db.fadeIn and 1 or 0, frame:GetAlpha(), NP.db.nonTargetTransparency)
-						end
-					end
+			target:SetScript("OnUpdate", function()
+				for _, np in ipairs(GetNamePlates()) do
+					np:SetAlpha(1)
 				end
 			end)
-			local plate = GetNamePlateForUnit('target')
-			if not plate or not plate.UnitFrame then return end
-			local frame = plate.UnitFrame
-			NP:SetTargetFrame(frame)
-			for _, np in ipairs(GetNamePlates()) do
-				NP:ResetNameplateFrameLevel(np.UnitFrame)
-			end
+		end
+		for _, np in ipairs(GetNamePlates()) do
+			NP:SetTargetFrame(np.UnitFrame)
 		end
 	end)
 
-	core:RegisterEvent('UPDATE_MOUSEOVER_UNIT', function()
-		local plate = GetNamePlateForUnit('mouseover')
-		if plate and plate.UnitFrame then
-			for _, np in ipairs(GetNamePlates()) do
-				local unitframe = np.UnitFrame
-				if unitframe and unitframe.isMouseover then
-					if unitframe.oldHighlight:IsShown() then
-						unitframe.isMouseover = true
-						NP:Update_Highlight(unitframe)
-					elseif unitframe.isMouseover then
-						unitframe.isMouseover = nil
-						NP:Update_Highlight(unitframe)
-					end
-				end
+	core:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function()
+		for _, np in ipairs(GetNamePlates()) do
+			local unitframe = np.UnitFrame
+			if unitframe then
+				NP:SetMouseoverFrame(unitframe)
 			end
-			NP:SetMouseoverFrame(plate.UnitFrame)
+		end
+		local plate = GetNamePlateForUnit("mouseover")
+		local mouseOverFrame = plate and plate.UnitFrame
+		if mouseOverFrame then
+			mouseOverFrame.isMouseover = true
+			NP:Update_Highlight(mouseOverFrame)
 			mouseover:SetScript("OnUpdate", function()
-				if not UnitExists('mouseover') then
-					for _, np in ipairs(GetNamePlates()) do
-						local unitframe = np.UnitFrame
-						if unitframe and unitframe.isMouseover then
-							unitframe.isMouseover = nil
-							NP:Update_Highlight(unitframe)
-						end
-					end
+				if not UnitExists("mouseover") then
+					mouseOverFrame.isMouseover = nil
+					NP:Update_Highlight(mouseOverFrame)
 					mouseover:SetScript("OnUpdate", nil)
 				end
 			end)
 		end
 	end)
 
-	core:RegisterEvent('UNIT_THREAT_LIST_UPDATE', function(_, unit)
-		if not unit or not find(unit, 'nameplate', 1, true) then return end
+	core:RegisterEvent("UNIT_THREAT_LIST_UPDATE", function(_, unit)
+		if not unit or not find(unit, "nameplate", 1, true) then return end
 		local plate = GetNamePlateForUnit(unit)
-		if not plate or not plate.UnitFrame then return end
-		local status = UnitThreatSituation("player", unit)
-		if plate.UnitFrame.ThreatStatus ~= status then
-			plate.UnitFrame.ThreatStatus = status
-			NP:Update_HealthColor(plate.UnitFrame)
+		if plate then
+			local frame = plate.UnitFrame
+			if frame then
+				local status = UnitThreatSituation("player", unit)
+				if frame.ThreatStatus ~= status then
+					frame.ThreatStatus = status
+					NP:Update_HealthColor(frame)
+				end
+			end
 		end
 	end)
 
-	core:RegisterEvent('NAME_PLATE_CREATED', function(_, plate)
+	core:RegisterEvent("NAME_PLATE_CREATED", function(_, plate)
 		local onShow, onHide = plate:GetScript("OnShow"), plate:GetScript("OnHide")
 		NP:OnCreated(plate)
 		plate:SetScript("OnShow", onShow)
 		plate:SetScript("OnHide", onHide)
 	end)
 
-	core:RegisterEvent('NAME_PLATE_OWNER_CHANGED', function(_, unit)
+	core:RegisterEvent("NAME_PLATE_OWNER_CHANGED", function(_, unit)
 		local plate = GetNamePlateForUnit(unit)
 		core:UpdateNameplate(plate.UnitFrame, unit)
+		NP.OnHide(plate, nil, true)
 		NP.OnShow(plate, nil, true)
 	end)
 
-	core:RegisterEvent('NAME_PLATE_UNIT_REMOVED', function(_, unit)
+	core:RegisterEvent("NAME_PLATE_UNIT_REMOVED", function(_, unit)
 		local plate = GetNamePlateForUnit(unit)
 		if plate then plate.unit = nil end
 		NP.OnHide(plate, nil, true)
 	end)
 
-	core:RegisterEvent('NAME_PLATE_UNIT_ADDED', function(_, unit)
+	core:RegisterEvent("NAME_PLATE_UNIT_ADDED", function(_, unit)
 		local plate = GetNamePlateForUnit(unit)
 		if plate then plate.unit = unit end
 		core:UpdateNameplate(plate.UnitFrame, unit)
@@ -406,28 +399,24 @@ if isAwesome then
 
 
 	function core:UpdateNameplate(frame, unit)
-		local guid = UnitGUID(unit)
-		LAI:RemoveAllAurasFromGUID(guid)
+		LAI:RemoveAllAurasFromGUID(UnitGUID(unit))
 		LAI.frame:UNIT_AURA(nil, unit)
-		if UnitThreatSituation('player') and UnitThreatSituation('player') > 1 then
-			frame.ThreatStatus = UnitThreatSituation("player", unit)
-		end
+		frame.ThreatStatus = UnitThreatSituation("player", unit)
 	end
 
 	function core:SetTargetFrame(_, frame)
 		local parent = frame:GetParent()
 		local unit = parent.unit
 		if not unit then return end
-		local isTargetUnit = UnitGUID(unit) == UnitGUID("target")
 
+		local isTargetUnit = UnitGUID(unit) == UnitGUID("target")
 		if isTargetUnit then
 			if not frame.isTarget then
-				NP:PlateFade(frame, 0, frame:GetAlpha(), 1)
 				frame.isTarget = true
 				if NP.db.useTargetScale then
 					NP:SetFrameScale(frame, (frame.ThreatScale or 1) * NP.db.targetScale)
 				end
-				if not NP.db.units[frame.UnitType].health.enable and NP.db.alwaysShowTargetHealth then
+				if not healthEnabled[frame.UnitType] and NP.db.alwaysShowTargetHealth then
 					frame.Health.r, frame.Health.g, frame.Health.b = nil, nil, nil
 					NP:Configure_HealthBar(frame)
 					NP:Configure_CastBar(frame)
@@ -436,46 +425,67 @@ if isAwesome then
 					NP:RegisterEvents(frame)
 					NP:UpdateElement_All(frame, true)
 				end
+				NP:PlateFade(frame, NP.db.fadeIn and 1 or 0, frame:GetAlpha(), 1)
 				NP:Update_Highlight(frame)
 				NP:Update_CPoints(frame)
 				NP:StyleFilterUpdate(frame, "PLAYER_TARGET_CHANGED")
-				NP:ForEachVisiblePlate("ResetNameplateFrameLevel")
+				NP:ResetNameplateFrameLevel(frame)
 			end
 		else
-			NP:PlateFade(frame, NP.db.fadeIn and 1 or 0, frame:GetAlpha(), UnitExists('target') and NP.db.nonTargetTransparency or 1)
 			if frame.isTarget then
 				frame.isTarget = nil
 				if NP.db.useTargetScale then
 					NP:SetFrameScale(frame, (frame.ThreatScale or 1))
 				end
-				if not NP.db.units[frame.UnitType].health.enable then
+				if not healthEnabled[frame.UnitType] then
 					NP:UpdateAllFrame(frame, nil, true)
 				end
 				NP:Update_CPoints(frame)
 				frame:SetFrameLevel(parent:GetFrameLevel() + 1)
 			end
+			if not frame.AlphaChanged then
+				NP:PlateFade(frame, NP.db.fadeIn and 1 or 0, frame:GetAlpha(), target.exists and NP.db.nonTargetTransparency or 1)
+			end
 			NP:StyleFilterUpdate(frame, "PLAYER_TARGET_CHANGED")
+			NP:ResetNameplateFrameLevel(frame)
 		end
 		NP:Configure_Glow(frame)
 		NP:Update_Glow(frame)
 	end
 
-	function core:GetUnitByName(self, frame, unitType)
-		local plate = frame:GetParent()
-		if plate.unit then return plate.unit end
-		return core.hooks[NP].GetUnitByName(self, frame, unitType)
+	function core:SetMouseoverFrame(_, frame)
+		if GetNamePlateForUnit("mouseover") == frame:GetParent() then
+			if not frame.isMouseover then
+				frame.isMouseover = true
+				NP:Update_Highlight(frame)
+			end
+		elseif frame.isMouseover then
+			frame.isMouseover = nil
+			NP:Update_Highlight(frame)
+		end
 	end
 
-	function core:UnitClass(self, frame, unitType)
+	function core:GetUnitByName(self, frame, ...)
 		local plate = frame:GetParent()
-		if plate.unit then return select(2,UnitClass(plate.unit)) end
-		return core.hooks[NP].UnitClass(self, frame, unitType)
+		if plate.unit then
+			return plate.unit
+		else
+			return core.hooks[NP].GetUnitByName(self, frame, ...)
+		end
 	end
 
-	function core:GetUnitInfo(self, frame)
+	function core:UnitClass(self, frame, ...)
+		local plate = frame:GetParent()
+		if plate.unit then
+			return select(2,UnitClass(plate.unit))
+		else
+			return core.hooks[NP].UnitClass(self, frame, ...)
+		end
+	end
+
+	function core:GetUnitInfo(self, frame, ...)
 		local plate = frame:GetParent()
 		local unit = plate.unit
-
 		if unit then
 			local reaction = UnitReaction(unit, "player")
 			local isPlayer = UnitIsPlayer(unit)
@@ -489,7 +499,7 @@ if isAwesome then
 				end
 				reaction = 5
 			elseif reaction == 4 then
-				if UnitCanAttack('player', unit) then
+				if UnitCanAttack("player", unit) then
 					unitType = "ENEMY_NPC"
 				else
 					unitType = "FRIENDLY_NPC"
@@ -501,13 +511,16 @@ if isAwesome then
 			end
 			return reaction, unitType
 		end
-		return core.hooks[NP].GetUnitInfo(self, frame)
+		return core.hooks[NP].GetUnitInfo(self, frame, ...)
 	end
 
-	function core:UnitDetailedThreatSituation(self, frame)
+	function core:UnitDetailedThreatSituation(self, frame, ...)
 		local plate = frame:GetParent()
-		if plate.unit then return UnitThreatSituation("player", plate.unit) end
-		return core.hooks[NP].UnitDetailedThreatSituation(self, frame)
+		if plate.unit then
+			return UnitThreatSituation("player", plate.unit)
+		else
+			return core.hooks[NP].UnitDetailedThreatSituation(self, frame, ...)
+		end
 	end
 
 	function core:ResetNameplateFrameLevel(_, frame)
@@ -525,10 +538,10 @@ if isAwesome then
 			frame.Debuffs:SetFrameLevel(level)
 			frame.LevelHandled = true
 
-			local targetPlate = GetNamePlateForUnit('target')
+			local targetPlate = GetNamePlateForUnit("target")
 			local plate = targetPlate and targetPlate.UnitFrame
 
-			if plate and plate:IsShown() and frame ~= plate and level > plate:GetFrameLevel() then
+			if plate and frame ~= plate and level > plate:GetFrameLevel() then
 				plate:SetFrameLevel(level + 10)
 			end
 		elseif frame.LevelHandled then
@@ -543,71 +556,47 @@ if isAwesome then
 
 
 	if not core:IsHooked(NP, "OnUpdate") then
-		core:RawHook(NP, "OnUpdate", function(self) self:SetScript('OnUpdate', nil) end)
+		core:RawHook(NP, "OnUpdate", function(self) self:SetScript("OnUpdate", nil) end)
 	end
 end
 --
 
+function core:RegisterNPElement(element, func)
+	if func then
+		plateAnchoring[element] = func
+	else
+		plateAnchoring[element] = nil
+	end
+end
+
 function core:OnShowHide(frame, health)
 	local unitType = frame.UnitType or select(2,NP:GetUnitInfo(frame))
 
-	if not healthEnabled[unitType] then
+	if unitType and not healthEnabled[unitType] then
 		local name = frame.Name
-		for e, func in pairs(core.plateAnchoring) do
-			local data, frames, target = func(unitType, frame)
-			local element = frame[e] or target
-			if data and element then
-				local point, relativeTo, x, y
-				if data then
-					point, relativeTo, x, y = data.point, data.relativeTo, data.xOffset, data.yOffset
-				else
-					point, _, relativeTo, x, y = frame:GetPoint()
-				end
-				element:ClearAllPoints()
-				element:Point(point, health or name, relativeTo, x, y)
-			elseif frames then
-				for _, values in ipairs(frames or {}) do
-					for _, f in pairs(values or {}) do
-						f:ClearAllPoints()
-						f:Point(f.point or "CENTER", health or name, f.relativeTo or "CENTER", f.xOffset or 0, f.yOffset or 0)
-					end
-				end
-			end
-		end
-		if unitType == "ENEMY_NPC" or unitType == "FRIENDLY_NPC" then
-			local elite = frame.Elite
-			if elite then
-				local db = NP.db.units[unitType].eliteIcon
-				elite:ClearAllPoints()
-				elite:Point(db.position, health or name, db.xOffset, db.yOffset)
-			end
+		for _, func in pairs(plateAnchoring) do
+			func(unitType, frame, health or name)
 		end
 	end
 end
 
+
 core:SecureHook(NP, "OnCreated", function(_, plate)
 	local frame = plate.UnitFrame
-	local frameHealth = frame and frame.Health
-
-	if frame and frameHealth then
-		if not core:IsHooked(frameHealth, "OnShow") then
-			core:SecureHookScript(frameHealth, "OnShow", function(self)
-				core:OnShowHide(frame, self)
-			end)
+	local health = frame.Health
+	core:SecureHookScript(health, "OnShow", function(self)
+		core:OnShowHide(frame, self)
+	end)
+	core:SecureHookScript(health, "OnHide", function()
+		if frame:IsVisible() then
+			core:OnShowHide(frame)
 		end
-		if not core:IsHooked(frameHealth, "OnHide") then
-			core:SecureHookScript(frameHealth, "OnHide", function()
-				if frame:IsVisible() then
-					core:OnShowHide(frame)
-				end
-			end)
-		end
-	end
+	end)
 end)
 
 core:SecureHook(NP, "Configure_Elite", function(_, frame)
 	local unitType = frame.UnitType
-	local db = NP.db.units[unitType].eliteIcon
+	local db = unitType and NP.db.units[unitType].eliteIcon
 
 	if db then
 		local icon = frame.Elite
@@ -659,7 +648,7 @@ function core:OpenEditor(title, text, acceptFunc)
 		self.EditFrame:SetBackdropBorderColor(unpack(E.media.rgbvaluecolor))
 		self.EditFrame:SetScript("OnKeyDown", function(_, key)
 			if key == "ESCAPE" then
-				core.EditFrame:Hide()
+				self.EditFrame:Hide()
 				E:ToggleOptionsUI()
 			end
 		end)
@@ -675,11 +664,11 @@ function core:OpenEditor(title, text, acceptFunc)
 		self.EditFrame.header:RegisterForClicks("AnyUp", "AnyDown")
 
 		self.EditFrame.header:SetScript("OnMouseDown", function()
-			core.EditFrame:StartMoving()
+			self.EditFrame:StartMoving()
 		end)
 
 		self.EditFrame.header:SetScript("OnMouseUp", function()
-			core.EditFrame:StopMovingOrSizing()
+			self.EditFrame:StopMovingOrSizing()
 		end)
 
 		self.EditFrame.title = self.EditFrame.header:CreateFontString("OVERLAY")
@@ -754,88 +743,142 @@ function core:OpenEditor(title, text, acceptFunc)
 end
 
 
-function core:Tag(name, func)
-	if tags[name] then return end
+function core:Tag(name, tagfunc, updatefunc)
+	if tagfunc and not next(nameUpdates) then
+		ElvUF.Tags.Events["updateshandler"] = "UNIT_NAME_UPDATE"
+		ElvUF.Tags.Methods["updateshandler"] = function(unit)
+			local frame = UF[unit]
+			local guid = UnitGUID(unit)
 
-	tinsert(core.nameUpdates, func)
-	tags[name] = #core.nameUpdates
+			if frame and guid ~= frame.lastGUID then
+				if frame.ThreatIndicator and (frame.db.threatStyle == 'BORDERS' or frame.db.threatStyle == 'HEALTHBORDERS') then
+					local status = UnitThreatSituation(unit)
+					frame.ThreatIndicator:PostUpdate(unit, status, GetThreatStatusColor(status))
+				end
+
+				for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
+					if frame[auraType] and frame[auraType].db.enable and frame[auraType].PostUpdate then
+						frame[auraType]:PostUpdate()
+					end
+				end
+
+				for _, func in pairs(nameUpdates) do
+					func(nil, frame, unit)
+				end
+				frame.lastGUID = guid
+			end
+		end
+	end
+	nameUpdates[name] = tagfunc
+
+	if updatefunc and not next(frameUpdates) then
+		for _, frame in ipairs(self:AggregateUnitFrames()) do
+			local type_db = E.db.unitframe.units[frame.unitframeType]
+			if type_db and type_db.enable then
+				if not taggedFrames[frame] then
+					frame.updatesHandler = frame:CreateFontString(nil, "OVERLAY")
+					frame.updatesHandler:FontTemplate()
+					frame:Tag(frame.updatesHandler, "[updateshandler]")
+
+					taggedFrames[frame] = true
+				end
+			end
+		end
+		for frameType in pairs(self:getAllFrameTypes()) do
+			local type_db = E.db.unitframe.units[frameType]
+			if type_db and type_db.enable then
+				local frameTypeCapital = gsub(gsub(frameType, "target", "Target"), "^(.)", function(firstLetter) return upper(firstLetter) end)
+				local func = "Update_"..frameTypeCapital.."Frame"
+				local groupFunc = "Update_"..frameTypeCapital.."Frames"
+				if (UF[func] or UF[groupFunc]) and not self:IsHooked(UF, UF[func] and func or groupFunc) then
+					self:SecureHook(UF, UF[func] and func or groupFunc, function(self, frame, ...)
+						if not taggedFrames[frame] then
+							frame.updatesHandler = frame:CreateFontString(nil, "OVERLAY")
+							frame.updatesHandler:FontTemplate()
+							frame:Tag(frame.updatesHandler, "[updateshandler]")
+
+							taggedFrames[frame] = true
+						end
+						for _, updateFunc in pairs(frameUpdates) do
+							updateFunc(self, frame, ...)
+						end
+					end)
+				end
+			end
+		end
+	end
+	frameUpdates[name] = updatefunc
 end
 
 function core:Untag(name)
-	if not tags[name] then return end
+	nameUpdates[name] = nil
+	if not next(nameUpdates) then
+		ElvUF.Tags.Events["updateshandler"] = nil
+		ElvUF.Tags.Methods["updateshandler"] = nil
+	end
 
-	tremove(core.nameUpdates, tags[name])
-	tags[name] = nil
-end
-
--- update new elements
-core:SecureHook(E, "ToggleOptionsUI", function()
-	if not E.Options.args.tagGroup then return end
-	E.Options.args.tagGroup.args.Miscellaneous.args.updateshandler.hidden = true
-end)
-
-ElvUF.Tags.Events["updateshandler"] = "UNIT_NAME_UPDATE"
-ElvUF.Tags.Methods["updateshandler"] = function(unit)
-	if not UnitExists(unit) then return end
-
-	local frame = UF[unit]
-
-	if frame then
-		if frame.ThreatIndicator and (frame.db.threatStyle == 'BORDERS' or frame.db.threatStyle == 'HEALTHBORDERS') then
-			local status = UnitThreatSituation(unit)
-			frame.ThreatIndicator:PostUpdate(unit, status, GetThreatStatusColor(status))
-		end
-
-		for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
-			if frame[auraType] and frame[auraType].db.enable and frame[auraType].PostUpdate then
-				frame[auraType]:PostUpdate()
+	frameUpdates[name] = nil
+	if not next(frameUpdates) then
+		for _, frame in ipairs({self:AggregateUnitFrames()}) do
+			if taggedFrames[frame] then
+				frame.updatesHandler:Hide()
+				frame.updatesHandler = nil
+				taggedFrames[frame] = nil
 			end
 		end
-
-		for _, func in ipairs(core.nameUpdates) do
-			func(frame, unit)
+		for frameType in pairs(self:getAllFrameTypes()) do
+			if E.db.unitframe.units[frameType] then
+				local frameTypeCapital = gsub(gsub(frameType, "target", "Target"), "^(.)", function(firstLetter) return upper(firstLetter) end)
+				local func = "Update_"..frameTypeCapital.."Frame"
+				local groupFunc = "Update_"..frameTypeCapital.."Frames"
+				if (UF[func] or UF[groupFunc]) and self:IsHooked(UF, UF[func] and func or groupFunc) then
+					self:Unhook(UF, UF[func] and func or groupFunc)
+				end
+			end
 		end
 	end
 end
 
-do
-	local db = E.db.unitframe.units
-	local types = core:getAllFrameTypes()
 
-	for type in pairs(types) do
-		if db[type] and db[type].power then
-			type = gsub(gsub(type, "target", "Target"), "^(.)", function(firstLetter)
-				return upper(firstLetter)
-			end)
-			local func = "Update_"..type.."Frame"
-			local groupFunc = "Update_"..type.."Frames"
-			if (UF[func] or UF[groupFunc]) and not core:IsHooked(UF, UF[func] and func or groupFunc) then
-				core:SecureHook(UF, UF[func] and func or groupFunc, function(self, frame, uf_db)
-					if not taggedFrames[frame] then
-						frame.updatesHandler = frame:CreateFontString(nil, "OVERLAY")
-						frame.updatesHandler:FontTemplate()
-						frame.updatesHandler:Show()
-						frame:Tag(frame.updatesHandler, "[updateshandler]")
-
-						taggedFrames[frame] = true
-
-						for _, updateFunc in ipairs(core.frameUpdates) do
-							updateFunc(self, frame, uf_db)
-						end
-					elseif not updatePending then
-						updatePending = true
-
-						E_Delay(nil, 0.1, function()
-							for _, updateFunc in ipairs(core.frameUpdates) do
-								updateFunc(self, frame, uf_db)
-							end
-							updatePending = false
-						end)
+function core:RegisterAreaUpdate(name, func)
+	if func then
+		if not next(areaUpdates) then
+			for _, event in ipairs({"PLAYER_UPDATE_RESTING", "ZONE_CHANGED_NEW_AREA"}) do
+				self:RegisterEvent(event, function(...)
+					for _, f in pairs(areaUpdates) do
+						f(...)
 					end
 				end)
 			end
 		end
+		areaUpdates[name] = func
+	else
+		areaUpdates[name] = nil
+		if not next(areaUpdates) then
+			for _, event in ipairs({"PLAYER_UPDATE_RESTING", "ZONE_CHANGED_NEW_AREA"}) do
+				self:UnregisterEvent(event)
+			end
+		end
 	end
+end
+
+function core:GetCurrentAreaType()
+	local areaType
+	if IsResting() then
+		areaType = "showCity"
+	else
+		local _, instanceType = IsInInstance()
+		if instanceType == "pvp" then
+			areaType = "showBG"
+		elseif instanceType == "arena" then
+			areaType = "showArena"
+		elseif instanceType == "party" or instanceType == "raid" then
+			areaType = "showInstance"
+		else
+			areaType = "showWorld"
+		end
+	end
+	return areaType
 end
 
 
@@ -1503,7 +1546,7 @@ function core:GetOptions()
 				args = {
 					colors = {
 						type = "group",
-						name = L["Version: "].."1.06",
+						name = L["Version: "].."1.07",
 						guiInline = true,
 						get = function(info) return colorConvert(E.db.Extras[info[#info]]) end,
 						set = function(info, r, g, b)
@@ -1595,18 +1638,35 @@ function core:Initialize()
 	self.customColorAlpha = E.db.Extras.customColorAlpha
 	self.customColorBeta = E.db.Extras.customColorBeta
 
-	self:SecureHook(NP, "UpdateAllFrame", function()
-		local FRIENDLY_NPC = healthEnabled["FRIENDLY_NPC"]
-		local ENEMY_NPC = healthEnabled["ENEMY_NPC"]
-		healthEnabled["FRIENDLY_NPC"] = NP.db.units["FRIENDLY_NPC"].health.enable
-		healthEnabled["ENEMY_NPC"] = NP.db.units["ENEMY_NPC"].health.enable
+	-- update new elements
+	core:SecureHook(E, "ToggleOptionsUI", function()
+		local tagGroup = E.Options.args.tagGroup
+		if tagGroup and tagGroup.args.Miscellaneous.args.updateshandler then
+			tagGroup.args.Miscellaneous.args.updateshandler.hidden = true
+		end
+		if E.Options.args.nameplate then
+			for unitType, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
+											["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
+				if not self:IsHooked(E.Options.args.nameplate.args[unitGroup].args.healthGroup, "set") then
+					self:SecureHook(E.Options.args.nameplate.args[unitGroup].args.healthGroup, "set", function()
+						local oldValue = healthEnabled[unitType]
+						healthEnabled[unitType] = NP.db.units[unitType].health.enable
 
-		if FRIENDLY_NPC ~= healthEnabled["FRIENDLY_NPC"] or ENEMY_NPC ~= healthEnabled["ENEMY_NPC"] then
-			for frame in pairs(NP.VisiblePlates) do
-				self:OnShowHide(frame, frame.Health and frame.Health:IsVisible())
+						if oldValue ~= healthEnabled[unitType] then
+							for frame in pairs(NP.VisiblePlates) do
+								self:OnShowHide(frame, frame.Health and frame.Health:IsVisible())
+							end
+						end
+					end)
+				end
 			end
 		end
 	end)
+
+	healthEnabled["FRIENDLY_PLAYER"] = NP.db.units["FRIENDLY_PLAYER"].health.enable
+	healthEnabled["FRIENDLY_NPC"] = NP.db.units["FRIENDLY_NPC"].health.enable
+	healthEnabled["ENEMY_PLAYER"] = NP.db.units["ENEMY_PLAYER"].health.enable
+	healthEnabled["ENEMY_NPC"] = NP.db.units["ENEMY_NPC"].health.enable
 
 	if isAwesome then
 		NP:UnregisterEvent("PLAYER_TARGET_CHANGED")
@@ -1617,7 +1677,7 @@ function core:Initialize()
 		NP:UnregisterEvent("RAID_ROSTER_UPDATE")
 		NP:UnregisterEvent("UNIT_NAME_UPDATE")
 
-		for _, func in pairs({'UnitClass', 'GetUnitInfo', 'GetUnitByName', 'SetTargetFrame',
+		for _, func in pairs({'UnitClass', 'GetUnitInfo', 'GetUnitByName', 'SetMouseoverFrame', 'SetTargetFrame',
 								'ResetNameplateFrameLevel', 'UnitDetailedThreatSituation'}) do
 			if not self:IsHooked(NP, func) then self:RawHook(NP, func) end
 		end
@@ -1630,27 +1690,14 @@ function core:Initialize()
     end
 
 	self:SecureHook(E, "SetMoversClampedToScreen", function(_, toggle)
-		E.globalShadow = nil
-		twipe(self.plateAnchoring)
 		self.reload = not toggle
-		if not toggle then
-			if self:IsHooked(NP, "UpdateAllFrame") then
-				self:Unhook(NP, "UpdateAllFrame")
-			end
-		elseif not self:IsHooked(NP, "UpdateAllFrame") then
-			self:SecureHook(NP, "UpdateAllFrame", function()
-				local FRIENDLY_NPC = healthEnabled["FRIENDLY_NPC"]
-				local ENEMY_NPC = healthEnabled["ENEMY_NPC"]
-				healthEnabled["FRIENDLY_NPC"] = NP.db.units["FRIENDLY_NPC"].health.enable
-				healthEnabled["ENEMY_NPC"] = NP.db.units["ENEMY_NPC"].health.enable
-
-				if FRIENDLY_NPC ~= healthEnabled["FRIENDLY_NPC"] or ENEMY_NPC ~= healthEnabled["ENEMY_NPC"] then
-					for frame in pairs(NP.VisiblePlates) do
-						self:OnShowHide(frame, frame.Health and frame.Health:IsVisible())
-					end
+		self.plateAnchoring = {
+			["Elite"] = function(unitType)
+				if unitType == "ENEMY_NPC" or unitType == "FRIENDLY_NPC" then
+					return NP.db.units[unitType].eliteIcon
 				end
-			end)
-		end
+			end
+		}
 		for _, module in pairs(self.modules) do
 			module()
 		end
@@ -1706,10 +1753,8 @@ function core:Initialize()
 			end)
 		end
 
-		tinsert(core.frameUpdates, function()
-			local units = core:AggregateUnitFrames()
-
-			for _, frame in ipairs(units) do
+		tinsert(self.frameUpdates, function()
+			for _, frame in ipairs(self:AggregateUnitFrames()) do
 				local healthBackdrop = frame.Health.backdrop
 				local powerBackdrop = (frame.USE_POWERBAR and frame.Power) and frame.Power.backdrop
 				local infoPanelBackdrop = (frame.USE_INFO_PANEL and frame.InfoPanel) and frame.InfoPanel.backdrop
@@ -1730,7 +1775,6 @@ function core:Initialize()
 			end
 
 			local target = _G["ElvUF_Target"]
-
 			if target and target.USE_CLASSBAR then
 				for _, comboPoint in ipairs(target.ComboPoints) do
 					local backdrop = comboPoint.backdrop
@@ -1756,7 +1800,6 @@ function core:Initialize()
 			end
 		end)
 	end
-
 	E.pendingShadowUpdate = nil
 end
 

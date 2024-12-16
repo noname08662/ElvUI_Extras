@@ -502,11 +502,6 @@ L["Mark"] = "Отметить"
 L["Mark the target/mouseover plate."] = "Отмечает неймплейт цели/под курсором."
 L["Unmark"] = "Снять отметку"
 L["Unmark the target/mouseover plate."] = "Снимает отметку с неймплейта цели/под курсором."
-L["FRIENDLY_PLAYER"] = "Дружественный игрок"
-L["FRIENDLY_NPC"] = "Дружественный NPC"
-L["ENEMY_PLAYER"] = "Вражеский игрок"
-L["ENEMY_NPC"] = "Вражеский NPC"
-L["Handles positioning and color."] = "Управляет позиционированием и цветом."
 L["Selected Type"] = "Выбранный тип"
 L["Reaction based coloring for non-cached characters."] = "Окраска на основе реакции для персонажей, не сохраненных в кэше."
 L["Apply Custom Color"] = "Применить пользовательский цвет"
@@ -1086,3 +1081,28 @@ L["...to the currently selected one."] = "...на текущий выбранн�
 L["Select Occupation"] = "Выбрать профессию"
 L["Sell"] = "Продать"
 L["Action Type"] = "Тип действия"
+L["Style Filter Additional Triggers"] = "Дополнительные триггеры фильтра стилей"
+L["Triggers"] = "Триггеры"
+L["Example usage:"..
+    "\n local frame, filter, trigger = ..."..
+    "\n return frame.UnitName == 'Shrek'"..
+    "\n         or (frame.unit"..
+    "\n             and UnitName(frame.unit) == 'Fiona')"] =
+    "Пример использования:"..
+    "\n local frame, filter, trigger = ..."..
+    "\n return frame.UnitName == 'Шрек'"..
+    "\n         or (frame.unit"..
+    "\n             and UnitName(frame.unit) == 'Фиона')"
+L["Abbreviate Name"] = "Сократить имя"
+L["Highlight Self"] = "Выделить себя"
+L["Highlight Others"] = "Выделить других"
+L["Self Inherit Name Color"] = "Унаследовать цвет имени себя"
+L["Self Texture"] = "Текстура себя"
+L["Whitespace to disable, empty to default."] = "Пробел для отключения, пусто для значения по умолчанию."
+L["Self Color"] = "Цвет себя"
+L["Self Scale"] = "Масштаб себя"
+L["Others Inherit Name Color"] = "Унаследовать цвет имени других"
+L["Others Texture"] = "Текстура других"
+L["Others Color"] = "Цвет других"
+L["Others Scale"] = "Масштаб других"
+L["Targets"] = "Цели"

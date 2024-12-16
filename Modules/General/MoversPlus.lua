@@ -5,7 +5,8 @@ local S = E:GetModule("Skins")
 
 local modName = mod:GetName()
 local pickMode, frameToAnchor = false
-local initialized
+
+mod.initialized = false
 
 local _G, pairs, unpack = _G, pairs, unpack
 local format, split = string.format, string.split
@@ -59,12 +60,12 @@ P["Extras"]["general"][modName] = {
 	},	]]--
 }
 
-function mod:LoadConfig()
+function mod:LoadConfig(db)
 	core.general.args[modName] = {
 		type = "group",
 		name = L[modName],
-		get = function(info) return E.db.Extras.general[modName][info[#info]] end,
-		set = function(info, value) E.db.Extras.general[modName][info[#info]] = value mod:Toggle(value) end,
+		get = function(info) return db[info[#info]] end,
+		set = function(info, value) db[info[#info]] = value mod:Toggle(db) end,
 		args = {
 			MoversPlus = {
                 type = "group",
@@ -272,13 +273,13 @@ function mod:UpdateNudgeFrame(self, mover)
 end
 
 
-function mod:Toggle(enable)
-	if not core.reload and enable then
+function mod:Toggle(db)
+	if not core.reload and db.enabled then
 		for _, func in pairs({'UpdateNudgeFrame', 'NudgeMover', 'ResetMovers'}) do
 			if not self:IsHooked(E, func) then self:SecureHook(E, func) end
 		end
-		initialized = true
-	elseif initialized then
+		self.initialized = true
+	elseif self.initialized then
 		for _, func in pairs({'UpdateNudgeFrame', 'NudgeMover', 'ResetMovers'}) do
 			if self:IsHooked(E, func) then self:Unhook(E, func) end
 		end
@@ -297,12 +298,13 @@ function mod:Toggle(enable)
 			nudge:Size(200, 110)
 		end
 	end
-	setMovers(enable)
+	setMovers(db.enabled)
 end
 
 function mod:InitializeCallback()
-	mod:LoadConfig()
-	mod:Toggle(E.db.Extras.general[modName].enabled)
+	local db = E.db.Extras.general[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

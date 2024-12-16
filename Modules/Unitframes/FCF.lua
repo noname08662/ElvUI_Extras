@@ -12,11 +12,15 @@ local find, gsub, match, format = string.find, string.gsub, string.match, string
 local tsort, tinsert = table.sort, table.insert
 local GetSpellInfo, GetSpellLink, CopyTable = GetSpellInfo, GetSpellLink, CopyTable
 local SCHOOL_MASK_NONE, SCHOOL_MASK_PHYSICAL, SCHOOL_MASK_HOLY, SCHOOL_MASK_FIRE,
-	SCHOOL_MASK_NATURE, SCHOOL_MASK_FROST, SCHOOL_MASK_SHADOW, SCHOOL_MASK_ARCANE =
-		SCHOOL_MASK_NONE, SCHOOL_MASK_PHYSICAL, SCHOOL_MASK_HOLY, SCHOOL_MASK_FIRE,
-		SCHOOL_MASK_NATURE, SCHOOL_MASK_FROST, SCHOOL_MASK_SHADOW, SCHOOL_MASK_ARCANE
+		SCHOOL_MASK_NATURE, SCHOOL_MASK_FROST, SCHOOL_MASK_SHADOW, SCHOOL_MASK_ARCANE =
+			SCHOOL_MASK_NONE, SCHOOL_MASK_PHYSICAL, SCHOOL_MASK_HOLY, SCHOOL_MASK_FIRE,
+			SCHOOL_MASK_NATURE, SCHOOL_MASK_FROST, SCHOOL_MASK_SHADOW, SCHOOL_MASK_ARCANE
 
-local function tagFunc(frame)
+mod.updatePending = false
+mod.initialized = false
+
+
+function mod:tagFunc(frame)
 	if frame.FloatingCombatFeedback then
 		ElvUF.uaeHook(frame)
 	end
@@ -304,8 +308,7 @@ P["Extras"]["unitframes"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.unitframes[modName]
+function mod:LoadConfig(db)
 	local function selectedUnit() return db.selectedUnit end
 	local function selectedEvent() return db.selectedEvent end
 	local function selectedFlag() return db.selectedFlag end
@@ -335,7 +338,7 @@ function mod:LoadConfig()
 						name = core.pluginColor..L["Enable"],
 						desc = L["Appends floating combat feedback fontstrings to frames."],
 						get = function() return selectedUnitData().enabled end,
-						set = function(_, value) selectedUnitData().enabled = value self:Toggle() end,
+						set = function(_, value) selectedUnitData().enabled = value self:Toggle(db) end,
 					},
 					unitDropdown = {
 						order = 2,
@@ -377,7 +380,7 @@ function mod:LoadConfig()
 						name = L["Player Only"],
 						desc = L["Handle only player combat log events."],
 						get = function() return selectedUnitData().playerOnly end,
-						set = function(_, value) selectedUnitData().playerOnly = value self:Toggle() end,
+						set = function(_, value) selectedUnitData().playerOnly = value self:UpdateAll(db) end,
 						hidden = function()
 							local unit = selectedUnit()
 							return find(unit, 'pet') and not find(unit, 'target')
@@ -399,7 +402,7 @@ function mod:LoadConfig()
 				name = L["Font Settings"],
 				inline = true,
 				get = function(info) return selectedUnitData()[info[#info]] end,
-				set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
+				set = function(info, value) selectedUnitData()[info[#info]] = value self:UpdateAll(db) end,
 				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					textLevel = {
@@ -424,7 +427,7 @@ function mod:LoadConfig()
 				name = L["Event Settings"],
 				inline = true,
 				get = function(info) return selectedEventData()[info[#info]] end,
-				set = function(info, value) selectedEventData()[info[#info]] = value self:Toggle() end,
+				set = function(info, value) selectedEventData()[info[#info]] = value self:UpdateAll(db) end,
 				disabled = function() return not selectedUnitData().enabled or selectedEventData().disabled end,
 				args = {
 					event = {
@@ -515,7 +518,7 @@ function mod:LoadConfig()
 						name = L["Color"],
 						desc = "",
 						get = function() return unpack(selectedEventData().color or {}) end,
-						set = function(_, r, g, b) selectedEventData().color = {r, g, b} self:Toggle() end,
+						set = function(_, r, g, b) selectedEventData().color = {r, g, b} self:UpdateAll(db) end,
 					},
 					colorSchool = {
 						order = 6,
@@ -523,7 +526,7 @@ function mod:LoadConfig()
 						name = L["Color (School)"],
 						desc = "",
 						get = function() return unpack(selectedUnitData().school[db.selectedSchool]) end,
-						set = function(_, r, g, b) selectedUnitData().school[db.selectedSchool] = {r, g, b} self:Toggle() end,
+						set = function(_, r, g, b) selectedUnitData().school[db.selectedSchool] = {r, g, b} self:UpdateAll(db) end,
 						disabled = function()
 							return not selectedUnitData().enabled
 									or selectedEventData().disabled
@@ -683,7 +686,7 @@ function mod:LoadConfig()
 				name = L["Flag Settings"],
 				inline = true,
 				get = function(info) return selectedFlagData()[info[#info]] end,
-				set = function(info, value) selectedFlagData()[info[#info]] = value self:Toggle() end,
+				set = function(info, value) selectedFlagData()[info[#info]] = value self:UpdateAll(db) end,
 				disabled = function() return not selectedUnitData().enabled or selectedEventData().disabled or selectedFlagData().disabled end,
 				hidden = function() return selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL' end,
 				args = {
@@ -813,7 +816,7 @@ function mod:LoadConfig()
 								local string = '\124T' .. icon .. ':16:16\124t' .. link
 								core:print('ADDED', string)
 							end
-							self:Toggle()
+							self:UpdateAll(db)
 						end,
 					},
 					removeSpell = {
@@ -835,7 +838,7 @@ function mod:LoadConfig()
 									break
 								end
 							end
-							self:Toggle()
+							self:UpdateAll(db)
 						end,
 						values = function()
 							local values = {}
@@ -924,110 +927,121 @@ function mod:ConstructFCF(frame, info)
 	end
 
 	frame.FloatingCombatFeedback = fcf
-
-	core:Tag("fcf", tagFunc)
 end
 
-function mod:UpdateFCFSettings(frame)
+function mod:UpdateFCFSettings(frame, db)
 	if not core.reload then
 		frame:DisableElement('FloatingCombatFeedback')
 	end
-	local db = E.db.Extras.unitframes[modName]
-	for unit, data in pairs(db.units) do
-		if frame.unitframeType == unit then
-			if not core.reload and data.enabled then
-				self:ConstructFCF(frame, data)
-				local fcf = frame.FloatingCombatFeedback
+	local enabled
+	local data = db.units[frame.unitframeType]
+	if data then
+		if not core.reload and data.enabled then
+			self:ConstructFCF(frame, data)
+			local fcf = frame.FloatingCombatFeedback
 
-				frame:EnableElement('FloatingCombatFeedback')
+			frame:EnableElement('FloatingCombatFeedback')
 
-				fcf.playerOnly = data.playerOnly
-				fcf.blacklist = CopyTable(data.blacklist)
+			fcf.playerOnly = data.playerOnly
+			fcf.blacklist = CopyTable(data.blacklist)
 
-				for event, info in pairs(data.events) do
-					if not info.disabled then
-						if info.showIcon then
-							fcf.iconBounce[event] = info.iconBounce
-							if info.iconPosition == 'before' then
-								fcf.formats[event] = "|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s"
-								fcf.iconFormats[event]= {"|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s", "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t"}
-							else
-								fcf.formats[event] = "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t"
-								fcf.iconFormats[event] = {"%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t", "|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s"}
-							end
-						end
-						if info.tryToColorBySchool then
-							fcf.tryToColorBySchool[event] = true
+			for event, info in pairs(data.events) do
+				if not info.disabled then
+					if info.showIcon then
+						fcf.iconBounce[event] = info.iconBounce
+						if info.iconPosition == 'before' then
+							fcf.formats[event] = "|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s"
+							fcf.iconFormats[event]= {"|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s", "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t"}
 						else
-							local color = info.color or {1,1,1}
-							fcf.tryToColorBySchool[event] = false
-							fcf.colors[event] = { r = color[1], g = color[2], b = color[3] }
+							fcf.formats[event] = "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t"
+							fcf.iconFormats[event] = {"%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t", "|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s"}
 						end
-						fcf.animationsByEvent[event] = {	info.animation,
-															tonumber(info.xDirection) or 1,
-															tonumber(info.yDirection) or 1,
-															not tonumber(info.xDirection),
-															info.yDirection and not tonumber(info.yDirection) or false,
-														}
-						fcf.fontData[event] = {	point = info.textPoint or "CENTER",
-												relativeTo = info.textRelativeTo or "CENTER",
-												x = info.textX or 0,
-												y = info.textY or 24,
-												fontSize = info.fontSize or 18,
-												fontFlags = info.fontFlags or "",
-												font = LSM:Fetch("font", info.font or "Expressway"),
-												scrollTime = info.scrollTime or 1.2,
-											}
-						self:CustomAnim(frame, info.customAnimation, event)
 					end
-				end
-				for school, color in pairs(data.school) do
-					fcf.schoolColors[school] = { r = color[1] or 1, g = color[2] or 1, b = color[3] or 1 }
-				end
-				for flag, info in pairs(data.flags) do
-					if not info.disabled then
-						fcf.multipliersByFlag[flag] = info.fontMult
-						if info.animationsByFlag then
-							fcf.animationsByFlag[flag] = {	info.animation,
-															tonumber(info.xDirection) or 1,
-															tonumber(info.yDirection) or 1,
-															not tonumber(info.xDirection),
-															info.yDirection and not tonumber(info.yDirection) or false,
-														}
-							self:CustomAnim(frame, info.customAnimation, nil, flag)
-						else
-							fcf.animationsByFlag[flag] = nil
-						end
+					if info.tryToColorBySchool then
+						fcf.tryToColorBySchool[event] = true
 					else
-						fcf.multipliersByFlag[flag] = nil
+						local color = info.color or {1,1,1}
+						fcf.tryToColorBySchool[event] = false
+						fcf.colors[event] = { r = color[1], g = color[2], b = color[3] }
 					end
+					fcf.animationsByEvent[event] = {	info.animation,
+														tonumber(info.xDirection) or 1,
+														tonumber(info.yDirection) or 1,
+														not tonumber(info.xDirection),
+														info.yDirection and not tonumber(info.yDirection) or false,
+													}
+					fcf.fontData[event] = {	point = info.textPoint or "CENTER",
+											relativeTo = info.textRelativeTo or "CENTER",
+											x = info.textX or 0,
+											y = info.textY or 24,
+											fontSize = info.fontSize or 18,
+											fontFlags = info.fontFlags or "",
+											font = LSM:Fetch("font", info.font or "Expressway"),
+											scrollTime = info.scrollTime or 1.2,
+										}
+					self:CustomAnim(frame, info.customAnimation, event)
 				end
-			elseif frame.FloatingCombatFeedback then
-				core:Untag("fcf")
 			end
+			for school, color in pairs(data.school) do
+				fcf.schoolColors[school] = { r = color[1] or 1, g = color[2] or 1, b = color[3] or 1 }
+			end
+			for flag, info in pairs(data.flags) do
+				if not info.disabled then
+					fcf.multipliersByFlag[flag] = info.fontMult
+					if info.animationsByFlag then
+						fcf.animationsByFlag[flag] = {	info.animation,
+														tonumber(info.xDirection) or 1,
+														tonumber(info.yDirection) or 1,
+														not tonumber(info.xDirection),
+														info.yDirection and not tonumber(info.yDirection) or false,
+													}
+						self:CustomAnim(frame, info.customAnimation, nil, flag)
+					else
+						fcf.animationsByFlag[flag] = nil
+					end
+				else
+					fcf.multipliersByFlag[flag] = nil
+				end
+			end
+			enabled = true
 		end
 	end
+	return enabled
 end
 
-local function manageFCF()
-	local units = core:AggregateUnitFrames()
-	for _, frame in ipairs(units) do
-		mod:UpdateFCFSettings(frame)
+function mod:UpdateAll(db)
+	for _, frame in ipairs(core:AggregateUnitFrames()) do
+		self:UpdateFCFSettings(frame, db)
 	end
 end
 
 
-function mod:Toggle()
-	manageFCF()
+function mod:Toggle(db)
+	local enabled
+	for _, frame in ipairs(core:AggregateUnitFrames()) do
+		enabled = self:UpdateFCFSettings(frame, db) or enabled
+	end
+	if enabled then
+		core:Tag("fcf", self.tagFunc, function()
+			if not self.updatePending then
+				self.updatePending = E:ScheduleTimer(function() self:UpdateAll(db) self.updatePending = false end, 0.1)
+			else
+				E:CancelTimer(self.updatePending)
+				self.updatePending = E:ScheduleTimer(function() self:UpdateAll(db) self.updatePending = false end, 0.1)
+			end
+		end)
+		self.initialized = true
+	elseif self.initialized then
+		core:Untag("fcf")
+	end
 end
 
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
 
-	mod:LoadConfig()
-	mod:Toggle()
-
-	tinsert(core.frameUpdates, manageFCF)
+	local db = E.db.Extras.unitframes[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

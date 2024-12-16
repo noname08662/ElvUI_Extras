@@ -501,11 +501,6 @@ L["Mark"] = "Marquer"
 L["Mark the target/mouseover plate."] = "Marque la barre d'informations de la cible/survol."
 L["Unmark"] = "Démarquer"
 L["Unmark the target/mouseover plate."] = "Démarque la barre d'informations de la cible/survol."
-L["FRIENDLY_PLAYER"] = "Joueur allié"
-L["FRIENDLY_NPC"] = "PNJ allié"
-L["ENEMY_PLAYER"] = "Joueur ennemi"
-L["ENEMY_NPC"] = "PNJ ennemi"
-L["Handles positioning and color."] = "Gère le positionnement et la couleur."
 L["Selected Type"] = "Type sélectionné"
 L["Reaction based coloring for non-cached characters."] = "Coloration basée sur la réaction pour les personnages non mis en cache."
 L["Apply Custom Color"] = "Appliquer une couleur personnalisée"
@@ -1088,3 +1083,28 @@ L["...to the currently selected one."] = "...à celui actuellement sélectionné
 L["Select Occupation"] = "Sélectionner la profession"
 L["Sell"] = "Vendre"
 L["Action Type"] = "Type d'action"
+L["Style Filter Additional Triggers"] = "Déclencheurs Supplémentaires de Filtres de Style"
+L["Triggers"] = "Déclencheurs"
+L["Example usage:"..
+    "\n local frame, filter, trigger = ..."..
+    "\n return frame.UnitName == 'Shrek'"..
+    "\n         or (frame.unit"..
+    "\n             and UnitName(frame.unit) == 'Fiona')"] =
+		"Exemple d'utilisation:"..
+			"\n local frame, filter, trigger = ..."..
+			"\n return frame.UnitName == 'Shrek'"..
+			"\n         or (frame.unit"..
+			"\n             and UnitName(frame.unit) == 'Fiona')"
+L["Abbreviate Name"] = "Nom abrégé"
+L["Highlight Self"] = "Mettre en évidence soi-même"
+L["Highlight Others"] = "Mettre en évidence les autres"
+L["Self Inherit Name Color"] = "Hériter de la couleur du nom de soi"
+L["Self Texture"] = "Texture de soi"
+L["Whitespace to disable, empty to default."] = "Espace pour désactiver, vide pour défaut."
+L["Self Color"] = "Couleur de soi"
+L["Self Scale"] = "Échelle de soi"
+L["Others Inherit Name Color"] = "Hériter de la couleur du nom des autres"
+L["Others Texture"] = "Texture des autres"
+L["Others Color"] = "Couleur des autres"
+L["Others Scale"] = "Échelle des autres"
+L["Targets"] = "Cibles"

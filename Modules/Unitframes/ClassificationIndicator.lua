@@ -10,9 +10,7 @@ local tinsert = table.insert
 local lower, gsub, upper, find, format = string.lower, string.gsub, string.upper, string.find, string.format
 local UnitClass, UnitIsPlayer, UnitClassification = UnitClass, UnitIsPlayer, UnitClassification
 
-local function tagFunc(frame, unit)
-	mod:UpdateElement(frame, unit, E.db.Extras.unitframes[modName].units[frame.unitframeType])
-end
+mod.initialized = false
 
 
 P["Extras"]["unitframes"][modName] = {
@@ -52,8 +50,7 @@ P["Extras"]["unitframes"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.unitframes[modName]
+function mod:LoadConfig(db)
 	local function selectedUnit() return db.selectedUnit end
     local function selectedUnitData()
 		return core:getSelected("unitframes", modName, format("units[%s]", selectedUnit() or ""), "target")
@@ -90,7 +87,7 @@ function mod:LoadConfig()
 						name = core.pluginColor..L["Enable"],
 						desc = L["Enables classification indicator for the selected unit."],
 						get = function() return selectedUnitData().enabled end,
-						set = function(_, value) selectedUnitData().enabled = value self:Toggle() end,
+						set = function(_, value) selectedUnitData().enabled = value self:Toggle(db) end,
 					},
 					backdrop = {
 						order = 1,
@@ -413,6 +410,10 @@ function mod:LoadConfig()
 end
 
 
+function mod:tagFunc(frame, unit)
+	mod:UpdateElement(frame, unit, E.db.Extras.unitframes[modName].units[frame.unitframeType])
+end
+
 function mod:UpdateElement(frame, unit, db)
 	if not unit or not db or not db.enabled then return end
 
@@ -494,59 +495,60 @@ function mod:UpdateElement(frame, unit, db)
 	end
 end
 
-local function manageClassificationIndicator(frame, unit)
+function mod:ManageClassificationIndicator(db, frame, unit)
 	if frame.classificationIndicator then return end
-	local db = E.db.Extras.unitframes[modName].units[unit]
+	local values = db[unit]
 
 	local classificationIndicator = CreateFrame("Frame", nil,frame)
-	classificationIndicator:Size(db.width, db.height)
-	classificationIndicator:Point(db.points.point, frame, db.points.relativeTo, db.points.xOffset, db.points.yOffset)
-	classificationIndicator:SetFrameStrata(db.frameStrata)
-	classificationIndicator:SetFrameLevel(db.frameLevel)
+	classificationIndicator:Size(values.width, values.height)
+	classificationIndicator:Point(values.points.point, frame, values.points.relativeTo, values.points.xOffset, values.points.yOffset)
+	classificationIndicator:SetFrameStrata(values.frameStrata)
+	classificationIndicator:SetFrameLevel(values.frameLevel)
 
 	classificationIndicator:CreateBackdrop()
 
 	local Texture = classificationIndicator:CreateTexture(nil, "OVERLAY")
-	Texture:Size(db.width, db.height)
 	Texture:SetAllPoints(classificationIndicator)
 
 	classificationIndicator.texture = Texture
-
-	core:Tag("classification", tagFunc)
 
 	frame.classificationIndicator = classificationIndicator
 end
 
 
-local function manageIndicators()
-	local units = core:AggregateUnitFrames()
-
-	local db = E.db.Extras.unitframes[modName].units
-	for _, frame in ipairs(units) do
+function mod:Toggle(db)
+	local units = db.units
+	local enabled
+	for _, frame in ipairs(core:AggregateUnitFrames()) do
 		local unitframeType = frame.unitframeType
-		if not core.reload and db[unitframeType] and db[unitframeType].enabled then
-			manageClassificationIndicator(frame, unitframeType)
-			mod:UpdateElement(frame, frame.unit, db[unitframeType])
+		if not core.reload and units[unitframeType] and units[unitframeType].enabled then
+			self:ManageClassificationIndicator(units, frame, unitframeType)
+			self:UpdateElement(frame, frame.unit, units[unitframeType])
+			enabled = true
 		elseif frame.classificationIndicator then
 			frame.classificationIndicator:Hide()
-			frame.classificationIndicator = nil
-			core:Untag("classification")
 		end
 	end
-end
-
-
-function mod:Toggle()
-	manageIndicators()
+	if enabled then
+		core:Tag("classification", self.tagFunc, function(_, frame)
+			local unitframeType = frame.unitframeType
+			if units[unitframeType] and units[unitframeType].enabled then
+				self:ManageClassificationIndicator(units, frame, unitframeType)
+				self:UpdateElement(frame, frame.unit, units[unitframeType])
+			end
+		end)
+		self.initialized = true
+	elseif self.initialized then
+		core:Untag("classification")
+	end
 end
 
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
 
-	mod:LoadConfig()
-	mod:Toggle()
-
-	tinsert(core.frameUpdates, manageIndicators)
+	local db = E.db.Extras.unitframes[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

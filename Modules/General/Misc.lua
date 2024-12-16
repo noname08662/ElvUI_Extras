@@ -3,8 +3,10 @@ local core = E:GetModule("Extras")
 local mod = core:NewModule("GeneralMisc.", "AceHook-3.0")
 
 local modName = mod:GetName()
-local initialized, alertFrame = {}
+local alertFrame
 local chatTypeIndexToName = {}
+
+mod.initialized = {}
 
 local max = math.max
 local _G, unpack, pairs, ipairs, tonumber, print, pcall, loadstring, tostring = _G, unpack, pairs, ipairs, tonumber, print, pcall, loadstring, tostring
@@ -121,14 +123,13 @@ P["Extras"]["general"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.general[modName]
+function mod:LoadConfig(db)
 	local function selectedSubSection() return db.selectedSubSection end
 	core.general.args[modName] = {
 		type = "group",
 		name = L["Misc."],
 		get = function(info) return db[selectedSubSection()][info[#info]] end,
-		set = function(info, value) db[selectedSubSection()][info[#info]] = value self:Toggle() end,
+		set = function(info, value) db[selectedSubSection()][info[#info]] = value self:Toggle(db) end,
 		args = {
 			SubSection = {
 				order = 1,
@@ -143,7 +144,7 @@ function mod:LoadConfig()
 						name = core.pluginColor..L["Enable"],
 						desc = function() return L[db[selectedSubSection()].desc] end,
 						get = function() return db[selectedSubSection()].enabled end,
-						set = function(_, value) db[selectedSubSection()].enabled = value self:Toggle()
+						set = function(_, value) db[selectedSubSection()].enabled = value self:Toggle(db)
 							if selectedSubSection() == 'GlobalShadow' then E:StaticPopup_Show("PRIVATE_RL") end
 						end,
 					},
@@ -230,7 +231,7 @@ function mod:LoadConfig()
 						name = L["Text Color"],
 						desc = L["255, 210, 0 - Blizzard's yellow."],
 						get = function() return unpack(db.EnterCombatAlert.textColor) end,
-						set = function(_, r, g, b) db.EnterCombatAlert.textColor = { r, g, b } self:EnterCombatAlert(true) end,
+						set = function(_, r, g, b) db.EnterCombatAlert.textColor = { r, g, b } self:EnterCombatAlert(db) end,
 					},
 					customTextEnter = {
 						order = 2,
@@ -299,8 +300,8 @@ function mod:LoadConfig()
 end
 
 
-function mod:InternalCooldowns(enable)
-	if enable then
+function mod:InternalCooldowns(db)
+	if db.enabled then
 		local function appendICD(tt)
 			local _, itemLink = tt:GetItem()
 			if not itemLink then return end
@@ -342,8 +343,8 @@ function mod:InternalCooldowns(enable)
 			self:SecureHookScript(ShoppingTooltip2, 'OnTooltipSetItem', runAllScripts)
 		end
 		allTipScrits['icd'] = appendICD
-		initialized.InternalCooldowns = true
-	elseif initialized.InternalCooldowns then
+		self.initialized.InternalCooldowns = true
+	elseif self.initialized.InternalCooldowns then
 		allTipScrits['icd'] = nil
 		if not E.db.Extras.general[modName].TooltipNotes.enabled then
 			if self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
@@ -362,10 +363,11 @@ function mod:InternalCooldowns(enable)
 	end
 end
 
-function mod:TooltipNotes(enable)
-	if enable then
+function mod:TooltipNotes(db)
+	if db.enabled then
 		mod.ttfuncs = {}
-		local notes = E.db.Extras.general[modName].TooltipNotes.notes
+
+		local notes = db.notes
 		local notesIndex = {}
 
 		local function manageFuncNotes(data, key)
@@ -694,8 +696,8 @@ function mod:TooltipNotes(enable)
 			self:SecureHookScript(ShoppingTooltip2, 'OnTooltipSetItem', runAllScripts)
 		end
 		allTipScrits['notes'] = handler
-		initialized.TooltipNotes = true
-	elseif initialized.TooltipNotes then
+		self.initialized.TooltipNotes = true
+	elseif self.initialized.TooltipNotes then
 		allTipScrits['notes'] = nil
 		SLASH_TOOLTIPNOTES1 = nil
 		SlashCmdList["TOOLTIPNOTES"] = nil
@@ -720,22 +722,17 @@ function mod:TooltipNotes(enable)
 	end
 end
 
-function mod:ItemIcons(enable)
+function mod:ItemIcons(db)
 	local ChatTypeInfo = ChatTypeInfo
 
-	if enable then
-		if not initialized.ItemIcons then
+	if db.enabled then
+		if not self.initialized.ItemIcons then
 			-- credit: ElvUI_ChatTweaks
-			local db = E.db.Extras.general[modName].ItemIcons
 			function mod:ItemIconsFilter(_, msg, ...)
 				msg = gsub(msg, "(\124%x%x%x%x%x%x%x%x%x\124[Hh]item:.-\124[hH]\124[rR])", function(link)
-					local texture = GetItemIcon(link)
-					if texture then
-						return (db.orientation == "left") and "\124T" .. texture .. ":" .. db.size .. "\124t" .. link
-													or link .. "\124T" .. texture .. ":" .. db.size .. "\124t"
-					else
-						return link
-					end
+					return (db.orientation == "left")
+							and "\124T" .. (GetItemIcon(link) or "Interface\\Icons\\INV_Misc_QuestionMark") .. ":" .. db.size .. "\124t" .. link
+							or link .. "\124T" .. (GetItemIcon(link) or "Interface\\Icons\\INV_Misc_QuestionMark") .. ":" .. db.size .. "\124t"
 				end)
 				return false, msg, ...
 			end
@@ -770,22 +767,22 @@ function mod:ItemIcons(enable)
 						info.r, info.g, info.b)
 				end
 			end
-			initialized.ItemIcons = true
+			self.initialized.ItemIcons = true
 		end
 
 		for _, event in ipairs(chatMsgEvents) do
 			ChatFrame_AddMessageEventFilter(event, self.ItemIconsFilter)
 		end
-	elseif initialized.ItemIcons then
+	elseif self.initialized.ItemIcons then
 		for _, event in ipairs(chatMsgEvents) do
 			ChatFrame_RemoveMessageEventFilter(event, self.ItemIconsFilter)
 		end
 	end
 end
 
-function mod:EnterCombatAlert(enable)
-	if enable then
-		if not initialized.EnterCombatAlert then
+function mod:EnterCombatAlert(db)
+	if db.enabled then
+		if not self.initialized.EnterCombatAlert then
 			alertFrame = CreateFrame("Frame", "alertFrame", UIParent)
 			alertFrame:SetClampedToScreen(true)
 			alertFrame:Size(300, 65)
@@ -814,11 +811,10 @@ function mod:EnterCombatAlert(enable)
 
 			E:CreateMover(alertFrame, "alertFrameMover", L["Enter Combat Alert"], nil, nil, nil, 'ALL,SOLO')
 
-			initialized.EnterCombatAlert = true
+			self.initialized.EnterCombatAlert = true
 		end
 		E:EnableMover("alertFrameMover")
 
-		local db = E.db.Extras.general[modName].EnterCombatAlert
 		alertFrame.text:SetTextColor(unpack(db.textColor))
 		alertFrame.text:SetFont(E.Libs.LSM:Fetch("font", db.font), db.fontSize, db.fontOutline)
 		alertFrame.Bg:SetTexture(db.customTex)
@@ -832,31 +828,33 @@ function mod:EnterCombatAlert(enable)
 			end
 			self:Show()
 		end)
-	elseif initialized.EnterCombatAlert then
+	elseif self.initialized.EnterCombatAlert then
 		E:DisableMover("alertFrameMover")
 		alertFrame:SetScript("OnEvent", nil)
 		alertFrame:Hide()
 	end
 end
 
-function mod:GlobalShadow(enable)
-	if enable then
-		E.globalShadow = E.db.Extras.general[modName].GlobalShadow
-	end
+function mod:GlobalShadow(db)
+	E.globalShadow = db.enabled and db
 end
 
 
-function mod:Toggle()
-	for subMod, info in pairs(E.db.Extras.general[modName]) do
+function mod:Toggle(db)
+	if core.reload then
+		twipe(self.initialized)
+	end
+	for subMod, info in pairs(db) do
 		if self[subMod] and info.enabled ~= nil then
-			self[subMod](self, core.reload and false or info.enabled)
+			self[subMod](self, core.reload and {enabled = false} or info)
 		end
 	end
 end
 
 function mod:InitializeCallback()
-	mod:LoadConfig()
-	mod:Toggle()
+	local db = E.db.Extras.general[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

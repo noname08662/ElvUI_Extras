@@ -4,9 +4,11 @@ local mod = core:NewModule("BlizzardMisc.", "AceHook-3.0", "AceEvent-3.0")
 local TT = E:GetModule("Tooltip")
 
 local modName = mod:GetName()
-local initialized = {}
+
+mod.initialized = {}
 
 local _G, pairs, ipairs = _G, pairs, ipairs
+local twipe = table.wipe
 local gsub, match, format = gsub, string.match, string.format
 local WorldFrame, UIErrorsFrame, GetTime, IsModifierKeyDown = WorldFrame, UIErrorsFrame, GetTime, IsModifierKeyDown
 local UnitClass, UnitName, GetActionInfo = UnitClass, UnitName, GetActionInfo
@@ -45,13 +47,13 @@ P["Extras"]["blizzard"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
+function mod:LoadConfig(db)
 	core.blizzard.args[modName] = {
 		type = "group",
 		name = L["Misc."],
-		get = function(info) return E.db.Extras.blizzard[modName][info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
-		set = function(info, value) E.db.Extras.blizzard[modName][info[#info-1]][gsub(info[#info], info[#info-1], '')] = value self:Toggle() end,
-		disabled = function(info) return info[#info] ~= modName and not match(info[#info], '^enabled') and not E.db.Extras.blizzard[modName][info[#info-1]].enabled end,
+		get = function(info) return db[info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
+		set = function(info, value) db[info[#info-1]][gsub(info[#info], info[#info-1], '')] = value self:Toggle(db) end,
+		disabled = function(info) return info[#info] ~= modName and not match(info[#info], '^enabled') and not db[info[#info-1]].enabled end,
 		args = {
 			PlayerPings = {
 				type = "group",
@@ -97,7 +99,7 @@ function mod:LoadConfig()
 						name = L["Left"],
 						desc = "",
 						min = 0, max = 100, step = 1,
-						hidden = function() return not E.db.Extras.blizzard[modName].LetterBox.enabled end,
+						hidden = function() return not db.LetterBox.enabled end,
 					},
 					right = {
 						order = 3,
@@ -105,7 +107,7 @@ function mod:LoadConfig()
 						name = L["Right"],
 						desc = "",
 						min = 0, max = 100, step = 1,
-						hidden = function() return not E.db.Extras.blizzard[modName].LetterBox.enabled end,
+						hidden = function() return not db.LetterBox.enabled end,
 					},
 					top = {
 						order = 4,
@@ -113,7 +115,7 @@ function mod:LoadConfig()
 						name = L["Top"],
 						desc = "",
 						min = 0, max = 100, step = 1,
-						hidden = function() return not E.db.Extras.blizzard[modName].LetterBox.enabled end,
+						hidden = function() return not db.LetterBox.enabled end,
 					},
 					bottom = {
 						order = 5,
@@ -121,7 +123,7 @@ function mod:LoadConfig()
 						name = L["Bottom"],
 						desc = "",
 						min = 0, max = 100, step = 1,
-						hidden = function() return not E.db.Extras.blizzard[modName].LetterBox.enabled end,
+						hidden = function() return not db.LetterBox.enabled end,
 					},
 				},
 			},
@@ -141,7 +143,7 @@ function mod:LoadConfig()
 						type = "toggle",
 						name = L["Show quest updates"],
 						desc = L["Re-enable quest updates."],
-						hidden = function() return not E.db.Extras.blizzard[modName].HideErrors.enabled end,
+						hidden = function() return not db.HideErrors.enabled end,
 					},
 				},
 			},
@@ -197,9 +199,8 @@ function mod:ShowPlayerPing(playerName)
 	mod.PlayerPingFrame:Point("CENTER", MinimapPing, "CENTER", x, y)
 end
 
-function mod:LetterBox(enable)
-	if enable then
-		local db = E.db.Extras.blizzard[modName].LetterBox
+function mod:LetterBox(db)
+	if db.enabled then
 		WorldFrame:SetUserPlaced(true)
 		WorldFrame:ClearAllPoints()
 		WorldFrame:SetPoint("TOPLEFT", db.left, -db.top)
@@ -212,22 +213,22 @@ function mod:LetterBox(enable)
 	end
 end
 
-function mod:PlayerPings(enable)
-	if enable then
-		if not initialized.PlayerPings then
+function mod:PlayerPings(db)
+	if db.enabled then
+		if not self.initialized.PlayerPings then
 			self.PlayerPingFrame = self:CreatePingFrame()
-			initialized.PlayerPings = true
+			self.initialized.PlayerPings = true
 		end
 		self:RegisterEvent("MINIMAP_PING", function(_, unit)
 			self:ShowPlayerPing(UnitName(unit))
 		end)
-	elseif initialized.PlayerPings then
+	elseif self.initialized.PlayerPings then
 		self.PlayerPingFrame.PingText:Hide()
 		self:UnregisterEvent("MINIMAP_PING")
 	end
 end
 
-function mod:HeldCurrency(enable)
+function mod:HeldCurrency(db)
     local function updateAltCurrencyText(merchantItem, itemIndex)
         for j = 1, MAX_ITEM_COST do
             local altCurrencyFrame = _G[merchantItem.."AltCurrencyFrame"]
@@ -269,7 +270,7 @@ function mod:HeldCurrency(enable)
         end
     end
 
-    if enable then
+    if db.enabled then
 		local processing = false
 		MerchantFrame.heldCurrencyHandler = MerchantFrame.heldCurrencyHandler or CreateFrame("Frame", nil, MerchantFrame)
 		MerchantFrame.heldCurrencyHandler:SetScript("OnEvent", function()
@@ -310,9 +311,8 @@ function mod:HeldCurrency(enable)
     end
 end
 
-function mod:HideErrors(enable)
-	if enable then
-		local db = E.db.Extras.blizzard[modName].HideErrors
+function mod:HideErrors(db)
+	if db.enabled then
 		UIErrorsFrame:SetScript('OnEvent', function (self, event, err, ...)
 			if event == 'UI_ERROR_MESSAGE' then
 				if 	err == ERR_INV_FULL or
@@ -338,16 +338,16 @@ function mod:HideErrors(enable)
 	end
 end
 
-function mod:LessTooltips(enable)
-	if enable then
-		if not initialized.LessTooltips then
-			function mod:GameTooltip_OnTooltipSetStuff(tt)
+function mod:LessTooltips(db)
+	if db.enabled then
+		if not self.initialized.LessTooltips then
+			function self:GameTooltip_OnTooltipSetStuff(tt)
 				if not (IsModifierKeyDown()) and tt:GetAnchorType() == 'ANCHOR_CURSOR' then
 					tt:Hide()
 					return
 				end
 			end
-			initialized.LessTooltips = true
+			self.initialized.LessTooltips = true
 		end
 		for _, funcType in ipairs({'Unit', 'Item', 'Spell'}) do
 			if not self:IsHooked(TT, "GameTooltip_OnTooltipSet"..funcType) then
@@ -362,7 +362,7 @@ function mod:LessTooltips(enable)
 				end
 			end)
 		end
-	elseif initialized.LessTooltips then
+	elseif self.initialized.LessTooltips then
 		if self:IsHooked(TT, "GameTooltip_OnTooltipSetUnit") then self:Unhook(TT, "GameTooltip_OnTooltipSetUnit") end
 		if self:IsHooked(TT, "GameTooltip_OnTooltipSetItem") then self:Unhook(TT, "GameTooltip_OnTooltipSetItem") end
 		if self:IsHooked(TT, "GameTooltip_OnTooltipSetSpell") then self:Unhook(TT, "GameTooltip_OnTooltipSetSpell") end
@@ -371,15 +371,19 @@ function mod:LessTooltips(enable)
 end
 
 
-function mod:Toggle()
-	for subMod, info in pairs(E.db.Extras.blizzard[modName]) do
-		self[subMod](self, core.reload and false or info.enabled)
+function mod:Toggle(db)
+	if core.reload then
+		twipe(self.initialized)
+	end
+	for subMod, info in pairs(db) do
+		self[subMod](self, core.reload and {enabled = false} or info)
 	end
 end
 
 function mod:InitializeCallback()
-	mod:LoadConfig()
-	mod:Toggle()
+	local db = E.db.Extras.blizzard[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

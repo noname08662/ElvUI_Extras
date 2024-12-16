@@ -5,7 +5,8 @@ local mod = core:NewModule("Custom Commands", "AceHook-3.0")
 local modName = mod:GetName()
 local lastEventTime = {}
 local handler = CreateFrame("Frame")
-local initialized
+
+mod.initialized = false
 
 local tostring, tonumber = tostring, tonumber
 local pairs, ipairs, loadstring, pcall, print, select = pairs, ipairs, loadstring, pcall, print, select
@@ -34,8 +35,7 @@ P["Extras"]["general"][modName] = {
 	["commands"] = {},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.general[modName]
+function mod:LoadConfig(db)
 	core.general.args[modName] = {
 		type = "group",
 		name = L[modName],
@@ -185,7 +185,7 @@ function mod:LoadConfig()
 						desc = L["UNIT_AURA CHAT_MSG_WHISPER etc.\nONUPDATE - 'OnUpdate' script"],
 						get = function() return db.tabs[db.selected].events and db.tabs[db.selected].events or "" end,
 						set = function(_, value) db.tabs[db.selected].events = value self:SetupHandler(db) end,
-						disabled = function() return not db.tabs[db.selected].enabled or not db.enabled or db.tabs[db.selected].preLoad end,
+						disabled = function() return not db.tabs[db.selected].enabled or not db.enabled end,
 					},
 					commandsEditbox = {
 						order = 11,
@@ -403,17 +403,18 @@ end
 function mod:Toggle(db)
 	if not core.reload and db and db.enabled then
 		self:SetupHandler(db)
-		initialized = true
-	elseif initialized then
+		self.initialized = true
+	elseif self.initialized then
 		handler:UnregisterAllEvents()
 		handler:SetScript("OnUpdate", nil)
-		handler:UnregisterAllEvents("OnEvent", nil)
+		handler:SetScript("OnEvent", nil)
 	end
 end
 
 function mod:InitializeCallback()
-	mod:LoadConfig()
-	mod:Toggle(E.db.Extras.general[modName])
+	local db = E.db.Extras.general[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

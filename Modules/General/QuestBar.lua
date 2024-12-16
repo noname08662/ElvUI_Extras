@@ -5,7 +5,8 @@ local mod = core:NewModule("Quest Bar", "AceHook-3.0", "AceEvent-3.0")
 
 local modName = mod:GetName()
 local incombat = false
-local initialized
+
+mod.initialized = false
 
 local _G = _G
 local tinsert, twipe = table.insert, table.wipe
@@ -326,8 +327,8 @@ function mod:Toggle(db)
 		SLASH_QUESTBARRESTORE1 = "/questbarRestore"
 		SlashCmdList["QUESTBARRESTORE"] = function() twipe(db.blacklist) mod:CheckQuestItems(db) end
 		self:CheckQuestItems(db)
-		initialized = true
-	elseif initialized then
+		self.initialized = true
+	elseif self.initialized then
         self:UnregisterAllEvents()
         local bar = AB.handledBars["bar"..modName]
 		if E.Options.args.actionbar and E.Options.args.actionbar.args.bar10 then

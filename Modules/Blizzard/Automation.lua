@@ -286,7 +286,7 @@ local function sellMerchantStuff(collectionMethod, failsafe)
 						local itemID = B:GetItemID(bagID, slotID)
 						if itemID then
 							local _, itemLink, _, _, _, _, _, _, _, _, sellPrice = GetItemInfo(itemID)
-							if sellPrice > 0 and collectionMethod(getItemDetails(itemID)) then
+							if sellPrice and sellPrice > 0 and collectionMethod(getItemDetails(itemID)) then
 								if failsafe then
 									if staticOffset > 4 then
 										tinsert(pending, 1, {nil, itemLink, button.count, bagID, slotID})
@@ -334,7 +334,8 @@ local function probeBagsStuff(collectionMethod)
 					if button then
 						local itemID = B:GetItemID(bagID, slotID)
 						if itemID then
-							if select(11,GetItemInfo(itemID)) > 0 and collectionMethod(getItemDetails(itemID)) then
+							local sellPrice = select(11,GetItemInfo(itemID))
+							if sellPrice and sellPrice > 0 and collectionMethod(getItemDetails(itemID)) then
 								return true
 							end
 						end

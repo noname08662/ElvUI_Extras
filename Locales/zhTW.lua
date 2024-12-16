@@ -501,11 +501,6 @@ L["Mark"] = "標記"
 L["Mark the target/mouseover plate."] = "標記目標/滑鼠懸停的姓名板。"
 L["Unmark"] = "取消標記"
 L["Unmark the target/mouseover plate."] = "取消標記目標/滑鼠懸停的姓名板。"
-L["FRIENDLY_PLAYER"] = "友方玩家"
-L["FRIENDLY_NPC"] = "友方NPC"
-L["ENEMY_PLAYER"] = "敵方玩家"
-L["ENEMY_NPC"] = "敵方NPC"
-L["Handles positioning and color."] = "處理定位和顏色。"
 L["Selected Type"] = "選擇的類型"
 L["Reaction based coloring for non-cached characters."] = "基於反應的非緩存角色的著色。"
 L["Apply Custom Color"] = "應用自定義顏色"
@@ -1083,3 +1078,28 @@ L["...to the currently selected one."] = "...為當前選擇的職業。"
 L["Select Occupation"] = "選擇職業"
 L["Sell"] = "出售"
 L["Action Type"] = "操作類型"
+L["Style Filter Additional Triggers"] = "樣式過濾器額外觸發器"
+L["Triggers"] = "觸發器"
+L["Example usage:"..
+    "\n local frame, filter, trigger = ..."..
+    "\n return frame.UnitName == 'Shrek'"..
+    "\n         or (frame.unit"..
+    "\n             and UnitName(frame.unit) == 'Fiona')"] =
+    "範例用法:"..
+    "\n local frame, filter, trigger = ..."..
+    "\n return frame.UnitName == '史瑞克'"..
+    "\n         or (frame.unit"..
+    "\n             and UnitName(frame.unit) == '菲歐娜')"
+L["Abbreviate Name"] = "縮寫名稱"
+L["Highlight Self"] = "突出自己"
+L["Highlight Others"] = "突出他人"
+L["Self Inherit Name Color"] = "繼承自己的名字顏色"
+L["Self Texture"] = "自己的材質"
+L["Whitespace to disable, empty to default."] = "空白以禁用，默認為空。"
+L["Self Color"] = "自己的顏色"
+L["Self Scale"] = "自己的比例"
+L["Others Inherit Name Color"] = "繼承他人的名字顏色"
+L["Others Texture"] = "他人的材質"
+L["Others Color"] = "他人的顏色"
+L["Others Scale"] = "他人的比例"
+L["Targets"] = "目標"

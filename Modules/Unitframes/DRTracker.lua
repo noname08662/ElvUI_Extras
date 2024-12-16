@@ -13,6 +13,8 @@ local framelist, activeGUIDs, lastUpdateTime = {}, {}, {}
 local spells = LAI.drSpells
 local pveDR = LAI.pveDR
 
+mod.initialized = false
+
 -- Improved Counterspell, not sure why the spellid is off
 spells[55021] = "silence"
 
@@ -101,8 +103,7 @@ P["Extras"]["unitframes"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.unitframes[modName]
+function mod:LoadConfig(db)
 	local function selectedUnit() return db.selectedUnit end
 	local function selectedCat() return db.selectedCat end
 	local function selectedUnitData()
@@ -650,7 +651,7 @@ local function combatLogCheck(...)
     end
 end
 
-local function setupDRUnits(db)
+function mod:SetupDRUnits(db)
 	twipe(framelist)
 	--[FRAME NAME]	= {UNITID,SIZE,ANCHOR,ANCHORFRAME,X,Y,"ANCHORNEXT","ANCHORPREVIOUS",nextx,nexty},
 
@@ -663,15 +664,15 @@ local function setupDRUnits(db)
 	end
 
 	if db.focus.enabled then
-		framelist["ElvUF_Focus"] = {"focus", db.focus.point, db.focus.relativeTo, db.focus.xOffset, db.focus.yOffset, "LEFT","RIGHT",2,0}
+		framelist["ElvUF_Focus"] = {"focus", db.focus.point, db.focus.relativeTo, db.focus.xOffset, db.focus.yOffset, "LEFT","RIGHT", 2, 0}
 	end
 
 	if db.arena.enabled then
-		framelist["ElvUF_Arena1"] = {"arena1", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT",-2,0}
-		framelist["ElvUF_Arena2"] = {"arena2", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT",-2,0}
-		framelist["ElvUF_Arena3"] = {"arena3", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT",-2,0}
-		framelist["ElvUF_Arena4"] = {"arena4", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT",-2,0}
-		framelist["ElvUF_Arena5"] = {"arena5", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT",-2,0}
+		framelist["ElvUF_Arena1"] = {"arena1", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT", -2, 0}
+		framelist["ElvUF_Arena2"] = {"arena2", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT", -2, 0}
+		framelist["ElvUF_Arena3"] = {"arena3", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT", -2, 0}
+		framelist["ElvUF_Arena4"] = {"arena4", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT", -2, 0}
+		framelist["ElvUF_Arena5"] = {"arena5", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT", -2, 0}
 	end
 end
 
@@ -846,25 +847,30 @@ function mod:TDR(db)
 end
 
 function mod:Toggle(db)
-	setupDRUnits(db.units)
 	if core.reload then
 		twipe(framelist)
+	else
+		self:SetupDRUnits(db.units)
 	end
 	if next(framelist) then
 		self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", combatLogCheck)
 		self:RegisterEvent("PLAYER_TARGET_CHANGED", combatLogCheck)
 		self:RegisterEvent("PLAYER_FOCUS_CHANGED", combatLogCheck)
-	else
+		self.initialized = true
+	elseif self.initialized then
 		self:UnregisterAllEvents()
 	end
-	self:UpdateDRTrackerFrames(db)
+	if self.initialized then
+		self:UpdateDRTrackerFrames(db)
+	end
 end
 
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
 
-	mod:LoadConfig()
-	mod:Toggle(E.db.Extras.unitframes[modName])
+	local db = E.db.Extras.unitframes[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

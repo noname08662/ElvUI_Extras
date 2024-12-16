@@ -40,8 +40,7 @@ P["Extras"]["unitframes"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.unitframes[modName]
+function mod:LoadConfig(db)
 	local uf_units = E.db.unitframe.units
 	local function selectedDetachUnit() return db.DetachPower.selectedUnit end
 	local function selectedShortenUnit() return db.NameAutoShorten.selectedUnit end
@@ -99,7 +98,7 @@ function mod:LoadConfig()
 									uf_units[selectedDetachUnit()].power.detachFromFrame = value
 								end
 								selectedDetachData().enabled = value
-								self:Toggle()
+								self:Toggle(db)
 								updateConfigMode('DP')
 							elseif selectedSubSection() == 'NameAutoShorten' then
 								db.NameAutoShorten.enabled = value
@@ -152,7 +151,7 @@ function mod:LoadConfig()
 								db.DetachPower.units[groupName].enabled = value
 							end
 							db.DetachPower.detachAll = value
-							self:Toggle()
+							self:Toggle(db)
 							updateConfigMode('DP')
 						end,
 					},
@@ -295,10 +294,10 @@ function mod:UpdateNameSettings(frame, childType)
 end
 
 
-function mod:Toggle()
-	local enable = E.db.Extras.unitframes[modName].DetachPower.detachAll
+function mod:Toggle(db)
+	local enable = db.DetachPower.detachAll
 	if not enable then
-		for _, info in pairs(E.db.Extras.unitframes[modName].DetachPower.units) do
+		for _, info in pairs(db.DetachPower.units) do
 			if info.enabled then enable = true break end
 		end
 	end
@@ -306,7 +305,7 @@ function mod:Toggle()
 		if not self:IsHooked(UF, "Configure_Power") then self:RawHook(UF, "Configure_Power", self.Configure_Power, true) end
 	elseif self:IsHooked(UF, "Configure_Power") then self:Unhook(UF, "Configure_Power") end
 
-	if not core.reload and E.db.Extras.unitframes[modName].NameAutoShorten.enabled then
+	if not core.reload and db.NameAutoShorten.enabled then
 		if not self:IsHooked(UF, "UpdateNameSettings") then self:SecureHook(UF, "UpdateNameSettings", self.UpdateNameSettings) end
 		if not self:IsHooked(UF, "Configure_HealthBar") then self:SecureHook(UF, "Configure_HealthBar", function(self, frame) UF:UpdateNameSettings(frame, frame.childType) end) end
 	else
@@ -318,8 +317,9 @@ end
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
 
-	mod:LoadConfig()
-	mod:Toggle()
+	local db = E.db.Extras.unitframes[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

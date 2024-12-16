@@ -500,11 +500,6 @@ L["Mark"] = "Marcar"
 L["Mark the target/mouseover plate."] = "Marca la placa del objetivo/mouseover."
 L["Unmark"] = "Desmarcar"
 L["Unmark the target/mouseover plate."] = "Desmarca la placa del objetivo/mouseover."
-L["FRIENDLY_PLAYER"] = "Jugador amistoso"
-L["FRIENDLY_NPC"] = "PNJ amistoso"
-L["ENEMY_PLAYER"] = "Jugador enemigo"
-L["ENEMY_NPC"] = "PNJ enemigo"
-L["Handles positioning and color."] = "Maneja el posicionamiento y el color."
 L["Selected Type"] = "Tipo seleccionado"
 L["Reaction based coloring for non-cached characters."] = "Coloración basada en reacción para personajes no almacenados en caché."
 L["Apply Custom Color"] = "Aplicar color personalizado"
@@ -1087,3 +1082,28 @@ L["...to the currently selected one."] = "...al actualmente seleccionado."
 L["Select Occupation"] = "Seleccionar ocupación"
 L["Sell"] = "Vender"
 L["Action Type"] = "Tipo de acción"
+L["Style Filter Additional Triggers"] = "Desencadenantes Adicionales de Filtros de Estilo"
+L["Triggers"] = "Desencadenantes"
+L["Example usage:"..
+    "\n local frame, filter, trigger = ..."..
+    "\n return frame.UnitName == 'Shrek'"..
+    "\n         or (frame.unit"..
+    "\n             and UnitName(frame.unit) == 'Fiona')"] =
+		"Ejemplo de uso:"..
+			"\n local frame, filter, trigger = ..."..
+			"\n return frame.UnitName == 'Shrek'"..
+			"\n         o (frame.unit"..
+			"\n             y UnitName(frame.unit) == 'Fiona')"
+L["Abbreviate Name"] = "Abreviar Nombre"
+L["Highlight Self"] = "Resaltar uno mismo"
+L["Highlight Others"] = "Resaltar a otros"
+L["Self Inherit Name Color"] = "Heredar color de nombre propio"
+L["Self Texture"] = "Textura propia"
+L["Whitespace to disable, empty to default."] = "Espacio en blanco para deshabilitar, vacío para predeterminado."
+L["Self Color"] = "Color propio"
+L["Self Scale"] = "Escala propia"
+L["Others Inherit Name Color"] = "Heredar color de nombre de otros"
+L["Others Texture"] = "Textura de otros"
+L["Others Color"] = "Color de otros"
+L["Others Scale"] = "Escala de otros"
+L["Targets"] = "Objetivos"

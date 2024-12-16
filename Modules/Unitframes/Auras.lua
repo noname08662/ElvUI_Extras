@@ -9,14 +9,17 @@ local modName = mod:GetName()
 local _G, unpack, pairs, ipairs, select, tonumber, type = _G, unpack, pairs, ipairs, select, tonumber, type
 local match, format, gsub, find = string.match, string.format, string.gsub, string.find
 local floor, ceil, min, max = math.floor, math.ceil, math.min, math.max
-local tinsert, tcontains = table.insert, tContains
+local tinsert = table.insert
 local UnitIsUnit, CancelUnitBuff, UnitCanAttack = UnitIsUnit, CancelUnitBuff, UnitCanAttack
 local DebuffTypeColor, GetSpellInfo, GetSpellLink = DebuffTypeColor, GetSpellInfo, GetSpellLink
 
-local function centerAuras(_, frame)
+mod.initialized = false
+
+function mod:CenterAuras(frame)
 	for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
-		if frame[auraType] and frame[auraType].db.enable and frame[auraType].PostUpdate and frame[auraType]['visible'..auraType] then
-			frame[auraType]:PostUpdate()
+		local element = frame[auraType]
+		if element and element.db.enable and element.PostUpdate and element['visible'..auraType] then
+			element:PostUpdate()
 		end
 	end
 end
@@ -62,8 +65,7 @@ P["Extras"]["unitframes"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.unitframes[modName]
+function mod:LoadConfig(db)
 	local function selectedType() return db.Highlights.selectedType or "FRIENDLY" end
 	local function selectedSpellorFilter() return db.Highlights.types[selectedType()].selected or "GLOBAL" end
 	local function getHighlightSettings(selected, spellOrFilter)
@@ -83,7 +85,7 @@ function mod:LoadConfig()
 		type = "group",
 		name = L["Auras"],
 		get = function(info) return db[info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
-		set = function(info, value) db[info[#info-1]][gsub(info[#info], info[#info-1], '')] = value self:Toggle() UF:Update_AllFrames() end,
+		set = function(info, value) db[info[#info-1]][gsub(info[#info], info[#info-1], '')] = value self:Toggle(db) UF:Update_AllFrames() end,
 		args = {
 			Highlights = {
 				order = 1,
@@ -640,10 +642,6 @@ function mod:UpdateCenteredAuras(enable)
 		end
 	end
 
-	if not tcontains(core.frameUpdates, centerAuras) then
-		tinsert(core.frameUpdates, centerAuras)
-	end
-
 	if enable then
 		for _, func in ipairs({'Configure_Auras', 'Configure_AuraBars', 'UpdateBuffsHeaderPosition', 'UpdateDebuffsHeaderPosition', 'UpdateBuffsPositionAndDebuffHeight', 'UpdateDebuffsPositionAndBuffHeight', 'UpdateDebuffsHeight', 'UpdateBuffsHeight'}) do
 			if not self:IsHooked(UF, func) then self:SecureHook(UF, func, self[func]) end
@@ -651,6 +649,7 @@ function mod:UpdateCenteredAuras(enable)
 		for _, func in ipairs({'Update_PlayerFrame', 'Update_TargetFrame', 'Update_FocusFrame', 'Update_PetFrame'}) do
 			if not self:IsHooked(UF, func) then self:SecureHook(UF, func, self.UpdateFrame) end
 		end
+		core:Tag('centerAuras', nil, mod.CenterAuras)
 	else
 		for _, func in ipairs({'Configure_Auras', 'Configure_AuraBars', 'UpdateBuffsHeaderPosition', 'UpdateDebuffsHeaderPosition', 'UpdateBuffsPositionAndDebuffHeight', 'UpdateDebuffsPositionAndBuffHeight', 'UpdateDebuffsHeight', 'UpdateBuffsHeight'}) do
 			if self:IsHooked(UF, func) then self:Unhook(UF, func) end
@@ -658,6 +657,7 @@ function mod:UpdateCenteredAuras(enable)
 		for _, func in ipairs({'Update_PlayerFrame', 'Update_TargetFrame', 'Update_FocusFrame', 'Update_PetFrame'}) do
 			if self:IsHooked(UF, func) then self:Unhook(UF, func) end
 		end
+		core:Untag('centerAuras')
 	end
 end
 
@@ -818,12 +818,13 @@ function mod:UpdatePostUpdateAura(enable)
 
 	if enable then
 		if not self:IsHooked(UF, "PostUpdateAura") then self:SecureHook(UF, "PostUpdateAura", self.PostUpdateAura) end
-	else
+		self.initialized = true
+	elseif self.initialized then
 		if self:IsHooked(UF, "PostUpdateAura") then self:Unhook(UF, "PostUpdateAura") end
 	end
+	if not self.initialized then return end
 
-	local units = core:AggregateUnitFrames()
-	for _, frame in ipairs(units) do
+	for _, frame in ipairs(core:AggregateUnitFrames()) do
 		for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
 			if frame[auraType] and frame[auraType].db and frame[auraType].db.enable then
 				frame[auraType].PostUpdateIcon = UF.PostUpdateAura
@@ -842,19 +843,19 @@ function mod:UpdatePostUpdateAura(enable)
 end
 
 
-function mod:Toggle()
-	self:UpdateCenteredAuras(E.db.Extras.unitframes[modName].CenteredAuras.enabled)
-	self:UpdateClickCancel(E.db.Extras.unitframes[modName].ClickCancel.enabled)
+function mod:Toggle(db)
+	self:UpdateCenteredAuras(db.CenteredAuras.enabled)
+	self:UpdateClickCancel(db.ClickCancel.enabled)
 	local enabled = false
 	if not core.reload then
 		for _, subMod in pairs({'TypeBorders', 'SaturatedDebuffs'}) do
-			if E.db.Extras.unitframes[modName][subMod].enabled then
+			if db[subMod].enabled then
 				enabled = true
 				break
 			end
 		end
 		if not enabled then
-			for _, info in pairs(E.db.Extras.unitframes[modName].Highlights.types) do
+			for _, info in pairs(db.Highlights.types) do
 				if info.enabled then enabled = true break end
 			end
 		end
@@ -865,8 +866,9 @@ end
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
 
-	mod:LoadConfig()
-	mod:Toggle()
+	local db = E.db.Extras.unitframes[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

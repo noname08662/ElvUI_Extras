@@ -5,11 +5,19 @@ local LSM = E.Libs.LSM
 local LAI = E.Libs.LAI
 
 local modName = mod:GetName()
-local activeCooldowns, petSpells, highlightedSpells, framelist, testSpells, testing = {}, {}, {}, {}, {}, false
+local activeCooldowns, petSpells, framelist, testSpells, testing = {}, {}, {}, {}, false
 local edgeFile = LSM:Fetch("border", "ElvUI GlowBorder")
+local highlightedSpells = {["ENEMY_PLAYER"] = {}, ["FRIENDLY_PLAYER"] = {}}
 
 local scanTool = CreateFrame("GameTooltip", "ScanTooltipUF", nil, "GameTooltipTemplate")
 scanTool:SetOwner(WorldFrame, "ANCHOR_NONE")
+
+mod.initialized = false
+mod.updatePending = false
+mod.iconPositions = {
+	["FRIENDLY_PLAYER"] = {},
+	["ENEMY_PLAYER"] = {},
+}
 
 local band = bit.band
 local _G, pairs, ipairs, select, unpack, tonumber, next = _G, pairs, ipairs, select, unpack, tonumber, next
@@ -18,24 +26,49 @@ local random, floor, min, ceil, abs = math.random, math.floor, math.min, math.ce
 local tinsert, tremove, tsort, twipe, tcontains = table.insert, table.remove, table.sort, table.wipe, tContains
 local GetTime, CooldownFrame_SetTimer = GetTime, CooldownFrame_SetTimer
 local GetSpellInfo, GetSpellLink = GetSpellInfo, GetSpellLink
-local IsInInstance, IsResting = IsInInstance, IsResting
 local UnitName, UnitCanAttack, UnitIsPlayer = UnitName, UnitCanAttack, UnitIsPlayer
 local COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_CONTROL_PLAYER = COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_CONTROL_PLAYER
 local UNITNAME_SUMMON_TITLES = {gsub(format(UNITNAME_SUMMON_TITLE1, 1), '[%d%p%s]+', ''), gsub(format(UNITNAME_SUMMON_TITLE3, 1), '[%d%p%s]+', ''), gsub(format(UNITNAME_SUMMON_TITLE5, 1), '[%d%p%s]+', '')}
 
+local iconPositions = mod.iconPositions
 
-local function tagFunc(frame, unit)
-	local playerName = UnitName(unit)
-	local activeCds = activeCooldowns[playerName]
+local function updateVisibilityState(db, areaType)
+	local isShown = false
+	for _, unitType in ipairs({'ENEMY_PLAYER', 'FRIENDLY_PLAYER'}) do
+		for _, frameType in ipairs({'target', 'player', 'focus', 'raid', 'raid40', 'party', 'arena'}) do
+			local data = db[unitType].units[frameType]
+			if data then
+				if data.enabled then
+					isShown = isShown or data['showAll'] or data[areaType]
+					data.isShown = data['showAll'] or data[areaType]
+				else
+					data.isShown = false
+				end
+			end
+		end
+	end
+	return isShown
+end
+
+function mod:tagFunc(frame, unit)
+	local activeCds = activeCooldowns[UnitName(unit)]
 
 	if activeCds and tcontains(framelist, frame) then
-		for i, cooldown in ipairs(activeCds) do
-			if cooldown.endTime < GetTime() then
+		local db = E.db.Extras.unitframes[modName]
+		if unit == 'target' or unit == 'focus' then
+			local header = db[testing and db.selectedType
+								or (UnitCanAttack(unit, 'player') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER')].units[frame.unitframeType].header
+			frame.CDTracker:ClearAllPoints()
+			frame.CDTracker:Point(header.point, frame, header.relativeTo, header.xOffset, header.yOffset)
+			frame.CDTracker:SetFrameLevel(header.level)
+			frame.CDTracker:SetFrameStrata(header.strata)
+		end
+		for i = #activeCds, 1, -1 do
+			if activeCds[i].endTime < GetTime() then
 				tremove(activeCds, i)
 			end
 		end
-
-		mod:AttachCooldowns(frame, activeCds)
+		mod:AttachCooldowns(db, frame, activeCds)
 	elseif frame.CDTracker then
 		frame.CDTracker:Hide()
 	end
@@ -54,6 +87,7 @@ local function getPetOwner(unit)
 		end
 	end
 end
+
 
 local trinkets = {
 	[42292] = true,
@@ -95,16 +129,31 @@ local fallbackSpells = {
     [53271] = 60    -- Master's Call
 }
 
-local function testMode()
-	for _, frame in ipairs(framelist) do
+local resetCooldowns = {
+    [11958] = {	[12472] = true, [42931] = true, [45438] = true,
+				[42917] = true, [31687] = true, [44572] = true,
+				[11426] = true, [43012] = true,						}, -- Coldsnap
+    [23989] = {	[19503] = true, [19263] = true, [781]	= true,
+				[60192] = true, [14311] = true, [13809] = true,
+				[34600] = true, [34490] = true,	[19386] = true,
+				[53271] = true, [19577] = true						}, -- Readiness
+    [14185] = {	[26669] = true, [11305] = true, [26889] = true,
+				[14177] = true, [36554] = true,						}, -- Preparation
+}
+
+
+local function testMode(db)
+	local units = core:AggregateUnitFrames()
+	for _, frame in ipairs(units) do
 		if frame.CDTracker then frame.CDTracker:Hide() end
-		if frame.unit then
-			if activeCooldowns[UnitName(frame.unit)] then twipe(activeCooldowns[UnitName(frame.unit)]) end
+		local unit = frame.unit
+		if unit then
+			if activeCooldowns[UnitName(unit)] then twipe(activeCooldowns[UnitName(unit)]) end
 		end
 	end
-	if testing then return end
+	if not testing then return end
 
-    local spellList = E.db.Extras.unitframes[modName][E.db.Extras.unitframes[modName].selectedType].spellList
+    local spellList = db[db.selectedType].spellList
     local spellIDs = {}
 
     local index = 0
@@ -146,12 +195,17 @@ local function testMode()
 	}
 	tinsert(testSpells, random(1, #testSpells), trinket)
 
-	for _, frame in ipairs(framelist) do
+	for _, frame in ipairs(units) do
 		local unit = frame.unit
-		if unit and UnitName(unit) and frame.unitframeType == E.db.Extras.unitframes[modName].selectedUnit then
+		local data = db[db.selectedType].units[frame.unitframeType]
+		if data and data.enabled and unit and UnitName(unit) then
 			local playerName = UnitName(unit)
 			activeCooldowns[playerName] = testSpells
-			mod:AttachCooldowns(frame, activeCooldowns[playerName], true)
+			if not frame.CDTracker then
+				frame.CDTracker = CreateFrame("Frame", '$parentCDTracker', frame)
+				frame.CDTracker.cooldowns = {}
+			end
+			mod:AttachCooldowns(db, frame, activeCooldowns[playerName])
 		end
 	end
 end
@@ -178,6 +232,68 @@ local function createCompareFunction(sorting, prioritizeTrinkets)
             return a.startTime < b.startTime
         end
     end
+end
+
+local function cachePositions(db, frameType)
+	for unitType in pairs(iconPositions) do
+		local data = db[unitType].units[frameType]
+		if data then
+			local icons = data.icons
+			local perRow, spacing, direction, size = icons.perRow, icons.spacing, icons.direction, icons.size
+			local offset = size + spacing
+			local point = oppositeDirections[direction]
+			local dirProps = directionProperties[direction]
+			local isCentered, isVertical, isReverseX, isReverseY = dirProps.isCentered, dirProps.isVertical, dirProps.isReverseX, dirProps.isReverseY
+			local t = iconPositions[unitType][frameType]
+
+			if t then
+				twipe(t)
+			else
+				iconPositions[unitType][frameType] = {}
+				t = iconPositions[unitType][frameType]
+			end
+
+			for shown = 1, icons.maxRows * perRow do
+				local numRows = ceil(shown / perRow)
+				local numCols = min(shown, perRow)
+				local trackerWidth = isVertical and (numRows * offset - spacing) or (numCols * offset - spacing)
+				local trackerHeight = isVertical and (numCols * offset - spacing) or (numRows * offset - spacing)
+
+				t[shown] = {
+					positions = {},
+					trackerWidth = trackerWidth,
+					trackerHeight = trackerHeight
+				}
+
+				for i = 1, shown do
+					local row = floor((i - 1) / perRow)
+					local col = (i - 1) % perRow
+
+					local xOffset, yOffset
+					if isCentered then
+						local itemsInThisRow = min(perRow, shown - row * perRow)
+						local rowSize = itemsInThisRow * size + (itemsInThisRow - 1) * spacing
+						if isVertical then
+							yOffset = -rowSize / 2 + col * offset + size / 2
+							xOffset = isReverseX and (row * offset) or (-row * offset)
+						else
+							xOffset = -rowSize / 2 + col * offset + size / 2
+							yOffset = isReverseY and (row * offset) or (-row * offset)
+						end
+					else
+						if isVertical then
+							xOffset = isReverseX and (row * offset) or (-row * offset)
+							yOffset = isReverseY and (col * offset) or (-col * offset)
+						else
+							xOffset = col * offset
+							yOffset = isReverseY and (-row * offset) or (row * offset)
+						end
+					end
+					t[shown].positions[i] = {point = point, xOffset = xOffset, yOffset = yOffset}
+				end
+			end
+		end
+	end
 end
 
 
@@ -522,8 +638,7 @@ P["Extras"]["unitframes"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.unitframes[modName]
+function mod:LoadConfig(db)
 	local function selectedUnit() return db.selectedUnit end
 	local function selectedType() return db.selectedType end
 	local function selectedSpell() return selectedType() and tonumber(db[selectedType()].selectedSpell) or "" end
@@ -550,18 +665,18 @@ function mod:LoadConfig()
 					enabled = {
 						order = 0,
 						type = "toggle",
-						disabled = false,
 						name = core.pluginColor..L["Enable"],
 						desc = L["Draws player cooldowns."],
 						get = function(info) return selectedUnitData()[info[#info]] end,
-						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
+						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle(db) end,
+						disabled = false,
 					},
 					testMode = {
 						order = 1,
 						type = "execute",
 						name = L["Test Mode"],
 						desc = "",
-						func = function() self:Toggle() testMode() testing = not testing end,
+						func = function() self:Toggle(db) testing = not testing testMode(db) end,
 					},
 					selectedUnit = {
 						order = 3,
@@ -571,7 +686,7 @@ function mod:LoadConfig()
 						desc = "",
 						values = function() return core:GetUnitDropdownOptions(db[selectedType()].units) end,
 						get = function(info) return db[info[#info]] end,
-						set = function(info, value) db[info[#info]] = value if testing then testMode() else self:Toggle() end end,
+						set = function(info, value) db[info[#info]] = value end,
 					},
 					selectedType = {
 						order = 4,
@@ -586,61 +701,82 @@ function mod:LoadConfig()
 							return list
 						end,
 						get = function(info) return db[info[#info]] end,
-						set = function(info, value) db[info[#info]] = value if testing then testMode() else self:Toggle() end end,
-						disabled = function() return not find(selectedUnit(), 'target') and selectedUnit() ~= 'focus' end,
+						set = function(info, value) db[info[#info]] = value db.selectedUnit = 'target' if testing then testMode(db) end end,
+						disabled = false,
 					},
+				},
+			},
+			visibility = {
+				order = 1,
+				type = "group",
+				name = L["Visibility State"],
+				guiInline = true,
+				get = function(info) return selectedUnitData()[info[#info]] end,
+				set = function(info, value)
+					local data = selectedUnitData()
+					data[info[#info]] = value
+					local enabled = false
+					for _, showType in ipairs({'showCity', 'showBG', 'showInstance', 'showArena', 'showWorld'}) do
+						if data[showType] then
+							enabled = true
+							break
+						end
+					end
+					if not enabled then data['showAll'] = true end
+					self:Toggle(db)
+				end,
+				disabled = function() return not selectedUnitData().enabled end,
+				args = {
 					showAll = {
-						order = 5,
+						order = 1,
 						type = "toggle",
 						name = L["Show Everywhere"],
 						desc = "",
-						get = function(info) return selectedUnitData()[info[#info]] end,
-						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
+						set = function(info, value)
+							local data = selectedUnitData()
+							data[info[#info]] = value
+							if not value then
+								for _, showType in ipairs({'showCity', 'showBG', 'showInstance', 'showArena', 'showWorld'}) do
+									data[showType] = true
+								end
+							end
+							self:Toggle(db)
+						end,
 					},
 					showCity = {
-						order = 5,
+						order = 2,
 						type = "toggle",
 						name = L["Show in Cities"],
 						desc = "",
 						hidden = function() return selectedUnitData().showAll end,
-						get = function(info) return selectedUnitData()[info[#info]] end,
-						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 					},
 					showBG = {
-						order = 6,
+						order = 3,
 						type = "toggle",
 						name = L["Show in Battlegrounds"],
 						desc = "",
 						hidden = function() return selectedUnitData().showAll end,
-						get = function(info) return selectedUnitData()[info[#info]] end,
-						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 					},
 					showArena = {
-						order = 7,
+						order = 4,
 						type = "toggle",
 						name = L["Show in Arenas"],
 						desc = "",
 						hidden = function() return selectedUnitData().showAll end,
-						get = function(info) return selectedUnitData()[info[#info]] end,
-						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 					},
 					showInstance = {
-						order = 7,
+						order = 5,
 						type = "toggle",
 						name = L["Show in Instances"],
 						desc = "",
 						hidden = function() return selectedUnitData().showAll end,
-						get = function(info) return selectedUnitData()[info[#info]] end,
-						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 					},
 					showWorld = {
-						order = 7,
+						order = 6,
 						type = "toggle",
 						name = L["Show in the World"],
 						desc = "",
 						hidden = function() return selectedUnitData().showAll end,
-						get = function(info) return selectedUnitData()[info[#info]] end,
-						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
 					},
 				},
 			},
@@ -649,7 +785,7 @@ function mod:LoadConfig()
 				name = L["Header"],
 				guiInline = true,
 				get = function(info) return selectedUnitData()[info[#info-1]][info[#info]] end,
-				set = function(info, value) selectedUnitData()[info[#info-1]][info[#info]] = value self:Toggle() end,
+				set = function(info, value) selectedUnitData()[info[#info-1]][info[#info]] = value self:Toggle(db) end,
 				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					level = {
@@ -706,7 +842,7 @@ function mod:LoadConfig()
 				name = L["Icons"],
 				guiInline = true,
 				get = function(info) return selectedUnitData()[info[#info-1]][info[#info]] end,
-				set = function(info, value) selectedUnitData()[info[#info-1]][info[#info]] = value self:Toggle() end,
+				set = function(info, value) selectedUnitData()[info[#info-1]][info[#info]] = value self:Toggle(db) end,
 				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					throttle = {
@@ -739,7 +875,7 @@ function mod:LoadConfig()
 						name = L["Border Color"],
 						desc = L["Any value apart from black (0,0,0) would override borders by time left."],
 						get = function(info) return unpack(selectedUnitData()[info[#info-1]].borderCustomColor) end,
-						set = function(info, r, g, b) selectedUnitData()[info[#info-1]].borderCustomColor = {r, g, b} self:Toggle() end,
+						set = function(info, r, g, b) selectedUnitData()[info[#info-1]].borderCustomColor = {r, g, b} self:Toggle(db) end,
 					},
 					borderColor = {
 						order = 5,
@@ -808,7 +944,7 @@ function mod:LoadConfig()
 				name = L["CD Text"],
 				guiInline = true,
 				get = function(info) return selectedUnitData()[info[#info-1]][info[#info]] end,
-				set = function(info, value) selectedUnitData()[info[#info-1]][info[#info]] = value self:Toggle() end,
+				set = function(info, value) selectedUnitData()[info[#info-1]][info[#info]] = value self:Toggle(db) end,
 				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					enabled = {
@@ -865,7 +1001,7 @@ function mod:LoadConfig()
 				name = L["Cooldown Fill"],
 				guiInline = true,
 				get = function(info) return selectedUnitData()[info[#info-1]][info[#info]] end,
-				set = function(info, value) selectedUnitData()[info[#info-1]][info[#info]] = value self:Toggle() end,
+				set = function(info, value) selectedUnitData()[info[#info-1]][info[#info]] = value self:Toggle(db) end,
 				disabled = function() return not selectedUnitData().enabled end,
 				args = {
 					enabled = {
@@ -913,9 +1049,9 @@ function mod:LoadConfig()
 						desc = L["Format: 'spellID cooldown time', e.g. 42292 120"],
 						get = function() return "" end,
 						set = function(_, value)
-							local spellID, cooldownTime = match(value, '%D*(%d+)%D*(%d+)')
+							local spellID, cooldownTime = match(value, '%D*(%d+)%D*(%d*)')
 							if spellID and GetSpellInfo(spellID) then
-								cooldownTime = cooldownTime or LAI.spellDuration[spellID]
+								cooldownTime = tonumber(cooldownTime) or LAI.spellDuration[spellID]
 								if not cooldownTime then return end
 								selectedTypeData().spellList[tonumber(spellID)] = cooldownTime
 								local _, _, icon = GetSpellInfo(spellID)
@@ -984,7 +1120,7 @@ function mod:LoadConfig()
 						name = L["Shadow"],
 						desc = L["For the important stuff."],
 						get = function() return selectedSpell() ~= "" and highlightedSpellsData().enabled end,
-						set = function(_, value) highlightedSpellsData().enabled = value self:Toggle() end,
+						set = function(_, value) highlightedSpellsData().enabled = value self:Toggle(db) end,
 						disabled = function() return selectedSpell() == "" end,
 					},
 					petSpell = {
@@ -993,7 +1129,7 @@ function mod:LoadConfig()
 						name = L["Pet Ability"],
 						desc = L["Pet casts require some special treatment."],
 						get = function() return db.petSpells[selectedSpell()] end,
-						set = function(_, value) db.petSpells[selectedSpell()] = value and value or nil self:Toggle() end,
+						set = function(_, value) db.petSpells[selectedSpell()] = value and value or nil self:Toggle(db) end,
 						disabled = function() return selectedSpell() == "" end,
 					},
 					shadowSize = {
@@ -1003,7 +1139,7 @@ function mod:LoadConfig()
 						desc = "",
 						min = 1, max = 12, step = 1,
 						get = function() return selectedSpell() ~= "" and highlightedSpellsData().size or 0 end,
-						set = function(_, value) highlightedSpellsData().size = value self:Toggle() end,
+						set = function(_, value) highlightedSpellsData().size = value self:Toggle(db) end,
 						disabled = function() return selectedSpell() == "" or not highlightedSpellsData().enabled end,
 					},
 					shadowColor = {
@@ -1013,7 +1149,7 @@ function mod:LoadConfig()
 						name = L["Shadow Color"],
 						desc = "",
 						get = function() return unpack(selectedSpell() ~= "" and highlightedSpellsData().color or {}) end,
-						set = function(_, r, g, b, a) highlightedSpellsData().color = {r, g, b, a} self:Toggle() end,
+						set = function(_, r, g, b, a) highlightedSpellsData().color = {r, g, b, a} self:Toggle(db) end,
 						disabled = function() return selectedSpell() == "" or not highlightedSpellsData().enabled end,
 					},
 				},
@@ -1021,23 +1157,28 @@ function mod:LoadConfig()
 		},
 	}
 	if not db['FRIENDLY_PLAYER'].units.player then
-		for _, unitframeType in ipairs({'player', 'focus', 'raid', 'raid40', 'party', 'arena'}) do
+		for _, unitframeType in ipairs({'player', 'focus', 'raid', 'raid40', 'party'}) do
 			db['FRIENDLY_PLAYER'].units[unitframeType] = CopyTable(db['FRIENDLY_PLAYER'].units.target)
 		end
 	end
 	if not db['ENEMY_PLAYER'] then
 		db['ENEMY_PLAYER'] = CopyTable(db['FRIENDLY_PLAYER'])
+		for _, unitframeType in ipairs({'player', 'raid', 'raid40', 'party'}) do
+			db['ENEMY_PLAYER'].units[unitframeType] = nil
+		end
+		db['ENEMY_PLAYER'].units['arena'] = CopyTable(db['FRIENDLY_PLAYER'].units.target)
 	end
 end
 
 
-local function getColorByTime(remainingTime, totalTime, unitType)
+local function getColorByTimeFriend(_, remainingTime, totalTime)
     local percentage = remainingTime / totalTime
+    return percentage, 1 - percentage
+end
 
-    local r = unitType == 'ENEMY_PLAYER' and (1 - percentage) or percentage
-    local g = unitType == 'ENEMY_PLAYER' and percentage or (1 - percentage)
-
-    return r, g
+local function getColorByTimeEnemy(_, remainingTime, totalTime)
+    local percentage = remainingTime / totalTime
+    return 1 - percentage, percentage
 end
 
 local function setFillPoints(cooldown, fillWidth, direction)
@@ -1083,30 +1224,42 @@ local function setFillPointsReversed(cooldown, fillWidth, direction)
     end
 end
 
-local function combatLogEvent(_, ...)
+local function combatLogEvent(db, _, ...)
     local _, eventType, _, sourceName, sourceFlags, _, _, _, spellID = ...
 
-    if eventType == "SPELL_CAST_SUCCESS" and sourceName then
-		local isAnotherPlayer = (band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER or band(sourceFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER)
+	if eventType == "SPELL_CAST_SUCCESS" and sourceName then
+		local isAnotherPlayer = (band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
+								or band(sourceFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER)
 		if not isAnotherPlayer then return end
 
-		local startTime = GetTime()
-		for _, type in ipairs({'ENEMY_PLAYER', 'FRIENDLY_PLAYER'}) do
-			if E.db.Extras.unitframes[modName][type].spellList[spellID] then
-				local endTime = startTime + E.db.Extras.unitframes[modName][type].spellList[spellID]
-				mod:UpdateCooldowns(match(sourceName, '%P+'), spellID, startTime, endTime)
-				break
+		for _, unitType in ipairs({'ENEMY_PLAYER', 'FRIENDLY_PLAYER'}) do
+			local cdTime = db[unitType].spellList[spellID]
+			if cdTime then
+				local startTime = GetTime()
+				mod:UpdateCooldowns(db, match(sourceName, '%P+'), spellID, startTime, startTime + cdTime)
+				return
 			end
 		end
     end
 end
 
-
-function mod:UpdateCooldowns(playerName, spellID, startTime, endTime)
+function mod:UpdateCooldowns(db, playerName, spellID, startTime, endTime)
     local remaining = endTime - GetTime()
     if remaining <= 0 then return end
 
-    activeCooldowns[playerName] = activeCooldowns[playerName] or {}
+	local activeCds = activeCooldowns[playerName]
+    local resetSpell = resetCooldowns[spellID]
+
+	if not activeCds then
+		activeCooldowns[playerName] = {}
+		activeCds = activeCooldowns[playerName]
+	elseif resetSpell then
+		for i = #activeCds, 1, -1 do
+			if resetSpell[activeCds[i].spellID] then
+				tremove(activeCds, i)
+			end
+		end
+	end
 
     local spellInfo = {
         spellID = spellID,
@@ -1115,15 +1268,14 @@ function mod:UpdateCooldowns(playerName, spellID, startTime, endTime)
         icon = select(3, GetSpellInfo(spellID)),
     }
 
-	tinsert(activeCooldowns[playerName], spellInfo)
-	self:UpdateFrames(playerName)
+    tinsert(activeCds, spellInfo)
+    self:UpdateFrames(db, playerName)
 end
 
-function mod:UpdateFrames(playerName, updateAll)
+function mod:UpdateFrames(db, playerName, updateAll)
 	for _, frame in ipairs(framelist) do
 		local unit = frame.unit
 		if unit and (UnitName(unit) == playerName or updateAll) then
-			if not playerName then playerName = UnitName(unit) end
 			if activeCooldowns[playerName] and next(activeCooldowns[playerName]) then
 				if not UnitIsPlayer(unit) then
 					local ownerName = getPetOwner(unit)
@@ -1139,13 +1291,13 @@ function mod:UpdateFrames(playerName, updateAll)
 						for _, f in ipairs(framelist) do
 							local unit = f.unit
 							if unit and UnitName(unit) == ownerName and UnitIsPlayer(unit) then
-								self:AttachCooldowns(f, activeCooldowns[ownerName], ownerName)
+								self:AttachCooldowns(db, f, activeCooldowns[ownerName], ownerName)
 								return
 							end
 						end
 					end
 				else
-					self:AttachCooldowns(frame, activeCooldowns[playerName])
+					self:AttachCooldowns(db, frame, activeCooldowns[playerName])
 				end
 			elseif frame.CDTracker then
 				frame.CDTracker:Hide()
@@ -1154,52 +1306,29 @@ function mod:UpdateFrames(playerName, updateAll)
 	end
 end
 
-function mod:AttachCooldowns(frame, cooldowns, inTestMode)
-	local unitType = UnitCanAttack(frame.unit, 'player') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER'
-    local db
-	if inTestMode then
-		db = E.db.Extras.unitframes[modName][E.db.Extras.unitframes[modName].selectedType].units[E.db.Extras.unitframes[modName].selectedUnit]
-	else
-		db = E.db.Extras.unitframes[modName][unitType].units[frame.unitframeType]
-	end
+function mod:AttachCooldowns(database, frame, cooldowns)
+	local unitType = testing and database.selectedType or (UnitCanAttack(frame.unit, 'player') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER')
+    local db = database[unitType].units[frame.unitframeType]
+	local tracker = frame.CDTracker
 
-	local shown = db.showAll
-	if not shown then
-		if IsResting() then
-			shown = db.showCity
-		else
-			local _, instanceType = IsInInstance()
-			if instanceType == "pvp" then
-				shown = db.showBG
-			elseif instanceType == "arena" then
-				shown = db.showArena
-			elseif instanceType == "party" or instanceType == "raid" then
-				shown = db.showInstance
-			else
-				shown = db.showWorld
-			end
-		end
-	end
-
-	if not shown then frame.CDTracker:Hide() return end
+	if not db or not db.enabled or not db.isShown or not tracker then return end
 
 	local db_icons = db.icons
 	local db_text = db.text
 	local db_cooldownFill = db.cooldownFill
 
-	local cmp = createCompareFunction(db_icons.sorting, db_icons.trinketOnTop)
-	tsort(cooldowns, cmp)
+	tsort(cooldowns, createCompareFunction(db_icons.sorting, db_icons.trinketOnTop))
 
     for i, cd in ipairs(cooldowns) do
 		if i > db_icons.perRow * db_icons.maxRows then break end
 
-        local cdFrame = frame.CDTracker.cooldowns[i]
+        local cdFrame = tracker.cooldowns[i]
 
 		local endTime = cd.endTime
 		local startTime = cd.startTime
 
         if not cdFrame then
-            cdFrame = CreateFrame("Frame", nil, frame.CDTracker)
+            cdFrame = CreateFrame("Frame", nil, tracker)
             cdFrame:Size(db_icons.size, db_icons.size)
             cdFrame:SetTemplate()
             cdFrame.texture = cdFrame:CreateTexture(nil, "ARTWORK")
@@ -1216,7 +1345,7 @@ function mod:AttachCooldowns(frame, cooldowns, inTestMode)
             cdFrame:SetTemplate()
 			cdFrame.shadow = CreateFrame("Frame", nil, cdFrame)
 			cdFrame.shadow:SetFrameLevel(db.header.level - 1)
-            tinsert(frame.CDTracker.cooldowns, cdFrame)
+            tinsert(tracker.cooldowns, cdFrame)
         end
 
 		if db_cooldownFill.enabled then
@@ -1243,8 +1372,12 @@ function mod:AttachCooldowns(frame, cooldowns, inTestMode)
 		if db_icons.borderCustomColor[1] > 0 or db_icons.borderCustomColor[2] > 0 or db_icons.borderCustomColor[3] > 0 then
 			cdFrame:SetBackdropBorderColor(unpack(db_icons.borderCustomColor))
 		elseif db_icons.borderColor then
-			cdFrame.col = testMode and E.db.Extras.unitframes[modName].selectedType or unitType
-			cdFrame:SetBackdropBorderColor(getColorByTime(endTime - GetTime(), endTime - startTime, cdFrame.col))
+			if unitType == "ENEMY_PLAYER" then
+				cdFrame.col = getColorByTimeEnemy
+			else
+				cdFrame.col = getColorByTimeFriend
+			end
+			cdFrame:SetBackdropBorderColor(cdFrame:col(endTime - GetTime(), endTime - startTime))
 		end
 
         cdFrame.texture:SetTexture(cd.icon)
@@ -1256,33 +1389,20 @@ function mod:AttachCooldowns(frame, cooldowns, inTestMode)
 		cdFrame.animateFadeOut = db_icons.animateFadeOut
 
         cdFrame:SetScript("OnUpdate", function(self, elapsed)
-            mod:OnUpdateCooldown(self, elapsed, cooldowns)
-        end)
-
-        cdFrame:SetScript("OnHide", function(self)
-            self:SetScript("OnUpdate", nil)
+            mod:OnUpdateCooldown(self, elapsed, cooldowns, database, tracker)
         end)
     end
 
 	local cdlen = #cooldowns
 
-	for i = cdlen + 1, #frame.CDTracker.cooldowns do
-        frame.CDTracker.cooldowns[i]:Hide()
+	for i = cdlen + 1, #tracker.cooldowns do
+        tracker.cooldowns[i]:Hide()
     end
 
-	frame.CDTracker:Show()
-
-	self:RepositionIcons(db, frame.CDTracker, cdlen)
+	self:RepositionIcons(tracker, cdlen, unitType, frame.unitframeType)
 end
 
-function mod:RepositionIcons(db, tracker, cdlen)
-    local icons = db.icons
-    local perRow, spacing, direction, size = icons.perRow, icons.spacing, icons.direction, icons.size
-    local offset = size + spacing
-    local point = oppositeDirections[direction]
-    local dirProps = directionProperties[direction]
-    local isCentered, isVertical, isReverseX, isReverseY = dirProps.isCentered, dirProps.isVertical, dirProps.isReverseX, dirProps.isReverseY
-
+function mod:RepositionIcons(tracker, cdlen, unitType, frameType)
     local shown = min(cdlen, #tracker.cooldowns)
 
     if shown == 0 then
@@ -1290,37 +1410,18 @@ function mod:RepositionIcons(db, tracker, cdlen)
         return
     end
 
+	local highlights = highlightedSpells[unitType]
+	local info = iconPositions[unitType][frameType][shown]
+	local iconPos = info.positions
+
     for i = 1, shown do
         local cdFrame = tracker.cooldowns[i]
         cdFrame:ClearAllPoints()
 
-        local row = floor((i - 1) / perRow)
-        local col = (i - 1) % perRow
+		local position = iconPos[i]
+		cdFrame:Point(position.point, tracker, position.point, position.xOffset, position.yOffset)
 
-        local xOffset, yOffset
-        if isCentered then
-            local itemsInThisRow = min(perRow, shown - row * perRow)
-            local rowSize = itemsInThisRow * size + (itemsInThisRow - 1) * spacing
-            if isVertical then
-                yOffset = -rowSize / 2 + col * offset + size / 2
-                xOffset = isReverseX and (row * offset) or (-row * offset)
-            else
-                xOffset = -rowSize / 2 + col * offset + size / 2
-                yOffset = isReverseY and (row * offset) or (-row * offset)
-            end
-        else
-            if isVertical then
-                xOffset = isReverseX and (row * offset) or (-row * offset)
-                yOffset = isReverseY and (col * offset) or (-col * offset)
-            else
-                xOffset = col * offset
-                yOffset = isReverseY and (-row * offset) or (row * offset)
-            end
-        end
-
-        cdFrame:Point(point, tracker, point, xOffset, yOffset)
-
-        local highlight = highlightedSpells[cdFrame.spellID]
+        local highlight = highlights[cdFrame.spellID]
         if highlight and highlight.enabled then
             cdFrame.shadow:SetOutside(cdFrame, highlight.size, highlight.size)
             cdFrame.shadow:SetBackdrop({edgeFile = edgeFile, edgeSize = E:Scale(highlight.size)})
@@ -1329,20 +1430,13 @@ function mod:RepositionIcons(db, tracker, cdlen)
         else
             cdFrame.shadow:Hide()
         end
-
         cdFrame:Show()
     end
-
-    local numRows = ceil(shown / perRow)
-    local numCols = min(shown, perRow)
-
-    local trackerWidth = isVertical and (numRows * offset - spacing) or (numCols * offset - spacing)
-    local trackerHeight = isVertical and (numCols * offset - spacing) or (numRows * offset - spacing)
-
-    tracker:Size(trackerWidth, trackerHeight)
+    tracker:Size(info.trackerWidth, info.trackerHeight)
+	tracker:Show()
 end
 
-function mod:OnUpdateCooldown(cooldown, elapsed, cooldowns)
+function mod:OnUpdateCooldown(cooldown, elapsed, cooldowns, database, tracker)
     cooldown.timeElapsed = (cooldown.timeElapsed or 0) + elapsed
 
     if cooldown.timeElapsed > cooldown.throttle then
@@ -1361,8 +1455,7 @@ function mod:OnUpdateCooldown(cooldown, elapsed, cooldowns)
         end
 
         if cooldown.col then
-			local r, g = getColorByTime(remaining, endTime - startTime, cooldown.col)
-			cooldown:SetBackdropBorderColor(r, g)
+			cooldown:SetBackdropBorderColor(cooldown:col(remaining, endTime - startTime))
         end
 
 		if cooldown.animateFadeOut then
@@ -1377,56 +1470,51 @@ function mod:OnUpdateCooldown(cooldown, elapsed, cooldowns)
 
 		if remaining > 0 then return end
 
-		cooldown:SetScript("OnUpdate", nil)
 		cooldown:Hide()
 
-		for i, cd in ipairs(cooldowns) do
-			if cd.endTime <= GetTime() then
+		for i = #cooldowns, 1, -1 do
+			if cooldowns[i].endTime < GetTime() then
 				tremove(cooldowns, i)
 			end
 		end
 
-		if cooldown:GetParent():IsShown() then
-			mod:AttachCooldowns(cooldown:GetParent():GetParent(), cooldowns, testing)
+		if tracker:IsShown() then
+			mod:AttachCooldowns(database, tracker:GetParent(), cooldowns)
 		end
     end
 end
 
 
-local function setupCooldowns()
-	local db = E.db.Extras.unitframes[modName]
-	local units = core:AggregateUnitFrames()
+function mod:SetupCooldowns(db, visibilityUpdate)
+	if not visibilityUpdate then
+		twipe(highlightedSpells['FRIENDLY_PLAYER'])
+		twipe(highlightedSpells['ENEMY_PLAYER'])
+		twipe(petSpells)
 
-	twipe(framelist)
-	twipe(highlightedSpells)
-	twipe(petSpells)
-
-	for _, type in ipairs({'FRIENDLY_PLAYER', 'ENEMY_PLAYER'}) do
-		for spellID, info in pairs(db[type].highlightedSpells or {}) do
-			highlightedSpells[spellID] = info
+		for _, unitType in ipairs({'FRIENDLY_PLAYER', 'ENEMY_PLAYER'}) do
+			for spellID, info in pairs(db[unitType].highlightedSpells or {}) do
+				highlightedSpells[unitType][spellID] = info
+			end
+		end
+		for spellID in pairs(db.petSpells) do
+			petSpells[spellID] = true
 		end
 	end
+	twipe(framelist)
+	twipe(iconPositions["FRIENDLY_PLAYER"])
+	twipe(iconPositions["ENEMY_PLAYER"])
 
-	for spellID in pairs(db.petSpells) do
-		petSpells[spellID] = true
-	end
-
-	for _, frame in ipairs(units) do
+	for _, frame in ipairs(core:AggregateUnitFrames()) do
 		local unit = frame.unit
-
 		if unit then
-			local playerName = UnitName(unit)
-			local unitType = UnitCanAttack(unit, 'player') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER'
-			local unitframeType = frame.unitframeType
-			local db_type = db[unitType].units[unitframeType]
-
+			local unitType = testing and db.selectedType or (UnitCanAttack(unit, 'player') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER')
+			local db_type = db[unitType].units[frame.unitframeType]
 			if db_type and db_type.enabled then
+				cachePositions(db, frame.unitframeType)
+
 				if not frame.CDTracker then
 					frame.CDTracker = CreateFrame("Frame", '$parentCDTracker', frame)
 					frame.CDTracker.cooldowns = {}
-					frame.CDTracker:Hide()
-
-					core:Tag("cooldowns", tagFunc)
 				end
 
 				local db_header = db_type.header
@@ -1439,60 +1527,86 @@ local function setupCooldowns()
 					frame.CDTracker.cooldowns[i]:Hide()
 					frame.CDTracker.cooldowns[i] = nil
 				end
-
 				tinsert(framelist, frame)
 
-				if UnitIsPlayer(unit) then
-					if activeCooldowns[playerName] then
-						mod:AttachCooldowns(frame, activeCooldowns[playerName], testing)
-					end
+				local playerName = UnitName(unit)
+				if UnitIsPlayer(unit) and activeCooldowns[playerName] then
+					mod:AttachCooldowns(db, frame, activeCooldowns[playerName])
+				else
+					frame.CDTracker:Hide()
 				end
+			elseif frame.CDTracker then
+				frame.CDTracker:Hide()
 			end
 		end
 	end
 end
 
-function mod:Toggle()
-	local enabled
+function mod:Toggle(db)
+	local enabled = {}
 
 	if not core.reload then
-		for _, type in ipairs({'FRIENDLY_PLAYER', 'ENEMY_PLAYER'}) do
-			for _, info in pairs(E.db.Extras.unitframes[modName][type].units) do
+		for _, unitType in ipairs({'FRIENDLY_PLAYER', 'ENEMY_PLAYER'}) do
+			for _, info in pairs(db[unitType].units) do
 				if info.enabled then
-					enabled = true
-					break
+					enabled[unitType] = true
 				end
 			end
 		end
 	end
 
-	if enabled then
-		setupCooldowns()
-
-		self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(self, event, ...) combatLogEvent(self, event, ...) end)
-		self:RegisterEvent("ZONE_CHANGED_NEW_AREA", function()
-			local _, type = IsInInstance()
-
-			if type == 'arena' then
-				twipe(activeCooldowns)
+	if next(enabled) then
+		local handleAreaUpdate = false
+		for unitType in pairs(enabled) do
+			for _, unitData in pairs(db[unitType].units) do
+				if not unitData['showAll'] then
+					core:RegisterAreaUpdate(modName, function()
+						if updateVisibilityState(db, core:GetCurrentAreaType()) then
+							self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(...) combatLogEvent(db, ...) end)
+						else
+							self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+						end
+						self:SetupCooldowns(db, true)
+					end)
+					handleAreaUpdate = true
+					break
+				end
 			end
-
-			mod:UpdateFrames(nil, true)
+			if handleAreaUpdate then break end
+		end
+		if not handleAreaUpdate then
+			core:RegisterAreaUpdate(modName)
+		end
+		if updateVisibilityState(db, core:GetCurrentAreaType()) then
+			self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(...) combatLogEvent(db, ...) end)
+		else
+			self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+		end
+		self:SetupCooldowns(db)
+		core:Tag("cooldowns", self.tagFunc, function()
+			if not self.updatePending then
+				self.updatePending = E:ScheduleTimer(function() self:SetupCooldowns(db) self.updatePending = false end, 0.1)
+			else
+				E:CancelTimer(self.updatePending)
+				self.updatePending = E:ScheduleTimer(function() self:SetupCooldowns(db) self.updatePending = false end, 0.1)
+			end
 		end)
-	else
+		self.initialized = true
+	elseif self.initialized then
 		self:UnregisterAllEvents()
+		core:RegisterAreaUpdate(modName)
 		twipe(activeCooldowns)
-		self:UpdateFrames(nil, true)
+		self:UpdateFrames(db, nil, true)
+		core:Untag("cooldowns")
 	end
 end
 
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
 
-	mod:LoadConfig()
-	mod:Toggle()
-
-	tinsert(core.frameUpdates, setupCooldowns)
+	local db = E.db.Extras.unitframes[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

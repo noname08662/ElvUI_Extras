@@ -7,7 +7,8 @@ local EMB = E.modules.EmbedSystem and E:GetModule("EmbedSystem")
 local LSM = E.Libs.LSM
 
 local modName = mod:GetName()
-local initialized = {}
+
+mod.initialized = {}
 
 local chatTypeIndexToName = {}
 local lastHisoryMsgIndex = {}
@@ -73,6 +74,10 @@ local NEW_CHAT_WINDOW, RESET_ALL_WINDOWS, RENAME_CHAT_WINDOW = NEW_CHAT_WINDOW, 
 local CLOSE_CHAT_WINDOW, CHAT_CONFIGURATION = CLOSE_CHAT_WINDOW, CHAT_CONFIGURATION
 
 local E_Delay, E_UIFrameFadeIn, E_UIFrameFadeOut = E.Delay, E.UIFrameFadeIn, E.UIFrameFadeOut
+
+local colorPattern = "^|c%x%x%x%x%x%x%x%x"
+local linkPattern = "(.-|h)(.-)|h"
+local codePattern = "^|%d%p%d%((.+)%)"
 
 for chatType in pairs(ChatTypeInfo) do
 	chatTypeIndexToName[GetChatTypeIndex(chatType)] = chatType
@@ -869,7 +874,7 @@ local function setupCompactChat(db)
 			updateChatVisibility(db.selectedRightTab)
 		end
 
-		if not initialized.compactChat then
+		if not mod.initialized.compactChat then
 			local isRightClick = false
 
 			local LeftChatModFrame = CreateFrame("Frame", "ChatModOptionsDropDown", UIParent, "UIDropDownMenuTemplate")
@@ -886,6 +891,7 @@ local function setupCompactChat(db)
 
 			local function ChatModOptionsDropDown_Initialize(self, level)
 				local isRightSide = self == RightChatModFrame
+				local data = E.db.Extras.general[modName]
 
 				if level == 1 then
 					local info = UIDropDownMenu_CreateInfo()
@@ -921,8 +927,9 @@ local function setupCompactChat(db)
 					for i = 1, NUM_CHAT_WINDOWS do
 						local chatFrame = _G["ChatFrame"..i]
 						local id = chatFrame:GetID()
-						if (isRightSide and db.rightSideChats[id]) or (not isRightSide and chatFrame.isDocked) then
-							info.text = ((isRightSide and db.selectedRightTab or db.selectedLeftTab) == id and core.customColorAlpha or core.customColorBeta) .. chatFrame.name
+						if (isRightSide and data.rightSideChats[id]) or (not isRightSide and chatFrame.isDocked) then
+							info.text = ((isRightSide and data.selectedRightTab or data.selectedLeftTab) == id
+											and core.customColorAlpha or core.customColorBeta) .. chatFrame.name
 							info.hasArrow = isRightClick
 							info.notCheckable = true
 							info.value = id
@@ -1144,7 +1151,7 @@ local function setupCompactChat(db)
 			createChatManagerButton(LeftChatPanel, "left")
 			createChatManagerButton(RightChatPanel, "right")
 
-			initialized.compactChat = true
+			mod.initialized.compactChat = true
 		end
 
 		if not MessageEventHandlerPostHooks['compactChat'] then
@@ -1371,7 +1378,7 @@ local function setupCompactChat(db)
 
 		selectChatTab(_G["ChatFrame"..db.selectedLeftTab], db.selectedLeftTab)
 		selectChatTab(_G["ChatFrame"..db.selectedRightTab], db.selectedRightTab, true)
-	elseif initialized.compactChat then
+	elseif mod.initialized.compactChat then
 		if MessageEventHandlerPostHooks['compactChat'] then MessageEventHandlerPostHooks['compactChat'] = nil end
 		if EMB then
 			if mod:IsHooked(EMB, "UpdateSwitchButton") then mod:Unhook(EMB, "UpdateSwitchButton") end
@@ -1417,7 +1424,7 @@ local function setupCompactChat(db)
 		end
 	end
 
-	if not initialized.compactChat then return end
+	if not mod.initialized.compactChat then return end
 
 	for id, frameName in ipairs(CHAT_FRAMES) do
 		local chat = _G[frameName]
@@ -1451,8 +1458,8 @@ local function setupChatEditBox(db)
 			mod:SecureHook(CH, "UpdateAnchors", updateAnchors)
 		end
 
-		initialized.chatEditBox = true
-	elseif initialized.chatEditBox then
+		mod.initialized.chatEditBox = true
+	elseif mod.initialized.chatEditBox then
 		if mod:IsHooked(CH, "UpdateAnchors") then
 			mod:Unhook(CH, "UpdateAnchors")
 		end
@@ -1507,8 +1514,7 @@ P["Extras"]["general"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.general[modName]
+function mod:LoadConfig(db)
 	local function selectedFrame() return db.SearchFilter.frames.selectedFrame or 1 end
     local function selectedRule()
 		return core:getSelected("general", modName, format("SearchFilter.frames[%s]", selectedFrame() or ""), 1).selectedRule or 1
@@ -2002,10 +2008,6 @@ function mod:StripMsg(msg)
     local tempMsg = lower(msg)
     local strLen = #tempMsg
 
-    local colorPattern = "^|c%x%x%x%x%x%x%x%x"
-    local linkPattern = "(.-|h)(.-)|h"
-    local codePattern = "^|%d%p%d%((.+)%)"
-
 	-- timestamps
 	local stampStart, stampEnd = find(msg, "^[|%x]*%[[|:%d%s%xaApPmMr]*%][|rR]*[|%x%x%x%x%x%x%x%x%x]*%s*")
 
@@ -2086,7 +2088,12 @@ function mod:StripMsg(msg)
                             end
                             i = linkEnd + 1
                         else
-                            i = i + 2
+							strippedMsg = strippedMsg .. sub(msg, i, codeEnd - 1)
+							for k = i, codeEnd - 1 do
+								msgMap[j], j = k, j + 1
+							end
+							i = codeEnd + 1
+							break
                         end
                     end
                 end
@@ -2099,7 +2106,6 @@ function mod:StripMsg(msg)
             msgMap[j], i, j = i, i + 1, j + 1
         end
     end
-
     return strippedMsg, msgMap
 end
 
@@ -2326,8 +2332,9 @@ function mod:InitializeCallback()
 	gBad = tonumber(sub(hex, 3, 4), 16) / 255
 	bBad = tonumber(sub(hex, 5, 6), 16) / 255
 
-	mod:LoadConfig()
-	mod:Toggle(core.reload and {SearchFilter = {}, CompactChat = {}, ChatEditBox = {}} or E.db.Extras.general[modName])
+	local db = E.db.Extras.general[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(core.reload and {SearchFilter = {}, CompactChat = {}, ChatEditBox = {}} or db)
 end
 
 core.modules[modName] = mod.InitializeCallback

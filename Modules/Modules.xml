@@ -19,6 +19,7 @@
 	<Include file="Nameplates\ClassificationIcons.lua"/>>
 	<Include file="Nameplates\Cooldowns.lua"/>>
 	<Include file="Nameplates\StyleFilter.lua"/>>
+	<Include file="Nameplates\Targets.lua"/>>
 
 	<Include file="Unitframes\Auras.lua"/>>
 	<Include file="Unitframes\Misc.lua"/>>

@@ -10,9 +10,10 @@ local modName = mod:GetName()
 local buttonMap, itemCounts, tooltipInfo = {}, {}, {}
 local equipmentSets = {}
 local removingBag = false
-local initialized = {}
 
+mod.initialized = {}
 mod.localhooks = {}
+
 mod.buttonMap = buttonMap
 mod.itemCounts = itemCounts
 
@@ -744,9 +745,8 @@ P["Extras"]["general"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
+function mod:LoadConfig(db)
 	local selectedItemType = 0
-	local db = E.db.Extras.general[modName]
     local function selectedContainer() return db.BagsExtendedV2.selectedContainer end
     local function selectedContainerData()
 		return core:getSelected("general", modName, format("BagsExtendedV2.containers[%s]", selectedContainer() or ""), "bags")
@@ -2916,8 +2916,8 @@ function mod:BagsExtendedV2(db)
 		self:UpdateAll()
 		self:RegisterEvent("EQUIPMENT_SETS_CHANGED", updateSetsInfo)
 		self:RegisterEvent("EQUIPMENT_SWAP_FINISHED", updateSetsInfo)
-		initialized.BagsExtendedV2 = true
-	elseif initialized.BagsExtendedV2 then
+		self.initialized.BagsExtendedV2 = true
+	elseif self.initialized.BagsExtendedV2 then
 		for _, func in pairs({'UpdateSlot', 'SetSlotAlphaForBag', 'ResetSlotAlphaForBags'}) do
 			if self:IsHooked(B, func) then self:Unhook(B, func) end
 		end
@@ -2930,7 +2930,7 @@ function mod:BagsExtendedV2(db)
 		self:UpdateAll(true)
 		self:UnregisterEvent("EQUIPMENT_SETS_CHANGED")
 		self:UnregisterEvent("EQUIPMENT_SWAP_FINISHED")
-		initialized.BagsExtendedV2 = false
+		self.initialized.BagsExtendedV2 = false
 	end
 end
 
@@ -3296,8 +3296,8 @@ function mod:EasierProcessing(db)
 			}
 		end
 
-		initialized.EasierProcessing = true
-	elseif initialized.EasierProcessing then
+		self.initialized.EasierProcessing = true
+	elseif self.initialized.EasierProcessing then
 		if self:IsHooked(B, 'Layout') and not (db.BagsExtendedV2.enabled or db.SplitStack.enabled) then
 			self:Unhook(B, 'Layout')
 		end
@@ -3305,7 +3305,7 @@ function mod:EasierProcessing(db)
 		self.localhooks.EasierProcessing["OnHide"] = false
 		self.ProcessButton:Hide()
 		self.ProcessButton = nil
-		initialized.EasierProcessing = false
+		self.initialized.EasierProcessing = false
 	end
 end
 
@@ -3318,14 +3318,14 @@ function mod:SplitStack(db)
 		}
 
 		self:ModifyStackSplitFrame(true)
-		initialized.SplitStack = true
-	elseif initialized.SplitStack then
+		self.initialized.SplitStack = true
+	elseif self.initialized.SplitStack then
 		if self:IsHooked(B, 'Layout') and not (db.BagsExtendedV2.enabled or db.EasierProcessing.enabled) then
 			self:Unhook(B, 'Layout')
 		end
 		self.localhooks.SplitStack["OnClick"] = false
 		self:ModifyStackSplitFrame(false)
-		initialized.SplitStack = false
+		self.initialized.SplitStack = false
 	end
 end
 
@@ -3344,10 +3344,10 @@ function mod:Toggle(db)
 end
 
 function mod:InitializeCallback()
-	mod:LoadConfig()
-
+	local db = E.db.Extras.general[modName]
+	mod:LoadConfig(db)
 	if not E.private.bags.enable then return end
-	mod:Toggle(E.db.Extras.general[modName])
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

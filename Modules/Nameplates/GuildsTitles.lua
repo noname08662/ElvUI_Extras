@@ -26,6 +26,8 @@ local dataTexMapDefaults = {
 }
 local isAwesome = C_NamePlate
 
+mod.initialized = false
+
 local scanner = CreateFrame("GameTooltip", "ExtrasGT_ScanningTooltip", nil, "GameTooltipTemplate")
 scanner:SetOwner(WorldFrame, "ANCHOR_NONE")
 
@@ -36,7 +38,6 @@ local format, match, find, gsub, sub = string.format, string.match, string.find,
 local GetGuildInfo = GetGuildInfo
 local UnitInRaid, UnitInParty, UnitIsPlayer, UnitGUID = UnitInRaid, UnitInParty, UnitIsPlayer, UnitGUID
 local UnitReaction, UnitName, UnitPlayerControlled, UnitCanAttack = UnitReaction, UnitName, UnitPlayerControlled, UnitCanAttack
-local IsResting, IsInInstance = IsResting, IsInInstance
 local UNKNOWN, UNIT_LEVEL_TEMPLATE = UNKNOWN, UNIT_LEVEL_TEMPLATE
 local TOOLTIP_UNIT_LEVEL_RACE_CLASS = gsub(table.concat({strsplit(1, string.format(TOOLTIP_UNIT_LEVEL_RACE_CLASS, 1, 1, 1))}), '[%d%p%s]+', '')
 local MINIMAP_TRACKING_AUCTIONEER, MINIMAP_TRACKING_BANKER,
@@ -48,9 +49,6 @@ local MINIMAP_TRACKING_AUCTIONEER, MINIMAP_TRACKING_BANKER,
 			MINIMAP_TRACKING_VENDOR_REAGENT, MINIMAP_TRACKING_TRAINER_PROFESSION, MINIMAP_TRACKING_REPAIR,
 			MINIMAP_TRACKING_STABLEMASTER, MINIMAP_TRACKING_FLIGHTMASTER, BARBERSHOP, GUILD, MERCHANT, ALL
 
-
-local E_Delay = E.Delay
-local updatePending = false
 
 local separatorMap = {
 	NONE = "%s",
@@ -65,6 +63,14 @@ local separatorMap = {
 	CURVE = "(%s)",
 	CURVE1 = "( %s )"
 }
+
+
+local function updateVisibilityState(db, areaType)
+	for _, unitType in ipairs({'ENEMY_PLAYER', 'FRIENDLY_PLAYER'}) do
+		local data = db[unitType]
+		data.isShown = data['showAll'] or data[areaType]
+	end
+end
 
 
 P["Extras"]["nameplates"][modName] = {
@@ -152,13 +158,12 @@ P["Extras"]["nameplates"][modName] = {
 		["desc"] = L["Displays player guild text."],
 		["selectedType"] = "ENEMY_PLAYER",
 		["ENEMY_PLAYER"] = {
-			["visibility"] = {
-				["city"] = true,
-				["pvp"] = true,
-				["arena"] = true,
-				["party"] = true,
-				["raid"] = true,
-			},
+			["showAll"] = true,
+			["showCity"] = false,
+			["showBG"] = false,
+			["showArena"] = false,
+			["showInstance"] = false,
+			["showWorld"] = false,
 			["font"] = "Expressway",
 			["fontSize"] = 11,
 			["fontOutline"] = "OUTLINE",
@@ -176,13 +181,12 @@ P["Extras"]["nameplates"][modName] = {
 			},
 		},
 		["FRIENDLY_PLAYER"] = {
-			["visibility"] = {
-				["city"] = true,
-				["pvp"] = true,
-				["arena"] = true,
-				["party"] = true,
-				["raid"] = true,
-			},
+			["showAll"] = true,
+			["showCity"] = false,
+			["showBG"] = false,
+			["showArena"] = false,
+			["showInstance"] = false,
+			["showWorld"] = false,
 			["font"] = "Expressway",
 			["fontSize"] = 11,
 			["fontOutline"] = "OUTLINE",
@@ -202,8 +206,7 @@ P["Extras"]["nameplates"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.nameplates[modName]
+function mod:LoadConfig(db)
 	local function selectedSubSection() return db.selectedSubSection or "Titles" end
 	local function selectedType() return db.Titles.selectedType or "ENEMY_NPC" end
 	local function selectedPlayerType() return db.Guilds.selectedType or "ENEMY_PLAYER" end
@@ -373,7 +376,7 @@ function mod:LoadConfig()
 						type = "range",
 						name = L["Level"],
 						desc = "",
-						min = -200, max = 200, step = 1
+						min = -5, max = 50, step = 1
 					},
 				},
 			},
@@ -382,40 +385,74 @@ function mod:LoadConfig()
 				type = "group",
 				name = L["Visibility State"],
 				guiInline = true,
-				get = function(info) return db.Guilds[selectedPlayerType()].visibility[info[#info]] end,
-				set = function(info, value) db.Guilds[selectedPlayerType()].visibility[info[#info]] = value NP:ConfigureAll() end,
+				get = function(info) return db.Guilds[selectedPlayerType()][info[#info]] end,
+				set = function(info, value)
+					local data = db.Guilds[selectedPlayerType()]
+					data[info[#info]] = value
+					local enabled = false
+					for _, showType in ipairs({'showCity', 'showBG', 'showInstance', 'showArena', 'showWorld'}) do
+						if data[showType] then
+							enabled = true
+							break
+						end
+					end
+					if not enabled then data['showAll'] = true end
+					updateVisibilityState(db.Guilds, core:GetCurrentAreaType())
+					self:UpdateAllSettings(db)
+				end,
 				disabled = function() return not db[selectedSubSection()].enabled end,
 				hidden = function() return selectedSubSection() ~= 'Guilds' end,
 				args = {
-					city = {
+					showAll = {
 						order = 1,
 						type = "toggle",
-						name = L["City (Resting)"],
+						name = L["Show Everywhere"],
 						desc = "",
+						set = function(info, value)
+							db.Guilds[selectedPlayerType()][info[#info]] = value
+							if not value then
+								for _, showType in ipairs({'showCity', 'showBG', 'showInstance', 'showArena', 'showWorld'}) do
+									db.Guilds[selectedPlayerType()][showType] = true
+								end
+							end
+							updateVisibilityState(db.Guilds, core:GetCurrentAreaType())
+							self:UpdateAllSettings(db)
+						end,
 					},
-					pvp = {
+					showCity = {
 						order = 2,
 						type = "toggle",
-						name = L["PvP"],
+						name = L["Show in Cities"],
 						desc = "",
+						hidden = function() return db.Guilds[selectedPlayerType()].showAll end,
 					},
-					arena = {
+					showBG = {
 						order = 3,
 						type = "toggle",
-						name = L["Arena"],
+						name = L["Show in Battlegrounds"],
 						desc = "",
+						hidden = function() return db.Guilds[selectedPlayerType()].showAll end,
 					},
-					party = {
+					showArena = {
 						order = 4,
 						type = "toggle",
-						name = L["Party"],
+						name = L["Show in Arenas"],
 						desc = "",
+						hidden = function() return db.Guilds[selectedPlayerType()].showAll end,
 					},
-					raid = {
+					showInstance = {
 						order = 5,
 						type = "toggle",
-						name = L["Raid"],
+						name = L["Show in Instances"],
 						desc = "",
+						hidden = function() return db.Guilds[selectedPlayerType()].showAll end,
+					},
+					showWorld = {
+						order = 6,
+						type = "toggle",
+						name = L["Show in the World"],
+						desc = "",
+						hidden = function() return db.Guilds[selectedPlayerType()].showAll end,
 					},
 				},
 			},
@@ -532,7 +569,7 @@ function mod:LoadConfig()
 						type = "range",
 						name = L["Level"],
 						desc = "",
-						min = -200, max = 200, step = 1
+						min = -5, max = 50, step = 1
 					},
 					modifier = {
 						order = 8,
@@ -886,7 +923,7 @@ function mod:LoadConfig()
 						type = "range",
 						name = L["Level"],
 						desc = "",
-						min = -200, max = 200, step = 1
+						min = -5, max = 50, step = 1
 					},
 				},
 			},
@@ -894,6 +931,26 @@ function mod:LoadConfig()
 	}
 end
 
+
+local function updateAllVisiblePlates(db)
+	if isAwesome then
+		for frame in pairs(NP.VisiblePlates) do
+			if frame.unit and frame.Title then
+				frame.Title:Hide()
+				frame.OccupationIcon:Hide()
+				mod:AwesomeUpdateUnitInfo(frame, db, frame.unit)
+			end
+		end
+	else
+		for frame in pairs(NP.VisiblePlates) do
+			if frame.Title then
+				frame.Title:Hide()
+				frame.OccupationIcon:Hide()
+				mod:UpdateTitle(frame, db, nil, nil, frame.UnitName)
+			end
+		end
+	end
+end
 
 local function constructTitle(frame)
 	if frame.Title then return end
@@ -914,7 +971,7 @@ local function manageTitleFrame(frame, title, db, db_icon)
 		title.str:SetFont(LSM:Fetch("font", db.font), db.fontSize, db.fontOutline)
 		title:Height(db.fontSize)
 		title:ClearAllPoints()
-		title:Point(db.point, health:IsVisible() and health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
+		title:Point(db.point, health:IsShown() and health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
 		title:SetFrameLevel(max(1, frame:GetFrameLevel() + db.level))
 	end
 	if db_icon then
@@ -923,7 +980,7 @@ local function manageTitleFrame(frame, title, db, db_icon)
 		occupationIcon:ClearAllPoints()
 		occupationIcon:Size(db_icon.size)
 		occupationIcon:Point(db_icon.point,
-							db_icon.anchor ~= "FRAME" and title or health:IsVisible() and health or frame.Name,
+							db_icon.anchor ~= "FRAME" and title or (health:IsShown() and health) or frame.Name,
 							db_icon.relativeTo, db_icon.xOffset, db_icon.yOffset)
 		occupationIcon:SetFrameLevel(max(1,frame:GetFrameLevel() + db_icon.level))
 
@@ -1010,29 +1067,10 @@ function mod:UpdateTitle(frame, db, unit, unitTitle, name)
 	elseif unitTitle and db.Guilds.enabled and (unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER') then
 		db = db.Guilds[unitType]
 
-		local shown
-		if IsResting() then
-			shown = db.visibility.city
-		else
-			local _, instanceType = IsInInstance()
-			if instanceType == "pvp" then
-				shown = db.visibility.pvp
-			elseif instanceType == "arena" then
-				shown = db.visibility.arena
-			elseif instanceType == "party" then
-				shown = db.visibility.party
-			elseif instanceType == "raid" then
-				shown = db.visibility.raid
-			else
-				shown = true
-			end
-		end
-
-		if shown then
+		if db.isShown then
 			manageTitleFrame(frame, title, db)
 
 			local color
-
 			if UnitInRaid(unit) then
 				color = db.colors.raid
 			elseif UnitInParty(unit) then
@@ -1062,26 +1100,7 @@ function mod:AwesomeUpdateUnitInfo(frame, db, unit)
 		scanner:SetUnit(unit)
 
 		local guildName = _G["ExtrasGT_ScanningTooltipTextLeft2"]:GetText()
-		if not guildName then
-			frame.Title:Hide()
-			frame.OccupationIcon:Hide()
-			return
-		end
-
-		if find(gsub(guildName, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
-			-- sometimes the guild info is too late to load
-			if updatePending then return end
-			updatePending = true
-
-			E_Delay(nil, 0.1, function()
-				if name ~= UnitName(unit) then return end
-
-				guildName = GetGuildInfo(unit)
-				if guildName then
-					mod:UpdateTitle(frame, db, unit, guildName, name)
-				end
-				updatePending = false
-			end)
+		if not guildName or find(gsub(guildName, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
 			return
 		end
 
@@ -1151,26 +1170,10 @@ function mod:UpdateUnitInfo(frame, db, unit)
 		scanner:SetUnit(unit)
 
 		local guildName = _G["ExtrasGT_ScanningTooltipTextLeft2"]:GetText()
-		if not guildName then
+		if not guildName or find(gsub(guildName, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
 			if db.UnitTitle[name] then
 				db.UnitTitle[name] = nil
 			end
-			return
-		end
-
-		if find(gsub(guildName, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
-			-- sometimes the guild info is too late to load
-			if updatePending then return end
-			updatePending = true
-
-			E_Delay(nil, 0.1, function()
-				if name ~= UnitName(unit) then return end
-				guildName = GetGuildInfo(unit)
-				if guildName then
-					mod:UpdateTitle(frame, db, unit, guildName, name)
-				end
-				updatePending = false
-			end)
 			return
 		end
 
@@ -1206,45 +1209,47 @@ function mod:UpdateUnitInfo(frame, db, unit)
 end
 
 function mod:UpdateAllSettings(db)
-	twipe(NPCOccupations_data)
-	twipe(NPCOccupations_cache)
-	dataTexMap = db.OccupationIcon.dataTexMap
-	local all = db.OccupationIcon.types["All"]
-	for occupation, data in pairs(core.NPCOccupations_data or {}) do
-		if all or db.OccupationIcon.types[occupation] then
-			NPCOccupations_data[occupation] = {}
-			local occupation_data = NPCOccupations_data[occupation]
-			for id in pairs(data) do
-				occupation_data[id] = true
-			end
-		end
-	end
-	for occupation, data in pairs(db.NPCOccupations_data) do
-		if all or db.OccupationIcon.types[occupation] then
-			NPCOccupations_data[occupation] = NPCOccupations_data[occupation] or {}
-			local occupation_data = NPCOccupations_data[occupation]
-			for id in pairs(data) do
-				occupation_data[id] = true
-			end
-		end
-	end
-	for name, occupation in pairs(db.NPCOccupations_cache) do
-		if all or db.OccupationIcon.types[occupation] then
-			NPCOccupations_cache[name] = occupation
-		end
-	end
 	if db.OccupationIcon.enabled then
-		if db.OccupationIcon.anchor == "FRAME" then
-			core.plateAnchoring['OccupationIcon'] = function(unitType)
-				if unitType == 'FRIENDLY_NPC' or unitType == 'ENEMY_NPC' then
-					return db.OccupationIcon
+		twipe(NPCOccupations_data)
+		twipe(NPCOccupations_cache)
+		dataTexMap = db.OccupationIcon.dataTexMap
+		local all = db.OccupationIcon.types["All"]
+		for occupation, data in pairs(core.NPCOccupations_data or {}) do
+			if all or db.OccupationIcon.types[occupation] then
+				NPCOccupations_data[occupation] = {}
+				local occupation_data = NPCOccupations_data[occupation]
+				for id in pairs(data) do
+					occupation_data[id] = true
 				end
 			end
+		end
+		for occupation, data in pairs(db.NPCOccupations_data) do
+			if all or db.OccupationIcon.types[occupation] then
+				NPCOccupations_data[occupation] = NPCOccupations_data[occupation] or {}
+				local occupation_data = NPCOccupations_data[occupation]
+				for id in pairs(data) do
+					occupation_data[id] = true
+				end
+			end
+		end
+		for name, occupation in pairs(db.NPCOccupations_cache) do
+			if all or db.OccupationIcon.types[occupation] then
+				NPCOccupations_cache[name] = occupation
+			end
+		end
+		if db.OccupationIcon.anchor == "FRAME" then
+			core:RegisterNPElement('OccupationIcon', function(unitType, frame, element)
+				if frame.OccupationIcon and (unitType == 'FRIENDLY_NPC' or unitType == 'ENEMY_NPC') then
+					local points = db.OccupationIcon
+					frame.OccupationIcon:ClearAllPoints()
+					frame.OccupationIcon:Point(points.point, element, points.relativeTo, points.xOffset, points.yOffset)
+				end
+			end)
 		else
-			core.plateAnchoring['OccupationIcon'] = nil
+			core:RegisterNPElement('OccupationIcon')
 		end
 	else
-		core.plateAnchoring['OccupationIcon'] = nil
+		core:RegisterNPElement('OccupationIcon')
 	end
 	for plate in pairs(NP.CreatedPlates) do
 		local frame = plate and plate.UnitFrame
@@ -1254,7 +1259,7 @@ function mod:UpdateAllSettings(db)
 		end
 	end
 	if not core.reload then
-		NP:ConfigureAll()
+		updateAllVisiblePlates(db)
 	end
 end
 
@@ -1336,33 +1341,58 @@ end
 
 function mod:Toggle(db)
 	if core.reload or (not db.Guilds.enabled and not db.Titles.enabled and not db.OccupationIcon.enabled) then
-		if not db.Guilds.enabled and not db.Titles.enabled then
-			core.plateAnchoring['Title'] = nil
+		if self.initialized then
+			if not db.Guilds.enabled and not db.Titles.enabled then
+				core:RegisterNPElement('Title')
+			end
+			if not db.OccupationIcon.enabled then
+				core:RegisterNPElement('OccupationIcon')
+			end
+			if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
+			if self:IsHooked(NP, "Update_Name") then self:Unhook(NP, "Update_Name") end
+			if self:IsHooked(NP, "OnCreated") then self:Unhook(NP, "OnCreated") end
+			if self:IsHooked(NP, "ResetNameplateFrameLevel") then self:Unhook(NP, "ResetNameplateFrameLevel") end
+			SLASH_ADDOCCUPATION1 = nil
+			SlashCmdList["ADDOCCUPATION"] = nil
+			hash_SlashCmdList["/ADDOCCUPATION"] = nil
+			self:UnregisterAllEvents()
+			core:RegisterAreaUpdate(modName)
+			self:UpdateAllSettings(db)
 		end
-		if not db.OccupationIcon.enabled then
-			core.plateAnchoring['OccupationIcon'] = nil
-		end
-		if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
-		if self:IsHooked(NP, "Update_Name") then self:Unhook(NP, "Update_Name") end
-		if self:IsHooked(NP, "OnCreated") then self:Unhook(NP, "OnCreated") end
-		if self:IsHooked(NP, "ResetNameplateFrameLevel") then self:Unhook(NP, "ResetNameplateFrameLevel") end
-		self:UnregisterAllEvents()
-		SLASH_ADDOCCUPATION1 = nil
-		SlashCmdList["ADDOCCUPATION"] = nil
-		hash_SlashCmdList["/ADDOCCUPATION"] = nil
 	else
 		if db.Guilds.enabled or db.Titles.enabled then
-			core.plateAnchoring['Title'] = function(unitType)
-				if unitType == 'FRIENDLY_NPC' or unitType == 'ENEMY_NPC' then
-					return db.Titles[unitType]
-				elseif unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER' then
-					return db.Guilds[unitType]
+			core:RegisterNPElement('Title', function(unitType, frame, element)
+				if frame.Title then
+					local points = db.Titles[unitType] or db.Guilds[unitType]
+					frame.Title:ClearAllPoints()
+					frame.Title:Point(points.point, element, points.relativeTo, points.xOffset, points.yOffset)
 				end
+			end)
+			if db.Guilds.enabled then
+				local handleAreaUpdate = false
+				for _, unitType in ipairs({'ENEMY_PLAYER', 'FRIENDLY_PLAYER'}) do
+					if not db.Guilds[unitType]['showAll'] then
+						core:RegisterAreaUpdate(modName, function()
+							updateVisibilityState(db.Guilds, core:GetCurrentAreaType())
+							updateAllVisiblePlates(db)
+						end)
+						handleAreaUpdate = true
+						break
+					end
+				end
+				if not handleAreaUpdate then
+					core:RegisterAreaUpdate(modName)
+				end
+				self:RegisterEvent("PARTY_MEMBERS_CHANGED", function() updateAllVisiblePlates(db) end)
+				self:RegisterEvent("GUILD_ROSTER_UPDATE", function() updateAllVisiblePlates(db) end)
+				self:RegisterEvent("RAID_ROSTER_UPDATE", function() updateAllVisiblePlates(db) end)
+				updateVisibilityState(db.Guilds, core:GetCurrentAreaType())
+			else
+				self:UnregisterEvent("PARTY_MEMBERS_CHANGED")
+				self:UnregisterEvent("GUILD_ROSTER_UPDATE")
+				self:UnregisterEvent("RAID_ROSTER_UPDATE")
 			end
 		end
-		self:RegisterEvent("PARTY_MEMBERS_CHANGED", function() self:UpdateAllSettings(db) end)
-		self:RegisterEvent("GUILD_ROSTER_UPDATE", function() self:UpdateAllSettings(db) end)
-		self:RegisterEvent("RAID_ROSTER_UPDATE", function() self:UpdateAllSettings(db) end)
 		if isAwesome then
 			if not self:IsHooked(NP, "OnCreated") then
 				self:SecureHook(NP, "OnCreated", function(self, plate)
@@ -1420,15 +1450,23 @@ function mod:Toggle(db)
 			SLASH_ADDOCCUPATION1 = "/addOccupation"
 			SlashCmdList["ADDOCCUPATION"] = function(msg) mod:addOccupation(msg) end
 		end
+		for plate in pairs(NP.CreatedPlates) do
+			local frame = plate and plate.UnitFrame
+			if frame then
+				constructTitle(frame)
+			end
+		end
+		self:UpdateAllSettings(db)
+		self.initialized = true
 	end
-	self:UpdateAllSettings(db)
 end
 
 function mod:InitializeCallback()
 	if not E.private.nameplates.enable then return end
 
-	mod:LoadConfig()
-	mod:Toggle(E.db.Extras.nameplates[modName])
+	local db = E.db.Extras.nameplates[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

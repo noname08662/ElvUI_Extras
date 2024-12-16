@@ -501,11 +501,6 @@ L["Mark"] = "Marcar"
 L["Mark the target/mouseover plate."] = "Marca a placa de identificação do alvo/mouseover."
 L["Unmark"] = "Desmarcar"
 L["Unmark the target/mouseover plate."] = "Desmarca a placa de identificação do alvo/mouseover."
-L["FRIENDLY_PLAYER"] = "Jogador amigável"
-L["FRIENDLY_NPC"] = "PNJ amigável"
-L["ENEMY_PLAYER"] = "Jogador inimigo"
-L["ENEMY_NPC"] = "PNJ inimigo"
-L["Handles positioning and color."] = "Lida com posicionamento e cor."
 L["Selected Type"] = "Tipo selecionado"
 L["Reaction based coloring for non-cached characters."] = "Coloração baseada em reação para personagens não armazenados em cache."
 L["Apply Custom Color"] = "Aplicar cor personalizada"
@@ -1085,3 +1080,28 @@ L["...to the currently selected one."] = "...para o atualmente selecionado."
 L["Select Occupation"] = "Selecionar Ocupação"
 L["Sell"] = "Vender"
 L["Action Type"] = "Tipo de ação"
+L["Style Filter Additional Triggers"] = "Gatilhos Adicionais de Filtros de Estilo"
+L["Triggers"] = "Gatilhos"
+L["Example usage:"..
+    "\n local frame, filter, trigger = ..."..
+    "\n return frame.UnitName == 'Shrek'"..
+    "\n         or (frame.unit"..
+    "\n             and UnitName(frame.unit) == 'Fiona')"] =
+    "Exemplo de uso:"..
+    "\n local frame, filter, trigger = ..."..
+    "\n return frame.UnitName == 'Shrek'"..
+    "\n         or (frame.unit"..
+    "\n             and UnitName(frame.unit) == 'Fiona')"
+L["Abbreviate Name"] = "Abreviar Nome"
+L["Highlight Self"] = "Destacar a si mesmo"
+L["Highlight Others"] = "Destacar outros"
+L["Self Inherit Name Color"] = "Herdar cor do nome próprio"
+L["Self Texture"] = "Textura própria"
+L["Whitespace to disable, empty to default."] = "Espaço em branco para desativar, vazio para padrão."
+L["Self Color"] = "Cor própria"
+L["Self Scale"] = "Escala própria"
+L["Others Inherit Name Color"] = "Herdar cor do nome de outros"
+L["Others Texture"] = "Textura dos outros"
+L["Others Color"] = "Cor dos outros"
+L["Others Scale"] = "Escala dos outros"
+L["Targets"] = "Alvos"

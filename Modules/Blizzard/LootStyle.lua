@@ -8,7 +8,8 @@ local B = E:GetModule("Blizzard")
 local modName = mod:GetName()
 local styleHistory, filterApplied, testlootbar
 local guildMap, friendMap, indicators, pendingMsgs, messageToSender = {}, {}, {}, {}, {}
-local initialized = {}
+
+mod.initialized = {}
 
 local _G, unpack, tonumber, select, pairs, ipairs, print, type, next = _G, unpack, tonumber, select, pairs, ipairs, print, type, next
 local tinsert, tremove, twipe, tsort, tconcat = table.insert, table.remove, table.wipe, table.sort, table.concat
@@ -25,6 +26,10 @@ local GOLD_AMOUNT, SILVER_AMOUNT, COPPER_AMOUNT = GOLD_AMOUNT, SILVER_AMOUNT, CO
 local SPELL_FAILED_TRY_AGAIN, ERR_ITEM_NOT_FOUND, HELPFRAME_ITEM_TITLE = SPELL_FAILED_TRY_AGAIN, ERR_ITEM_NOT_FOUND, HELPFRAME_ITEM_TITLE
 local KBASE_SEARCH_RESULTS, BNET_BROADCAST_SENT_TIME = KBASE_SEARCH_RESULTS, BNET_BROADCAST_SENT_TIME
 local YOU, PLAYER, OPTIONAL, SECONDS, MINUTES = YOU, PLAYER, OPTIONAL, SECONDS, MINUTES
+
+local colorPattern = "^|c%x%x%x%x%x%x%x%x"
+local linkPattern = "(.-|h)(.-)|h"
+local codePattern = "^|%d%p%d%((.+)%)"
 
 local function simulateLootRoll()
 	local itemID = 49623
@@ -280,7 +285,7 @@ if not mod:IsHooked(CH, "DisplayChatHistory") then
 			styleHistory = data
 			return
 		end
-		mod.hooks[CH].DisplayChatHistory(self)
+		return mod.hooks[CH].DisplayChatHistory(self)
 	end)
 end
 
@@ -308,15 +313,14 @@ P["Extras"]["blizzard"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.blizzard[modName]
+function mod:LoadConfig(db)
 	local function selected() return db.StyledMsgs.selected end
 	local function selectedData() return core:getSelected("blizzard", modName, format("StyledMsgs[%s]", selected() or ""), "friend") end
 	core.blizzard.args[modName] = {
 		type = "group",
 		name = L["Loot&Style"],
 		get = function(info) return db[info[#info-1]][gsub(info[#info], info[#info-1], '')] end,
-		set = function(info, value) db[info[#info-1]][gsub(info[#info], info[#info-1], '')] = value self:Toggle() end,
+		set = function(info, value) db[info[#info-1]][gsub(info[#info], info[#info-1], '')] = value self:Toggle(db) end,
 		disabled = function(info) return info[#info] ~= modName and not match(info[#info], '^enabled') and not db[info[#info-1]].enabled end,
 		args = {
 			LootInfo = {
@@ -342,7 +346,7 @@ function mod:LoadConfig()
 				get = function(info) return unpack(selectedData()[info[#info]]) end,
 				set = function(info, r, g, b)
 					selectedData()[info[#info]] = { r, g, b }
-					self:StyledMsgs(db.StyledMsgs.enabled)
+					self:StyledMsgs(db.StyledMsgs)
 				end,
 				args = {
 					enabledStyledMsgs = {
@@ -353,7 +357,7 @@ function mod:LoadConfig()
 						get = function() return db.StyledMsgs.enabled end,
 						set = function(_, value)
 							db.StyledMsgs.enabled = value
-							self:StyledMsgs(value)
+							self:StyledMsgs(db.StyledMsgs)
 						end,
 					},
 					color = {
@@ -385,7 +389,7 @@ function mod:LoadConfig()
 						get = function() return selectedData().indicator end,
 						set = function(_, value)
 							selectedData().indicator = value
-							self:StyledMsgs(db.StyledMsgs.enabled)
+							self:StyledMsgs(db.StyledMsgs)
 						end,
 						hidden = function() return not db.StyledMsgs.enabled end,
 						values = {
@@ -433,7 +437,7 @@ function mod:LoadConfig()
 				name = L["Loot Bars"],
 				guiInline = true,
 				get = function(info) return db.LootBars[info[#info]] end,
-				set = function(info, value) db.LootBars[info[#info]] = value simulateLootRoll() mod:Toggle() end,
+				set = function(info, value) db.LootBars[info[#info]] = value simulateLootRoll() self:Toggle(db) end,
 				args = {
 					enabled = {
 						order = 1,
@@ -471,14 +475,13 @@ function mod:LoadConfig()
 	}
 end
 
-function mod:StyledMsgs(enable)
-    if enable then
-        local db = E.db.Extras.blizzard[modName].StyledMsgs
+function mod:StyledMsgs(db)
+    if db.enabled then
         indicators["self"] = {indicator = db.self.indicator, color = format("|cff%02x%02x%02x", db.self.color[1] * 255, db.self.color[2] * 255, db.self.color[3] * 255)}
         indicators["friend"] = {indicator = db.friend.indicator, color = format("|cff%02x%02x%02x", db.friend.color[1] * 255, db.friend.color[2] * 255, db.friend.color[3] * 255)}
         indicators["guild"] = {indicator = db.guild.indicator, color = format("|cff%02x%02x%02x", db.guild.color[1] * 255, db.guild.color[2] * 255, db.guild.color[3] * 255)}
 
-		if not initialized.StyledMsgs then
+		if not self.initialized.StyledMsgs then
 			local myname, myclass = E.myname, E.myclass
 			local mynameLower = lower(myname)
 			local friendOnlineMsgProcessed = gsub(tconcat({split(1, format(gsub(ERR_FRIEND_ONLINE_SS, '[%[%]]',''), 1, 1))}), "|H.+|h", "")
@@ -573,10 +576,6 @@ function mod:StyledMsgs(enable)
 				local tempMsg = lower(msg)
 				local len = #tempMsg
 
-				local colorPattern = "^|c%x%x%x%x%x%x%x%x"
-				local linkPattern = "(.-|h)(.-)|h"
-				local codePattern = "^|%d%p%d%((.+)%)"
-
 				-- timestamps
 				local stampStart, stampEnd = find(msg, "^[|%x]*%[[|:%d%s%xaApPmMr]*%][|rR]*[|%x%x%x%x%x%x%x%x%x]*%s*")
 
@@ -617,7 +616,7 @@ function mod:StyledMsgs(enable)
 									if link then
 										i = linkEnd + 1
 									else
-										i = i + 2
+										break
 									end
 								end
 							end
@@ -632,7 +631,6 @@ function mod:StyledMsgs(enable)
 						msgMap[j], i, j = i, i + 1, j + 1
 					end
 				end
-
 				return strippedMsg, msgMap
 			end
 
@@ -803,8 +801,7 @@ function mod:StyledMsgs(enable)
 						end
 					end
 				end)
-
-				mod.hooks[frame].AddMessage(frame, formattedMessage, ...)
+				return mod.hooks[frame].AddMessage(frame, formattedMessage, ...)
 			end
 
 			self:UpdateFriendMap()
@@ -823,7 +820,7 @@ function mod:StyledMsgs(enable)
 				CH:DisplayChatHistory()
 			end
 
-			initialized.StyledMsgs = true
+			self.initialized.StyledMsgs = true
 		end
 
         for _, msgType in ipairs(chatMsgs) do
@@ -885,7 +882,7 @@ function mod:StyledMsgs(enable)
 				chatBubble.Name:SetFormattedText("%s", mod:StyleName(name))
 			end)
 		end
-    elseif initialized.StyledMsgs then
+    elseif self.initialized.StyledMsgs then
         for _, msgType in ipairs(chatMsgs) do
             ChatFrame_RemoveMessageEventFilter(msgType, mod.StyledMsgsFilter)
         end
@@ -920,18 +917,17 @@ function mod:StyledMsgs(enable)
 			end
 		end
     end
-	updateChatHooks(enable)
+	updateChatHooks(db.enabled)
 end
 
-function mod:StyledLootings(enable)
-    if enable then
-		if not initialized.StyledLootings then
+function mod:StyledLootings(db)
+    if db.enabled then
+		if not self.initialized.StyledLootings then
 			local moneyMsgsProcessed = {}
 			local _, moneyMsgLOOT_MONEY = split(1, format(LOOT_MONEY, 1, 1))
 			local goldProcessed = gsub(format(GOLD_AMOUNT, 1), 1, "")
 			local silverProcessed = gsub(format(SILVER_AMOUNT, 1), 1, "")
 			local copperProcessed = gsub(format(COPPER_AMOUNT, 1), 1, "")
-			local db = E.db.Extras.blizzard[modName].StyledLootings
 			local styledb = E.db.Extras.blizzard[modName].StyledMsgs
 
 			for _, message in ipairs({YOU_LOOT_MONEY, LOOT_MONEY_SPLIT}) do
@@ -1026,7 +1022,7 @@ function mod:StyledLootings(enable)
 				end
 			end
 
-			initialized.StyledLootings = true
+			self.initialized.StyledLootings = true
 		end
         ChatFrame_AddMessageEventFilter("CHAT_MSG_LOOT", mod.StyledLootingsFilter)
         ChatFrame_AddMessageEventFilter("CHAT_MSG_MONEY", mod.StyledLootingsFilter)
@@ -1035,7 +1031,7 @@ function mod:StyledLootings(enable)
 			ChatFrame_RemoveMessageEventFilter("CHAT_MSG_MONEY", mod.StyledMsgsFilter)
 			filterApplied = false
 		end
-    elseif initialized.StyledLootings then
+    elseif self.initialized.StyledLootings then
         ChatFrame_RemoveMessageEventFilter("CHAT_MSG_LOOT", mod.StyledLootingsFilter)
         ChatFrame_RemoveMessageEventFilter("CHAT_MSG_MONEY", mod.StyledLootingsFilter)
 		if E.db.Extras.blizzard[modName].StyledMsgs.enabled then
@@ -1046,9 +1042,9 @@ function mod:StyledLootings(enable)
     end
 end
 
-function mod:LootInfo(enable)
-	if enable then
-		if not initialized.LootInfo then
+function mod:LootInfo(db)
+	if db.enabled then
+		if not self.initialized.LootInfo then
 			local function round(num)
 				local decimal = num % 1
 				if decimal >= 0.5 then
@@ -1150,12 +1146,12 @@ function mod:LootInfo(enable)
 					end
 				end
 			end
-			initialized.LootInfo = true
+			self.initialized.LootInfo = true
 		end
 		self:RegisterEvent("CHAT_MSG_LOOT")
 		SLASH_LOOTINFO1 = "/lootinfo"
-		SlashCmdList["LOOTINFO"] = function(msg) mod:LootInfoCommand(msg) end
-	elseif initialized.LootInfo then
+		SlashCmdList["LOOTINFO"] = function(msg) self:LootInfoCommand(msg) end
+	elseif self.initialized.LootInfo then
 		self:UnregisterEvent("CHAT_MSG_LOOT")
 		SLASH_LOOTINFO1 = nil
 		SlashCmdList["LOOTINFO"] = nil
@@ -1163,9 +1159,7 @@ function mod:LootInfo(enable)
 	end
 end
 
-function mod:LootBars(enable)
-	local db = E.db.Extras.blizzard[modName].LootBars
-
+function mod:LootBars(db)
 	local function updateBars()
 		for _, frame in pairs(M.RollBars) do
 			local p, pa, re, x, y = frame:GetPoint()
@@ -1192,7 +1186,7 @@ function mod:LootBars(enable)
 		end
 	end
 
-	if enable then
+	if db.enabled then
 		if not E.private.general.lootRoll then E.private.general.lootRoll = true E:StaticPopup_Show("PRIVATE_RL") end
 		if not self:IsHooked(E, "PostAlertMove") then
 			self:SecureHook(E, "PostAlertMove", function()
@@ -1235,15 +1229,19 @@ function mod:LootBars(enable)
 end
 
 
-function mod:Toggle()
-	for subMod, info in pairs(E.db.Extras.blizzard[modName]) do
-		self[subMod](self, core.reload and false or info.enabled)
+function mod:Toggle(db)
+	if core.reload then
+		twipe(self.initialized)
+	end
+	for subMod, info in pairs(db) do
+		self[subMod](self, core.reload and {enabled = false} or info)
 	end
 end
 
 function mod:InitializeCallback()
-	mod:LoadConfig()
-	mod:Toggle()
+	local db = E.db.Extras.blizzard[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

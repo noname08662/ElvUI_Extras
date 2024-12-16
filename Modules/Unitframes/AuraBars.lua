@@ -9,6 +9,7 @@ local barsCreated = {}
 local _G, pairs, ipairs, unpack = _G, pairs, ipairs, unpack
 local twipe = table.wipe
 
+mod.initialized = false
 
 P["Extras"]["unitframes"][modName] = {
 	["selectedUnit"] = 'player',
@@ -34,8 +35,7 @@ P["Extras"]["unitframes"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.unitframes[modName]
+function mod:LoadConfig(db)
 	local function selectedUnit() return db.selectedUnit end
     local function selectedUnitData()
 		return core:getSelected("unitframes", modName, format("units[%s]", selectedUnit() or ""), "player")
@@ -44,7 +44,7 @@ function mod:LoadConfig()
 		type = "group",
 		name = L[modName],
 		get = function(info) return selectedUnitData()[info[#info]] end,
-		set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle() end,
+		set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle(db) end,
 		args = {
 			AuraBars = {
 				order = 1,
@@ -292,17 +292,16 @@ function mod:UpdateFrame(frame, db)
 	end
 end
 
-function mod:UpdatePostUpdateAuraBars()
+function mod:UpdatePostUpdateAuraBars(db)
 	twipe(barsCreated)
-	local db = E.db.Extras.unitframes[modName].units
-	local units = core:AggregateUnitFrames()
-	for _, frame in ipairs(units) do
+	local units = db.units
+	for _, frame in ipairs(core:AggregateUnitFrames()) do
 		local unitframeType = frame.unitframeType
-		if db[unitframeType] then
+		if units[unitframeType] then
 			if frame.db.aurabar and frame.db.aurabar.enable then
 				local auraBars = frame.AuraBars
 
-				auraBars.gap = db[unitframeType].enabled and -frame.db.aurabar.height or (-frame.BORDER + frame.SPACING*3)
+				auraBars.gap = units[unitframeType].enabled and -frame.db.aurabar.height or (-frame.BORDER + frame.SPACING*3)
 				auraBars.PostCreateBar = UF.Construct_AuraBars
 				auraBars:SetAnchors()
 
@@ -312,7 +311,7 @@ function mod:UpdatePostUpdateAuraBars()
 				barsCreated[unitframeType] = 0
 				for _, bar in ipairs(auraBars.bars) do
 					UF.Construct_AuraBars(bar)
-					if not db[unitframeType].enabled then
+					if not units[unitframeType].enabled then
 						bar.statusBar.iconHolder:ClearAllPoints()
 						bar.statusBar.iconHolder:Point("RIGHT", bar.statusBar, "LEFT", 0, 0)
 						bar.statusBar.spelltime:ClearAllPoints()
@@ -326,10 +325,10 @@ function mod:UpdatePostUpdateAuraBars()
 end
 
 
-function mod:Toggle()
+function mod:Toggle(db)
 	local enable
 	if not core.reload then
-		for _, enabled in pairs(E.db.Extras.unitframes[modName].units) do
+		for _, enabled in pairs(db.units) do
 			if enabled then enable = true break end
 		end
 	end
@@ -338,20 +337,24 @@ function mod:Toggle()
 		for _, type in ipairs({"Update_PlayerFrame", "Update_TargetFrame", "Update_FocusFrame", "Update_PetFrame"}) do
 			if not self:IsHooked(UF, type) then self:SecureHook(UF, type, self.UpdateFrame) end
 		end
-	else
+		self.initialized = true
+	elseif self.initialized then
 		if self:IsHooked(UF, "Construct_AuraBars") then self:Unhook(UF, "Construct_AuraBars") end
 		for _, type in ipairs({"Update_PlayerFrame", "Update_TargetFrame", "Update_FocusFrame", "Update_PetFrame"}) do
 			if self:IsHooked(UF, type) then self:Unhook(UF, type) end
 		end
 	end
-	self:UpdatePostUpdateAuraBars()
+	if self.initialized then
+		self:UpdatePostUpdateAuraBars(db)
+	end
 end
 
 function mod:InitializeCallback()
 	if not E.private.unitframe.enable then return end
 
-	mod:LoadConfig()
-	mod:Toggle()
+	local db = E.db.Extras.unitframes[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

@@ -9,6 +9,8 @@ local isAwesome = C_NamePlate
 local markedUnits = {}
 local quests = {}
 
+mod.initialized = false
+
 local _G, pairs, ipairs, unpack, tonumber = _G, pairs, ipairs, unpack, tonumber
 local find, match, format, lower = string.find, string.match, string.format, string.lower
 local tinsert, twipe = table.insert, table.wipe
@@ -113,8 +115,7 @@ P["Extras"]["nameplates"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.nameplates[modName]
+function mod:LoadConfig(db)
 	local function populateModifierValues(othervala, othervalb)
 		local modsList = {}
 		for modifier, val in pairs(E.db.Extras.modifiers) do
@@ -722,7 +723,12 @@ function mod:Toggle(db)
 	twipe(markedUnits)
 
     if not core.reload and db.enabled then
-		core.plateAnchoring['questIcon'] = function() return db end
+		core:RegisterNPElement('questIcon', function(_, frame, element)
+			if frame.questIcon then
+				frame.questIcon:ClearAllPoints()
+				frame.questIcon:Point(db.point, element, db.relativeTo, db.xOffset, db.yOffset)
+			end
+		end)
 
 		SLASH_QMARK1 = "/qmark"
 		SlashCmdList["QMARK"] = function(msg) self:SlashCommandHandler(msg) end
@@ -781,8 +787,9 @@ function mod:Toggle(db)
 			end
 		end
 		self:UpdateIconSettings(db)
-	else
-		core.plateAnchoring['questIcon'] = nil
+		self.initialized = true
+	elseif self.initialized then
+		core:RegisterNPElement('questIcon')
 		SLASH_QMARK1 = nil
 		SlashCmdList["QMARK"] = nil
 		hash_SlashCmdList["/QMARK"] = nil
@@ -795,14 +802,16 @@ function mod:Toggle(db)
 				frame.questIcon = nil
 			end
 		end
+		self.initialized = false
     end
 end
 
 function mod:InitializeCallback()
 	if not E.private.nameplates.enable then return end
 
-	mod:LoadConfig()
-	mod:Toggle(E.db.Extras.nameplates[modName])
+	local db = E.db.Extras.nameplates[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(db)
 end
 
 core.modules[modName] = mod.InitializeCallback

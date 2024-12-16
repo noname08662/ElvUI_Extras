@@ -385,11 +385,6 @@ L["Mark"] = true
 L["Mark the target/mouseover plate."] = true
 L["Unmark"] = true
 L["Unmark the target/mouseover plate."] = true
-L["FRIENDLY_PLAYER"] = true
-L["FRIENDLY_NPC"] = true
-L["ENEMY_PLAYER"] = true
-L["ENEMY_NPC"] = true
-L["Handles positioning and color."] = true
 L["Selected Type"] = true
 L["Reaction based coloring for non-cached characters."] = true
 L["Apply Custom Color"] = true
@@ -878,4 +873,23 @@ L["...to the currently selected one."] = true
 L["Select Occupation"] = true
 L["Sell"] = true
 L["Action Type"] = true
-
+L["Style Filter Additional Triggers"] = true
+L["Triggers"] = true
+L["Example usage:"..
+	"\n local frame, filter, trigger = ..."..
+	"\n return frame.UnitName == 'Shrek'"..
+	"\n         oder (frame.unit"..
+	"\n             und UnitName(frame.unit) == 'Fiona')"] = true
+L["Abbreviate Name"] = true
+L["Highlight Self"] = true
+L["Highlight Others"] = true
+L["Self Inherit Name Color"] = true
+L["Self Texture"] = true
+L["Whitespace to disable, empty to default."] = true
+L["Self Color"] = true
+L["Self Scale"] = true
+L["Others Inherit Name Color"] = true
+L["Others Texture"] = true
+L["Others Color"] = true
+L["Others Scale"] = true
+L["Targets"] = true

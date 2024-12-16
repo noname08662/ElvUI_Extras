@@ -6,11 +6,21 @@ local NP = E:GetModule("NamePlates")
 local modName = mod:GetName()
 local isAwesome = C_NamePlate
 
-local pairs, print, select = pairs, print, select
+local ipairs, pairs, print, select = ipairs, pairs, print, select
 local upper, gsub, format = string.upper, string.gsub, string.format
 local CopyTable, UnitClass = CopyTable, UnitClass
 
 local classMap = {}
+
+local function updateVisibilityState(db, areaType)
+	local isShown = false
+	for _, unitType in ipairs({'FRIENDLY_PLAYER', 'ENEMY_PLAYER'}) do
+		local data = db[unitType]
+		isShown = isShown or data['showAll'] or data[areaType]
+		data.isShown = data['showAll'] or data[areaType]
+	end
+	return isShown
+end
 
 
 P["Extras"]["nameplates"][modName] = {
@@ -65,8 +75,7 @@ P["Extras"]["nameplates"][modName] = {
 	},
 }
 
-function mod:LoadConfig()
-	local db = E.db.Extras.nameplates[modName]
+function mod:LoadConfig(db)
 	local function populateClassMap()
 		if not isAwesome then
 			for player, texture in pairs(db.classList) do
@@ -138,8 +147,82 @@ function mod:LoadConfig()
 					},
 				},
 			},
-			NPCs = {
+			visibility = {
 				order = 2,
+				type = "group",
+				name = L["Visibility State"],
+				guiInline = true,
+				get = function(info) return selectedPlayersData()[info[#info]] end,
+				set = function(info, value)
+					local data = selectedPlayersData()
+					data[info[#info]] = value
+					local enabled = false
+					for _, showType in ipairs({'showCity', 'showBG', 'showInstance', 'showArena', 'showWorld'}) do
+						if data[showType] then
+							enabled = true
+							break
+						end
+					end
+					if not enabled then data['showAll'] = true end
+					self:Toggle(db, true)
+				end,
+				hidden = function() return selectedSubSection() == 'NPCs' end,
+				args = {
+					showAll = {
+						order = 1,
+						type = "toggle",
+						name = L["Show Everywhere"],
+						desc = "",
+						set = function(info, value)
+							local data = selectedPlayersData()
+							data[info[#info]] = value
+							if not value then
+								for _, showType in ipairs({'showCity', 'showBG', 'showInstance', 'showArena', 'showWorld'}) do
+									data[showType] = true
+								end
+							end
+							self:Toggle(db, true)
+						end,
+					},
+					showCity = {
+						order = 2,
+						type = "toggle",
+						name = L["Show in Cities"],
+						desc = "",
+						hidden = function() return selectedPlayersData().showAll end,
+					},
+					showBG = {
+						order = 3,
+						type = "toggle",
+						name = L["Show in Battlegrounds"],
+						desc = "",
+						hidden = function() return selectedPlayersData().showAll end,
+					},
+					showArena = {
+						order = 4,
+						type = "toggle",
+						name = L["Show in Arenas"],
+						desc = "",
+						hidden = function() return selectedPlayersData().showAll end,
+					},
+					showInstance = {
+						order = 5,
+						type = "toggle",
+						name = L["Show in Instances"],
+						desc = "",
+						hidden = function() return selectedPlayersData().showAll end,
+					},
+					showWorld = {
+						order = 6,
+						type = "toggle",
+						name = L["Show in the World"],
+						desc = "",
+						hidden = function() return selectedPlayersData().showAll end,
+					},
+				},
+			},
+			NPCs = {
+				order = 3,
 				type = "group",
 				name = L["Settings"],
 				guiInline = true,
@@ -202,7 +285,7 @@ function mod:LoadConfig()
 				},
 			},
 			texCoords = {
-				order = 3,
+				order = 4,
 				type = "group",
 				name = L["Texture Coordinates"],
 				guiInline = true,
@@ -242,7 +325,7 @@ function mod:LoadConfig()
 				},
 			},
 			Players = {
-				order = 2,
+				order = 3,
 				type = "group",
 				name = L["Settings"],
 				guiInline = true,
@@ -272,7 +355,7 @@ function mod:LoadConfig()
 					frameLevel = {
 						order = 2,
 						type = "range",
-						min = 0, max = 200, step = 1,
+						min = -5, max = 50, step = 1,
 						name = L["Level"],
 						desc = "",
 					},
@@ -336,7 +419,7 @@ function mod:LoadConfig()
 				},
 			},
 			points = {
-				order = 3,
+				order = 4,
 				type = "group",
 				name = L["Points"],
 				guiInline = true,
@@ -395,15 +478,11 @@ function mod:LoadConfig()
 end
 
 
-function mod:Update_Elite(frame)
-	local db = NP.db.units[frame.UnitType].eliteIcon
-	if not db then return end
-
+function mod:Update_Elite(frame, db)
 	local icon = frame.Elite
-	if db.enable then
+	if icon and icon:IsShown() then
 		local elite, boss = frame.EliteIcon:IsShown(), frame.BossIcon:IsShown()
 		local r, g, b, tex, texCoords
-		local db = E.db.Extras.nameplates[modName].NPCs
 
 		if boss then
 			db = db.types.Boss
@@ -425,40 +504,33 @@ function mod:Update_Elite(frame)
 			icon:Hide()
 			return
 		end
-		icon:SetTexture(tex and tex or E.Media.Textures.Nameplates)
-
-		if icon:IsShown() then
-			if db.colorByType then
-				icon:SetVertexColor(r, g, b)
-			else
-				icon:SetVertexColor(1, 1, 1)
-			end
-			if db.flipIcon and not db.keepOrigTex then
-				icon:SetTexCoord(1, 0, 0, 1)
-			else
-				icon:SetTexCoord(texCoords.left, texCoords.right, texCoords.top, texCoords.bottom)
-			end
+		if db.colorByType then
+			icon:SetVertexColor(r, g, b)
+		else
+			icon:SetVertexColor(1, 1, 1)
 		end
-	else
-		icon:Hide()
+		if db.flipIcon and not db.keepOrigTex then
+			icon:SetTexCoord(1, 0, 0, 1)
+		else
+			icon:SetTexCoord(texCoords.left, texCoords.right, texCoords.top, texCoords.bottom)
+		end
+		icon:SetTexture(tex or E.Media.Textures.Nameplates)
 	end
 end
 
-local function manageClassIcon(frame, unitType, db)
-	if frame.ClassIcon then frame.ClassIcon:Hide() return end
-	db = db or E.db.Extras.nameplates[modName].Players.affiliations[unitType]
-	if not db then return end
+
+function mod:Construct_ClassIcon(frame)
 	local ClassIcon = CreateFrame("Frame", nil, frame)
 	local Texture = ClassIcon:CreateTexture(nil, "ARTWORK")
 	Texture:SetAllPoints(ClassIcon)
 	ClassIcon:CreateBackdrop()
 	ClassIcon.texture = Texture
+	ClassIcon:Hide()
 
 	frame.ClassIcon = ClassIcon
-	frame.ClassIcon:Hide()
 end
 
-local function showIcon(frame, texture, db)
+function mod:ShowIcon(frame, texture, db)
 	local classIcon = frame.ClassIcon
 
 	if texture then
@@ -476,7 +548,7 @@ local function showIcon(frame, texture, db)
 
 	db = db.points
 	classIcon:ClearAllPoints()
-	classIcon:Point(db.point, frame.Health:IsVisible() and frame.Health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
+	classIcon:Point(db.point, frame.Health:IsShown() and frame.Health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
 	classIcon:Show()
 end
 
@@ -487,15 +559,16 @@ function mod:UpdateClassIcon(frame, db, classList)
 	local unitClass = frame.UnitClass
 	if not unitClass then
 		if classMap[unitName] then
-			showIcon(frame, classMap[unitName], db)
+			self:ShowIcon(frame, classMap[unitName], db)
 		end
 		return
 	end
 
-	local classIconPath = db.classes[unitClass] and db.classes[unitClass].texture
+	local classes = db.classes[unitClass]
+	local classIconPath = classes and classes.texture
 	if classIconPath then
-		showIcon(frame, classIconPath, db)
-		if not classMap[unitName] or classList[unitName] ~= db.classes[unitClass].texture then
+		self:ShowIcon(frame, classIconPath, db)
+		if not classMap[unitName] or classList[unitName] ~= classes.texture then
 			classList[unitName] = classIconPath
 			classMap[unitName] = classIconPath
 		end
@@ -506,7 +579,7 @@ function mod:AwesomeUpdateClassIcon(frame, db, unit)
 	local classFile = select(2,UnitClass(unit))
 	local classIconPath = db.classes[classFile] and db.classes[classFile].texture
 	if classIconPath then
-		showIcon(frame, classIconPath, db)
+		self:ShowIcon(frame, classIconPath, db)
 	end
 end
 
@@ -515,63 +588,104 @@ function mod:UpdateAllClassIcons(db)
 		local frame = plate.UnitFrame
 		local unitType = frame.UnitType
 		if frame.ClassIcon and (unitType == "FRIENDLY_PLAYER" or unitType == "ENEMY_PLAYER") then
-			showIcon(frame, nil, db.Players.affiliations[unitType], NP.db.units[unitType].health.enable)
+			self:ShowIcon(frame, nil, db.Players.affiliations[unitType], NP.db.units[unitType].health.enable)
 		end
 	end
 end
 
 
-function mod:Toggle(db)
-	if db.NPCs.enabled or db.Players.enabled then
-		core.plateAnchoring["ClassIcon"] = function(unitType)
-			if unitType == "ENEMY_NPC" or unitType == "FRIENDLY_NPC" then
-				return db.NPC
-			elseif unitType == "ENEMY_PLAYER" or unitType == "FRIENDLY_PLAYER" then
-				return db.Players.affiliations[unitType].points
-			end
+function mod:Toggle(db, visibilityUpdate)
+	local affiliations = db.Players.affiliations
+	if not visibilityUpdate then
+		if db.NPCs.enabled or db.Players.enabled then
+			core:RegisterNPElement("ClassIcon", function(unitType, frame, element)
+				if frame.ClassIcon then
+					if unitType == "FRIENDLY_PLAYER" or unitType == "ENEMY_PLAYER" then
+						local points = affiliations[unitType].points
+						frame.ClassIcon:ClearAllPoints()
+						frame.ClassIcon:Point(points.point, element, points.relativeTo, points.xOffset, points.yOffset)
+					end
+				end
+			end)
+		else
+			core:RegisterNPElement("ClassIcon")
 		end
-	else
-		core.plateAnchoring["ClassIcon"] = nil
-	end
-	if db.NPCs.enabled then
-		if not self:IsHooked(NP, "Update_Elite") then self:SecureHook(NP, "Update_Elite", self.Update_Elite) end
-	elseif self:IsHooked(NP, "Update_Elite") then
-		db.NPCs.types.Elite.keepOrigTex = true
-		db.NPCs.types.Boss.keepOrigTex = true
-		self:Unhook(NP, "Update_Elite")
+		if db.NPCs.enabled then
+			if not self:IsHooked(NP, "Update_Elite") then
+				self:SecureHook(NP, "Update_Elite", function(_, frame)
+					self:Update_Elite(frame, db.NPCs)
+				end)
+			end
+		elseif self:IsHooked(NP, "Update_Elite") then
+			db.NPCs.types.Elite.keepOrigTex = true
+			db.NPCs.types.Boss.keepOrigTex = true
+			self:Unhook(NP, "Update_Elite")
+		end
 	end
 	if db.Players.enabled then
-		if isAwesome then
-			if not self:IsHooked(NP, "OnShow") then
+		local handleAreaUpdate = false
+		for _, unitType in ipairs({'ENEMY_PLAYER', 'FRIENDLY_PLAYER'}) do
+			if not affiliations[unitType]['showAll'] then
+				core:RegisterAreaUpdate(modName, function() self:Toggle(db, true) end)
+				handleAreaUpdate = true
+				break
+			end
+		end
+		if not handleAreaUpdate then core:RegisterAreaUpdate(modName) end
+		if updateVisibilityState(affiliations, core:GetCurrentAreaType()) then
+			for plate in pairs(NP.CreatedPlates) do
+				local frame = plate.UnitFrame
+				if frame and not frame.ClassIcon then
+					self:Construct_ClassIcon(frame)
+				end
+			end
+			if not self:IsHooked(NP, "Construct_HealthBar") then
+				self:SecureHook(NP, "Construct_HealthBar", self.Construct_ClassIcon)
+			end
+			if isAwesome then
+				if not self:IsHooked(NP, "OnShow") then
+					self:SecureHook(NP, "OnShow", function(self)
+						if not self.unit then return end
+						local frame = self.UnitFrame
+						local unitType = frame.UnitType
+						local data = affiliations[unitType]
+						if (unitType == "FRIENDLY_PLAYER" or unitType == "ENEMY_PLAYER") and data.isShown then
+							mod:AwesomeUpdateClassIcon(frame, data, self.unit)
+						elseif frame.ClassIcon then
+							frame.ClassIcon:Hide()
+						end
+					end)
+				end
+			elseif not self:IsHooked(NP, "OnShow") then
 				self:SecureHook(NP, "OnShow", function(self)
-					if not self.unit then return end
 					local frame = self.UnitFrame
 					local unitType = frame.UnitType
-					manageClassIcon(frame, unitType)
-					if unitType == "FRIENDLY_PLAYER" or unitType == "ENEMY_PLAYER" then
-						mod:AwesomeUpdateClassIcon(frame, db.Players.affiliations[unitType], self.unit)
+					local data = affiliations[unitType]
+					if (unitType == "FRIENDLY_PLAYER" or unitType == "ENEMY_PLAYER") and data.isShown then
+						mod:UpdateClassIcon(frame, data, db.classList)
+					elseif frame.ClassIcon then
+						frame.ClassIcon:Hide()
 					end
 				end)
 			end
-		elseif not self:IsHooked(NP, "OnShow") then
-			self:SecureHook(NP, "OnShow", function(self)
-				local frame = self.UnitFrame
-				local unitType = frame.UnitType
-				manageClassIcon(frame, unitType)
-				if unitType == "FRIENDLY_PLAYER" or unitType == "ENEMY_PLAYER" then
-					mod:UpdateClassIcon(frame, db.Players.affiliations[unitType], db.classList)
+		else
+			if self:IsHooked(NP, "Construct_HealthBar") then self:Unhook(NP, "Construct_HealthBar") end
+			if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
+			for plate in pairs(NP.CreatedPlates) do
+				local frame = plate.UnitFrame
+				if frame and frame.ClassIcon then
+					frame.ClassIcon:Hide()
 				end
-			end)
+			end
 		end
 	else
+		core:RegisterAreaUpdate(modName)
+		if self:IsHooked(NP, "Construct_HealthBar") then self:Unhook(NP, "Construct_HealthBar") end
 		if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
-		for frame in pairs(NP.VisiblePlates) do
-			local unitType = frame.UnitType
-			if unitType == "FRIENDLY_PLAYER" or unitType == "ENEMY_PLAYER" then
-				if frame.ClassIcon then
-					frame.ClassIcon:Hide()
-					frame.ClassIcon = nil
-				end
+		for plate in pairs(NP.CreatedPlates) do
+			local frame = plate.UnitFrame
+			if frame and frame.ClassIcon then
+				frame.ClassIcon:Hide()
 			end
 		end
 	end
@@ -582,9 +696,9 @@ end
 
 function mod:InitializeCallback()
 	if not E.private.nameplates.enable then return end
-
-	mod:LoadConfig()
-	mod:Toggle(core.reload and {NPCs = {types = {Elite = {}, Boss = {}}}, Players = {}} or E.db.Extras.nameplates[modName])
+	local db = E.db.Extras.nameplates[modName]
+	mod:LoadConfig(db)
+	mod:Toggle(core.reload and {NPCs = {types = {Elite = {}, Boss = {}}}, Players = {}} or db)
 end
 
 core.modules[modName] = mod.InitializeCallback

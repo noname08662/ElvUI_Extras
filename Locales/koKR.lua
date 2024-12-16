@@ -501,11 +501,6 @@ L["Mark"] = "표시"
 L["Mark the target/mouseover plate."] = "대상/마우스오버 이름표를 표시합니다."
 L["Unmark"] = "표시 해제"
 L["Unmark the target/mouseover plate."] = "대상/마우스오버 이름표의 표시를 해제합니다."
-L["FRIENDLY_PLAYER"] = "우호적인 플레이어"
-L["FRIENDLY_NPC"] = "우호적인 NPC"
-L["ENEMY_PLAYER"] = "적대적인 플레이어"
-L["ENEMY_NPC"] = "적대적인 NPC"
-L["Handles positioning and color."] = "위치 지정 및 색상을 처리합니다."
 L["Selected Type"] = "선택된 유형"
 L["Reaction based coloring for non-cached characters."] = "캐시되지 않은 캐릭터에 대한 반응 기반 색상 지정."
 L["Apply Custom Color"] = "사용자 지정 색상 적용"
@@ -1087,3 +1082,28 @@ L["...to the currently selected one."] = "...현재 선택된 것으로."
 L["Select Occupation"] = "직업 선택"
 L["Sell"] = "판매"
 L["Action Type"] = "작업 유형"
+L["Style Filter Additional Triggers"] = "스타일 필터 추가 트리거"
+L["Triggers"] = "트리거"
+L["Example usage:"..
+    "\n local frame, filter, trigger = ..."..
+    "\n return frame.UnitName == 'Shrek'"..
+    "\n         or (frame.unit"..
+    "\n             and UnitName(frame.unit) == 'Fiona')"] =
+		"사용 예:"..
+			"\n local frame, filter, trigger = ..."..
+			"\n return frame.UnitName == 'Shrek'"..
+			"\n         or (frame.unit"..
+			"\n             and UnitName(frame.unit) == 'Fiona')"
+L["Abbreviate Name"] = "이름 축약"
+L["Highlight Self"] = "자신 강조"
+L["Highlight Others"] = "다른 사람 강조"
+L["Self Inherit Name Color"] = "자신의 이름 색상 상속"
+L["Self Texture"] = "자신 텍스처"
+L["Whitespace to disable, empty to default."] = "비활성화하려면 공백, 기본값은 비우십시오."
+L["Self Color"] = "자신의 색상"
+L["Self Scale"] = "자신의 크기"
+L["Others Inherit Name Color"] = "다른 사람의 이름 색상 상속"
+L["Others Texture"] = "다른 사람 텍스처"
+L["Others Color"] = "다른 사람 색상"
+L["Others Scale"] = "다른 사람 크기"
+L["Targets"] = "대상"
