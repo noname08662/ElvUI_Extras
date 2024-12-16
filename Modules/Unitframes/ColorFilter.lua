@@ -1325,7 +1325,7 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 		else
 			local otherbar = statusbar == 'Health' and 'Power' or 'Health'
 			local otherBorders = appliedBorders[otherbar]
-			if otherBorders.applied and otherBorders.highlight.borders.infoPanelBorderEnabled then
+			if otherBorders and otherBorders.applied and otherBorders.highlight.borders.infoPanelBorderEnabled then
 				if weights[otherbar] == 0 then
 					finalColor = colorFilter.threatBordersColor
 				elseif adapt == otherbar then
@@ -1381,7 +1381,7 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 		else
 			local otherbar = statusbar == 'Health' and 'Power' or 'Health'
 			local otherBorders = appliedBorders[otherbar]
-			if otherBorders.applied and otherBorders.highlight.borders.classBarBorderEnabled then
+			if otherBorders and otherBorders.applied and otherBorders.highlight.borders.classBarBorderEnabled then
 				if weights[otherbar] == 0 then
 					finalColor = colorFilter.threatBordersColor
 				elseif adapt == otherbar then
