@@ -403,65 +403,73 @@ function mod:LoadConfig(db)
 	end
 end
 
-
 local directionProperties = {
 	["CENTER"] = {
 		isVertical = true,
 		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
-		framePoint = 'BOTTOM'
+		framePoint = 'BOTTOM',
+		growthX = 1,
 	},
 	["TOP"] = {
 		isVertical = true,
 		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
-		framePoint = 'BOTTOM'
+		framePoint = 'BOTTOM',
+		growthX = 1,
 	},
 	["BOTTOM"] = {
 		isVertical = true,
 		isReverse = true,
 		firstInRowPoint = 'TOP',
 		subsequentPoint = 'TOPLEFT',
-		framePoint = 'TOP'
+		framePoint = 'TOP',
+		growthX = 1,
 	},
 	["LEFT"] = {
 		isVertical = false,
 		firstInRowPoint = 'RIGHT',
 		subsequentPoint = 'TOPRIGHT',
-		framePoint = 'RIGHT'
+		framePoint = 'RIGHT',
+		growthX = 1,
 	},
 	["RIGHT"] = {
 		isVertical = false,
 		isReverse = true,
 		firstInRowPoint = 'LEFT',
 		subsequentPoint = 'TOPLEFT',
-		framePoint = 'LEFT'
+		framePoint = 'LEFT',
+		growthX = -1,
 	},
 	["TOPLEFT"] = {
 		isVertical = true,
 		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
-		framePoint = 'BOTTOM'
+		framePoint = 'BOTTOM',
+		growthX = 1,
 	},
 	["TOPRIGHT"] = {
 		isVertical = true,
 		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
-		framePoint = 'BOTTOM'
+		framePoint = 'BOTTOM',
+		growthX = -1,
 	},
 	["BOTTOMLEFT"] = {
 		isVertical = true,
 		isReverse = true,
 		firstInRowPoint = 'TOP',
 		subsequentPoint = 'TOPLEFT',
-		framePoint = 'TOP'
+		framePoint = 'TOP',
+		growthX = 1,
 	},
 	["BOTTOMRIGHT"] = {
 		isVertical = true,
 		isReverse = true,
 		firstInRowPoint = 'TOP',
 		subsequentPoint = 'TOPLEFT',
-		framePoint = 'TOP'
+		framePoint = 'TOP',
+		growthX = -1,
 	}
 }
 
@@ -471,11 +479,13 @@ function mod:CenterAlignAuras(frame, db)
 	local numElements = aurasFrame.type == 'debuffs' and aurasFrame.visibleDebuffs or aurasFrame.visibleBuffs
 
 	local anchorPoint = db.anchorPoint
-	local isVertical = directionProperties[anchorPoint].isVertical
-	local isReverse = directionProperties[anchorPoint].isReverse
-	local firstInRowPoint = directionProperties[anchorPoint].firstInRowPoint
-	local subsequentPoint = directionProperties[anchorPoint].subsequentPoint
-	local framePoint = directionProperties[anchorPoint].framePoint
+	local points = directionProperties[anchorPoint]
+	local isVertical = points.isVertical
+	local isReverse = points.isReverse
+	local firstInRowPoint = points.firstInRowPoint
+	local subsequentPoint = points.subsequentPoint
+	local framePoint = points.framePoint
+	local growthX = points.growthX
 
 	for i = 1, numElements do
 		local child = frame[i]
@@ -484,12 +494,12 @@ function mod:CenterAlignAuras(frame, db)
 			if i == (perRow * floor(i / perRow) + 1) then
 				local numOtherRow = min(perRow, (numElements - (perRow * floor(i / perRow))))
 				local OtherRowSize = (numOtherRow * offset)
-				local xOffset = isVertical and -(OtherRowSize - offset) / 2 or ((isReverse and 1 or -1) * offset * floor(i / perRow))
+				local xOffset = (isVertical and -(OtherRowSize - offset) / 2 or ((isReverse and 1 or -1) * offset * floor(i / perRow))) * growthX
 				local yOffset = isVertical and ((isReverse and -1 or 1) * offset * floor(i / perRow)) or -(OtherRowSize - offset) / 2
 				child:Point(firstInRowPoint, aurasFrame, framePoint, xOffset, yOffset)
 				anchorPoint = child
 			else
-				local xOffset = isVertical and offset or 0
+				local xOffset = (isVertical and offset or 0) * growthX
 				local yOffset = isVertical and 0 or offset
 				child:Point(subsequentPoint, anchorPoint, subsequentPoint, xOffset, yOffset)
 				anchorPoint = child
