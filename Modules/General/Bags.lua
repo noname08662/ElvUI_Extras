@@ -2501,6 +2501,13 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 			mod:UpdateSection(f, #section.buttons, section, numColumns, buttonSize, buttonSpacing, true)
 			db.qualityFilterShown = not db.qualityFilterShown
 		end)
+	else
+		local barWidth = (((buttonSize + buttonSpacing) * numColumns) - buttonSpacing - 30)/7
+		for i, bar in ipairs(f.qualityFilterBar) do
+			bar:Width(barWidth)
+			bar:ClearAllPoints()
+			bar:Point("TOPLEFT", f.qualityFilterBar, "TOPLEFT", (i - 1) * (barWidth+5), 0)
+		end
 	end
 
 	f.editBox:ClearAllPoints()
