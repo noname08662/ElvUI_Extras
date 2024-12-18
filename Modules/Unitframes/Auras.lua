@@ -660,7 +660,7 @@ function mod:UpdateCenteredAuras(enable)
 		for _, func in ipairs({'Update_PlayerFrame', 'Update_TargetFrame', 'Update_FocusFrame', 'Update_PetFrame'}) do
 			if not self:IsHooked(UF, func) then self:SecureHook(UF, func, self.UpdateFrame) end
 		end
-		core:Tag('centerAuras', nil, mod.CenterAuras)
+		core:Tag('centerAuras', nil, function(_, frame) E:ScheduleTimer(function() self:CenterAuras(frame) end, 0.1) end)
 	else
 		for _, func in ipairs({'Configure_Auras', 'Configure_AuraBars', 'UpdateBuffsHeaderPosition', 'UpdateDebuffsHeaderPosition', 'UpdateBuffsPositionAndDebuffHeight', 'UpdateDebuffsPositionAndBuffHeight', 'UpdateDebuffsHeight', 'UpdateBuffsHeight'}) do
 			if self:IsHooked(UF, func) then self:Unhook(UF, func) end
