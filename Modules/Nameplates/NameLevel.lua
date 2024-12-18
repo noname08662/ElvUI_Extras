@@ -142,7 +142,7 @@ function mod:LoadConfig(db)
 						disabled = false,
 					},
 					customColor = {
-						order = 1,
+						order = 2,
 						type = "toggle",
 						name = L["Apply Custom Color"],
 						desc = "",
@@ -154,7 +154,7 @@ function mod:LoadConfig(db)
 						end,
 					},
 					color = {
-						order = 2,
+						order = 3,
 						type = "color",
 						name = L["Color"],
 						desc = "",
@@ -170,7 +170,7 @@ function mod:LoadConfig(db)
 						disabled = function() return not selectedTypeData().Level.customColor end,
 					},
 					reactionColor = {
-						order = 3,
+						order = 4,
 						type = "toggle",
 						name = L["Reaction Color"],
 						desc = L["Reaction based coloring for non-cached characters."],
@@ -182,7 +182,7 @@ function mod:LoadConfig(db)
 						end,
 					},
 					classColor = {
-						order = 4,
+						order = 5,
 						type = "toggle",
 						name = L["Class Color"],
 						desc = L["Use class colors."],
