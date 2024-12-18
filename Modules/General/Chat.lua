@@ -891,7 +891,7 @@ local function setupCompactChat(db)
 
 			local function ChatModOptionsDropDown_Initialize(self, level)
 				local isRightSide = self == RightChatModFrame
-				local data = E.db.Extras.general[modName]
+				local data = E.db.Extras.general[modName].CompactChat
 
 				if level == 1 then
 					local info = UIDropDownMenu_CreateInfo()
