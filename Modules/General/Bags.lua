@@ -2297,6 +2297,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 						section.db.storedPositions = {}
 					end
 					mod:Layout(B, f.isBank)
+					layout = f.currentLayout
 					for _, section in ipairs(layout.sections) do
 						if not section.frame.minimized then
 							local ignoreList = section.db.ignoreList
