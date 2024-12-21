@@ -24,7 +24,9 @@ local dataTexMapDefaults = {
 	[MERCHANT							] = "Interface\\GossipFrame\\VendorGossipIcon",
 	[BARBERSHOP							] = "Interface\\GossipFrame\\HealerGossipIcon",
 }
+
 local isAwesome = C_NamePlate
+local GetNamePlateForUnit = isAwesome and C_NamePlate.GetNamePlateForUnit
 
 mod.initialized = false
 
@@ -1330,7 +1332,7 @@ end
 
 function mod:AwesomeOnEvent(db, unit)
 	if UnitIsPlayer(unit) and UnitReaction(unit, "player") ~= 2 then
-		local plate = C_NamePlate.GetNamePlateForUnit(unit)
+		local plate = GetNamePlateForUnit(unit)
 		local frame = plate and plate.UnitFrame
 		if frame then
 			local title = frame.Title
