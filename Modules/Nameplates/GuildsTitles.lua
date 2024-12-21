@@ -997,8 +997,8 @@ end
 
 
 function mod:UpdateTitle(frame, db, unit, unitTitle, name)
-	name = name and name or frame.UnitName
-	unit = unit and unit or name
+	name = name or frame.UnitName
+	unit = unit or name
 	unitTitle = unitTitle or db.UnitTitle[name]
 
 	if not unit or not name then return end
@@ -1086,7 +1086,6 @@ function mod:UpdateTitle(frame, db, unit, unitTitle, name)
 			title:Width(title.str:GetStringWidth())
 
 			title:Show()
-			frame.OccupationIcon:Hide()
 		end
 	end
 end
@@ -1099,7 +1098,7 @@ function mod:AwesomeUpdateUnitInfo(frame, db, unit)
 		scanner:ClearLines()
 		scanner:SetUnit(unit)
 
-		local guildName = _G["ExtrasGT_ScanningTooltipTextLeft2"]:GetText()
+		local guildName = _G["ExtrasGT_ScanningTooltipTextLeft2"]:GetText() or GetGuildInfo(unit)
 		if not guildName or find(gsub(guildName, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
 			return
 		end
@@ -1210,6 +1209,8 @@ end
 
 function mod:UpdateAllSettings(db)
 	if db.OccupationIcon.enabled then
+		SLASH_ADDOCCUPATION1 = "/addOccupation"
+		SlashCmdList["ADDOCCUPATION"] = function(msg) mod:addOccupation(msg) end
 		twipe(NPCOccupations_data)
 		twipe(NPCOccupations_cache)
 		dataTexMap = db.OccupationIcon.dataTexMap
@@ -1327,6 +1328,43 @@ function mod:addOccupation()
 	end
 end
 
+function mod:AwesomeOnEvent(db, unit)
+	if UnitIsPlayer(unit) and UnitReaction(unit, "player") ~= 2 then
+		local plate = C_NamePlate.GetNamePlateForUnit(unit)
+		local frame = plate and plate.UnitFrame
+		if frame then
+			local title = frame.Title
+			if not title:IsShown() then
+				local guildName = GetGuildInfo(unit)
+				if guildName then
+					db = db.Guilds[frame.UnitType]
+
+					if db and db.isShown then
+						manageTitleFrame(frame, title, db)
+
+						local color
+						if UnitInRaid(unit) then
+							color = db.colors.raid
+						elseif UnitInParty(unit) then
+							color = db.colors.party
+						elseif GetGuildInfo("player") == guildName then
+							color = db.colors.guild
+						else
+							color = db.colors.none
+						end
+
+						title.str:SetTextColor(color.r, color.g, color.b)
+						title.str:SetFormattedText(separatorMap[db.separator], guildName)
+						title:Width(title.str:GetStringWidth())
+
+						title:Show()
+					end
+				end
+			end
+		end
+	end
+end
+
 function mod:OnEvent(db, unit)
 	local name = UnitName(unit)
 	if name then
@@ -1368,30 +1406,33 @@ function mod:Toggle(db)
 					frame.Title:Point(points.point, element, points.relativeTo, points.xOffset, points.yOffset)
 				end
 			end)
-			if db.Guilds.enabled then
-				local handleAreaUpdate = false
-				for _, unitType in ipairs({'ENEMY_PLAYER', 'FRIENDLY_PLAYER'}) do
-					if not db.Guilds[unitType]['showAll'] then
-						core:RegisterAreaUpdate(modName, function()
-							updateVisibilityState(db.Guilds, core:GetCurrentAreaType())
-							updateAllVisiblePlates(db)
-						end)
-						handleAreaUpdate = true
-						break
-					end
+		end
+		if db.Guilds.enabled then
+			local handleAreaUpdate = false
+			for _, unitType in ipairs({'ENEMY_PLAYER', 'FRIENDLY_PLAYER'}) do
+				if not db.Guilds[unitType]['showAll'] then
+					core:RegisterAreaUpdate(modName, function()
+						updateVisibilityState(db.Guilds, core:GetCurrentAreaType())
+						updateAllVisiblePlates(db)
+					end)
+					handleAreaUpdate = true
+					break
 				end
-				if not handleAreaUpdate then
-					core:RegisterAreaUpdate(modName)
-				end
-				self:RegisterEvent("PARTY_MEMBERS_CHANGED", function() updateAllVisiblePlates(db) end)
-				self:RegisterEvent("GUILD_ROSTER_UPDATE", function() updateAllVisiblePlates(db) end)
-				self:RegisterEvent("RAID_ROSTER_UPDATE", function() updateAllVisiblePlates(db) end)
-				updateVisibilityState(db.Guilds, core:GetCurrentAreaType())
-			else
-				self:UnregisterEvent("PARTY_MEMBERS_CHANGED")
-				self:UnregisterEvent("GUILD_ROSTER_UPDATE")
-				self:UnregisterEvent("RAID_ROSTER_UPDATE")
 			end
+			if not handleAreaUpdate then
+				core:RegisterAreaUpdate(modName)
+			end
+			self:RegisterEvent("PARTY_MEMBERS_CHANGED", function() updateAllVisiblePlates(db) end)
+			self:RegisterEvent("GUILD_ROSTER_UPDATE", function() updateAllVisiblePlates(db) end)
+			self:RegisterEvent("RAID_ROSTER_UPDATE", function() updateAllVisiblePlates(db) end)
+			updateVisibilityState(db.Guilds, core:GetCurrentAreaType())
+		else
+			self:UnregisterEvent("PARTY_MEMBERS_CHANGED")
+			self:UnregisterEvent("GUILD_ROSTER_UPDATE")
+			self:UnregisterEvent("RAID_ROSTER_UPDATE")
+			self:UnregisterEvent("UPDATE_MOUSEOVER_UNIT")
+			self:UnregisterEvent("PLAYER_TARGET_CHANGED")
+			self:UnregisterEvent("PLAYER_FOCUS_CHANGED")
 		end
 		if isAwesome then
 			if not self:IsHooked(NP, "OnCreated") then
@@ -1410,10 +1451,13 @@ function mod:Toggle(db)
 					end
 				end)
 			end
+			self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() self:AwesomeOnEvent(db, 'mouseover') end)
+			self:RegisterEvent("PLAYER_TARGET_CHANGED", function() self:AwesomeOnEvent(db, 'target') end)
+			self:RegisterEvent("PLAYER_FOCUS_CHANGED", function() self:AwesomeOnEvent(db, 'focus') end)
 		else
-			self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() mod:OnEvent(db, 'mouseover') end)
-			self:RegisterEvent("PLAYER_TARGET_CHANGED", function() mod:OnEvent(db, 'target') end)
-			self:RegisterEvent("PLAYER_FOCUS_CHANGED", function() mod:OnEvent(db, 'focus') end)
+			self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() self:OnEvent(db, 'mouseover') end)
+			self:RegisterEvent("PLAYER_TARGET_CHANGED", function() self:OnEvent(db, 'target') end)
+			self:RegisterEvent("PLAYER_FOCUS_CHANGED", function() self:OnEvent(db, 'focus') end)
 			if not self:IsHooked(NP, "ResetNameplateFrameLevel") then
 				self:SecureHook(NP, "ResetNameplateFrameLevel", function(self, frame)
 					if frame.Title then
@@ -1445,10 +1489,6 @@ function mod:Toggle(db)
 					end
 				end)
 			end
-		end
-		if db.OccupationIcon.enabled then
-			SLASH_ADDOCCUPATION1 = "/addOccupation"
-			SlashCmdList["ADDOCCUPATION"] = function(msg) mod:addOccupation(msg) end
 		end
 		for plate in pairs(NP.CreatedPlates) do
 			local frame = plate and plate.UnitFrame
