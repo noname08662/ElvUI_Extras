@@ -456,7 +456,26 @@ local function toggleLayoutMode(f, toggle)
 	end
 end
 
-local function updateEmptyButtonCount(f, update)
+function mod:UpdateButtonPositions(section, button)
+	local buttonPos
+	local buttons = section.buttons
+	for i, btn in ipairs(buttons) do
+		if btn == button then
+			tremove(buttons, i)
+			buttonPos = i
+			break
+		end
+	end
+	for i = buttonPos or 1, #buttons do
+		local btn = buttons[i]
+		if btn then
+			section.db.storedPositions[btn.bagID..'-'..btn.slotID] = i
+		end
+	end
+	return min(buttonPos or 1, #buttons)
+end
+
+function mod:UpdateEmptyButtonCount(f, update)
 	local emptyButton = f.emptyButton
 	if update then
 		if emptyButton.emptySlotsSelection == 0 then
@@ -586,7 +605,7 @@ local function handleButton(f, button)
 					if header.prevEmptySlotsSelection then
 						f.emptyButton.emptySlotsSelection = header.prevEmptySlotsSelection
 						header.prevEmptySlotsSelection = nil
-						updateEmptyButtonCount(f, true)
+						mod:UpdateEmptyButtonCount(f, true)
 					end
 				end
 				self:Hide()
@@ -1791,7 +1810,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 					elseif currentSection.db.isSpecialBag then
 						self.prevEmptySlotsSelection = f.emptyButton.emptySlotsSelection
 						emptyButton = mod:FindEmpty(nil, f, currentSection.db.bagID)
-						updateEmptyButtonCount(f, false)
+						mod:UpdateEmptyButtonCount(f, false)
 					else
 						emptyButton = next(buttonMap[f])
 					end
@@ -1821,7 +1840,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 					if self.prevEmptySlotsSelection then
 						f.emptyButton.emptySlotsSelection = self.prevEmptySlotsSelection
 						self.prevEmptySlotsSelection = nil
-						updateEmptyButtonCount(f, true)
+						mod:UpdateEmptyButtonCount(f, true)
 					end
 				end
 			end)
@@ -2201,7 +2220,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 
 		f.emptyButton.emptySlotsSelection = 0
 		f.emptyButton:SetScript("OnMouseWheel", function(self)
-			updateEmptyButtonCount(f)
+			mod:UpdateEmptyButtonCount(f)
 			self:GetScript("OnEnter")(self)
 		end)
 		f.emptyButton:SetScript("OnReceiveDrag", function(self)
@@ -2622,23 +2641,13 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 			button.itemID = false
 			local targetSection = bagMap[slotID]
 			if targetSection then
-				local buttonPos = targetSection.db.storedPositions[bagID..'-'..slotID] or 1
-				targetSection.db.storedPositions[bagID..'-'..slotID] = nil
-				tremove(targetSection.buttons, buttonPos)
 				if not bagType or bagType == 0 then
 					buttonMap[f][button] = true
 					bagMap[slotID] = nil
 				end
-				local buttons = targetSection.buttons
-				local buttonsLen = #buttons
-				for i = buttonPos, buttonsLen do
-					local button = buttons[i]
-					if button then
-						targetSection.db.storedPositions[button.bagID..'-'..button.slotID] = i
-					end
-				end
-				mod:UpdateSection(f, min(buttonsLen, buttonPos), targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
-				updateEmptyButtonCount(f, true)
+				mod:UpdateSection(f, mod:UpdateButtonPositions(targetSection, button), targetSection,
+											layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+				mod:UpdateEmptyButtonCount(f, true)
 			end
 		end
 	else
@@ -2687,23 +2696,14 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 					mod:UpdateSection(f, #buttons, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 				end
 			end
-			updateEmptyButtonCount(f, true)
+			mod:UpdateEmptyButtonCount(f, true)
 		elseif button.shouldEvaluate then
 			local currentSection = bagMap[slotID]
 			local targetSection = mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
 			if currentSection then
-				local buttonPos = currentSection.db.storedPositions[bagID..'-'..slotID] or 1
 				currentSection.db.storedPositions[bagID..'-'..slotID] = nil
-				tremove(currentSection.buttons, buttonPos)
-				local buttons = currentSection.buttons
-				local buttonsLen = #buttons
-				for i = buttonPos, buttonsLen do
-					local button = buttons[i]
-					if button then
-						currentSection.db.storedPositions[button.bagID..'-'..button.slotID] = i
-					end
-				end
-				mod:UpdateSection(f, min(buttonsLen, buttonPos), currentSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+				mod:UpdateSection(f, mod:UpdateButtonPositions(currentSection, button), currentSection,
+												layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 			end
 			if targetSection then
 				local buttons = targetSection.buttons
@@ -2737,21 +2737,13 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 					end
 				end
 				if targetSection then
-					local buttonPos = currentSection.db.storedPositions[bagID..'-'..slotID] or 1
 					local buttonsT = targetSection.buttons
-					local buttonsC = currentSection.buttons
-					for i = buttonPos, #buttonsC do
-						local button = buttonsC[i]
-						if button then
-							currentSection.db.storedPositions[button.bagID..'-'..button.slotID] = i
-						end
-					end
 					tinsert(buttonsT, button)
-					tremove(buttonsC, buttonPos)
 					targetSection.db.storedPositions[bagID..'-'..slotID] = #buttonsT
 					currentSection.db.storedPositions[bagID..'-'..slotID] = nil
 					bagMap[slotID] = targetSection
-					mod:UpdateSection(f, min(#buttonsC, buttonPos), currentSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+					mod:UpdateSection(f, mod:UpdateButtonPositions(currentSection, button), currentSection,
+													layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 					mod:UpdateSection(f, #buttonsT, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 				end
 			end
