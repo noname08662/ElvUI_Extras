@@ -360,7 +360,7 @@ local function updateSortMethods(section)
 end
 
 
-local function toggleLayoutMode(f, toggle)
+function mod:ToggleLayoutMode(f, toggle)
 	if toggle then
 		for _, section in ipairs(f.currentLayout.sections) do
 			local sectionFrame = section.frame
@@ -463,6 +463,7 @@ function mod:UpdateButtonPositions(section, button)
 		if btn == button then
 			tremove(buttons, i)
 			buttonPos = i
+			section.db.storedPositions[btn.bagID..'-'..btn.slotID] = nil
 			break
 		end
 	end
@@ -640,7 +641,7 @@ end
 
 
 local function wipeLayout(f, isBank)
-	toggleLayoutMode(f)
+	mod:ToggleLayoutMode(f)
 	mod.localhooks[f] = nil
 	for _, section in ipairs(f.currentLayout.sections) do
 		for _, button in ipairs(section.buttons) do
@@ -1922,22 +1923,25 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 			section.shouldPopulate = nil
 		else
 			local reserved = {}
+			local buttonsWithPos = {}
 			for j, button in ipairs(buttons) do
 				local bagID, slotID = button.bagID, button.slotID
 				local pos = storedPositions[bagID..'-'..slotID]
 				if pos then
 					tinsert(reserved, j)
-					tinsert(processedSection.buttons, button)
-					buttonMap[bagID][slotID] = processedSection
+					tinsert(buttonsWithPos, {button = button, pos = pos, bagID = bagID, slotID = slotID})
 				end
 			end
+			tsort(buttonsWithPos, function(a, b) return a.pos < b.pos end)
+			for _, data in ipairs(buttonsWithPos) do
+				tinsert(processedSection.buttons, data.button)
+				buttonMap[data.bagID][data.slotID] = processedSection
+			end
+
 			tsort(reserved, function(a,b) return a > b end)
 			for _, index in ipairs(reserved) do
 				tremove(buttons, index)
 			end
-			tsort(processedSection.buttons, function(a, b)
-				return (storedPositions[a.bagID..'-'..a.slotID] or 999) < (storedPositions[b.bagID..'-'..b.slotID] or 999)
-			end)
 		end
 
 		sectionFrame.title = sectionFrame.title or sectionFrame:CreateFontString(nil, "OVERLAY")
@@ -2347,7 +2351,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 			elseif not draggingItem then
 				self.showEmptySections = not self.showEmptySections
 				self.showSizing = not self.showSizing
-				toggleLayoutMode(f, self.showSizing)
+				mod:ToggleLayoutMode(f, self.showSizing)
 				if self.showEmptySections then
 					f.emptyButton.eyeTex:Show()
 					for i, section in ipairs(layout.sections) do
@@ -2569,7 +2573,9 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 	for _, section in ipairs(f.currentLayout.sections) do
 		self:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing)
 	end
-	toggleLayoutMode(f, f.emptyButton.showSizing)
+
+	mod:ToggleLayoutMode(f, f.emptyButton.showSizing)
+	mod:UpdateEmptyButtonCount(f, true)
 end
 
 function mod:Layout(self, isBank)
@@ -2701,7 +2707,6 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 			local currentSection = bagMap[slotID]
 			local targetSection = mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
 			if currentSection then
-				currentSection.db.storedPositions[bagID..'-'..slotID] = nil
 				mod:UpdateSection(f, mod:UpdateButtonPositions(currentSection, button), currentSection,
 												layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 			end
@@ -2740,7 +2745,6 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 					local buttonsT = targetSection.buttons
 					tinsert(buttonsT, button)
 					targetSection.db.storedPositions[bagID..'-'..slotID] = #buttonsT
-					currentSection.db.storedPositions[bagID..'-'..slotID] = nil
 					bagMap[slotID] = targetSection
 					mod:UpdateSection(f, mod:UpdateButtonPositions(currentSection, button), currentSection,
 													layout.numColumns, layout.buttonSize, layout.buttonSpacing)
