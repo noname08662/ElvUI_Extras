@@ -1427,14 +1427,21 @@ function mod:Toggle(db)
 			self:RegisterEvent("PARTY_MEMBERS_CHANGED", function() updateAllVisiblePlates(db) end)
 			self:RegisterEvent("GUILD_ROSTER_UPDATE", function() updateAllVisiblePlates(db) end)
 			self:RegisterEvent("RAID_ROSTER_UPDATE", function() updateAllVisiblePlates(db) end)
+			if isAwesome then
+				self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() self:AwesomeOnEvent(db, 'mouseover') end)
+				self:RegisterEvent("PLAYER_TARGET_CHANGED", function() self:AwesomeOnEvent(db, 'target') end)
+				self:RegisterEvent("PLAYER_FOCUS_CHANGED", function() self:AwesomeOnEvent(db, 'focus') end)
+			end
 			updateVisibilityState(db.Guilds, core:GetCurrentAreaType())
 		else
 			self:UnregisterEvent("PARTY_MEMBERS_CHANGED")
 			self:UnregisterEvent("GUILD_ROSTER_UPDATE")
 			self:UnregisterEvent("RAID_ROSTER_UPDATE")
-			self:UnregisterEvent("UPDATE_MOUSEOVER_UNIT")
-			self:UnregisterEvent("PLAYER_TARGET_CHANGED")
-			self:UnregisterEvent("PLAYER_FOCUS_CHANGED")
+			if isAwesome then
+				self:UnregisterEvent("UPDATE_MOUSEOVER_UNIT")
+				self:UnregisterEvent("PLAYER_TARGET_CHANGED")
+				self:UnregisterEvent("PLAYER_FOCUS_CHANGED")
+			end
 		end
 		if isAwesome then
 			if not self:IsHooked(NP, "OnCreated") then
@@ -1453,9 +1460,6 @@ function mod:Toggle(db)
 					end
 				end)
 			end
-			self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() self:AwesomeOnEvent(db, 'mouseover') end)
-			self:RegisterEvent("PLAYER_TARGET_CHANGED", function() self:AwesomeOnEvent(db, 'target') end)
-			self:RegisterEvent("PLAYER_FOCUS_CHANGED", function() self:AwesomeOnEvent(db, 'focus') end)
 		else
 			self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() self:OnEvent(db, 'mouseover') end)
 			self:RegisterEvent("PLAYER_TARGET_CHANGED", function() self:OnEvent(db, 'target') end)
