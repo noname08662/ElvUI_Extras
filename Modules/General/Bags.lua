@@ -440,7 +440,7 @@ function mod:ToggleLayoutMode(f, toggle)
 							local row = floor((j - 1) / newNumColumns)
 							tinsert(currentSection.db.buttonPositions, {col * buttonOffset, -row * buttonOffset})
 						end
-						mod:UpdateSection(f, 1, currentSection, numColumns, buttonSize, buttonSpacing, true)
+						mod:UpdateSection(f, currentSection, numColumns, buttonSize, buttonSpacing, true)
 					end)
 				end)
 			end
@@ -456,24 +456,27 @@ function mod:ToggleLayoutMode(f, toggle)
 	end
 end
 
-function mod:UpdateButtonPositions(section, button)
-	local buttonPos
-	local buttons = section.buttons
-	for i, btn in ipairs(buttons) do
-		if btn == button then
-			tremove(buttons, i)
-			buttonPos = i
-			section.db.storedPositions[btn.bagID..'-'..btn.slotID] = nil
-			break
+function mod:UpdateButtonPositions(button, bagMap, bagID, slotID, currentSection, targetSection)
+	if currentSection then
+		local buttons = currentSection.buttons
+		for i, btn in ipairs(buttons) do
+			if btn == button then
+				tremove(buttons, i)
+				currentSection.db.storedPositions[bagID..'-'..slotID] = nil
+				for j = i, #buttons do
+					local otherButton = buttons[j]
+					if otherButton then
+						currentSection.db.storedPositions[otherButton.bagID..'-'..otherButton.slotID] = j
+					end
+				end
+			end
 		end
 	end
-	for i = buttonPos or 1, #buttons do
-		local btn = buttons[i]
-		if btn then
-			section.db.storedPositions[btn.bagID..'-'..btn.slotID] = i
-		end
+	if targetSection then
+		tinsert(targetSection.buttons, button)
+		targetSection.db.storedPositions[bagID..'-'..slotID] = #targetSection.buttons
+		bagMap[slotID] = targetSection
 	end
-	return min(buttonPos or 1, #buttons)
 end
 
 function mod:UpdateEmptyButtonCount(f, update)
@@ -627,6 +630,8 @@ local function handleButton(f, button)
 	if not mod:IsHooked(button, "OnDragStart") then
 		mod:SecureHookScript(button, "OnDragStart", function(self)
 			if GetCursorInfo() then
+				local header = buttonMap[self.bagID][self.slotID].frame.header
+				header:GetScript("OnEnter")(header)
 				f.draggedButton = button
 				f.emptyButton:SetScript("OnUpdate", function(eb)
 					if not GetCursorInfo() and not button.atHeader then
@@ -1518,37 +1523,40 @@ function mod:EvaluateItem(sections, bagID, slotID, itemID)
 	return sections[#sections]
 end
 
-function mod:HandleSortButton(f, enable, isBank, numColumns, buttonSize, buttonSpacing)
-	if enable then
-		f.sortButton:SetScript("OnClick", nil)
-		f.sortButton:SetScript("OnMouseDown", function()
-			for _, section in ipairs(f.currentLayout.sections) do
-				if not section.frame.minimized then
-					local ignoreList = section.db.ignoreList
-					local sortedButtons = {}
-					local ignoredButtons = {}
+function mod:SortAllSections(f)
+	local layout = f.currentLayout
+	for _, section in ipairs(layout.sections) do
+		if not section.frame.minimized then
+			local ignoreList = section.db.ignoreList
+			local sortedButtons = {}
+			local ignoredButtons = {}
 
-					for i, button in ipairs(section.buttons) do
-						if ignoreList[button.itemID or B_GetItemID(nil, button.bagID, button.slotID)] then
-							ignoredButtons[i] = button
-						else
-							tinsert(sortedButtons, button)
-						end
-					end
-
-					tsort(sortedButtons, section.sortMethodFunc)
-					for i, ignoredButton in pairs(ignoredButtons) do
-						tinsert(sortedButtons, i, ignoredButton)
-					end
-					for i, button in ipairs(sortedButtons) do
-						section.db.storedPositions[button.bagID..'-'..button.slotID] = i
-					end
-					section.buttons = {unpack(sortedButtons)}
-
-					self:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing)
+			for i, button in ipairs(section.buttons) do
+				if ignoreList[button.itemID or B_GetItemID(nil, button.bagID, button.slotID)] then
+					ignoredButtons[i] = button
+				else
+					tinsert(sortedButtons, button)
 				end
 			end
-		end)
+
+			tsort(sortedButtons, section.sortMethodFunc)
+			for i, ignoredButton in pairs(ignoredButtons) do
+				tinsert(sortedButtons, i, ignoredButton)
+			end
+			for i, button in ipairs(sortedButtons) do
+				section.db.storedPositions[button.bagID..'-'..button.slotID] = i
+			end
+			section.buttons = {unpack(sortedButtons)}
+
+			self:UpdateSection(f, section, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+		end
+	end
+end
+
+function mod:HandleSortButton(f, enable, isBank)
+	if enable then
+		f.sortButton:SetScript("OnClick", nil)
+		f.sortButton:SetScript("OnMouseDown", function() self:SortAllSections(f) end)
 	else
 		f.sortButton:SetScript("OnUpdate", nil)
 		f.sortButton:SetScript("OnMouseDown", nil)
@@ -1780,7 +1788,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 					sectionFrame.minimizedLine:Show()
 					sectionFrame:Height(1)
 				end
-				self:UpdateSection(f, 1, currentSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing, true)
+				self:UpdateSection(f, currentSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing, true)
 			end)
 			sectionFrame.header:SetScript("OnReceiveDrag", function()
 				if f.draggedButton then
@@ -2320,33 +2328,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 						section.db.storedPositions = {}
 					end
 					mod:Layout(B, f.isBank)
-					layout = f.currentLayout
-					for _, section in ipairs(layout.sections) do
-						if not section.frame.minimized then
-							local ignoreList = section.db.ignoreList
-							local sortedButtons = {}
-							local ignoredButtons = {}
-
-							for i, button in ipairs(section.buttons) do
-								if ignoreList[button.itemID or B_GetItemID(nil, button.bagID, button.slotID)] then
-									ignoredButtons[i] = button
-								else
-									tinsert(sortedButtons, button)
-								end
-							end
-
-							tsort(sortedButtons, section.sortMethodFunc)
-							for i, ignoredButton in pairs(ignoredButtons) do
-								tinsert(sortedButtons, i, ignoredButton)
-							end
-							for i, button in ipairs(sortedButtons) do
-								section.db.storedPositions[button.bagID..'-'..button.slotID] = i
-							end
-							section.buttons = {unpack(sortedButtons)}
-
-							mod:UpdateSection(f, 1, section, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
-						end
-					end
+					mod:SortAllSections(f)
 				end
 			elseif not draggingItem then
 				self.showEmptySections = not self.showEmptySections
@@ -2357,16 +2339,14 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 					for i, section in ipairs(layout.sections) do
 						f.forceShow = true
 						db.forceShow = true
-						mod:UpdateSection(f, #section.buttons, section,
-											layout.numColumns, layout.buttonSize, layout.buttonSpacing, i == #layout.sections)
+						mod:UpdateSection(f, section, layout.numColumns, layout.buttonSize, layout.buttonSpacing, i == #layout.sections)
 					end
 				else
 					f.emptyButton.eyeTex:Hide()
 					for i, section in ipairs(layout.sections) do
 						f.forceShow = false
 						db.forceShow = false
-						mod:UpdateSection(f, #section.buttons, section,
-											layout.numColumns, layout.buttonSize, layout.buttonSpacing, i == #layout.sections)
+						mod:UpdateSection(f, section, layout.numColumns, layout.buttonSize, layout.buttonSpacing, i == #layout.sections)
 					end
 				end
 				E:StopFlash(self.highlight)
@@ -2412,6 +2392,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 			end
 
 			bar:SetScript("OnClick", function(self, clickButton)
+				local layout = f.currentLayout
 				if clickButton == "RightButton" then
 					for j = 0, 6 do
 						local filterBar = f.qualityFilterBar[j+1]
@@ -2438,7 +2419,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 								button:Show()
 							end
 						end
-						mod:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing, j == #f.currentLayout.sections)
+						mod:UpdateSection(f, section, layout.numColumns, layout.buttonSize, layout.buttonSpacing, j == #layout.sections)
 					end
 				elseif self.isActive then
 					self.bg:SetTexture(color.r * 0.5, color.g * 0.5, color.b * 0.5)
@@ -2452,7 +2433,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 								button:Hide()
 							end
 						end
-						mod:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing, j == #f.currentLayout.sections)
+						mod:UpdateSection(f, section, layout.numColumns, layout.buttonSize, layout.buttonSpacing, j == #layout.sections)
 					end
 				else
 					self.bg:SetTexture(color.r, color.g, color.b)
@@ -2466,7 +2447,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 								button:Show()
 							end
 						end
-						mod:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing, j == #f.currentLayout.sections)
+						mod:UpdateSection(f, section, layout.numColumns, layout.buttonSize, layout.buttonSpacing, j == #layout.sections)
 					end
 				end
 			end)
@@ -2486,7 +2467,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 						button:Hide()
 					end
 				end
-				mod:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing, j == #f.currentLayout.sections)
+				mod:UpdateSection(f, section, numColumns, buttonSize, buttonSpacing, j == #f.currentLayout.sections)
 			end
 		end
 		f.qualityFilterButton = CreateFrame("Button", '$parentQualityFilterButton', f.holderFrame)
@@ -2511,7 +2492,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 				f.currencyButton:ClearAllPoints()
 				f.currencyButton:Point("TOPLEFT", f.qualityFilterBar, "BOTTOMLEFT", 0, 18)
 				f.currencyButton:Point("TOPRIGHT", f.qualityFilterBar, "BOTTOMRIGHT", 0, 18)
-				f.bottomOffset = f.bottomOffset - 10
+				f.newbottomOffset = db.bottomOffset or 0
 			else
 				for _, bar in ipairs(f.qualityFilterBar) do
 					bar:Show()
@@ -2519,10 +2500,10 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 				f.currencyButton:ClearAllPoints()
 				f.currencyButton:Point("TOPLEFT", f.qualityFilterBar, "BOTTOMLEFT", 0, 28)
 				f.currencyButton:Point("TOPRIGHT", f.qualityFilterBar, "BOTTOMRIGHT", 0, 28)
-				f.bottomOffset = f.bottomOffset + 10
+				f.newbottomOffset = (db.bottomOffset or 0) + 10
 			end
-			local section = f.currentLayout.sections[#f.currentLayout.sections]
-			mod:UpdateSection(f, #section.buttons, section, numColumns, buttonSize, buttonSpacing, true)
+			local layout = f.currentLayout
+			mod:UpdateSection(f, layout.sections[#layout.sections], layout.numColumns, layout.buttonSize, layout.buttonSpacing, true)
 			db.qualityFilterShown = not db.qualityFilterShown
 		end)
 	else
@@ -2571,7 +2552,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 	f:Width(numColumns * (buttonSize + buttonSpacing) + (offset2 or offset1) * 2 - buttonSpacing)
 
 	for _, section in ipairs(f.currentLayout.sections) do
-		self:UpdateSection(f, 1, section, numColumns, buttonSize, buttonSpacing)
+		self:UpdateSection(f, section, numColumns, buttonSize, buttonSpacing)
 	end
 
 	mod:ToggleLayoutMode(f, f.emptyButton.showSizing)
@@ -2633,6 +2614,7 @@ end
 function mod:UpdateSlot(self, f, bagID, slotID)
 	local bag = f.Bags[bagID]
 	local bagMap = buttonMap[bagID]
+
 	if not bag or not bag[slotID] or not bagMap or (bag.numSlots ~= GetContainerNumSlots(bagID)) then return end
 
 	local layout = f.currentLayout
@@ -2644,22 +2626,23 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 		local itemID = button.itemID
 		if itemID then
 			itemCounts[itemID] = GetItemCount(itemID)
-			button.itemID = false
-			local targetSection = bagMap[slotID]
-			if targetSection then
+			button.itemID = nil
+			local currentSection = bagMap[slotID]
+			if currentSection then
 				if not bagType or bagType == 0 then
 					buttonMap[f][button] = true
 					bagMap[slotID] = nil
 				end
-				mod:UpdateSection(f, mod:UpdateButtonPositions(targetSection, button), targetSection,
-											layout.numColumns, layout.buttonSize, layout.buttonSpacing)
-				mod:UpdateEmptyButtonCount(f, true)
+				mod:UpdateButtonPositions(button, bagMap, bagID, slotID, currentSection)
+				mod:UpdateSection(f, currentSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 			end
+			mod:UpdateEmptyButtonCount(f, true)
 		end
 	else
 		local oldID = button.itemID
 		local itemID = B_GetItemID(nil, bagID, slotID)
 		local itemCount = GetItemCount(itemID)
+
 		if button.isHidden then
 			button:Hide()
 		elseif not oldID then
@@ -2668,6 +2651,7 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 			if itemCounts[itemID] ~= itemCount and not button:IsVisible() then
 				button.highlight:Show()
 			end
+
 			if button.atHeader then
 				if button.atHeader == 'evaluate' then
 					targetSection = (bagType and bagType ~= 0) and bagMap[slotID] or mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
@@ -2688,41 +2672,31 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 			else
 				targetSection = mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
 			end
-			if targetSection then
-				local buttons = targetSection.buttons
-				tinsert(buttons, button)
-				bagMap[slotID] = targetSection
-				targetSection.db.storedPositions[bagID..'-'..slotID] = #buttons
-				local rarity = button.rarity or select(3,GetItemInfo(itemID))
-				if not layout.filter[rarity] then
-					button.isHidden = true
-					button:Hide()
-					button.highlight:Show()
-				else
-					mod:UpdateSection(f, #buttons, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
-				end
+			mod:UpdateButtonPositions(button, bagMap, bagID, slotID, nil, targetSection)
+
+			if not layout.filter[button.rarity or select(3,GetItemInfo(itemID))] then
+				button.isHidden = true
+				button:Hide()
+				button.highlight:Show()
+			else
+				mod:UpdateSection(f, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 			end
 			mod:UpdateEmptyButtonCount(f, true)
 		elseif button.shouldEvaluate then
 			local currentSection = bagMap[slotID]
 			local targetSection = mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
+
+			mod:UpdateButtonPositions(button, bagMap, bagID, slotID, currentSection, targetSection)
+
 			if currentSection then
-				mod:UpdateSection(f, mod:UpdateButtonPositions(currentSection, button), currentSection,
-												layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+				mod:UpdateSection(f, currentSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 			end
-			if targetSection then
-				local buttons = targetSection.buttons
-				tinsert(buttons, button)
-				bagMap[slotID] = targetSection
-				targetSection.db.storedPositions[bagID..'-'..slotID] = #buttons
-				local rarity = button.rarity or select(3,GetItemInfo(itemID))
-				if not layout.filter[rarity] then
-					button.isHidden = true
-					button:Hide()
-					button.highlight:Show()
-				else
-					mod:UpdateSection(f, #buttons, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
-				end
+			if not layout.filter[button.rarity or select(3,GetItemInfo(itemID))] then
+				button.isHidden = true
+				button:Hide()
+				button.highlight:Show()
+			else
+				mod:UpdateSection(f, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 			end
 			button.shouldEvaluate = nil
 		elseif f.draggedButton == button then
@@ -2741,17 +2715,11 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 						header.prevEmptySlotsSelection = nil
 					end
 				end
-				if targetSection then
-					local buttonsT = targetSection.buttons
-					tinsert(buttonsT, button)
-					targetSection.db.storedPositions[bagID..'-'..slotID] = #buttonsT
-					bagMap[slotID] = targetSection
-					mod:UpdateSection(f, mod:UpdateButtonPositions(currentSection, button), currentSection,
-													layout.numColumns, layout.buttonSize, layout.buttonSpacing)
-					mod:UpdateSection(f, #buttonsT, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
-				end
+				mod:UpdateButtonPositions(button, bagMap, bagID, slotID, currentSection, targetSection)
+				mod:UpdateSection(f, currentSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+				mod:UpdateSection(f, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 			end
-			button.atHeader = false
+			button.atHeader = nil
 		end
 		if oldID and oldID ~= itemID then
 			itemCounts[oldID] = GetItemCount(oldID)
@@ -2761,7 +2729,7 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 	end
 end
 
-function mod:UpdateSection(f, index, section, numColumns, buttonSize, buttonSpacing, resize)
+function mod:UpdateSection(f, section, numColumns, buttonSize, buttonSpacing, resize)
     local sectionFrame = section.frame
 	local buttons = section.buttons
 	local numRows
@@ -2783,12 +2751,11 @@ function mod:UpdateSection(f, index, section, numColumns, buttonSize, buttonSpac
 		sectionFrame.title:SetText(section.db.title.text..(minimizedCount > 0 and " (+" .. minimizedCount .. ")" or ""))
 		sectionFrame:Show()
 	else
-		local pos = index
+		local pos = 1
 		local buttonPos = section.db.buttonPositions
 		local isEmpty = true
-		for i = index, #buttons do
-			local button = buttons[i]
-			if button and not button.isHidden then
+		for _, button in ipairs(buttons) do
+			if not button.isHidden then
 				button:ClearAllPoints()
 				button:SetPoint("TOPLEFT", section.frame, "TOPLEFT", unpack(buttonPos[pos]))
 				pos = pos + 1
