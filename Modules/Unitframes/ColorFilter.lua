@@ -890,7 +890,7 @@ function mod:LoadConfig(db)
 								selectedTabData().conditions or "",
 								function()
 									selectedTabData().conditions = core.EditFrame.editBox:GetText()
-									self:UpdateAll()
+									self:UpdateAll(db)
 								end
 							)
 						end,

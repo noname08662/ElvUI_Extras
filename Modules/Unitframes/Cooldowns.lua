@@ -1556,27 +1556,15 @@ function mod:Toggle(db)
 	end
 
 	if next(enabled) then
-		local handleAreaUpdate = false
-		for unitType in pairs(enabled) do
-			for _, unitData in pairs(db[unitType].units) do
-				if not unitData['showAll'] then
-					core:RegisterAreaUpdate(modName, function()
-						if updateVisibilityState(db, core:GetCurrentAreaType()) then
-							self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(...) combatLogEvent(db, ...) end)
-						else
-							self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-						end
-						self:SetupCooldowns(db, true)
-					end)
-					handleAreaUpdate = true
-					break
-				end
+		core:RegisterAreaUpdate(modName, function()
+			scanTool:SetOwner(WorldFrame, "ANCHOR_NONE")
+			if updateVisibilityState(db, core:GetCurrentAreaType()) then
+				self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(...) combatLogEvent(db, ...) end)
+			else
+				self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 			end
-			if handleAreaUpdate then break end
-		end
-		if not handleAreaUpdate then
-			core:RegisterAreaUpdate(modName)
-		end
+			self:SetupCooldowns(db, true)
+		end)
 		if updateVisibilityState(db, core:GetCurrentAreaType()) then
 			self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(...) combatLogEvent(db, ...) end)
 		else

@@ -172,7 +172,7 @@ function mod:LoadConfig(db)
 							local tab_db = db.tabs[db.selected]
 							core:OpenEditor(L["Custom Commands"],
 											tab_db.commands,
-											function() tab_db.commands = core.EditFrame.editBox:GetText() mod:SetupHandler(tab_db) end)
+											function() tab_db.commands = core.EditFrame.editBox:GetText() mod:SetupHandler(db) end)
 						end,
 						disabled = function() return not db.tabs[db.selected].enabled or not db.enabled end,
 					},

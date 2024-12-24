@@ -36,11 +36,11 @@ scanner:SetOwner(WorldFrame, "ANCHOR_NONE")
 local max = math.max
 local _G, pairs, ipairs, tonumber, select = _G, pairs, ipairs, tonumber, select
 local twipe, tinsert, tsort = table.wipe, table.insert, table.sort
-local format, match, find, gsub, sub = string.format, string.match, string.find, string.gsub, string.sub
+local format, find, gsub, sub = string.format, string.find, string.gsub, string.sub
 local GetGuildInfo = GetGuildInfo
 local UnitInRaid, UnitInParty, UnitIsPlayer, UnitGUID = UnitInRaid, UnitInParty, UnitIsPlayer, UnitGUID
 local UnitReaction, UnitName, UnitPlayerControlled, UnitCanAttack = UnitReaction, UnitName, UnitPlayerControlled, UnitCanAttack
-local UNKNOWN, UNIT_LEVEL_TEMPLATE = UNKNOWN, UNIT_LEVEL_TEMPLATE
+local UNKNOWN = UNKNOWN
 local TOOLTIP_UNIT_LEVEL_RACE_CLASS = gsub(table.concat({strsplit(1, string.format(TOOLTIP_UNIT_LEVEL_RACE_CLASS, 1, 1, 1))}), '[%d%p%s]+', '')
 local MINIMAP_TRACKING_AUCTIONEER, MINIMAP_TRACKING_BANKER,
 		MINIMAP_TRACKING_BATTLEMASTER, MINIMAP_TRACKING_TRAINER_CLASS, MINIMAP_TRACKING_INNKEEPER,
@@ -1003,32 +1003,18 @@ function mod:UpdateTitle(frame, db, unit, unitTitle, name)
 	unit = unit or name
 	unitTitle = unitTitle or db.UnitTitle[name]
 
-	if not unit or not name then return end
+	if not unit or not name or not unitTitle then return end
 
 	local title, unitType = frame.Title, frame.UnitType
 
 	if unitType == 'FRIENDLY_NPC' or unitType == 'ENEMY_NPC' then
-		local iconEnabled = db.OccupationIcon.enabled
-		if not unitTitle or match(unitTitle, UNIT_LEVEL_TEMPLATE) or find(gsub(unitTitle, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
-			if iconEnabled then
-				if unitType == 'FRIENDLY_NPC' then
-					manageTitleFrame(frame, title, nil, db.OccupationIcon)
-					self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
-				elseif frame.OccupationIcon then
-					frame.OccupationIcon:Hide()
-				end
-			end
-		elseif unitTitle and db.Titles.enabled then
+		if db.Titles.enabled then
 			if not isAwesome and db.UnitTitle[name] ~= unitTitle then
 				db.UnitTitle[name] = unitTitle
 			end
-			if iconEnabled then
+			if db.OccupationIcon.enabled and unitType == 'FRIENDLY_NPC' then
 				manageTitleFrame(frame, title, db.Titles[unitType], db.OccupationIcon)
-				if unitType == 'FRIENDLY_NPC' then
-					self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
-				elseif frame.OccupationIcon then
-					frame.OccupationIcon:Hide()
-				end
+				self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
 			else
 				manageTitleFrame(frame, title, db.Titles[unitType])
 			end
@@ -1058,15 +1044,11 @@ function mod:UpdateTitle(frame, db, unit, unitTitle, name)
 			title.str:SetFormattedText(separatorMap[db.separator], unitTitle)
 			title:Width(title.str:GetStringWidth())
 			title:Show()
-		elseif iconEnabled then
-			if unitType == 'FRIENDLY_NPC' then
-				manageTitleFrame(frame, title, nil, db.OccupationIcon)
-				self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
-			elseif frame.OccupationIcon then
-				frame.OccupationIcon:Hide()
-			end
+		elseif db.OccupationIcon.enabled and unitType == 'FRIENDLY_NPC' then
+			manageTitleFrame(frame, title, nil, db.OccupationIcon)
+			self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
 		end
-	elseif unitTitle and db.Guilds.enabled and (unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER') then
+	elseif db.Guilds.enabled and (unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER') then
 		db = db.Guilds[unitType]
 
 		if db.isShown then
@@ -1113,7 +1095,13 @@ function mod:AwesomeUpdateUnitInfo(frame, db, unit)
 		local name = _G["ExtrasGT_ScanningTooltipTextLeft1"]:GetText()
 		if not name then return end
 		local description = _G["ExtrasGT_ScanningTooltipTextLeft2"]:GetText()
-		if not description then return end
+		if not description or find(gsub(description, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
+			if db.OccupationIcon.enabled and frame.UnitType == 'FRIENDLY_NPC' then
+				manageTitleFrame(frame, frame.Title, nil, db.OccupationIcon)
+				self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
+			end
+			return
+		end
 
 		name = gsub(gsub((name), "|c........", ""), "|r", "")
 		if name ~= UnitName(unit) then return end
@@ -1189,15 +1177,10 @@ function mod:UpdateUnitInfo(frame, db, unit)
 		local name = _G["ExtrasGT_ScanningTooltipTextLeft1"]:GetText()
 		if not name then return end
 		local description = _G["ExtrasGT_ScanningTooltipTextLeft2"]:GetText()
-		if not description then
-			if db.OccupationIcon.enabled then
-				local unitType = frame.UnitType
-				if unitType == 'FRIENDLY_NPC' then
-					manageTitleFrame(frame, frame.Title, nil, db.OccupationIcon)
-					self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
-				elseif frame.OccupationIcon then
-					frame.OccupationIcon:Hide()
-				end
+		if not description or find(gsub(description, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
+			if db.OccupationIcon.enabled and frame.UnitType == 'FRIENDLY_NPC' then
+				manageTitleFrame(frame, frame.Title, nil, db.OccupationIcon)
+				self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
 			end
 			return
 		end
@@ -1408,22 +1391,15 @@ function mod:Toggle(db)
 					frame.Title:Point(points.point, element, points.relativeTo, points.xOffset, points.yOffset)
 				end
 			end)
+			core:RegisterAreaUpdate(modName, function()
+				if db.Guilds.enabled then
+					updateVisibilityState(db.Guilds, core:GetCurrentAreaType())
+					updateAllVisiblePlates(db)
+				end
+				scanner:SetOwner(WorldFrame, "ANCHOR_NONE")
+			end)
 		end
 		if db.Guilds.enabled then
-			local handleAreaUpdate = false
-			for _, unitType in ipairs({'ENEMY_PLAYER', 'FRIENDLY_PLAYER'}) do
-				if not db.Guilds[unitType]['showAll'] then
-					core:RegisterAreaUpdate(modName, function()
-						updateVisibilityState(db.Guilds, core:GetCurrentAreaType())
-						updateAllVisiblePlates(db)
-					end)
-					handleAreaUpdate = true
-					break
-				end
-			end
-			if not handleAreaUpdate then
-				core:RegisterAreaUpdate(modName)
-			end
 			self:RegisterEvent("PARTY_MEMBERS_CHANGED", function() updateAllVisiblePlates(db) end)
 			self:RegisterEvent("GUILD_ROSTER_UPDATE", function() updateAllVisiblePlates(db) end)
 			self:RegisterEvent("RAID_ROSTER_UPDATE", function() updateAllVisiblePlates(db) end)

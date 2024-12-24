@@ -1409,17 +1409,7 @@ function mod:Toggle(db, visibilityUpdate)
 	end
 
 	if not core.reload and (db['FRIENDLY_PLAYER'].enabled or db['ENEMY_PLAYER'].enabled) then
-		local handleAreaUpdate = false
-		for _, unitType in ipairs({'ENEMY_PLAYER', 'FRIENDLY_PLAYER'}) do
-			if not db[unitType]['showAll'] then
-				core:RegisterAreaUpdate(modName, function() self:Toggle(db, true) end)
-				handleAreaUpdate = true
-				break
-			end
-		end
-		if not handleAreaUpdate then
-			core:RegisterAreaUpdate(modName)
-		end
+		core:RegisterAreaUpdate(modName, function() scanTool:SetOwner(WorldFrame, "ANCHOR_NONE") self:Toggle(db, true) end)
 		if updateVisibilityState(db, core:GetCurrentAreaType()) then
 			cachePositions(db)
 			for frame in pairs(NP.CreatedPlates) do
