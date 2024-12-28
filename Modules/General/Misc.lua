@@ -1,6 +1,7 @@
 local E, L, _, P = unpack(ElvUI)
 local core = E:GetModule("Extras")
 local mod = core:NewModule("GeneralMisc.", "AceHook-3.0")
+local S = E:GetModule("Skins")
 
 local modName = mod:GetName()
 local alertFrame
@@ -8,12 +9,14 @@ local chatTypeIndexToName = {}
 
 mod.initialized = {}
 
-local max = math.max
+local max, floor = math.max, math.floor
 local _G, unpack, pairs, ipairs, tonumber, print, pcall, loadstring, tostring = _G, unpack, pairs, ipairs, tonumber, print, pcall, loadstring, tostring
 local lower, find, match, gsub, sub, format = string.lower, string.find, string.match, string.gsub, string.sub, string.format
 local twipe, tinsert = table.wipe, table.insert
 local ChatFrame_AddMessageEventFilter, ChatFrame_RemoveMessageEventFilter = ChatFrame_AddMessageEventFilter, ChatFrame_RemoveMessageEventFilter
 local GetSpellLink, GetSpellTexture = GetSpellLink, GetSpellTexture
+local GetLFGQueueStats, GetLFGInfoServer = GetLFGQueueStats, GetLFGInfoServer
+local GetTime = GetTime
 local UnitExists, GetItemIcon = UnitExists, GetItemIcon
 local ITEM_SPELL_TRIGGER_ONEQUIP = "^"..ITEM_SPELL_TRIGGER_ONEQUIP
 local ITEM_SPELL_TRIGGER_ONUSE = "^"..ITEM_SPELL_TRIGGER_ONUSE
@@ -120,6 +123,23 @@ P["Extras"]["general"][modName] = {
 		"\nDoes nothing unless you replace your ElvUI/Core/Toolkit.lua with the relevant file from the Optionals folder of this plugin."],
 		["size"] = 2,
 		["color"] = {0,0,0,0.8},
+	},
+	["RDFQueueTracker"] = {
+		["enabled"] = false,
+		["desc"] = L["Random dungeon finder queue status frame."],
+		["iconSize"] = 15,
+		["iconSpacing"] = 5,
+		["point"] = "TOP",
+		["relativeTo"] = "BOTTOM",
+		["xOffset"] = 0,
+		["yOffset"] = -15,
+		["queueTime"] = true,
+		["queueTimeColor"] = {0.7,0.7,0.7},
+		["font"] = E.db.general.font,
+		["fontSize"] = E.db.general.fontSize,
+		["fontOutline"] = "OUTLINE",
+		["timeXOffset"] = 0,
+		["timeYOffset"] = -20,
 	},
 }
 
@@ -292,6 +312,120 @@ function mod:LoadConfig(db)
 						type = "input",
 						name = L["Custom Texture"],
 						desc = L["E.g. Interface\\Icons\\INV_Misc_QuestionMark"],
+					},
+				},
+			},
+			RDFQueueTracker = {
+				type = "group",
+				name = L["Settings"],
+				guiInline = true,
+				disabled = function(info) return not db[info[#info-1]].enabled end,
+				hidden = function() return selectedSubSection() ~= 'RDFQueueTracker' end,
+				args = {
+					queueTime = {
+						order = 1,
+						type = "toggle",
+						width = "full",
+						name = L["Queue Time"],
+						desc = "",
+					},
+					queueTimeColor = {
+						order = 2,
+						type = "color",
+						name = L["Text Color"],
+						desc = "",
+						get = function(info) return unpack(db[selectedSubSection()][info[#info]]) end,
+						set = function(info, r, g, b) db[selectedSubSection()][info[#info]] = {r,g,b} self:RDFQueueTracker(db.RDFQueueTracker) end,
+						hidden = function(info) return not db[info[#info-1]].queueTime end,
+					},
+					fontSize = {
+						order = 3,
+						type = "range",
+						name = L["Font Size"],
+						desc = "",
+						min = 4, max = 33, step = 1,
+						hidden = function(info) return not db[info[#info-1]].queueTime end,
+					},
+					font = {
+						order = 4,
+						type = "select",
+						dialogControl = "LSM30_Font",
+						name = L["Font"],
+						desc = "",
+						values = function() return AceGUIWidgetLSMlists.font end,
+						hidden = function(info) return not db[info[#info-1]].queueTime end,
+					},
+					fontOutline = {
+						order = 5,
+						type = "select",
+						name = L["Font Outline"],
+						desc = "",
+						values = {
+							[""] = L["None"],
+							["OUTLINE"] = "OUTLINE",
+							["THICKOUTLINE"] = "THICKOUTLINE",
+							["MONOCHROME"] = "MONOCHROME",
+							["OUTLINEMONOCHROME"] = "OUTLINEMONOCHROME",
+						},
+						hidden = function(info) return not db[info[#info-1]].queueTime end,
+					},
+					timeXOffset = {
+						order = 6,
+						type = "range",
+						name = L["X Offset"],
+						desc = "",
+						min = -200, max = 200, step = 1,
+						hidden = function(info) return not db[info[#info-1]].queueTime end,
+					},
+					timeYOffset = {
+						order = 7,
+						type = "range",
+						name = L["Y Offset"],
+						desc = "",
+						min = -200, max = 200, step = 1,
+						hidden = function(info) return not db[info[#info-1]].queueTime end,
+					},
+					point = {
+						order = 8,
+						type = "select",
+						name = L["Point"],
+						desc = "",
+						values = E.db.Extras.pointOptions,
+					},
+					relativeTo = {
+						order = 9,
+						type = "select",
+						name = L["Relative Point"],
+						desc = "",
+						values = E.db.Extras.pointOptions,
+					},
+					xOffset = {
+						order = 10,
+						type = "range",
+						name = L["X Offset"],
+						desc = "",
+						min = -200, max = 200, step = 1,
+					},
+					yOffset = {
+						order = 11,
+						type = "range",
+						name = L["Y Offset"],
+						desc = "",
+						min = -200, max = 200, step = 1,
+					},
+					iconSize = {
+						order = 12,
+						type = "range",
+						name = L["Icon Size"],
+						desc = "",
+						min = 4, max = 60, step = 1,
+					},
+					iconSpacing = {
+						order = 13,
+						type = "range",
+						name = L["Icon Spacing"],
+						desc = "",
+						min = 0, max = 10, step = 1,
 					},
 				},
 			},
@@ -837,6 +971,128 @@ end
 
 function mod:GlobalShadow(db)
 	E.globalShadow = db.enabled and db
+end
+
+function mod:RDFQueueTracker(db)
+    if db.enabled then
+        local BATTLEFIELD_IN_QUEUE = match(BATTLEFIELD_IN_QUEUE, ".+\n(.+)")
+        local iconSize = db.iconSize
+        local iconSpacing = db.iconSpacing
+		local queueTracker = self.queueTracker
+
+		if not queueTracker then
+			queueTracker = CreateFrame("Frame", "ElvUI_RDFQueueTracker", UIParent)
+			queueTracker:SetFrameStrata("LOW")
+			queueTracker.waitTimeText = queueTracker:CreateFontString(nil, "OVERLAY")
+			queueTracker.roleIcons = {}
+		end
+
+        for i, role in ipairs({"Tank", "Healer", "DPS1", "DPS2", "DPS3"}) do
+			if not queueTracker.roleIcons[role] then
+				local icon = CreateFrame("Button", nil, queueTracker)
+				icon:Size(iconSize)
+				icon:ClearAllPoints()
+				icon:Point("LEFT", (i-1) * (iconSize + iconSpacing), 0)
+				icon:SetScript("OnClick", MiniMapLFGFrame_OnClick)
+				S:HandleButton(icon)
+
+				local texture = icon:CreateTexture(nil, "ARTWORK")
+				texture:SetAllPoints()
+				texture:SetTexture(E.Media.Textures[gsub(role, "%d", "")])
+				icon.texture = texture
+
+				queueTracker.roleIcons[role] = icon
+			else
+				local icon = queueTracker.roleIcons[role]
+				icon:Size(iconSize)
+				icon:ClearAllPoints()
+				icon:Point("LEFT", (i-1) * (iconSize + iconSpacing), 0)
+			end
+        end
+
+		if db.queueTime then
+			queueTracker.elapsed = 0
+			queueTracker.waitTimeText:ClearAllPoints()
+			queueTracker.waitTimeText:Point("CENTER", queueTracker, db.timeXOffset, db.timeYOffset)
+			queueTracker.waitTimeText:SetFont(E.Libs.LSM:Fetch("font", db.font), db.fontSize, db.fontOutline)
+			queueTracker.waitTimeText:SetTextColor(unpack(db.queueTimeColor))
+			queueTracker:SetScript("OnUpdate", function(self, elapsed)
+				self.elapsed = self.elapsed + elapsed
+				if self.elapsed > 1 then
+					local _, _, _, _, _, _, _, _, _, _, _, _, queuedTime = GetLFGQueueStats()
+					if queuedTime then
+						local seconds = GetTime() - queuedTime
+						local hours, minutes, secs = floor(seconds/3600), floor((seconds % 3600)/60), seconds % 60
+						if hours > 0 then
+							self.waitTimeText:SetText(format(BATTLEFIELD_IN_QUEUE, format("%d:%02d:%02d", hours, minutes, secs)))
+						else
+							self.waitTimeText:SetText(format(BATTLEFIELD_IN_QUEUE, format("%02d:%02d", minutes, secs)))
+						end
+					else
+						self.waitTimeText:SetText(format(BATTLEFIELD_IN_QUEUE, "--:--"))
+					end
+					self.elapsed = 0
+				end
+			end)
+			queueTracker.waitTimeText:Show()
+		else
+			queueTracker:SetScript("OnUpdate", nil)
+			queueTracker.waitTimeText:Hide()
+		end
+
+        function mod:UpdateRDFTracker()
+            local _, _, tankNeeds, healerNeeds, dpsNeeds = GetLFGQueueStats()
+			local _, _, queued = GetLFGInfoServer()
+            if queued then
+				if tankNeeds ~= 0 then
+					queueTracker.roleIcons["Tank"].texture:SetDesaturated(true)
+					queueTracker.roleIcons["Tank"].texture:SetAlpha(0.5)
+				else
+					queueTracker.roleIcons["Tank"].texture:SetDesaturated(false)
+					queueTracker.roleIcons["Tank"].texture:SetAlpha(1)
+				end
+				if healerNeeds ~= 0 then
+					queueTracker.roleIcons["Healer"].texture:SetDesaturated(true)
+					queueTracker.roleIcons["Healer"].texture:SetAlpha(0.5)
+				else
+					queueTracker.roleIcons["Healer"].texture:SetDesaturated(false)
+					queueTracker.roleIcons["Healer"].texture:SetAlpha(1)
+				end
+				queueTracker.roleIcons["DPS1"].texture:SetDesaturated(not dpsNeeds or dpsNeeds > 2)
+				queueTracker.roleIcons["DPS1"].texture:SetAlpha((not dpsNeeds or dpsNeeds > 2) and 0.5 or 1)
+				queueTracker.roleIcons["DPS2"].texture:SetDesaturated(not dpsNeeds or dpsNeeds > 1)
+				queueTracker.roleIcons["DPS2"].texture:SetAlpha((not dpsNeeds or dpsNeeds > 1) and 0.5 or 1)
+				queueTracker.roleIcons["DPS3"].texture:SetDesaturated(not dpsNeeds or dpsNeeds > 0)
+				queueTracker.roleIcons["DPS3"].texture:SetAlpha((not dpsNeeds or dpsNeeds > 0) and 0.5 or 1)
+                queueTracker:Show()
+            else
+                queueTracker:Hide()
+            end
+        end
+
+        queueTracker:Size(5 * (iconSize + iconSpacing) - iconSpacing, iconSize)
+        queueTracker:ClearAllPoints()
+        queueTracker:Point(db.point, MMHolder, db.relativeTo, db.xOffset, db.yOffset)
+        queueTracker:Hide()
+
+		queueTracker:RegisterEvent("LFG_UPDATE")
+		queueTracker:RegisterEvent("LFG_PROPOSAL_SUCCEEDED")
+		queueTracker:RegisterEvent("LFG_PROPOSAL_SHOW")
+		queueTracker:RegisterEvent("LFG_PROPOSAL_FAILED")
+		queueTracker:RegisterEvent("LFG_PROPOSAL_UPDATE")
+		queueTracker:RegisterEvent("LFG_QUEUE_STATUS_UPDATE")
+		queueTracker:RegisterEvent("PARTY_MEMBERS_CHANGED")
+		queueTracker:RegisterEvent("UPDATE_LFG_LIST")
+
+		queueTracker:SetScript("OnEvent", self.UpdateRDFTracker)
+
+		self.queueTracker = queueTracker
+		self:UpdateRDFTracker()
+        self.initialized.RDFQueueTracker = true
+    elseif self.initialized.RDFQueueTracker then
+        self.queueTracker:UnregisterAllEvents()
+        self.queueTracker:Hide()
+    end
 end
 
 
