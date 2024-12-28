@@ -19,6 +19,7 @@ What's inside:
 		 combat state alerts;
 		 arbitrary tooltip notes for most of the in-game tooltips;
 		 internal cds at trinket tooltips;
+		 rdf queue tracker;
 [Blizzard]:
 	(Automation) - auto-gossip;
 		       auto-fill "DELETE";
