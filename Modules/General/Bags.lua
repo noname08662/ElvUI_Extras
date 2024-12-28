@@ -631,7 +631,9 @@ local function handleButton(f, button)
 		mod:SecureHookScript(button, "OnDragStart", function(self)
 			if GetCursorInfo() then
 				local header = buttonMap[self.bagID][self.slotID].frame.header
-				header:GetScript("OnEnter")(header)
+				if header:IsMouseOver() then
+					header:GetScript("OnEnter")(header)
+				end
 				f.draggedButton = button
 				f.emptyButton:SetScript("OnUpdate", function(eb)
 					if not GetCursorInfo() and not button.atHeader then
@@ -2674,10 +2676,14 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 			end
 			mod:UpdateButtonPositions(button, bagMap, bagID, slotID, nil, targetSection)
 
-			if not layout.filter[button.rarity or select(3,GetItemInfo(itemID))] then
-				button.isHidden = true
-				button:Hide()
-				button.highlight:Show()
+			if not layout.filter[button.rarity] then
+				if not GetItemInfo(itemID) then
+					mod:UpdateSection(f, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+				else
+					button.isHidden = true
+					button:Hide()
+					button.highlight:Show()
+				end
 			else
 				mod:UpdateSection(f, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 			end
@@ -2691,10 +2697,14 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 			if currentSection then
 				mod:UpdateSection(f, currentSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 			end
-			if not layout.filter[button.rarity or select(3,GetItemInfo(itemID))] then
-				button.isHidden = true
-				button:Hide()
-				button.highlight:Show()
+			if not layout.filter[button.rarity] then
+				if not GetItemInfo(itemID) then
+					mod:UpdateSection(f, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+				else
+					button.isHidden = true
+					button:Hide()
+					button.highlight:Show()
+				end
 			else
 				mod:UpdateSection(f, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
 			end
