@@ -893,3 +893,6 @@ L["Others Texture"] = true
 L["Others Color"] = true
 L["Others Scale"] = true
 L["Targets"] = true
+L["Random dungeon finder queue status frame."] = true
+L["Queue Time"] = true
+L["RDFQueueTracker"] = true
