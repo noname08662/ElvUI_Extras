@@ -602,7 +602,7 @@ function mod:LoadConfig(db)
 						name = L["Collection Method"],
 						desc = function()
 							local actionType = selectedSetData().actionType
-							return not actionType or actionType == "BUY" and
+							return (selectedSet() == 0 or not actionType or actionType == "BUY") and
 							L["Syntax: filter@value@amount\n\n"..
 								"Available filters:\n"..
 								" id@number@amount(+)/+ - matches itemID,\n"..
