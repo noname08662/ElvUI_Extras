@@ -2454,23 +2454,6 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 				end
 			end)
 			f.qualityFilterBar[i+1] = bar
-
-			local hiddenRarities = {}
-			for _, bar in ipairs(f.qualityFilterBar) do
-				if not bar.isActive then
-					hiddenRarities[bar.quality] = true
-				end
-			end
-			for j, section in ipairs(f.currentLayout.sections) do
-				for _, button in ipairs(section.buttons) do
-					local rarity = button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.bagID, button.slotID)))
-					if hiddenRarities[rarity] then
-						button.isHidden = true
-						button:Hide()
-					end
-				end
-				mod:UpdateSection(f, section, numColumns, buttonSize, buttonSpacing, j == #f.currentLayout.sections)
-			end
 		end
 		f.qualityFilterButton = CreateFrame("Button", '$parentQualityFilterButton', f.holderFrame)
 		f.qualityFilterButton:Size(16 + E.Border)
@@ -2554,11 +2537,21 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 	f:Width(numColumns * (buttonSize + buttonSpacing) + (offset2 or offset1) * 2 - buttonSpacing)
 
 	for _, section in ipairs(f.currentLayout.sections) do
+		for _, button in ipairs(section.buttons) do
+			local rarity = button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.bagID, button.slotID)))
+			if not f.currentLayout.filter[rarity] then
+				button.isHidden = true
+				button:Hide()
+			else
+				button.isHidden = nil
+				button:Show()
+			end
+		end
 		self:UpdateSection(f, section, numColumns, buttonSize, buttonSpacing)
 	end
 
-	mod:ToggleLayoutMode(f, f.emptyButton.showSizing)
-	mod:UpdateEmptyButtonCount(f, true)
+	self:ToggleLayoutMode(f, f.emptyButton.showSizing)
+	self:UpdateEmptyButtonCount(f, true)
 end
 
 function mod:Layout(self, isBank)
@@ -2645,7 +2638,23 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 		local itemID = B_GetItemID(nil, bagID, slotID)
 		local itemCount = GetItemCount(itemID)
 
-		if button.isHidden then
+		if button.shouldEvaluate then
+			local currentSection = bagMap[slotID]
+			local targetSection = mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
+
+			mod:UpdateButtonPositions(button, bagMap, bagID, slotID, currentSection, targetSection)
+			if currentSection then
+				mod:UpdateSection(f, currentSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+			end
+
+			if not layout.filter[button.rarity or select(3,GetItemInfo(itemID))] then
+				button:Hide()
+			else
+				button.isHidden = nil
+				mod:UpdateSection(f, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+			end
+			button.shouldEvaluate = nil
+		elseif button.isHidden then
 			button:Hide()
 		elseif not oldID then
 			local targetSection
@@ -2676,39 +2685,14 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 			end
 			mod:UpdateButtonPositions(button, bagMap, bagID, slotID, nil, targetSection)
 
-			if not layout.filter[button.rarity] then
-				if not GetItemInfo(itemID) then
-					mod:UpdateSection(f, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
-				else
-					button.isHidden = true
-					button:Hide()
-					button.highlight:Show()
-				end
-			else
+			local rarity = button.rarity or select(3,GetItemInfo(itemID))
+			if not rarity or layout.filter[rarity] then
 				mod:UpdateSection(f, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
+			else
+				button.isHidden = true
+				button:Hide()
 			end
 			mod:UpdateEmptyButtonCount(f, true)
-		elseif button.shouldEvaluate then
-			local currentSection = bagMap[slotID]
-			local targetSection = mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
-
-			mod:UpdateButtonPositions(button, bagMap, bagID, slotID, currentSection, targetSection)
-
-			if currentSection then
-				mod:UpdateSection(f, currentSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
-			end
-			if not layout.filter[button.rarity] then
-				if not GetItemInfo(itemID) then
-					mod:UpdateSection(f, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
-				else
-					button.isHidden = true
-					button:Hide()
-					button.highlight:Show()
-				end
-			else
-				mod:UpdateSection(f, targetSection, layout.numColumns, layout.buttonSize, layout.buttonSpacing)
-			end
-			button.shouldEvaluate = nil
 		elseif f.draggedButton == button then
 			local currentSection = bagMap[slotID]
 			if currentSection and button.atHeader then
