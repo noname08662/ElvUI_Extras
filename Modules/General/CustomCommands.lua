@@ -3,7 +3,6 @@ local core = E:GetModule("Extras")
 local mod = core:NewModule("Custom Commands", "AceHook-3.0")
 
 local modName = mod:GetName()
-local lastEventTime = {}
 local handler = CreateFrame("Frame")
 
 mod.initialized = false
@@ -327,6 +326,8 @@ function mod:SortEvents(db)
                 core:print('LUA', L["CustomCommands"], errorMsg)
                 db.eventCommandsPairs[event] = function() end
             end
+			db.lastEventTime = db.lastEventTime or {}
+			db.lastEventTime[event] = 0
         end
     end
 end
@@ -362,14 +363,14 @@ function mod:SetupHandler(db)
 
     handler:SetScript('OnEvent', function(_, event, ...)
         for _, tab in ipairs(eventTabs) do
-            if find(tab.events, event) and (not lastEventTime[event] or (GetTime() >= lastEventTime[event] + (tab.throttleEvents[event] or 0))) then
+            if find(tab.events, event) and (GetTime() >= tab.lastEventTime[event] + (tab.throttleEvents[event] or 0)) then
                 local failedTheArgs
                 if ... and #tab.args > 0 then
                     failedTheArgs = self:CheckArgs(tab, ...)
                 end
                 if not failedTheArgs then
                     tab.eventCommandsPairs[event](...)
-                    lastEventTime[event] = GetTime()
+                    tab.lastEventTime[event] = GetTime()
                 end
             end
         end
