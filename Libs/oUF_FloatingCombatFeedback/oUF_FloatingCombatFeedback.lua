@@ -303,8 +303,7 @@ end
 local function Update(self, _, unit, event, flag, amount, school, texture)
 	if self.unit ~= unit then return end
 	local element = self.FloatingCombatFeedback
-	local flagMult = element.multipliersByFlag[flag]
-	if event ~= "BUFF" and event ~= "DEBUFF" and not flagMult then return end
+	if flag and not element.multipliersByFlag[flag] then return end
 
 	local unitGUID = UnitGUID(unit)
 	if unitGUID ~= element.unitGUID then
@@ -454,15 +453,12 @@ local function prep(event, _, ...)
 		texture = getTexture(spellId)
 		event = "HEAL"
     elseif event == "RANGE_MISSED" or event == "SPELL_MISSED" or event == "SPELL_PERIODIC_MISSED" then
-		_, _, school, flag = ...
+		_, _, school, event = ...
 		texture = getTexture(...)
-		event = flag
     elseif event == "SWING_MISSED" then
-		flag = ""
 		event = ...
     elseif event == "SPELL_INTERRUPT" then
 		spellId, _, _, _, _, school = ...
-		flag = ""
 		texture = getTexture(spellId)
 		event = "INTERRUPT"
     end

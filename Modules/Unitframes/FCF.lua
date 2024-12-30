@@ -405,15 +405,22 @@ function mod:LoadConfig(db)
 				set = function(info, value) selectedUnitData()[info[#info]] = value self:UpdateAll(db) end,
 				disabled = function() return not selectedUnitData().enabled end,
 				args = {
-					textLevel = {
+					abbreviateNumbers = {
 						order = 1,
+						type = "toggle",
+						width = "full",
+						name = L["Abbreviate Numbers"],
+						desc = "",
+					},
+					textLevel = {
+						order = 2,
 						type = "range",
 						name = L["Level"],
 						desc = "",
 						min = 1, max = 200, step = 1
 					},
 					textStrata = {
-						order = 2,
+						order = 3,
 						type = "select",
 						name = L["Strata"],
 						desc = "",
@@ -533,8 +540,47 @@ function mod:LoadConfig(db)
 									or (selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL')
 						end,
 					},
-					animation = {
+					copyEvent = {
 						order = 7,
+						type = "select",
+						width = "double",
+						name = L["Copy"],
+						desc = "",
+						set = function(_, value)
+							local t = selectedUnitData().events[value]
+							if t then
+								selectedUnitData().events[selectedEvent()] = CopyTable(t)
+								if value == 'WOUND' or value == 'HEAL' and (selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL') then
+									selectedEventData().tryToColorBySchool = false
+								end
+								self:UpdateAll(db)
+							end
+						end,
+						values = function()
+							local vals = {
+								["ABSORB"] = L["ABSORB"],
+								["BLOCK"] = L["BLOCK"],
+								["DEFLECT"] = L["DEFLECT"],
+								["DODGE"] = L["DODGE"],
+								["ENERGIZE"] = L["ENERGIZE"],
+								["EVADE"] = L["EVADE"],
+								["HEAL"] = L["HEAL"],
+								["IMMUNE"] = L["IMMUNE"],
+								["INTERRUPT"] = L["INTERRUPT"],
+								["MISS"] = L["MISS"],
+								["PARRY"] = L["PARRY"],
+								["REFLECT"] = L["REFLECT"],
+								["RESIST"] = L["RESIST"],
+								["WOUND"] = L["WOUND"],
+								["DEBUFF"] = L["Debuff applied/faded/refreshed"],
+								["BUFF"] = L["Buff applied/faded/refreshed"],
+							}
+							vals[selectedEvent()] = nil
+							return vals
+						end,
+					},
+					animation = {
+						order = 8,
 						type = "select",
 						width = "double",
 						name = L["Animation Type"],
@@ -548,7 +594,7 @@ function mod:LoadConfig(db)
 						end,
 					},
 					xDirection = {
-						order = 8,
+						order = 9,
 						type = "select",
 						name = L["X Direction"],
 						desc = "",
@@ -559,7 +605,7 @@ function mod:LoadConfig(db)
 						}
 					},
 					yDirection = {
-						order = 9,
+						order = 10,
 						type = "select",
 						name = L["Y Direction"],
 						desc = "",
@@ -570,7 +616,7 @@ function mod:LoadConfig(db)
 						}
 					},
 					customAnimation = {
-						order = 10,
+						order = 11,
 						type = "input",
 						width = "double",
 						multiline = true,
@@ -580,14 +626,14 @@ function mod:LoadConfig(db)
 								"\nself.y + self.yDirection * self.radius * m_sin(m_pi / 2 * self.progress) end"],
 					},
 					showIcon = {
-						order = 11,
+						order = 12,
 						type = "toggle",
 						width = "full",
 						name = L["Show Icon"],
 						desc = "",
 					},
 					iconPosition = {
-						order = 12,
+						order = 13,
 						type = "select",
 						name = L["Icon Position"],
 						desc = "",
@@ -599,7 +645,7 @@ function mod:LoadConfig(db)
 							return not selectedUnitData().enabled or selectedEventData().disabled or not selectedEventData().showIcon end,
 					},
 					iconBounce = {
-						order = 13,
+						order = 14,
 						type = "toggle",
 						name = L["Bounce"],
 						desc = L["Flip position left-right."],
@@ -607,7 +653,7 @@ function mod:LoadConfig(db)
 							return not selectedUnitData().enabled or selectedEventData().disabled or not selectedEventData().showIcon end,
 					},
 					font = {
-						order = 14,
+						order = 15,
 						type = "select",
 						name = L["Font"],
 						desc = "",
@@ -615,14 +661,14 @@ function mod:LoadConfig(db)
 						values = function() return AceGUIWidgetLSMlists.font end,
 					},
 					fontSize = {
-						order = 15,
+						order = 16,
 						type = "range",
 						name = L["Font Size"],
 						desc = L["There seems to be a font size limit?"],
 						min = 10, max = 25, step = 1,
 					},
 					fontFlags = {
-						order = 16,
+						order = 17,
 						type = "select",
 						name = L["Font Flags"],
 						desc = "",
@@ -634,7 +680,7 @@ function mod:LoadConfig(db)
 						},
 					},
 					scrollTime = {
-						order = 17,
+						order = 18,
 						type = "range",
 						name = L["Scroll Time"],
 						desc = "",
@@ -642,7 +688,7 @@ function mod:LoadConfig(db)
 					},
 					--[[
 					fadeTime = {
-						order = 16,
+						order = 19,
 						type = "range",
 						name = L["Fade Time"],
 						desc = "",
@@ -651,28 +697,28 @@ function mod:LoadConfig(db)
 					},
 					]]--
 					textPoint = {
-						order = 18,
+						order = 19,
 						type = "select",
 						name = L["Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
 					},
 					textRelativeTo = {
-						order = 19,
+						order = 20,
 						type = "select",
 						name = L["Relative Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
 					},
 					textX = {
-						order = 20,
+						order = 21,
 						type = "range",
 						name = L["X Offset"],
 						desc = "",
 						min = -80, max = 80, step = 1,
 					},
 					textY = {
-						order = 21,
+						order = 22,
 						type = "range",
 						name = L["Y Offset"],
 						desc = "",
@@ -738,7 +784,7 @@ function mod:LoadConfig(db)
 						type = "range",
 						name = L["Font Size Multiplier"],
 						desc = L["There seems to be a font size limit?"],
-						min = 0, max = 3, step = 0.25,
+						min = 0.25, max = 3, step = 0.25,
 					},
 					animation = {
 						order = 3,
@@ -943,6 +989,7 @@ function mod:UpdateFCFSettings(frame, db)
 			frame:EnableElement('FloatingCombatFeedback')
 
 			fcf.playerOnly = data.playerOnly
+			fcf.abbreviateNumbers = data.abbreviateNumbers
 			fcf.blacklist = CopyTable(data.blacklist)
 
 			for event, info in pairs(data.events) do

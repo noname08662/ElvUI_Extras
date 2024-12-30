@@ -1169,8 +1169,10 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 				frame[statusbar].backdrop:SetBackdropBorderColor(r, g, b)
 			end
         else
-			local otherStatusbar = statusbar == 'Health' and 'Power' or 'Health'
-			if not appliedBorders[otherStatusbar].applied then
+			local otherbar = statusbar == 'Health' and 'Power' or 'Health'
+			local otherBorders = appliedBorders[otherbar]
+
+			if otherBorders and not otherBorders.applied then
 				if weights[statusbar] < 2 then
 					if power then
 						if weights[statusbar] == 1 then
@@ -1186,31 +1188,37 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 					end
 					health.backdrop:SetBackdropBorderColor(r, g, b)
 				end
-			elseif weights[statusbar] > weights[otherStatusbar] then
-				if power then
-					power.backdrop:SetBackdropBorderColor(r, g, b)
-				end
-				if weights[statusbar] == 1 then
-					health.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
-				else
-					health.backdrop:SetBackdropBorderColor(r, g, b)
-				end
-			elseif weights[statusbar] < weights[otherStatusbar] then
-				local otherAppliedBorders = appliedBorders[otherStatusbar]
-				if weights[statusbar] == 1 then
+			elseif weights[otherbar] then
+				if weights[statusbar] > weights[otherbar] then
 					if power then
-						if db.bordersPriority == statusbar then
-							power.backdrop:SetBackdropBorderColor(r, g, b)
-						else
-							power.backdrop:SetBackdropBorderColor(unpack(otherAppliedBorders.color))
+						power.backdrop:SetBackdropBorderColor(r, g, b)
+					end
+					if weights[statusbar] == 1 then
+						health.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+					else
+						health.backdrop:SetBackdropBorderColor(r, g, b)
+					end
+				elseif weights[statusbar] < weights[otherbar] then
+					if weights[statusbar] == 1 then
+						if power then
+							if db.bordersPriority == statusbar then
+								power.backdrop:SetBackdropBorderColor(r, g, b)
+							else
+								power.backdrop:SetBackdropBorderColor(unpack(otherBorders.color))
+							end
 						end
+						health.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
+					else
+						if power then
+							power.backdrop:SetBackdropBorderColor(unpack(otherBorders.color))
+						end
+						health.backdrop:SetBackdropBorderColor(unpack(otherBorders.color))
+					end
+				elseif weights[statusbar] == 0 then
+					if power then
+						power.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
 					end
 					health.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
-				else
-					if power then
-						power.backdrop:SetBackdropBorderColor(unpack(otherAppliedBorders.color))
-					end
-					health.backdrop:SetBackdropBorderColor(unpack(otherAppliedBorders.color))
 				end
 			elseif weights[statusbar] == 0 then
 				if power then
@@ -1237,13 +1245,13 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 
 			if not detached and db.bordersPriority ~= 'NONE' then
 				local otherbar = statusbar == 'Health' and 'Power' or 'Health'
-				local otherAppliedBorders = appliedBorders[otherbar]
+				local otherBorders = appliedBorders[otherbar]
 
-				if otherAppliedBorders.applied then
+				if otherBorders and otherBorders.applied then
 					if weights[otherbar] < 2 then
 						if power then
 							if weights[otherbar] == 1 then
-								power.backdrop:SetBackdropBorderColor(unpack(otherAppliedBorders.color))
+								power.backdrop:SetBackdropBorderColor(unpack(otherBorders.color))
 							else
 								power.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
 							end
@@ -1251,12 +1259,12 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 						health.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
 					else
 						if power then
-							power.backdrop:SetBackdropBorderColor(unpack(otherAppliedBorders.color))
+							power.backdrop:SetBackdropBorderColor(unpack(otherBorders.color))
 						end
 						if weights[statusbar] == 1 and not appliedBorders.Power.override then
 							health.backdrop:SetBackdropBorderColor(unpack(colorFilter.threatBordersColor))
 						else
-							health.backdrop:SetBackdropBorderColor(unpack(otherAppliedBorders.color))
+							health.backdrop:SetBackdropBorderColor(unpack(otherBorders.color))
 						end
 					end
 				else
@@ -1302,8 +1310,9 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 					finalColor = appliedBordersAdapt.color
 				elseif adapt == statusbar then
 					local otherbar = statusbar == 'Health' and 'Power' or 'Health'
-					if appliedBorders[otherbar].applied and weights[otherbar] ~= 0 then
-						finalColor = appliedBorders[otherbar].highlight.borders.infoPanelBorderColors
+					local otherBorders = appliedBorders[otherbar]
+					if otherBorders and otherBorders.applied and weights[otherbar] ~= 0 then
+						finalColor = otherBorders.highlight.borders.infoPanelBorderColors
 					else
 						finalColor = colorFilter.threatBordersColor
 					end
@@ -1314,8 +1323,9 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 				end
             elseif weights[statusbar] == 0 then
 				local otherbar = statusbar == 'Health' and 'Power' or 'Health'
-				if appliedBorders[otherbar].applied and weights[otherbar] ~= 0 then
-					finalColor = appliedBorders[otherbar].highlight.borders.infoPanelBorderColors
+				local otherBorders = appliedBorders[otherbar]
+				if otherBorders and otherBorders.applied and weights[otherbar] ~= 0 then
+					finalColor = otherBorders.highlight.borders.infoPanelBorderColors
 				else
 					finalColor = colorFilter.threatBordersColor
 				end
@@ -1358,8 +1368,9 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 					finalColor = appliedBordersAdapt.color
 				elseif adapt == statusbar then
 					local otherbar = statusbar == 'Health' and 'Power' or 'Health'
-					if appliedBorders[otherbar].applied and weights[otherbar] ~= 0 then
-						finalColor = appliedBorders[otherbar].highlight.borders.classBarBorderColors
+					local otherBorders = appliedBorders[otherbar]
+					if otherBorders and otherBorders.applied and weights[otherbar] ~= 0 then
+						finalColor = otherBorders.highlight.borders.classBarBorderColors
 					else
 						finalColor = colorFilter.threatBordersColor
 					end
@@ -1370,8 +1381,9 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
                 end
             elseif weights[statusbar] == 0 then
 				local otherbar = statusbar == 'Health' and 'Power' or 'Health'
-				if appliedBorders[otherbar].applied and weights[otherbar] ~= 0 then
-					finalColor = appliedBorders[otherbar].highlight.borders.classBarBorderColors
+				local otherBorders = appliedBorders[otherbar]
+				if otherBorders and otherBorders.applied and weights[otherbar] ~= 0 then
+					finalColor = otherBorders.highlight.borders.classBarBorderColors
 				else
 					finalColor = colorFilter.threatBordersColor
 				end
@@ -1654,6 +1666,7 @@ function mod:UpdateAll(db)
 					end
 				end
 				frame.colorFilter:Hide()
+				frame.colorFilter = nil
 			end
 		end
 	end
@@ -1661,6 +1674,8 @@ function mod:UpdateAll(db)
 	twipe(metaTable.events)
 	twipe(metaTable.statusbars)
 	twipe(conditionsFuncs)
+
+	local enabled = false
 
 	for _, frame in ipairs(core:AggregateUnitFrames()) do
 		local unit = frame.unitframeType
@@ -1678,6 +1693,7 @@ function mod:UpdateAll(db)
 			for statusbar, bar in pairs(db.units[unit].statusbars) do
 				local targetBar = frame.colorFilter[statusbar]
 				if targetBar and bar.enabled then
+					enabled = true
 					local barInfo = metaTable.statusbars[unit][statusbar]
 					if not barInfo then
 						metaTable.statusbars[unit][statusbar] = CopyTable(bar)
@@ -1768,7 +1784,7 @@ function mod:UpdateAll(db)
 					end
 				end
 				if frame[statusbar] then
-					updateHooks(frame, bar.enabled, statusbar)
+					updateHooks(frame, enabled, statusbar)
 					frame[statusbar]:ForceUpdate()
 				end
 			end

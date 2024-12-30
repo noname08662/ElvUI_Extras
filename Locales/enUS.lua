@@ -896,3 +896,4 @@ L["Targets"] = true
 L["Random dungeon finder queue status frame."] = true
 L["Queue Time"] = true
 L["RDFQueueTracker"] = true
+L["Abbreviate Numbers"] = true
