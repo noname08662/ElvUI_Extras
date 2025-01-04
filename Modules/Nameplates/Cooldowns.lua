@@ -1307,6 +1307,14 @@ end
 
 function mod:Toggle(db, visibilityUpdate)
 	if not core.reload and (db['FRIENDLY_PLAYER'].enabled or db['ENEMY_PLAYER'].enabled) then
+		if not self:IsHooked(E, "ToggleOptionsUI") then
+			self:SecureHook(E, "ToggleOptionsUI", function()
+				if testing and ElvUIGUIFrame and not ElvUIGUIFrame:IsShown() then
+					testing = false
+					testMode(db)
+				end
+			end)
+		end
 		core:RegisterAreaUpdate(modName, function()
 			if core:GetCurrentAreaType() == "showArena" then
 				twipe(activeCooldowns)
@@ -1439,6 +1447,7 @@ function mod:Toggle(db, visibilityUpdate)
 		core:RegisterAreaUpdate(modName)
 		core:RegisterNPElement('CDTracker')
 		self:UnregisterAllEvents()
+		if self:IsHooked(E, "ToggleOptionsUI") then self:Unhook(E, "ToggleOptionsUI") end
 		if self:IsHooked(NP, "Construct_HealthBar") then self:Unhook(NP, "Construct_HealthBar") end
 		if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
 		for frame in pairs(NP.CreatedPlates) do
