@@ -237,7 +237,7 @@ P["Extras"]["unitframes"][modName] = {
 }
 
 function mod:LoadConfig(db)
-	local customFrames = { ['tanktarget'] = true, ['assisttarget'] = true }
+	local customFrames = { ['tanktarget'] = 'target', ['assisttarget'] = 'target', ['partypet'] = 'pet', ['partytarget'] = 'target' }
 	local units = E.db.unitframe.units
 	local function selectedUnit() return db.selectedUnit end
 	local function selectedUnitData()
@@ -252,13 +252,15 @@ function mod:LoadConfig(db)
 		return core:getSelected("unitframes", modName,
 								format("units.%s.statusbars.%s.tabs[%s]", selectedUnit(), selectedBar(), selectedTab() or ""), 1)
 	end
-	local function selectedUFData() return units[selectedUnit()] end
+	local function selectedUFData() return units[selectedUnit()] or {} end
 	local function unitEnabled() return selectedUnitData().enabled end
 	local function barEnabled() return selectedBarData().enabled end
 	local function UFUnitEnabled()
-		return not customFrames[selectedUnit()]
-				and (selectedUFData() and selectedUFData().enable)
-				or (units[gsub(selectedUnit(),'target','')] and units[gsub(selectedUnit(),'target','')].enable)
+		local custom = customFrames[selectedUnit()] or ""
+		local data = selectedUFData()
+		return not custom
+				and (not data or data.enable)
+				or (units[gsub(selectedUnit(), custom, '')] and units[gsub(selectedUnit(), custom,'')].enable)
 	end
 	local function greyed()
 		return not selectedUnitData().enabled
