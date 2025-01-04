@@ -5,7 +5,7 @@ local LSM = E.Libs.LSM
 local LAI = E.Libs.LAI
 
 local modName = mod:GetName()
-local activeCooldowns, petSpells, framelist, testSpells, testing = {}, {}, {}, {}, false
+local activeCooldowns, petSpells, framelist, testing = {}, {}, {}, false
 local edgeFile = LSM:Fetch("border", "ElvUI GlowBorder")
 local highlightedSpells = {["ENEMY_PLAYER"] = {}, ["FRIENDLY_PLAYER"] = {}}
 
@@ -173,7 +173,7 @@ local function testMode(db)
 	if not testing then return end
 
     local spellList = {}
-    local spellIDs = {}
+    local testSpells = {}
 
 	for _, unitType in ipairs({"FRIENDLY_PLAYER", "ENEMY_PLAYER"}) do
 		for _, data in pairs(db[unitType].units) do
@@ -183,26 +183,14 @@ local function testMode(db)
 		end
 	end
 
-    local index = 0
-    for id in pairs(spellList) do
-        index = index + 1
-        if random() < 1 / index then
-            tinsert(spellIDs, id)
+    if not next(spellList) then
+        for id, duration in pairs(fallbackSpells) do
+            spellList[id] = duration
         end
     end
 
-    if #spellIDs == 0 then
-        for id in pairs(fallbackSpells) do
-            tinsert(spellIDs, id)
-        end
-    end
-
-    local numSpells = random(2, 7)
-    for _ = 1, numSpells do
-        local spellID = spellIDs[random(#spellIDs)]
-        local duration = spellList[spellID] or fallbackSpells[spellID]
+    for spellID, duration in pairs(spellList) do
         local startTime = GetTime() - random(0, duration/2)
-
         tinsert(testSpells, {
 						spellID = spellID,
 						startTime = startTime,
@@ -225,11 +213,21 @@ local function testMode(db)
 		local data = db[db.selectedType].units[frame.unitframeType]
 		if data and data.enabled and unit and UnitName(unit) then
 			local playerName = UnitName(unit)
-			activeCooldowns[playerName] = testSpells
-			if not frame.CDTracker then
+			local tracker = frame.CDTracker
+			if not tracker then
 				frame.CDTracker = CreateFrame("Frame", '$parentCDTracker', frame)
-				frame.CDTracker.cooldowns = {}
+				tracker = frame.CDTracker
+				tracker.cooldowns = {}
 			end
+			if unit == 'target' or unit == 'focus' then
+				local header = data.header
+				frame.CDTracker:ClearAllPoints()
+				frame.CDTracker:Point(header.point, frame, header.relativeTo, header.xOffset, header.yOffset)
+				frame.CDTracker:SetFrameLevel(header.level)
+				frame.CDTracker:SetFrameStrata(header.strata)
+				frame.CDTracker:Hide()
+			end
+			activeCooldowns[playerName] = testSpells
 			mod:AttachCooldowns(db, frame, activeCooldowns[playerName])
 		end
 	end
@@ -384,8 +382,10 @@ local function cache(db, frameType)
 	for unitType in pairs(iconPositions) do
 		local data = db[unitType].units[frameType]
 		if data then
-			for id, cdTime in pairs(data.spellList) do
-				allSpells[id] = cdTime
+			if data.isShown then
+				for id, cdTime in pairs(data.spellList) do
+					allSpells[id] = cdTime
+				end
 			end
 
 			local icons = data.icons
@@ -532,7 +532,14 @@ function mod:LoadConfig(db)
 						name = core.pluginColor..L["Enable"],
 						desc = L["Draws player cooldowns."],
 						get = function(info) return selectedUnitData()[info[#info]] end,
-						set = function(info, value) selectedUnitData()[info[#info]] = value self:Toggle(db) end,
+						set = function(info, value)
+							selectedUnitData()[info[#info]] = value
+							if not value and testing then
+								testing = false
+								testMode(db)
+							end
+							self:Toggle(db)
+						end,
 						disabled = false,
 					},
 					testMode = {
@@ -1187,7 +1194,7 @@ function mod:UpdateFrames(db, playerName, updateAll)
 end
 
 function mod:AttachCooldowns(database, frame, cooldowns)
-	local unitType = testing and database.selectedType or (UnitCanAttack(frame.unit, 'player') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER')
+	local unitType = testing and database.selectedType or (UnitCanAttack('player', frame.unit) and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER')
 	local frameType = frame.unitframeType
     local db = database[unitType].units[frameType]
 	local tracker = frame.CDTracker
@@ -1382,13 +1389,14 @@ function mod:SetupCooldowns(db, visibilityUpdate)
 	twipe(iconPositions["ENEMY_PLAYER"])
 
 	for _, frame in ipairs(core:AggregateUnitFrames()) do
+		cache(db, frame.unitframeType)
+
 		local unit = frame.unit
 		if unit then
 			local unitType = testing and db.selectedType or (UnitCanAttack(unit, 'player') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER')
 			local db_type = db[unitType].units[frame.unitframeType]
-			if db_type and db_type.enabled and db.isShown then
-				cache(db, frame.unitframeType)
 
+			if db_type and db_type.enabled then
 				if not frame.CDTracker then
 					frame.CDTracker = CreateFrame("Frame", '$parentCDTracker', frame)
 					frame.CDTracker.cooldowns = {}
