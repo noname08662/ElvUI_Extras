@@ -6,7 +6,7 @@ local CH = E:GetModule("Chat")
 local B = E:GetModule("Blizzard")
 
 local modName = mod:GetName()
-local styleHistory, filterApplied, testlootbar
+local styleHistory, testlootbar
 local guildMap, friendMap, indicators, pendingMsgs, messageToSender = {}, {}, {}, {}, {}
 
 mod.initialized = {}
@@ -30,6 +30,29 @@ local YOU, PLAYER, OPTIONAL, SECONDS, MINUTES = YOU, PLAYER, OPTIONAL, SECONDS, 
 local colorPattern = "^|c%x%x%x%x%x%x%x%x"
 local linkPattern = "(.-|h)(.-)|h"
 local codePattern = "^|%d%p%d%((.+)%)"
+local styleEvents = {"CHAT_MSG_LOOT", "CHAT_MSG_MONEY"}
+
+local function handleMessageFilter(events, filterFunc, shouldAdd)
+    for _, event in ipairs(events) do
+        local filterFuncs = ChatFrame_GetMessageEventFilters(event)
+        local hasFilter = false
+
+        if filterFuncs then
+            for _, filter in ipairs(filterFuncs) do
+                if filter == filterFunc then
+                    hasFilter = true
+                    break
+                end
+            end
+        end
+
+        if shouldAdd and not hasFilter then
+            ChatFrame_AddMessageEventFilter(event, filterFunc)
+        elseif not shouldAdd and hasFilter then
+            ChatFrame_RemoveMessageEventFilter(event, filterFunc)
+        end
+    end
+end
 
 local function simulateLootRoll()
 	local itemID = 49623
@@ -823,14 +846,10 @@ function mod:StyledMsgs(db)
 			self.initialized.StyledMsgs = true
 		end
 
-        for _, msgType in ipairs(chatMsgs) do
-            ChatFrame_AddMessageEventFilter(msgType, mod.StyledMsgsFilter)
-        end
+		handleMessageFilter(chatMsgs, self.StyledMsgsFilter, true)
 
 		if not E.db.Extras.blizzard[modName].StyledLootings.enabled then
-			ChatFrame_AddMessageEventFilter("CHAT_MSG_LOOT", mod.StyledMsgsFilter)
-			ChatFrame_AddMessageEventFilter("CHAT_MSG_MONEY", mod.StyledMsgsFilter)
-			filterApplied = true
+			handleMessageFilter(styleEvents, self.StyledMsgsFilter, true)
 		end
 
 		self:RegisterEvent("FRIENDLIST_UPDATE", self.UpdateFriendMap)
@@ -883,18 +902,11 @@ function mod:StyledMsgs(db)
 			end)
 		end
     elseif self.initialized.StyledMsgs then
-        for _, msgType in ipairs(chatMsgs) do
-            ChatFrame_RemoveMessageEventFilter(msgType, mod.StyledMsgsFilter)
-        end
+		handleMessageFilter(chatMsgs, self.StyledMsgsFilter, false)
 
-		if filterApplied then
-			ChatFrame_RemoveMessageEventFilter("CHAT_MSG_LOOT", mod.StyledMsgsFilter)
-			ChatFrame_RemoveMessageEventFilter("CHAT_MSG_MONEY", mod.StyledMsgsFilter)
-			if E.db.Extras.blizzard[modName].StyledLootings.enabled then
-				ChatFrame_AddMessageEventFilter("CHAT_MSG_LOOT", mod.StyledLootingsFilter)
-				ChatFrame_AddMessageEventFilter("CHAT_MSG_MONEY", mod.StyledLootingsFilter)
-			end
-			filterApplied = false
+		if E.db.Extras.blizzard[modName].StyledLootings.enabled then
+			handleMessageFilter(styleEvents, self.StyledMsgsFilter, false)
+			handleMessageFilter(styleEvents, self.StyledLootingsFilter, true)
 		end
 
 		self:UnregisterEvent("GUILD_ROSTER_UPDATE")
@@ -1024,20 +1036,14 @@ function mod:StyledLootings(db)
 
 			self.initialized.StyledLootings = true
 		end
-        ChatFrame_AddMessageEventFilter("CHAT_MSG_LOOT", mod.StyledLootingsFilter)
-        ChatFrame_AddMessageEventFilter("CHAT_MSG_MONEY", mod.StyledLootingsFilter)
-		if filterApplied then
-			ChatFrame_RemoveMessageEventFilter("CHAT_MSG_LOOT", mod.StyledMsgsFilter)
-			ChatFrame_RemoveMessageEventFilter("CHAT_MSG_MONEY", mod.StyledMsgsFilter)
-			filterApplied = false
+		handleMessageFilter(styleEvents, self.StyledLootingsFilter, true)
+		if E.db.Extras.blizzard[modName].StyledMsgs.enabled then
+			handleMessageFilter(styleEvents, self.StyledMsgsFilter, false)
 		end
     elseif self.initialized.StyledLootings then
-        ChatFrame_RemoveMessageEventFilter("CHAT_MSG_LOOT", mod.StyledLootingsFilter)
-        ChatFrame_RemoveMessageEventFilter("CHAT_MSG_MONEY", mod.StyledLootingsFilter)
+		handleMessageFilter(styleEvents, self.StyledLootingsFilter, false)
 		if E.db.Extras.blizzard[modName].StyledMsgs.enabled then
-			ChatFrame_AddMessageEventFilter("CHAT_MSG_LOOT", mod.StyledMsgsFilter)
-			ChatFrame_AddMessageEventFilter("CHAT_MSG_MONEY", mod.StyledMsgsFilter)
-			filterApplied = true
+			handleMessageFilter(styleEvents, self.StyledMsgsFilter, true)
 		end
     end
 end
@@ -1230,9 +1236,6 @@ end
 
 
 function mod:Toggle(db)
-	if core.reload then
-		twipe(self.initialized)
-	end
 	for subMod, info in pairs(db) do
 		self[subMod](self, core.reload and {enabled = false} or info)
 	end

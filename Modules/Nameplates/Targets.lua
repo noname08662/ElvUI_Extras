@@ -877,8 +877,10 @@ function mod:UpdateAllFrames(db, enable, visibilityUpdate)
 					frame.targetNameHighlightOthers:Hide()
 					frame.targetNameHighlightOthers = nil
 				end
-				frame.targetNamesHolder:Hide()
-				frame.targetNamesHolder = nil
+				if frame.targetNamesHolder then
+					frame.targetNamesHolder:Hide()
+					frame.targetNamesHolder = nil
+				end
 			end
 		end
 	end
@@ -1331,6 +1333,10 @@ function mod:SetScripts(handler, data, unitType)
 end
 
 
+function mod:OnHide()
+end
+
+
 function mod:Toggle(db, visibilityUpdate)
 	updateValues(db)
 	if visibilityUpdate then
@@ -1362,24 +1368,28 @@ function mod:Toggle(db, visibilityUpdate)
 						end
 					end)
 				end
-				if not self:IsHooked(NP, "OnHide") then
-					self:RawHook(NP, "OnHide", function(self, ...)
-						local frame = self.UnitFrame
-						local unitType = frame.UnitType
-						if mod[unitType] then
-							frames[unitType][frame] = nil
-							if not next(frames[unitType]) then
-								mod[unitType]:Hide()
-							end
+				self.OnHide = function(_, self, ...)
+					local frame = self.UnitFrame
+					local unitType = frame.UnitType
+					if mod[unitType] then
+						frames[unitType][frame] = nil
+						if not next(frames[unitType]) then
+							mod[unitType]:Hide()
 						end
-						for _, targetName in pairs(frame.targetNames) do
-							targetName:Hide()
-							targetName.lastName = nil
-						end
-						return mod.hooks[NP].OnHide(self, ...)
-					end)
+					end
+					for _, targetName in pairs(frame.targetNames) do
+						targetName:Hide()
+						targetName.lastName = nil
+					end
+					return mod.hooks[NP].OnHide(self, ...)
 				end
 			else
+				self.OnHide = function(_, self)
+					for _, targetName in pairs(self.UnitFrame.targetNames) do
+						targetName:Hide()
+						targetName.lastName = nil
+					end
+				end
 				self:UpdateAllFrames(db, true)
 				if not self:IsHooked(NP, "CacheGroupUnits") then
 					self:SecureHook(NP, "CacheGroupUnits", function()
@@ -1397,14 +1407,6 @@ function mod:Toggle(db, visibilityUpdate)
 					self:SecureHook(NP, "UpdateElement_All", function(_, frame)
 						if frame.unit ~= "mouseover" then
 							self:UpdateName(frame, frame.UnitType, true)
-						end
-					end)
-				end
-				if not self:IsHooked(NP, "OnHide") then
-					self:SecureHook(NP, "OnHide", function(self)
-						for _, targetName in pairs(self.UnitFrame.targetNames) do
-							targetName:Hide()
-							targetName.lastName = nil
 						end
 					end)
 				end
@@ -1447,6 +1449,13 @@ function mod:Toggle(db, visibilityUpdate)
 					end
 				end)
 			end
+			if not self:IsHooked(NP, "OnHide") then
+				if isAwesome then
+					self:RawHook(NP, "OnHide")
+				else
+					self:SecureHook(NP, "OnHide")
+				end
+			end
 			if not self:IsHooked(NP, "Construct_Name") then
 				self:SecureHook(NP, "Construct_Name", function(_, frame)
 					self:SetupFrame(frame)
@@ -1461,8 +1470,16 @@ function mod:Toggle(db, visibilityUpdate)
 			end)
 		else
 			self:UnregisterEvent("UNIT_TARGET")
-			for _, func in ipairs({"Construct_Name", "CacheGroupUnits", "OnShow", "OnHide", "Update_CPoints", "UpdateElement_All"}) do
+			for _, func in ipairs({"UPDATE_MOUSEOVER_UNIT", "SetMouseoverFrame", "Construct_Name",
+									"CacheGroupUnits", "OnShow", "Update_CPoints", "UpdateElement_All"}) do
 				if self:IsHooked(NP, func) then self:Unhook(NP, func) end
+			end
+			if self:IsHooked(NP, "OnHide") then
+				if isAwesome then
+					self:Unhook(NP, "OnHide")
+				else
+					self.OnHide = function() end
+				end
 			end
 			self:UpdateAllFrames(db)
 			core:RegisterNPElement('targetNamesHolder')

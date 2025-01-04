@@ -6,6 +6,7 @@ local S = E:GetModule("Skins")
 local EP = E.Libs.EP
 local LSM = E.Libs.LSM
 local ElvUF = E.oUF
+local LAI = E.Libs.LAI
 
 core.modules = {}
 core.nameUpdates = {}
@@ -39,6 +40,315 @@ core.DispellList = {
 	WARLOCK = {Magic = true},
 }
 
+core.SpellLists = {
+	["DEFAULTS"] = {
+		-- Stolen from Icicle
+
+		-- Misc
+		[11732] = 120,	-- Healthstone
+		[26297] = 180,	-- Berserking
+		[20594] = 120,	-- Stoneform
+		[58984] = 120,	-- Shadowmeld
+		[20589] = 105,	-- Escape Artist
+		[59752] = 120,	-- Every Man for Himself
+		[7744] 	= 120,	-- Will of the Forsaken
+		[50613] = 120,	-- Arcane Torrent
+		[20549] = 120,	-- War Stomp
+		[42292] = 120,	-- PvP Trinket
+		[61685] = 25,	-- Charge
+		[50519] = 60,	-- Sonic Blast
+		[50245] = 40,	-- Pin
+		[50433] = 10,	-- Ankle Crack
+		[26090] = 30,	-- Pummel
+		[50541] = 60, 	-- Clench
+		[54706] = 40,	-- Vemom Web Spray
+		[4167] 	= 40,	-- Web
+		[50274] = 12,	-- Spore Cloud
+		[50271] = 10, 	-- Tendon Rip
+		[50318] = 60,	-- Serenity Dust
+		[50285] = 40, 	-- Dust Cloud
+		[55709] = 480,	-- Heart of the Phoenix
+		[53426] = 180,	-- Lick Your Wounds
+		[53476] = 30,	-- Intervene
+		[53480] = 60,	-- Roar of Sacrifice
+		[53478] = 360,	-- Last Stand
+		[53517] = 180,	-- Roar of Recovery
+
+		-- Pets(Warlock)
+		[19647] = 24,	-- Spell Lock
+		[47986] = 60,	-- Sacrifice
+
+		-- Pets(Mage)
+		[33395] = 25,	-- Freeze
+
+		-- Death Knight
+		[49039] = 120,	-- Lichborne
+		[47476] = 60,	-- Strangulate
+		[48707] = 45,	-- Anti-Magic Shell
+		[49576] = 25,	-- Death Grip
+		[47528] = 10,	-- Mind Freeze
+		[49222] = 60,	-- Bone Shield
+		[51052] = 120,	-- Anti-Magic Zone
+		[49203] = 60,	-- Hungering Cold
+		[49028] = 90, 	-- Dancing Rune Weapon
+		[49206] = 180,	-- Summon Gargoyle
+		[48792] = 180,	-- Icebound Fortitude
+		[48743] = 120,	-- Death Pact
+		[42650] = 600,	-- Army of the Dead
+
+		-- Druid
+		[22812] = 60,	-- Barkskin
+		[17116] = 180,	-- Nature's Swiftness
+		[16979] = 15,	-- Feral Charge - Bear
+		[49376] = 30,	-- Feral Charge - Cat
+		[61336] = 180,	-- Survival Instincts
+		[50334] = 180,	-- Berserk
+		[50516] = 17,	-- Typhoon
+		[33831] = 180,	-- Force of Nature
+		[53201] = 60,	-- Starfall
+		[8983] 	= 50,	-- Bash
+		[29166] = 180,	-- Innervate
+		-- [22570] = 10,	-- Maim
+		-- [18562] = 15,	-- Swiftmend
+		-- [22842] = 180,	-- Frenzied Regeneration
+		-- [53312] = 60, 	-- Nature's Grasp
+		-- [740] = 480,		-- Tranquility
+
+		-- Hunter
+		[49012] = 54,	-- Wyvern Sting
+		[3045] 	= 180,	-- Rapid Fire
+		[53351] = 10,	-- Kill Shot
+		[53271] = 35, 	-- Master's Call
+		[19263] = 120,	-- Deterrence
+		[19503] = 30,	-- Scatter Shot
+		[23989] = 180,	-- Readiness
+		[34490] = 20,	-- Silencing Shot
+		[19574] = 90,	-- Bestial Wrath
+		[14311]	= 30,	-- Freezing Trap
+		[60202] = 30,   -- Freezing Arrow
+		[50518] = 40,	-- Ravage
+		[50479] = 40,	-- Nether Shock
+
+		-- Mage
+		[2139] 	= 24,	-- Counterspell
+		[44572] = 30,	-- Deep Freeze
+		[11958] = 384,	-- Cold Snap
+		[45438] = 300,	-- Ice Block
+		[12042] = 106,	-- Arcane Power
+		[12051] = 240,	-- Evocation
+		[12472] = 144,	-- Icy Veins
+		[66]	= 132,	-- Invisibility
+		[42945] = 30, 	-- Blast Wave
+		[12043] = 90,	-- Presence of Mind
+		[11129] = 120,	-- Combustion
+		[42950] = 20,	-- Dragon's Breath
+		-- [122] = 25,		-- Frost Nova
+		-- [42917] = 25,	-- Frost Nova
+		-- [11426] = 24,	-- Ice Barrier
+		-- [55342] = 180,	-- Mirror Image
+
+		-- Paladin
+		[1044] 	= 25,	-- Hand of Freedom
+		[31884] = 180,	-- Avenging Wrath
+		[10308] = 40,	-- Hammer of Justice
+		[48827] = 30,	-- Avenger's Shield
+		[633] 	= 420,	-- Lay on Hands
+		[10278] = 180,	-- Hand of Protection
+		[498] 	= 180,	-- Divine Protection
+		[54428] = 60,	-- Divine Plea
+		[642] 	= 240,	-- Divine Shield
+		[6940] 	= 120,	-- Hand of Sacrifice
+		[31821] = 120,	-- Aura Mastery
+		[20066] = 60,	-- Repentance
+		-- [31842] = 180,	-- Divine Favor
+		-- [31850] = 180,	-- Ardent Defender
+
+		-- Priest
+		[64044] = 120,	-- Psychic Horror
+		[10890] = 23,	-- Psychic Scream
+		[15487] = 45,	-- Silence
+		[47585] = 120,	-- Dispersion
+		[33206] = 180,	-- Pain Suppression
+		[10060] = 120,	-- Power Infusion
+		[48158] = 12,	-- Shadow Word: Death
+		-- [586] = 15,		-- Fade
+		-- [6346] = 180,	-- Fear Ward
+		-- [64901] = 360,	-- Hymn of Hope
+		-- [64843] = 480,	-- Divine Hymn
+		-- [19236] = 120,	-- Desperate Prayer
+		-- [724] = 180,		-- Lightwell
+
+		-- Rogue
+		[2094] 	= 180,	-- Blind
+		[1766] 	= 10,	-- Kick
+		[11305]	= 180,	-- Sprint
+		[14185] = 300,	-- Preparation
+		[31224] = 90,	-- Cloak of Shadows
+		[26889]	= 180,	-- Vanish
+		[36554] = 30,	-- Shadowstep
+		[26669]	= 180,	-- Evasion
+		[51722] = 60,	-- Dismantle
+		[51690] = 75,	-- Killing Spree
+		[51713] = 60, 	-- Shadow Dance
+		[8643] 	= 20,	-- Kidney Shot
+		-- [14177] = 120,	-- Cold Blood
+
+		-- Shaman
+		[8177] 	= 13,	-- Grounding Totem
+		[57994] = 5,	-- Wind Shear
+		[32182] = 300,	-- Heroism
+		[2825] 	= 300,	-- Bloodlust
+		[51533] = 180,	-- Feral Spirit
+		[16190] = 240,	-- Mana Tide Totem
+		[30823] = 60,	-- Shamanistic Rage
+		[59159] = 35,	-- Thunderstorm
+		[5730] 	= 20,	-- Stoneclaw Totem
+		[51514] = 45,	-- Hex
+		[16166] = 180,	-- Elemental Mastery
+		[16188] = 120,	-- Nature's Swiftness
+
+		-- Warlock
+		[47860]	= 120,	-- Death Coil
+		[17928]	= 32,	-- Howl of Terror
+		[54785] = 45,	-- Demon Leap
+		[48020] = 26,	-- Demonic Circle: Teleport
+		[47847] = 20,   -- Shadowfury
+		-- [17962] = 8,		-- Conflagrate
+		-- [74434] = 45,	-- Soulburn
+		-- [6229] = 30,		-- Shadow Ward
+
+		-- Warrior
+		[11578]	= 15,	-- Charge
+		[6552] 	= 10,	-- Pummel
+		[72] 	= 12,	-- Shield Bash
+		[23920] = 9,	-- Spell Reflection
+		[676] 	= 60,	-- Disarm
+		[5246] 	= 120,	-- Intimidation Shout
+		[871] 	= 120,	-- Shield Wall
+		[20252] = 20,	-- Intercept
+		[64382] = 240,	-- Shattering Throw
+		[12809] = 30,	-- Concussion Blow
+		[12975] = 180,	-- Last Stand
+		[60970] = 30,	-- Heroic Fury
+		[46924] = 75,	-- Bladestorm
+		[46968] = 17,	-- Shockwave
+		-- [2565] = 30,		-- Shield Block
+		-- [6544] = 40,		-- Heroic Leap
+		-- [12328] = 60,	-- Sweeping Strikes
+		-- [20230] = 300,	-- Retaliation
+		-- [1719] = 240,	-- Recklessness
+		-- [3411] = 30,		-- Intervene
+		-- [12292] = 144, 	-- Death Wish
+	},
+	["INTERRUPT"] = {
+		[6552] 	= 10,	-- Pummel
+		[72] 	= 12,	-- Shield Bash
+		[1766] 	= 10,	-- Kick
+		[57994] = 5,	-- Wind Shear
+		[2139] 	= 24,	-- Counterspell
+		[19647] = 24,   -- Spell Lock (Felhunter)
+		[47528] = 10,   -- Mind Freeze
+		[47476] = 120,	-- Strangulate
+		[34490] = 20,   -- Silencing Shot
+		[26090] = 30,   -- Pummel (Gorilla Pet)
+		[50479] = 40,	-- Nether Shock (Nether Ray Pet)
+		[15487] = 45,   -- Silence
+		[8983] 	= 60,   -- Bash
+		[48827] = 30,   -- Avenger's Shield
+	},
+	["CONTROL"] = {
+		[47476] = 120,	-- Strangulate
+		[51209] = 60,   -- Hungering Cold
+		[8983] 	= 50,   -- Bash
+		[22570] = 10,   -- Maim
+		[16979] = 15,   -- Feral Charge
+		[1513] 	= 15,	-- Scare Beast
+		[14311]	= 30,	-- Freezing Trap
+		[49012] = 54,   -- Wyvern Sting
+		[19503] = 30,   -- Scatter Shot
+		[24394] = 60,   -- Intimidation
+		[34490] = 20,   -- Silencing Shot
+		[50245] = 40,   -- Pin
+		[50519] = 60,   -- Sonic Blast
+		[50541] = 60,   -- Snatch
+		[54706] = 40,   -- Venom Web Spray
+		[50518] = 40,	-- Ravage
+		[56626] = 10,   -- Sting
+		[50479] = 40,	-- Nether Shock
+		[60202] = 30,   -- Freezing Arrow
+		[122] 	= 25,	-- Frost Nova
+		[42917]	= 20,	-- Frost Nova
+		[42950] = 20,   -- Dragon's Breath
+		[33395] = 25,   -- Freeze
+		[44572] = 30,   -- Deep Freeze
+		[2139] 	= 24,	-- Counterspell
+		[10308]	= 40,	-- Hammer of Justice
+		[20066] = 60,   -- Repentance
+		[48827] = 30,   -- Avenger's Shield
+		[10890]	= 23,	-- Psychic Scream
+		[15487] = 45,   -- Silence
+		[64044] = 120,	-- Psychic Horror
+		[8643] 	= 20,	-- Kidney Shot
+		[1776] 	= 10,	-- Gouge
+		[2094] 	= 180,	-- Blind
+		[1766] 	= 10,	-- Kick
+		[51722] = 60,   -- Dismantle
+		[51514] = 45,   -- Hex
+		[47860]	= 120,	-- Death Coil
+		[17928] = 32,   -- Howl of Terror
+		[19647] = 24,   -- Spell Lock
+		[47847] = 20,   -- Shadowfury
+		[676] 	= 60,	-- Disarm
+		[72] 	= 12,   -- Shield Bash
+		[5246] 	= 120,  -- Intimidating Shout
+		[50613] = 120,  -- Arcane Torrent
+		[20549] = 120,  -- War Stomp
+	},
+	["PETS"] = {
+		-- Hunter
+		[61685] = 25,	-- Charge
+		[50519] = 60,	-- Sonic Blast
+		[50245] = 40,	-- Pin
+		[50433] = 10,	-- Ankle Crack
+		[26090] = 30,	-- Pummel
+		[57386] = 60,	-- Stampede
+		[50541] = 60,	-- Clench
+		[26064] = 60,	-- Shell Shield
+		[35346] = 15,	-- Time Warp
+		[54644] = 10,	-- Frost Breath
+		[50479] = 40,	-- Nether Shock
+		[50518] = 40,	-- Ravage
+		[35387] = 10,	-- Corrosive Spit
+		[54706] = 40,	-- Vemom Web Spray
+		[4167] 	= 40,	-- Web
+		[50274] = 12,	-- Spore Cloud
+		[54680] = 10,	-- Monstrous Bite
+		[50271] = 10,	-- Tendon Rip
+		[50318] = 60,	-- Serenity Dust
+		[50498] = 60,	-- Tear Armor
+		[50285] = 40,	-- Dust Cloud
+		[56626] = 10,	-- Sting
+		[24604] = 40,	-- Furious Howl
+		[24423] = 10,	-- Demoralizing Screech
+		[58604] = 10,	-- Lava Breath
+		[53490] = 180,	-- Bullheaded
+		[23145] = 32,	-- Dive
+		[55709] = 480,	-- Heart of the Phoenix
+		[53426] = 180,	-- Lick Your Wounds
+		[53401] = 45,	-- Rabid
+		[53476] = 30,	-- Intervene
+		[53480] = 60,	-- Roar of Sacrifice
+		[53478] = 360,	-- Last Stand
+		[53517] = 180,	-- Roar of Recovery
+
+		-- Warlock
+		[19647] = 24,	-- Spell Lock
+		[47986]	= 60,	-- Sacrifice
+
+		-- Mage
+		[33395] = 25,	-- Freeze
+	},
+}
 
 local AddOnName = ...
 local isAwesome = C_NamePlate and E.private.nameplates.enable
@@ -57,7 +367,7 @@ local gsub, find, sub, lower, upper = string.gsub, string.find, string.sub, stri
 local format, match, gmatch = string.format, string.match, string.gmatch
 local max, ceil, floor = math.max, math.ceil, math.floor
 local tinsert, twipe, tsort = table.insert, table.wipe, table.sort
-local UnitGUID, UnitClass, UnitExists = UnitGUID, UnitClass, UnitExists
+local UnitGUID, UnitClass, UnitExists, UnitAura = UnitGUID, UnitClass, UnitExists, UnitAura
 local UnitThreatSituation, GetThreatStatusColor = UnitThreatSituation, GetThreatStatusColor
 local UnitReaction, UnitIsPlayer, UnitCanAttack = UnitReaction, UnitIsPlayer, UnitCanAttack
 local GetNumMacroIcons, GetMacroIconInfo, GameTooltip = GetNumMacroIcons, GetMacroIconInfo, GameTooltip
@@ -310,8 +620,8 @@ if isAwesome then
 	local mouseover = CreateFrame("Frame")
 	local GetNamePlates = C_NamePlate.GetNamePlates
 	local GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
-	local LAI = E.Libs.LAI
 
+	core.plateList = {}
 
 	core:RegisterEvent("PLAYER_TARGET_CHANGED", function()
 		local exists = UnitExists("target")
@@ -379,30 +689,29 @@ if isAwesome then
 
 	core:RegisterEvent("NAME_PLATE_OWNER_CHANGED", function(_, unit)
 		local plate = GetNamePlateForUnit(unit)
-		core:UpdateNameplate(plate.UnitFrame, unit)
+		local frame = plate.UnitFrame
+		core.plateList[frame.guid or ""] = nil
+		core.plateList[UnitGUID(unit)] = plate
+		frame.ThreatStatus = UnitThreatSituation("player", unit)
 		NP.OnHide(plate, nil, true)
 		NP.OnShow(plate, nil, true)
 	end)
 
 	core:RegisterEvent("NAME_PLATE_UNIT_REMOVED", function(_, unit)
 		local plate = GetNamePlateForUnit(unit)
-		if plate then plate.unit = nil end
+		plate.unit = nil
+		core.plateList[UnitGUID(unit)] = nil
 		NP.OnHide(plate, nil, true)
 	end)
 
 	core:RegisterEvent("NAME_PLATE_UNIT_ADDED", function(_, unit)
 		local plate = GetNamePlateForUnit(unit)
-		if plate then plate.unit = unit end
-		core:UpdateNameplate(plate.UnitFrame, unit)
+		local frame = plate.UnitFrame
+		plate.unit = unit
+		core.plateList[UnitGUID(unit)] = plate
+		frame.ThreatStatus = UnitThreatSituation("player", unit)
 		NP.OnShow(plate, nil, true)
 	end)
-
-
-	function core:UpdateNameplate(frame, unit)
-		LAI:RemoveAllAurasFromGUID(UnitGUID(unit))
-		LAI.frame:UNIT_AURA(nil, unit)
-		frame.ThreatStatus = UnitThreatSituation("player", unit)
-	end
 
 	function core:SetTargetFrame(_, frame)
 		local parent = frame:GetParent()
@@ -554,6 +863,29 @@ if isAwesome then
 		end
 	end
 
+	function core:GUIDAura(self, guid, index, filter, ...)
+		local plate = core.plateList[guid]
+		if plate then
+			local name, _, texture, count, debuffType, duration, expiration, caster, _, _, spellId = UnitAura(plate.unit, index, filter)
+			if name then
+				return true, name, texture, count, debuffType, duration, expiration, caster and UnitGUID(caster), spellId
+			end
+		end
+		return core.hooks[LAI].GUIDAura(self, guid, index, filter, ...)
+	end
+
+	core.SPELL_AURA_APPLIED = true
+	core.SPELL_AURA_REMOVED = true
+	core.SPELL_AURA_REFRESH = true
+
+	core:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(_, _, eventType, _, _, _, dstGUID)
+		if core[eventType] then
+			local frame = NP:SearchNameplateByGUID(dstGUID)
+			if frame then
+				NP:UpdateElement_Auras(frame)
+			end
+		end
+	end)
 
 	if not core:IsHooked(NP, "OnUpdate") then
 		core:RawHook(NP, "OnUpdate", function(self) self:SetScript("OnUpdate", nil) end)
@@ -1669,17 +2001,23 @@ function core:Initialize()
 	healthEnabled["ENEMY_NPC"] = NP.db.units["ENEMY_NPC"].health.enable
 
 	if isAwesome then
-		NP:UnregisterEvent("PLAYER_TARGET_CHANGED")
-		NP:UnregisterEvent("PLAYER_FOCUS_CHANGED")
-		NP:UnregisterEvent("UPDATE_MOUSEOVER_UNIT")
-		NP:UnregisterEvent("ARENA_OPPONENT_UPDATE")
-		NP:UnregisterEvent("PARTY_MEMBERS_CHANGED")
-		NP:UnregisterEvent("RAID_ROSTER_UPDATE")
-		NP:UnregisterEvent("UNIT_NAME_UPDATE")
+		if E.private.nameplates.enable then
+			NP:UnregisterEvent("PLAYER_TARGET_CHANGED")
+			NP:UnregisterEvent("PLAYER_FOCUS_CHANGED")
+			NP:UnregisterEvent("UPDATE_MOUSEOVER_UNIT")
+			NP:UnregisterEvent("ARENA_OPPONENT_UPDATE")
+			NP:UnregisterEvent("PARTY_MEMBERS_CHANGED")
+			NP:UnregisterEvent("RAID_ROSTER_UPDATE")
+			NP:UnregisterEvent("UNIT_NAME_UPDATE")
 
-		for _, func in pairs({'UnitClass', 'GetUnitInfo', 'GetUnitByName', 'SetMouseoverFrame', 'SetTargetFrame',
-								'ResetNameplateFrameLevel', 'UnitDetailedThreatSituation'}) do
-			if not self:IsHooked(NP, func) then self:RawHook(NP, func) end
+			for _, func in pairs({'UnitClass', 'GetUnitInfo', 'GetUnitByName', 'SetMouseoverFrame', 'SetTargetFrame',
+									'ResetNameplateFrameLevel', 'UnitDetailedThreatSituation'}) do
+				self:RawHook(NP, func)
+			end
+			self:RawHook(LAI, "GUIDAura")
+			LAI.UnregisterAllCallbacks(NP)
+		else
+			self:UnregisterAllEvents()
 		end
 	end
 

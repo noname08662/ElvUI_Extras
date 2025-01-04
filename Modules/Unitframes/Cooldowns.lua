@@ -1,6 +1,6 @@
 local E, L, _, P = unpack(ElvUI)
 local core = E:GetModule("Extras")
-local mod = core:NewModule("CooldownsUF", "AceHook-3.0", "AceEvent-3.0")
+local mod = core:NewModule("CooldownsUF2", "AceHook-3.0", "AceEvent-3.0")
 local LSM = E.Libs.LSM
 local LAI = E.Libs.LAI
 
@@ -8,6 +8,24 @@ local modName = mod:GetName()
 local activeCooldowns, petSpells, framelist, testSpells, testing = {}, {}, {}, {}, false
 local edgeFile = LSM:Fetch("border", "ElvUI GlowBorder")
 local highlightedSpells = {["ENEMY_PLAYER"] = {}, ["FRIENDLY_PLAYER"] = {}}
+
+local allSpells = {}
+local compareFuncs = {
+	["FRIENDLY_PLAYER"] = {},
+	["ENEMY_PLAYER"] = {},
+}
+local borderCustomColor = {
+	["FRIENDLY_PLAYER"] = {},
+	["ENEMY_PLAYER"] = {},
+}
+local borderColor = {
+	["FRIENDLY_PLAYER"] = {},
+	["ENEMY_PLAYER"] = {},
+}
+local fills = {
+	["FRIENDLY_PLAYER"] = {},
+	["ENEMY_PLAYER"] = {},
+}
 
 local scanTool = CreateFrame("GameTooltip", "ScanTooltipUF", nil, "GameTooltipTemplate")
 scanTool:SetOwner(WorldFrame, "ANCHOR_NONE")
@@ -32,6 +50,33 @@ local UNITNAME_SUMMON_TITLES = {gsub(format(UNITNAME_SUMMON_TITLE1, 1), '[%d%p%s
 
 local iconPositions = mod.iconPositions
 
+
+function mod:tagFunc(frame, unit)
+	local activeCds = activeCooldowns[UnitName(unit)]
+
+	if activeCds and tcontains(framelist, frame) then
+		local db = E.db.Extras.unitframes[modName]
+		if unit == 'target' or unit == 'focus' then
+			local header = db[testing and db.selectedType
+								or (UnitCanAttack(unit, 'player') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER')].units[frame.unitframeType].header
+			frame.CDTracker:ClearAllPoints()
+			frame.CDTracker:Point(header.point, frame, header.relativeTo, header.xOffset, header.yOffset)
+			frame.CDTracker:SetFrameLevel(header.level)
+			frame.CDTracker:SetFrameStrata(header.strata)
+			frame.CDTracker:Hide()
+		end
+		for i = #activeCds, 1, -1 do
+			if activeCds[i].endTime < GetTime() then
+				tremove(activeCds, i)
+			end
+		end
+		mod:AttachCooldowns(db, frame, activeCds)
+	elseif frame.CDTracker then
+		frame.CDTracker:Hide()
+	end
+end
+
+
 local function updateVisibilityState(db, areaType)
 	local isShown = false
 	for _, unitType in ipairs({'ENEMY_PLAYER', 'FRIENDLY_PLAYER'}) do
@@ -48,30 +93,6 @@ local function updateVisibilityState(db, areaType)
 		end
 	end
 	return isShown
-end
-
-function mod:tagFunc(frame, unit)
-	local activeCds = activeCooldowns[UnitName(unit)]
-
-	if activeCds and tcontains(framelist, frame) then
-		local db = E.db.Extras.unitframes[modName]
-		if unit == 'target' or unit == 'focus' then
-			local header = db[testing and db.selectedType
-								or (UnitCanAttack(unit, 'player') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER')].units[frame.unitframeType].header
-			frame.CDTracker:ClearAllPoints()
-			frame.CDTracker:Point(header.point, frame, header.relativeTo, header.xOffset, header.yOffset)
-			frame.CDTracker:SetFrameLevel(header.level)
-			frame.CDTracker:SetFrameStrata(header.strata)
-		end
-		for i = #activeCds, 1, -1 do
-			if activeCds[i].endTime < GetTime() then
-				tremove(activeCds, i)
-			end
-		end
-		mod:AttachCooldowns(db, frame, activeCds)
-	elseif frame.CDTracker then
-		frame.CDTracker:Hide()
-	end
 end
 
 local function getPetOwner(unit)
@@ -143,18 +164,24 @@ local resetCooldowns = {
 
 
 local function testMode(db)
+	twipe(activeCooldowns)
+
 	local units = core:AggregateUnitFrames()
 	for _, frame in ipairs(units) do
 		if frame.CDTracker then frame.CDTracker:Hide() end
-		local unit = frame.unit
-		if unit then
-			if activeCooldowns[UnitName(unit)] then twipe(activeCooldowns[UnitName(unit)]) end
-		end
 	end
 	if not testing then return end
 
-    local spellList = db[db.selectedType].spellList
+    local spellList = {}
     local spellIDs = {}
+
+	for _, unitType in ipairs({"FRIENDLY_PLAYER", "ENEMY_PLAYER"}) do
+		for _, data in pairs(db[unitType].units) do
+			for id, cdTime in pairs(data.spellList) do
+				spellList[id] = cdTime
+			end
+		end
+	end
 
     local index = 0
     for id in pairs(spellList) do
@@ -175,25 +202,23 @@ local function testMode(db)
         local spellID = spellIDs[random(#spellIDs)]
         local duration = spellList[spellID] or fallbackSpells[spellID]
         local startTime = GetTime() - random(0, duration/2)
-        local endTime = startTime + duration
 
-        local spellInfo = {
-            spellID = spellID,
-            startTime = startTime,
-            endTime = endTime,
-            icon = select(3, GetSpellInfo(spellID))
-        }
-
-        tinsert(testSpells, spellInfo)
+        tinsert(testSpells, {
+						spellID = spellID,
+						startTime = startTime,
+						endTime = startTime + duration,
+						icon = select(3, GetSpellInfo(spellID)),
+						isTrinket = trinkets[spellID]
+					})
     end
 
-    local trinket = {
-		spellID = 59752,
-		startTime = GetTime() - random(0, 120/2),
-		endTime = GetTime() - random(0, 120/2) + 120,
-		icon = select(3, GetSpellInfo(59752))
-	}
-	tinsert(testSpells, random(1, #testSpells), trinket)
+	tinsert(testSpells, {
+					spellID = 59752,
+					startTime = GetTime() - random(0, 120/2),
+					endTime = GetTime() - random(0, 120/2) + 120,
+					icon = select(3, GetSpellInfo(59752)),
+					isTrinket = true,
+				})
 
 	for _, frame in ipairs(units) do
 		local unit = frame.unit
@@ -211,33 +236,158 @@ local function testMode(db)
 end
 
 local function createCompareFunction(sorting, prioritizeTrinkets)
-    return function(a, b)
-        if prioritizeTrinkets then
-            local aIsTrinket = trinkets[a.spellID]
-            local bIsTrinket = trinkets[b.spellID]
-            if aIsTrinket and not bIsTrinket then
-                return true
-            elseif not aIsTrinket and bIsTrinket then
-                return false
+    if prioritizeTrinkets then
+        if sorting == "durationAsc" then
+            return function(a, b)
+                if a.isTrinket and not b.isTrinket then
+                    return true
+                elseif not a.isTrinket and b.isTrinket then
+                    return false
+                end
+                return a.endTime < b.endTime
+            end
+        elseif sorting == "durationDesc" then
+            return function(a, b)
+                if a.isTrinket and not b.isTrinket then
+                    return true
+                elseif not a.isTrinket and b.isTrinket then
+                    return false
+                end
+                return a.endTime > b.endTime
+            end
+        elseif sorting == "timeUsedDesc" then
+            return function(a, b)
+                if a.isTrinket and not b.isTrinket then
+                    return true
+                elseif not a.isTrinket and b.isTrinket then
+                    return false
+                end
+                return a.startTime > b.startTime
+            end
+        else
+            return function(a, b)
+                if a.isTrinket and not b.isTrinket then
+                    return true
+                elseif not a.isTrinket and b.isTrinket then
+                    return false
+                end
+                return a.startTime < b.startTime
             end
         end
-
+    else
         if sorting == "durationAsc" then
-            return a.endTime < b.endTime
+            return function(a, b)
+                return a.endTime < b.endTime
+            end
         elseif sorting == "durationDesc" then
-            return a.endTime > b.endTime
+            return function(a, b)
+                return a.endTime > b.endTime
+            end
         elseif sorting == "timeUsedDesc" then
-            return a.startTime > b.startTime
+            return function(a, b)
+                return a.startTime > b.startTime
+            end
         else
-            return a.startTime < b.startTime
+            return function(a, b)
+                return a.startTime < b.startTime
+            end
         end
     end
 end
 
-local function cachePositions(db, frameType)
+local function createFillFunction(db_cooldownFill, db_icons)
+    local border = E.mult or 0
+	local size = db_icons.size
+    local isReversed = db_cooldownFill.reversed
+    local direction = db_cooldownFill.direction
+
+    if direction == "LEFT" then
+        if isReversed then
+            return function(cooldown, remainingTime)
+                local fill = cooldown.fill
+                fill:ClearAllPoints()
+                fill:Point("TOPLEFT", cooldown, "TOPLEFT", border, -border)
+                fill:Point("BOTTOMRIGHT", cooldown, "BOTTOMRIGHT", (remainingTime * size) - size - border, border)
+            end
+        else
+            return function(cooldown, remainingTime)
+                local fill = cooldown.fill
+                fill:ClearAllPoints()
+                fill:Point("TOPRIGHT", cooldown, "TOPRIGHT", -border, -border)
+                fill:Point("BOTTOMLEFT", cooldown, "BOTTOMLEFT", (remainingTime * size) + border, border)
+            end
+        end
+    elseif direction == "RIGHT" then
+        if isReversed then
+            return function(cooldown, remainingTime)
+                local fill = cooldown.fill
+                fill:ClearAllPoints()
+                fill:Point("TOPRIGHT", cooldown, "TOPRIGHT", -border, -border)
+                fill:Point("BOTTOMLEFT", cooldown, "BOTTOMLEFT", size - (remainingTime * size) + border, border)
+            end
+        else
+            return function(cooldown, remainingTime)
+                local fill = cooldown.fill
+                fill:ClearAllPoints()
+                fill:Point("TOPLEFT", cooldown, "TOPLEFT", border, -border)
+                fill:Point("BOTTOMRIGHT", cooldown, "BOTTOMRIGHT", -(remainingTime * size) - border, border)
+            end
+        end
+    elseif direction == "TOP" then
+        if isReversed then
+            return function(cooldown, remainingTime)
+                local fill = cooldown.fill
+                fill:ClearAllPoints()
+                fill:SetPoint("TOPLEFT", cooldown, "TOPLEFT", border, -border)
+                fill:SetPoint("BOTTOMRIGHT", cooldown, "BOTTOMRIGHT", -border, (remainingTime * size) - border)
+            end
+        else
+            return function(cooldown, remainingTime)
+                local fill = cooldown.fill
+                fill:ClearAllPoints()
+                fill:Point("BOTTOMLEFT", cooldown, "BOTTOMLEFT", border, border)
+                fill:Point("TOPRIGHT", cooldown, "TOPRIGHT", -border, -(remainingTime * size) - border)
+            end
+        end
+    else
+        if isReversed then
+            return function(cooldown, remainingTime)
+                local fill = cooldown.fill
+                fill:ClearAllPoints()
+                fill:SetPoint("BOTTOMLEFT", cooldown, "BOTTOMLEFT", border, border)
+                fill:SetPoint("TOPRIGHT", cooldown, "TOPRIGHT", -border, -(size - (remainingTime * size)) + border)
+            end
+        else
+            return function(cooldown, remainingTime)
+                local fill = cooldown.fill
+                fill:ClearAllPoints()
+                fill:Point("TOPLEFT", cooldown, "TOPLEFT", border, -border)
+                fill:Point("BOTTOMRIGHT", cooldown, "BOTTOMRIGHT", -border, (remainingTime * size))
+            end
+        end
+    end
+end
+
+
+local function getColorByTimeFriend(_, remainingTime, totalTime)
+    local percentage = remainingTime / totalTime
+    return percentage, 1 - percentage
+end
+
+local function getColorByTimeEnemy(_, remainingTime, totalTime)
+    local percentage = remainingTime / totalTime
+    return 1 - percentage, percentage
+end
+
+
+local function cache(db, frameType)
 	for unitType in pairs(iconPositions) do
 		local data = db[unitType].units[frameType]
 		if data then
+			for id, cdTime in pairs(data.spellList) do
+				allSpells[id] = cdTime
+			end
+
 			local icons = data.icons
 			local perRow, spacing, direction, size = icons.perRow, icons.spacing, icons.direction, icons.size
 			local offset = size + spacing
@@ -292,6 +442,10 @@ local function cachePositions(db, frameType)
 					t[shown].positions[i] = {point = point, xOffset = xOffset, yOffset = yOffset}
 				end
 			end
+			compareFuncs[unitType][frameType] = createCompareFunction(icons.sorting, icons.trinketOnTop)
+			borderCustomColor[unitType][frameType] = icons.borderCustomColor[1] > 0 or icons.borderCustomColor[2] > 0 or icons.borderCustomColor[3] > 0
+			borderColor[unitType][frameType] = unitType == 'ENEMY_PLAYER' and getColorByTimeEnemy or getColorByTimeFriend
+			fills[unitType][frameType] = createFillFunction(data.cooldownFill, icons)
 		end
 	end
 end
@@ -300,304 +454,14 @@ end
 P["Extras"]["unitframes"][modName] = {
 	["selectedUnit"] = 'target',
 	["selectedType"] = 'FRIENDLY_PLAYER',
-	["petSpells"] = {
-		--Pets(Death Knight)
-		--I haven't seen these working. Will have to look into it.
-		--[91797] = true,				--"Monstrous Blow",
-		--[91837] = true,				--"Putrid Bulwark",
-		--[91802] = true,				--"Shambling Rush",
-		--[47482] = true,				--"Leap",
-		--[91809] = true,				--"Leap",
-		--[91800] = true,				--"Gnaw",
-		--[47481] = true,				--"Gnaw",
-		--Pets(Hunter)
-		--[90339] = true,				--"Harden Carapace",
-		[61685] = true,				--"Charge",
-		[50519] = true,				--"Sonic Blast",
-		--[35290] = true,				--"Gore",
-		[50245] = true,				--"Pin",
-		[50433] = true,				--"Ankle Crack",
-		[26090] = true,				--"Pummel",
-		--[93434] = true,				--"Horn Toss",
-		--[57386] = true,				--"Stampede",
-		[50541] = true, 				--"Clench",
-		--[26064] = true, 				--"Shell Shield",
-		--[35346] = true, 				--"Time Warp",
-		--[93433] = true,				--"Burrow Attack",
-		--[54644] = true,				--"Frost Breath",
-		--[34889] = true,				--"Fire Breath",
-		--[50479] = true,				--"Nether Shock",
-		--[50518] = true,				--"Ravage",
-		--[35387] = true, 				--"Corrosive Spit",
-		[54706] = true,				--"Vemom Web Spray",
-		[4167] = true,				--"Web",
-		[50274] = true,				--"Spore Cloud",
-		--[24844] = true, 				--"Lightning Breath",
-		--[54680] = true,				--"Monstrous Bite",
-		[50271] = true, 				--"Tendon Rip",
-		[50318] = true,				--"Serenity Dust",
-		--[50498] = true, 				--"Tear Armor",
-		[50285] = true, 				--"Dust Cloud",
-		--[56626] = true,				--"Sting",
-		--[24604] = true,				--"Furious Howl",
-		--[90309] = true,				--"Terrifying Roar",
-		--[24423] = true,				--"Demoralizing Screech",
-		--[93435] = true,				--"Roar of Courage",
-		--[58604] = true,				--"Lava Breath",
-		--[53490] = true,				--"Bullheaded",
-		--[23145] = true,				--"Dive",
-		[55709] = true,				--"Heart of the Phoenix",
-		[53426] = true,				--"Lick Your Wounds",
-		--[53401] = true, 				--"Rabid",
-		[53476] = true,				--"Intervene",
-		[53480] = true,				--"Roar of Sacrifice",
-		[53478] = true,				--"Last Stand",
-		[53517] = true,				--"Roar of Recovery",
-		--Pets(Warlock)
-		[19647] = true,				--"Spell Lock",
-		[7812] = true,				--"Sacrifice",
-		--Pets(Mage)
-		[33395] = true,
-	},
+	["petSpells"] = {},
 	["FRIENDLY_PLAYER"] = {
 		["selectedSpell"] = '',
 		["highlightedSpells"] = {},
-		["spellList"] = {
-	-- stolen from Icicle
-			--Misc
-			[11732] = 120, -- healthstone
-			[26297] = 180,				--"Berserking",
-			[20594] = 120,				--"Stoneform",
-			[58984] = 120,				--"Shadowmeld",
-			[20589] = 90,				--"Escape Artist",
-			[59752] = 120,				--"Every Man for Himself",
-			[7744] = 120,				--"Will of the Forsaken",
-			[50613] = 120,				--"Arcane Torrent",
-			[11876] = 120,				--"War Stomp",
-			[42292] = 120,				--"PvP Trinket",
-			--Pets(Death Knight)
-			--I haven't seen these working. Will have to look into it.
-			--[91797] = 60,				--"Monstrous Blow",
-			--[91837] = 45,				--"Putrid Bulwark",
-			--[91802] = 30,				--"Shambling Rush",
-			--[47482] = 30,				--"Leap",
-			--[91809] = 30,				--"Leap",
-			--[91800] = 60,				--"Gnaw",
-			--[47481] = 60,				--"Gnaw",
-			--Pets(Hunter)
-			--[90339] = 60,				--"Harden Carapace",
-			[61685] = 25,				--"Charge",
-			[50519] = 60,				--"Sonic Blast",
-			--[35290] = 10,				--"Gore",
-			[50245] = 40,				--"Pin",
-			[50433] = 10,				--"Ankle Crack",
-			[26090] = 30,				--"Pummel",
-			--[93434] = 90,				--"Horn Toss",
-			--[57386] = 15,				--"Stampede",
-			[50541] = 60, 				--"Clench",
-			--[26064] = 60, 				--"Shell Shield",
-			--[35346] = 15, 				--"Time Warp",
-			--[93433] = 30,				--"Burrow Attack",
-			--[54644] = 10,				--"Frost Breath",
-			--[34889] = 30,				--"Fire Breath",
-			--[50479] = 40,				--"Nether Shock",
-			--[50518] = 15,				--"Ravage",
-			--[35387] = 6, 				--"Corrosive Spit",
-			[54706] = 40,				--"Vemom Web Spray",
-			[4167] = 40,				--"Web",
-			[50274] = 12,				--"Spore Cloud",
-			--[24844] = 30, 				--"Lightning Breath",
-			--[54680] = 8,				--"Monstrous Bite",
-			[50271] = 10, 				--"Tendon Rip",
-			[50318] = 60,				--"Serenity Dust",
-			--[50498] = 6, 				--"Tear Armor",
-			[50285] = 40, 				--"Dust Cloud",
-			--[56626] = 45,				--"Sting",
-			--[24604] = 45,				--"Furious Howl",
-			--[90309] = 45,				--"Terrifying Roar",
-			--[24423] = 10,				--"Demoralizing Screech",
-			--[93435] = 45,				--"Roar of Courage",
-			--[58604] = 8,				--"Lava Breath",
-			--[53490] = 180,				--"Bullheaded",
-			--[23145] = 32,				--"Dive",
-			[55709] = 480,				--"Heart of the Phoenix",
-			[53426] = 180,				--"Lick Your Wounds",
-			--[53401] = 45, 				--"Rabid",
-			[53476] = 30,				--"Intervene",
-			[53480] = 60,				--"Roar of Sacrifice",
-			[53478] = 360,				--"Last Stand",
-			[53517] = 180,				--"Roar of Recovery",
-			--Pets(Warlock)
-			[19647] = 24,				--"Spell Lock",
-			[7812] = 60,				--"Sacrifice",
-			--Pets(Mage)
-			[33395] = 25,				--"Freeze", --No way to tell which WE cast this still usefull to some degree.
-			--Death Knight
-			[49039] = 120,				--"Lichborne",
-			[47476] = 60,				--"Strangulate",
-			[48707] = 45,				--"Anti-Magic Shell",
-			[49576] = 25,				--"Death Grip",
-			[47528] = 10,				--"Mind Freeze",
-			[49222] = 60,				--"Bone Shield",
-			--[51271] = 60,				--"Pillar of Frost",
-			[51052] = 120,				--"Anti-Magic Zone",
-			[49203] = 60,				--"Hungering Cold",
-			--[49028] = 90, 				--"Dancing Rune Weapon",
-			[49206] = 180,				--"Summon Gargoyle",
-			--[43265] = 30,				--"Death and Decay",
-			[48792] = 180,				--"Icebound Fortitude",
-			--[48743] = 120,				--"Death Pact",
-			--[42650] = 600,				--"Army of the Dead",
-			--Druid
-			[22812] = 60,				--"Barkskin",
-			--[17116] = 180,				--"Nature's Swiftness",
-			--[33891] = 180,				--"Tree of Life",
-			[16979] = 14,				--"Feral Charge - Bear",
-			[49376] = 28,				--"Feral Charge - Cat",
-			[61336] = 180,				--"Survival Instincts",
-			--[50334] = 180,				--"Berserk",
-			[50516] = 17,				--"Typhoon",
-			[33831] = 180,				--"Force of Nature",
-			--[22570] = 10,				--"Maim",
-			--[18562] = 15,				--"Swiftmend",
-			[48505] = 60,				--"Starfall",
-			[53201] = 60,				--"Starfall"
-			[5211] = 50,				--"Bash",
-			--[22842] = 180,				--"Frenzied Regeneration",
-			--[16689] = 60, 				--"Nature's Grasp",
-			--[740] = 480,				--"Tranquility",
-			--[78674] = 15,				--"Starsurge",
-			[29166] = 180,				--"Innervate",
-			--Hunter
-			--[82726] = 120,				--"Fervor",
-			[19386] = 54,				--"Wyvern Sting",
-			[3045] = 180,				--"Rapid Fire",
-			[53351] = 10,				--"Kill Shot",
-			[53271] = 35, 				--"Master's Call",
-			--[51753] = 60,				--"Camouflage",
-			[19263] = 120,				--"Deterrence",
-			[19503] = 30,				--"Scatter Shot",
-			[23989] = 180,				--"Readiness",
-			[34490] = 20,				--"Silencing Shot",
-			[19574] = 90,				--"Bestial Wrath",
-			--Mage
-			[2139] = 24,				--"Counterspell",
-			[42950] = 20,				--"Dragon's Breath",
-			[44572] = 30,				--"Deep Freeze",
-			[11958] = 384,				--"Cold Snap",
-			[45438] = 300,				--"Ice Block",
-			[12042] = 106,				--"Arcane Power",
-			--[12051] = 240,				--"Evocation",
-			--[122] = 20,					--"Frost Nova",
-			--[11426] = 24,				--"Ice Barrier",
-			[12472] = 144,				--"Icy Veins",
-			--[55342] = 180,				--"Mirror Image",
-			[66] = 132,					--"Invisibility",
-			[11113] = 15, 				--"Blast Wave",
-			[12043] = 90,				--"Presence of Mind",
-			[11129] = 120,				--"Combustion",
-			[31661] = 17,				--"Dragon's Breath",
-			--Paladin
-			[1044] = 25,				--"Hand of Freedom",
-			--[31884] = 120,				--"Avenging Wrath",
-			[10308] = 40,					--"Hammer of Justice",
-			[31935] = 15,				--"Avenger's Shield",
-			--[633] = 420,				--"Lay on Hands",
-			[10278] = 180,				--"Hand of Protection",
-			--[498] = 40,					--"Divine Protection",
-			--[54428] = 120,			--"Divine Plea",
-			[642] = 300,				--"Divine Shield",
-			[6940] = 96,				--"Hand of Sacrifice",
-			--[86150] = 120,				--"Guardian of Ancient Kings",
-			--[31842] = 180,			--"Divine Favor",
-			[31821] = 120,				--"Aura Mastery",
-			--[70940] = 120,			--"Divine Guardian",
-			[20066] = 60,				--"Repentance",
-			--[31850] = 180,				--"Ardent Defender",
-			--Priest
-			[64044] = 90,				--"Psychic Horror",
-			[10890] = 23,				--"Psychic Scream",
-			[15487] = 45,				--"Silence",
-			[47585] = 75,				--"Dispersion",
-			[33206] = 180,				--"Pain Suppression",
-			[10060] = 120,				--"Power Infusion",
-			--[586] = 15,				--"Fade",
-			[32379] = 10,				--"Shadow Word: Death",
-			--[6346] = 180,				--"Fear Ward",
-			--[64901] = 360,			--"Hymn of Hope",
-			--[64843] = 480,			--"Divine Hymn",
-			--[19236] = 120,			--"Desperate Prayer",
-			--[724] = 180,				--"Lightwell",
-			--[62618] = 120,			--"Power Word: Barrier",
-			--Rogue
-			[2094] = 120,				--"Blind",
-			[1766] = 10,				--"Kick",
-			[2983] = 60,				--"Sprint",
-			[14185] = 300,				--"Preparation",
-			[31224] = 70,				--"Cloak of Shadows",
-			[1856] = 120,				--"Vanish",
-			[36554] = 24,				--"Shadowstep",
-			[5277] = 180,				--"Evasion",
-			--[408] = 20,				--"Kidney Shot",
-			[51722] = 60,				--"Dismantle",
-			--[14177] = 120,			--"Cold Blood",
-			--[51690] = 120,			--"Killing Spree",
-			--[51713] = 60, 			--"Shadow Dance",
-			--Shaman
-			[8177] = 14,				--"Grounding Totem",
-			[57994] = 5,				--"Wind Shear",
-			[32182] = 300,				--"Heroism",
-			[2825] = 300,				--"Bloodlust",
-			[51533] = 120,				--"Feral Spirit",
-			[16190] = 180,				--"Mana Tide Totem",
-			[30823] = 60,				--"Shamanistic Rage",
-			[51490] = 35,				--"Thunderstorm",
-			[2484] = 15,				--"Earthbind Totem",
-			[5730] = 20,				--"Stoneclaw Totem",
-			[51514] = 35,				--"Hex",
-			--[79206] = 120,			--"Spiritwalker's Grace",
-			[16166] = 180,			--"Elemental Mastery",
-			--[16188] = 120,				--"Nature's Swiftness",
-			--Warlock
-			[30283] = 20,				--"Shadowfury",
-			[6789] = 120,				--"Death Coil",
-			--[17962] = 8,				--"Conflagrate",
-			--[74434] = 45,				--"Soulburn",
-			--[6229] = 30,				--"Shadow Ward",
-			[5484] = 32,				--"Howl of Terror",
-			[54785] = 45,				--"Demon Leap",
-			[48020] = 26,				--"Demonic Circle: Teleport",
-			[17877] = 15,				--"Shadowburn",
-			--[71521] = 12,				--"Hand of Gul'dan",
-			--[91711] = 30,				--"Nether Ward",
-			--Warrior
-			--[12292] = 144, 				--"Death Wish",
-			--[86346] = 20,				--"Colossus Smash",
-			[100] = 15,					--"Charge",
-			[6552] = 10,				--"Pummel",
-			[72] = 12,					--"Shield Bash",
-			[23920] = 9,				--"Spell Reflection",
-			--[2565] = 30,				--"Shield Block",
-			[676] = 60,					--"Disarm",
-			--[5246] = 120,				--"Intimidation Shout",
-			[871] = 120,				--"Shield Wall",
-			[20252] = 20,				--"Intercept",
-			--[20230] = 300,			--"Retaliation",
-			--[1719] = 240,				--"Recklessness",
-			--[3411] = 30,				--"Intervene",
-			[64382] = 90,				--"Shattering Throw",
-			--[6544] = 40,				--"Heroic Leap",
-			[12809] = 30,				--"Concussion Blow",
-			[12975] = 180,				--"Last Stand",
-			--[12328] = 60,				--"Sweeping Strikes",
-			--[85730] = 120,			--"Deadly Calm",
-			[60970] = 30,				--"Heroic Fury",
-			[46924] = 75,				--"Bladestorm",
-			[46968] = 17,				--"Shockwave",
-		},
 		["units"] = {
 			["target"] = {
 				["enabled"] = false,
+				["spellList"] = {},
 				["header"] = {
 					["point"] = "RIGHT",
 					["relativeTo"] = "LEFT",
@@ -1053,7 +917,8 @@ function mod:LoadConfig(db)
 							if spellID and GetSpellInfo(spellID) then
 								cooldownTime = tonumber(cooldownTime) or LAI.spellDuration[spellID]
 								if not cooldownTime then return end
-								selectedTypeData().spellList[tonumber(spellID)] = cooldownTime
+								selectedUnitData().spellList[tonumber(spellID)] = cooldownTime
+								allSpells[tonumber(spellID)] = cooldownTime
 								local _, _, icon = GetSpellInfo(spellID)
 								local link = GetSpellLink(spellID)
 								icon = gsub(icon, '\124', '\124\124')
@@ -1069,22 +934,89 @@ function mod:LoadConfig(db)
 						desc = "",
 						func = function()
 							local spellID = selectedSpell()
-							selectedTypeData().spellList[spellID] = nil
+							selectedUnitData().spellList[spellID] = nil
+							allSpells[spellID] = nil
 							local _, _, icon = GetSpellInfo(spellID)
 							local link = GetSpellLink(spellID)
 							icon = gsub(icon, '\124', '\124\124')
 							local string = '\124T' .. icon .. ':16:16\124t' .. link
 							core:print('REMOVED', string)
 						end,
-						disabled = function() return not selectedTypeData().spellList[selectedSpell()] end,
+						disabled = function() return not selectedUnitData().spellList[selectedSpell()] end,
+					},
+					copyList = {
+						order = 3,
+						type = "select",
+						width = "double",
+						name = L["Copy List"],
+						desc = "",
+						get = function() return "" end,
+						set = function(_, value)
+							if core.SpellLists[value] then
+								selectedUnitData().spellList = CopyTable(core.SpellLists[value])
+							else
+								local unit, unitType = match(value, "(%l+)(.+)")
+								selectedUnitData().spellList = CopyTable(db[unitType].units[unit].spellList)
+							end
+							self:Toggle(db)
+						end,
+						values = function()
+							local values = {}
+							for listType in pairs(core.SpellLists) do
+								values[listType] = L[listType]
+							end
+							values["PETS"] = nil
+							for unitType, typeName in pairs({["FRIENDLY_PLAYER"] = "Friendly", ["ENEMY_PLAYER"] = "Enemy"}) do
+								for unit in pairs(db[unitType].units) do
+									values[unit..unitType] = format("%s (%s)", L[unit], L[typeName])
+								end
+							end
+							values[selectedUnit()..selectedType()] = nil
+							return values
+						end,
+						sorting = function()
+							local sortedValues = {}
+							local currUnit, currType = selectedUnit(), selectedType()
+							for listType in pairs(core.SpellLists) do
+								if listType ~= "PETS" then
+									tinsert(sortedValues, listType)
+								end
+							end
+							for _, unitType in ipairs({"FRIENDLY_PLAYER", "ENEMY_PLAYER"}) do
+								for unit in pairs(db[unitType].units) do
+									if currUnit ~= unit or currType ~= unitType then
+										tinsert(sortedValues, unit..unitType)
+									end
+								end
+							end
+							tsort(sortedValues, function(a,b)
+								if a == "DEFAULTS" then
+									return true
+								elseif b == "DEFAULTS" then
+									return false
+								else
+									local hasLowerA = match(a, "%l")
+									local hasLowerB = match(b, "%l")
+
+									if not hasLowerA and hasLowerB then
+										return true
+									elseif hasLowerA and not hasLowerB then
+										return false
+									else
+										return a < b
+									end
+								end
+							end)
+							return sortedValues
+						end,
 					},
 					selectedSpell = {
-						order = 3,
+						order = 4,
 						type = "select",
 						width = "double",
 						name = L["Select Spell"],
 						desc = "",
-						get = function(info) return selectedTypeData()[info[#info]] end,
+						get = function(info) return selectedUnitData()[info[#info]] end,
 						set = function(info, value)
 							selectedTypeData()[info[#info]] = value
 							if not selectedTypeData().highlightedSpells[selectedSpell()] then
@@ -1093,7 +1025,7 @@ function mod:LoadConfig(db)
 						end,
 						values = function()
 							local values = {}
-							for id in pairs(db[selectedType()].spellList) do
+							for id in pairs(selectedUnitData().spellList) do
 								local name = GetSpellInfo(id) or ""
 								local icon = select(3, GetSpellInfo(id))
 								icon = icon and "|T"..icon..":0|t" or ""
@@ -1103,59 +1035,67 @@ function mod:LoadConfig(db)
 						end,
 						sorting = function()
 							local sortedKeys = {}
-							for id in pairs(db[selectedType()].spellList) do
+							for id in pairs(selectedUnitData().spellList) do
 								tinsert(sortedKeys, id)
 							end
 							tsort(sortedKeys, function(a, b)
-								local nameA = GetSpellInfo(a) or ""
-								local nameB = GetSpellInfo(b) or ""
-								return nameA < nameB
+								return (GetSpellInfo(a) or "") < (GetSpellInfo(b) or "")
 							end)
 							return sortedKeys
 						end,
 					},
 					shadow = {
-						order = 4,
+						order = 5,
 						type = "toggle",
 						name = L["Shadow"],
 						desc = L["For the important stuff."],
 						get = function() return selectedSpell() ~= "" and highlightedSpellsData().enabled end,
 						set = function(_, value) highlightedSpellsData().enabled = value self:Toggle(db) end,
-						disabled = function() return selectedSpell() == "" end,
+						disabled = function() return not selectedUnitData().enabled or selectedSpell() == "" end,
 					},
 					petSpell = {
-						order = 5,
+						order = 6,
 						type = "toggle",
 						name = L["Pet Ability"],
 						desc = L["Pet casts require some special treatment."],
 						get = function() return db.petSpells[selectedSpell()] end,
 						set = function(_, value) db.petSpells[selectedSpell()] = value and value or nil self:Toggle(db) end,
-						disabled = function() return selectedSpell() == "" end,
+						disabled = function() return not selectedUnitData().enabled or selectedSpell() == "" end,
 					},
 					shadowSize = {
-						order = 6,
+						order = 7,
 						type = "range",
 						name = L["Shadow Size"],
 						desc = "",
 						min = 1, max = 12, step = 1,
 						get = function() return selectedSpell() ~= "" and highlightedSpellsData().size or 0 end,
 						set = function(_, value) highlightedSpellsData().size = value self:Toggle(db) end,
-						disabled = function() return selectedSpell() == "" or not highlightedSpellsData().enabled end,
+						disabled = function()
+							return not selectedUnitData().enabled or selectedSpell() == "" or not highlightedSpellsData().enabled
+						end,
 					},
 					shadowColor = {
-						order = 7,
+						order = 8,
 						type = "color",
 						hasAlpha = true,
 						name = L["Shadow Color"],
 						desc = "",
 						get = function() return unpack(selectedSpell() ~= "" and highlightedSpellsData().color or {}) end,
 						set = function(_, r, g, b, a) highlightedSpellsData().color = {r, g, b, a} self:Toggle(db) end,
-						disabled = function() return selectedSpell() == "" or not highlightedSpellsData().enabled end,
+						disabled = function()
+							return not selectedUnitData().enabled or selectedSpell() == "" or not highlightedSpellsData().enabled
+						end,
 					},
 				},
 			},
 		},
 	}
+	if not next(db['FRIENDLY_PLAYER'].units.target.spellList) then
+		db['FRIENDLY_PLAYER'].units.target.spellList = CopyTable(core.SpellLists["DEFAULTS"])
+	end
+	if not next(db.petSpells) then
+		db.petSpells = CopyTable(core.SpellLists["PETS"])
+	end
 	if not db['FRIENDLY_PLAYER'].units.player then
 		for _, unitframeType in ipairs({'player', 'focus', 'raid', 'raid40', 'party'}) do
 			db['FRIENDLY_PLAYER'].units[unitframeType] = CopyTable(db['FRIENDLY_PLAYER'].units.target)
@@ -1171,74 +1111,15 @@ function mod:LoadConfig(db)
 end
 
 
-local function getColorByTimeFriend(_, remainingTime, totalTime)
-    local percentage = remainingTime / totalTime
-    return percentage, 1 - percentage
-end
-
-local function getColorByTimeEnemy(_, remainingTime, totalTime)
-    local percentage = remainingTime / totalTime
-    return 1 - percentage, percentage
-end
-
-local function setFillPoints(cooldown, fillWidth, direction)
-    local border = cooldown.border
-    local fill = cooldown.fill
-
-	fill:ClearAllPoints()
-
-    if direction == "LEFT" then
-        fill:Point("TOPRIGHT", cooldown, "TOPRIGHT", -border, -border)
-        fill:Point("BOTTOMLEFT", cooldown, "BOTTOMLEFT", fillWidth + border, border)
-    elseif direction == "RIGHT" then
-        fill:Point("TOPLEFT", cooldown, "TOPLEFT", border, -border)
-        fill:Point("BOTTOMRIGHT", cooldown, "BOTTOMRIGHT", -fillWidth - border, border)
-    elseif direction == "TOP" then
-		fill:Point("BOTTOMLEFT", cooldown, "BOTTOMLEFT", border, border)
-        fill:Point("TOPRIGHT", cooldown, "TOPRIGHT", -border, -fillWidth - border)
-    elseif direction == "BOTTOM" then
-        fill:Point("TOPLEFT", cooldown, "TOPLEFT", border, -border)
-        fill:Point("BOTTOMRIGHT", cooldown, "BOTTOMRIGHT", -border, fillWidth)
-    end
-end
-
-local function setFillPointsReversed(cooldown, fillWidth, direction)
-    local border = cooldown.border
-    local fill = cooldown.fill
-    local size = cooldown.size
-
-    fill:ClearAllPoints()
-
-    if direction == "LEFT" then
-        fill:Point("TOPLEFT", cooldown, "TOPLEFT", border, -border)
-        fill:Point("BOTTOMRIGHT", cooldown, "BOTTOMRIGHT", fillWidth - size - border, border)
-    elseif direction == "RIGHT" then
-        fill:Point("TOPRIGHT", cooldown, "TOPRIGHT", -border, -border)
-		fill:Point("BOTTOMLEFT", cooldown, "BOTTOMLEFT", size - fillWidth + border, border)
-    elseif direction == "TOP" then
-        fill:SetPoint("TOPLEFT", cooldown, "TOPLEFT", border, -border)
-        fill:SetPoint("BOTTOMRIGHT", cooldown, "BOTTOMRIGHT", -border, fillWidth - border)
-    elseif direction == "BOTTOM" then
-        fill:SetPoint("BOTTOMLEFT", cooldown, "BOTTOMLEFT", border, border)
-        fill:SetPoint("TOPRIGHT", cooldown, "TOPRIGHT", -border, -(size - fillWidth) + border)
-    end
-end
-
 local function combatLogEvent(db, _, ...)
     local _, eventType, _, sourceName, sourceFlags, _, _, _, spellID = ...
 
 	if eventType == "SPELL_CAST_SUCCESS" and sourceName then
-		local isAnotherPlayer = (band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
-								or band(sourceFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER)
-		if not isAnotherPlayer then return end
-
-		for _, unitType in ipairs({'ENEMY_PLAYER', 'FRIENDLY_PLAYER'}) do
-			local cdTime = db[unitType].spellList[spellID]
-			if cdTime then
-				local startTime = GetTime()
-				mod:UpdateCooldowns(db, match(sourceName, '%P+'), spellID, startTime, startTime + cdTime)
-				return
-			end
+		local cdTime = allSpells[spellID]
+		if cdTime and ((band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
+									or band(sourceFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER)) then
+			local startTime = GetTime()
+			mod:UpdateCooldowns(db, match(sourceName, '%P+'), spellID, startTime, startTime + cdTime)
 		end
     end
 end
@@ -1260,15 +1141,13 @@ function mod:UpdateCooldowns(db, playerName, spellID, startTime, endTime)
 			end
 		end
 	end
-
-    local spellInfo = {
-        spellID = spellID,
-        startTime = startTime,
-        endTime = endTime,
-        icon = select(3, GetSpellInfo(spellID)),
-    }
-
-    tinsert(activeCds, spellInfo)
+    tinsert(activeCds, {
+						spellID = spellID,
+						startTime = startTime,
+						endTime = endTime,
+						icon = select(3, GetSpellInfo(spellID)),
+						isTrinket = trinkets[spellID]
+					})
     self:UpdateFrames(db, playerName)
 end
 
@@ -1276,28 +1155,29 @@ function mod:UpdateFrames(db, playerName, updateAll)
 	for _, frame in ipairs(framelist) do
 		local unit = frame.unit
 		if unit and (UnitName(unit) == playerName or updateAll) then
-			if activeCooldowns[playerName] and next(activeCooldowns[playerName]) then
+			local cooldowns = activeCooldowns[playerName]
+			if cooldowns and next(cooldowns) then
 				if not UnitIsPlayer(unit) then
 					local ownerName = getPetOwner(unit)
 					if ownerName then
 						activeCooldowns[ownerName] = activeCooldowns[ownerName] or {}
 						if playerName ~= ownerName then
-							for _, spellInfo in ipairs(activeCooldowns[playerName]) do
+							for _, spellInfo in ipairs(cooldowns) do
 								tinsert(activeCooldowns[ownerName], spellInfo)
 							end
-							twipe(activeCooldowns[playerName])
+							twipe(cooldowns)
 						end
 						frame.CDTracker:Hide()
 						for _, f in ipairs(framelist) do
 							local unit = f.unit
 							if unit and UnitName(unit) == ownerName and UnitIsPlayer(unit) then
-								self:AttachCooldowns(db, f, activeCooldowns[ownerName], ownerName)
+								self:AttachCooldowns(db, f, activeCooldowns[ownerName])
 								return
 							end
 						end
 					end
 				else
-					self:AttachCooldowns(db, frame, activeCooldowns[playerName])
+					self:AttachCooldowns(db, frame, cooldowns)
 				end
 			elseif frame.CDTracker then
 				frame.CDTracker:Hide()
@@ -1308,7 +1188,8 @@ end
 
 function mod:AttachCooldowns(database, frame, cooldowns)
 	local unitType = testing and database.selectedType or (UnitCanAttack(frame.unit, 'player') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER')
-    local db = database[unitType].units[frame.unitframeType]
+	local frameType = frame.unitframeType
+    local db = database[unitType].units[frameType]
 	local tracker = frame.CDTracker
 
 	if not db or not db.enabled or not db.isShown or not tracker then return end
@@ -1316,106 +1197,101 @@ function mod:AttachCooldowns(database, frame, cooldowns)
 	local db_icons = db.icons
 	local db_text = db.text
 	local db_cooldownFill = db.cooldownFill
+	local db_spellList = db.spellList
 
-	tsort(cooldowns, createCompareFunction(db_icons.sorting, db_icons.trinketOnTop))
+	tsort(cooldowns, compareFuncs[unitType][frameType])
 
-    for i, cd in ipairs(cooldowns) do
-		if i > db_icons.perRow * db_icons.maxRows then break end
+	local shown = 0
+	local maxShown = db_icons.perRow * db_icons.maxRows
 
-        local cdFrame = tracker.cooldowns[i]
+    for _, cd in ipairs(cooldowns) do
+		if db_spellList[cd.spellID] then
+			if shown >= maxShown then break end
 
-		local endTime = cd.endTime
-		local startTime = cd.startTime
+			local cdFrame = tracker.cooldowns[shown+1]
 
-        if not cdFrame then
-            cdFrame = CreateFrame("Frame", nil, tracker)
-            cdFrame:Size(db_icons.size, db_icons.size)
-            cdFrame:SetTemplate()
-            cdFrame.texture = cdFrame:CreateTexture(nil, "ARTWORK")
-            cdFrame.texture:SetInside(cdFrame, E.mult, E.mult)
-			cdFrame.border = E.mult or 0
-			cdFrame.fill = cdFrame:CreateTexture(nil, "OVERLAY")
-			cdFrame.fillDir = db_cooldownFill.direction
-			cdFrame.fill:SetTexture(0, 0, 0, 0.8)
-			cdFrame.cooldown = CreateFrame("Cooldown", "$parentCD", cdFrame, "CooldownFrameTemplate")
-			cdFrame.cooldown:SetAllPoints(cdFrame.texture)
-			cdFrame.text = cdFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-			cdFrame.text:SetFont(LSM:Fetch("font", db_text.font), db_text.size, db_text.flag)
-			cdFrame.text:Point("CENTER", cdFrame, "CENTER", db_text.xOffset, db_text.yOffset)
-            cdFrame:SetTemplate()
-			cdFrame.shadow = CreateFrame("Frame", nil, cdFrame)
-			cdFrame.shadow:SetFrameLevel(db.header.level - 1)
-            tinsert(tracker.cooldowns, cdFrame)
-        end
+			local endTime = cd.endTime
+			local startTime = cd.startTime
 
-		if db_cooldownFill.enabled then
-			if db_cooldownFill.classic then
-				CooldownFrame_SetTimer(cdFrame.cooldown, startTime, endTime - startTime, 1)
-				if db_cooldownFill.reversed then
-					cdFrame.cooldown:SetReverse(true)
+			if not cdFrame then
+				cdFrame = CreateFrame("Frame", nil, tracker)
+				cdFrame:Size(db_icons.size, db_icons.size)
+				cdFrame:SetTemplate()
+				cdFrame.texture = cdFrame:CreateTexture(nil, "ARTWORK")
+				cdFrame.texture:SetInside(cdFrame, E.mult, E.mult)
+				cdFrame.fill = cdFrame:CreateTexture(nil, "OVERLAY")
+				cdFrame.fill:SetTexture(0, 0, 0, 0.8)
+				cdFrame.cooldown = CreateFrame("Cooldown", "$parentCD", cdFrame, "CooldownFrameTemplate")
+				cdFrame.cooldown:SetAllPoints(cdFrame.texture)
+				cdFrame.text = cdFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+				cdFrame.text:SetFont(LSM:Fetch("font", db_text.font), db_text.size, db_text.flag)
+				cdFrame.text:Point("CENTER", cdFrame, "CENTER", db_text.xOffset, db_text.yOffset)
+				cdFrame:SetTemplate()
+				cdFrame.shadow = CreateFrame("Frame", nil, cdFrame)
+				cdFrame.shadow:SetFrameLevel(db.header.level - 1)
+				tinsert(tracker.cooldowns, cdFrame)
+			end
+
+			if db_cooldownFill.enabled then
+				if db_cooldownFill.classic then
+					CooldownFrame_SetTimer(cdFrame.cooldown, startTime, endTime - startTime, 1)
+					if db_cooldownFill.reversed then
+						cdFrame.cooldown:SetReverse(true)
+					else
+						cdFrame.cooldown:SetReverse(false)
+					end
 				else
-					cdFrame.cooldown:SetReverse(false)
+					cdFrame.fillOn = fills[unitType][frameType]
+					cdFrame.fillOn(cdFrame, ((endTime - GetTime()) / (endTime - startTime)))
 				end
-			else
-				cdFrame.fillOn = db_cooldownFill.reversed and setFillPointsReversed or setFillPoints
-				cdFrame.size = db_icons.size
-
-				cdFrame.fillOn(cdFrame, ((endTime - GetTime()) / (endTime - startTime)) * db_icons.size, cdFrame.fillDir)
 			end
-		end
 
-		if db_text.enabled then
-			cdFrame.text:SetText(ceil(cd.endTime - GetTime()))
-			cdFrame.textOn = true
-		end
-
-		if db_icons.borderCustomColor[1] > 0 or db_icons.borderCustomColor[2] > 0 or db_icons.borderCustomColor[3] > 0 then
-			cdFrame:SetBackdropBorderColor(unpack(db_icons.borderCustomColor))
-		elseif db_icons.borderColor then
-			if unitType == "ENEMY_PLAYER" then
-				cdFrame.col = getColorByTimeEnemy
-			else
-				cdFrame.col = getColorByTimeFriend
+			if db_text.enabled then
+				cdFrame.text:SetText(ceil(cd.endTime - GetTime()))
+				cdFrame.textOn = true
 			end
-			cdFrame:SetBackdropBorderColor(cdFrame:col(endTime - GetTime(), endTime - startTime))
+
+			if borderCustomColor[unitType][frameType] then
+				cdFrame:SetBackdropBorderColor(unpack(db_icons.borderCustomColor))
+			elseif db_icons.borderColor then
+				cdFrame.col = borderColor[unitType][frameType]
+				cdFrame:SetBackdropBorderColor(cdFrame:col(endTime - GetTime(), endTime - startTime))
+			end
+
+			cdFrame.texture:SetTexture(cd.icon)
+
+			cdFrame.endTime = endTime
+			cdFrame.startTime = startTime
+			cdFrame.spellID = cd.spellID
+			cdFrame.throttle = db_icons.throttle
+			cdFrame.animateFadeOut = db_icons.animateFadeOut
+
+			cdFrame:SetScript("OnUpdate", function(self, elapsed)
+				mod:OnUpdateCooldown(self, elapsed, cooldowns, database, tracker)
+			end)
+
+			shown = shown + 1
 		end
-
-        cdFrame.texture:SetTexture(cd.icon)
-
-        cdFrame.endTime = endTime
-        cdFrame.startTime = startTime
-        cdFrame.spellID = cd.spellID
-		cdFrame.throttle = db_icons.throttle
-		cdFrame.animateFadeOut = db_icons.animateFadeOut
-
-        cdFrame:SetScript("OnUpdate", function(self, elapsed)
-            mod:OnUpdateCooldown(self, elapsed, cooldowns, database, tracker)
-        end)
     end
 
-	local cdlen = #cooldowns
-
-	for i = cdlen + 1, #tracker.cooldowns do
-        tracker.cooldowns[i]:Hide()
-    end
-
-	self:RepositionIcons(tracker, cdlen, unitType, frame.unitframeType)
+	if shown == 0 then
+		tracker:Hide()
+	else
+		for i = shown+1, #tracker.cooldowns do
+			tracker.cooldowns[i]:Hide()
+		end
+		self:RepositionIcons(tracker, shown, unitType, frameType)
+	end
 end
 
-function mod:RepositionIcons(tracker, cdlen, unitType, frameType)
-    local shown = min(cdlen, #tracker.cooldowns)
-
-    if shown == 0 then
-        tracker:Size(1, 1)
-        return
-    end
-
+function mod:RepositionIcons(tracker, shown, unitType, frameType)
 	local highlights = highlightedSpells[unitType]
 	local info = iconPositions[unitType][frameType][shown]
 	local iconPos = info.positions
+	local cooldowns = tracker.cooldowns
 
     for i = 1, shown do
-        local cdFrame = tracker.cooldowns[i]
+        local cdFrame = cooldowns[i]
         cdFrame:ClearAllPoints()
 
 		local position = iconPos[i]
@@ -1451,7 +1327,7 @@ function mod:OnUpdateCooldown(cooldown, elapsed, cooldowns, database, tracker)
         end
 
         if cooldown.fillOn then
-			cooldown.fillOn(cooldown, (remaining / (endTime - startTime)) * cooldown.size, cooldown.fillDir)
+			cooldown.fillOn(cooldown, (remaining / (endTime - startTime)))
         end
 
         if cooldown.col then
@@ -1500,6 +1376,7 @@ function mod:SetupCooldowns(db, visibilityUpdate)
 			petSpells[spellID] = true
 		end
 	end
+	twipe(allSpells)
 	twipe(framelist)
 	twipe(iconPositions["FRIENDLY_PLAYER"])
 	twipe(iconPositions["ENEMY_PLAYER"])
@@ -1509,8 +1386,8 @@ function mod:SetupCooldowns(db, visibilityUpdate)
 		if unit then
 			local unitType = testing and db.selectedType or (UnitCanAttack(unit, 'player') and 'ENEMY_PLAYER' or 'FRIENDLY_PLAYER')
 			local db_type = db[unitType].units[frame.unitframeType]
-			if db_type and db_type.enabled then
-				cachePositions(db, frame.unitframeType)
+			if db_type and db_type.enabled and db.isShown then
+				cache(db, frame.unitframeType)
 
 				if not frame.CDTracker then
 					frame.CDTracker = CreateFrame("Frame", '$parentCDTracker', frame)
@@ -1558,7 +1435,11 @@ function mod:Toggle(db)
 	if next(enabled) then
 		core:RegisterAreaUpdate(modName, function()
 			scanTool:SetOwner(WorldFrame, "ANCHOR_NONE")
-			if updateVisibilityState(db, core:GetCurrentAreaType()) then
+			local currentArea = core:GetCurrentAreaType()
+			if currentArea == "showArena" then
+				twipe(activeCooldowns)
+			end
+			if updateVisibilityState(db, currentArea) then
 				self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(...) combatLogEvent(db, ...) end)
 			else
 				self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")

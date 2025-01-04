@@ -147,7 +147,14 @@ function mod:LoadConfig(db)
 						type = "toggle",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"],
-						set = function(info, value) db[info[#info]] = value self:Toggle(db) end,
+						set = function(info, value)
+							db[info[#info]] = value
+							if value and not isAwesome then
+								E:StaticPopup_Show("PRIVATE_RL")
+							else
+								self:Toggle(db)
+							end
+						end,
 						disabled = false,
 					},
 					automatic = {

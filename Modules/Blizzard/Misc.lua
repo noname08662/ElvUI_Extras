@@ -8,7 +8,6 @@ local modName = mod:GetName()
 mod.initialized = {}
 
 local _G, pairs, ipairs = _G, pairs, ipairs
-local twipe = table.wipe
 local gsub, match, format = gsub, string.match, string.format
 local WorldFrame, UIErrorsFrame, GetTime, IsModifierKeyDown = WorldFrame, UIErrorsFrame, GetTime, IsModifierKeyDown
 local UnitClass, UnitName, GetActionInfo = UnitClass, UnitName, GetActionInfo
@@ -372,9 +371,6 @@ end
 
 
 function mod:Toggle(db)
-	if core.reload then
-		twipe(self.initialized)
-	end
 	for subMod, info in pairs(db) do
 		self[subMod](self, core.reload and {enabled = false} or info)
 	end

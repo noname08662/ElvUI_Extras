@@ -20,6 +20,7 @@
 	<Include file="Nameplates\Cooldowns.lua"/>>
 	<Include file="Nameplates\StyleFilter.lua"/>>
 	<Include file="Nameplates\Targets.lua"/>>
+	<Include file="Nameplates\DepthOfField.lua"/>>
 
 	<Include file="Unitframes\Auras.lua"/>>
 	<Include file="Unitframes\Misc.lua"/>>

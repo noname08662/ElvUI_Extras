@@ -334,14 +334,20 @@ function mod:LoadConfig(db)
 					enabled = {
 						order = 1,
 						type = "toggle",
-						width = "full",
 						name = core.pluginColor..L["Enable"],
 						desc = L["Appends floating combat feedback fontstrings to frames."],
 						get = function() return selectedUnitData().enabled end,
 						set = function(_, value) selectedUnitData().enabled = value self:Toggle(db) end,
 					},
-					unitDropdown = {
+					testMode = {
 						order = 2,
+						type = "execute",
+						name = L["Test Mode"],
+						desc = "",
+						func = function() testMode(selectedUnitData()) testing = not testing end,
+					},
+					unitDropdown = {
+						order = 3,
 						type = "select",
 						name = L["Select Unit"],
 						desc = "",
@@ -350,7 +356,7 @@ function mod:LoadConfig(db)
 						values = function() return core:GetUnitDropdownOptions(db.units) end,
 					},
 					copySettings = {
-						order = 3,
+						order = 4,
 						type = "select",
 						name = L["Copy Unit Settings"],
 						desc = "",
@@ -373,26 +379,6 @@ function mod:LoadConfig(db)
 							end
 							return list
 						end,
-					},
-					playerOnly = {
-						order = 3,
-						type = "toggle",
-						name = L["Player Only"],
-						desc = L["Handle only player combat log events."],
-						get = function() return selectedUnitData().playerOnly end,
-						set = function(_, value) selectedUnitData().playerOnly = value self:UpdateAll(db) end,
-						hidden = function()
-							local unit = selectedUnit()
-							return find(unit, 'pet') and not find(unit, 'target')
-								or unit == 'boss' or unit == 'arena'
-						end,
-					},
-					testMode = {
-						order = 4,
-						type = "execute",
-						name = L["Test Mode"],
-						desc = "",
-						func = function() testMode(selectedUnitData()) testing = not testing end,
 					},
 				},
 			},
@@ -437,8 +423,46 @@ function mod:LoadConfig(db)
 				set = function(info, value) selectedEventData()[info[#info]] = value self:UpdateAll(db) end,
 				disabled = function() return not selectedUnitData().enabled or selectedEventData().disabled end,
 				args = {
-					event = {
+					copyEvent = {
 						order = 1,
+						type = "select",
+						name = L["Copy"],
+						desc = "",
+						set = function(_, value)
+							local t = selectedUnitData().events[value]
+							if t then
+								selectedUnitData().events[selectedEvent()] = CopyTable(t)
+								if value == 'WOUND' or value == 'HEAL' and (selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL') then
+									selectedEventData().tryToColorBySchool = false
+								end
+								self:UpdateAll(db)
+							end
+						end,
+						values = function()
+							local vals = {
+								["ABSORB"] = L["ABSORB"],
+								["BLOCK"] = L["BLOCK"],
+								["DEFLECT"] = L["DEFLECT"],
+								["DODGE"] = L["DODGE"],
+								["ENERGIZE"] = L["ENERGIZE"],
+								["EVADE"] = L["EVADE"],
+								["HEAL"] = L["HEAL"],
+								["IMMUNE"] = L["IMMUNE"],
+								["INTERRUPT"] = L["INTERRUPT"],
+								["MISS"] = L["MISS"],
+								["PARRY"] = L["PARRY"],
+								["REFLECT"] = L["REFLECT"],
+								["RESIST"] = L["RESIST"],
+								["WOUND"] = L["WOUND"],
+								["DEBUFF"] = L["Debuff applied/faded/refreshed"],
+								["BUFF"] = L["Buff applied/faded/refreshed"],
+							}
+							vals[selectedEvent()] = nil
+							return vals
+						end,
+					},
+					event = {
+						order = 2,
 						type = "select",
 						name = L["Event"],
 						desc = "",
@@ -469,14 +493,20 @@ function mod:LoadConfig(db)
 						},
 					},
 					disabled = {
-						order = 2,
+						order = 3,
 						type = "toggle",
 						disabled = false,
 						name = L["Disable Event"],
 						desc = "",
 					},
+					playerOnly = {
+						order = 4,
+						type = "toggle",
+						name = L["Player Only"],
+						desc = L["Handle only player combat log events."],
+					},
 					school = {
-						order = 3,
+						order = 5,
 						type = "select",
 						name = L["School"],
 						desc = "",
@@ -513,14 +543,14 @@ function mod:LoadConfig(db)
 						hidden = function() return selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL' end,
 					},
 					tryToColorBySchool = {
-						order = 4,
+						order = 6,
 						type = "toggle",
 						name = L["Use School Colors"],
 						desc = L["Not every event is eligible for this. But some are."],
 						hidden = function() return selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL' end,
 					},
 					color = {
-						order = 5,
+						order = 7,
 						type = "color",
 						name = L["Color"],
 						desc = "",
@@ -528,7 +558,7 @@ function mod:LoadConfig(db)
 						set = function(_, r, g, b) selectedEventData().color = {r, g, b} self:UpdateAll(db) end,
 					},
 					colorSchool = {
-						order = 6,
+						order = 8,
 						type = "color",
 						name = L["Color (School)"],
 						desc = "",
@@ -540,47 +570,8 @@ function mod:LoadConfig(db)
 									or (selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL')
 						end,
 					},
-					copyEvent = {
-						order = 7,
-						type = "select",
-						width = "double",
-						name = L["Copy"],
-						desc = "",
-						set = function(_, value)
-							local t = selectedUnitData().events[value]
-							if t then
-								selectedUnitData().events[selectedEvent()] = CopyTable(t)
-								if value == 'WOUND' or value == 'HEAL' and (selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL') then
-									selectedEventData().tryToColorBySchool = false
-								end
-								self:UpdateAll(db)
-							end
-						end,
-						values = function()
-							local vals = {
-								["ABSORB"] = L["ABSORB"],
-								["BLOCK"] = L["BLOCK"],
-								["DEFLECT"] = L["DEFLECT"],
-								["DODGE"] = L["DODGE"],
-								["ENERGIZE"] = L["ENERGIZE"],
-								["EVADE"] = L["EVADE"],
-								["HEAL"] = L["HEAL"],
-								["IMMUNE"] = L["IMMUNE"],
-								["INTERRUPT"] = L["INTERRUPT"],
-								["MISS"] = L["MISS"],
-								["PARRY"] = L["PARRY"],
-								["REFLECT"] = L["REFLECT"],
-								["RESIST"] = L["RESIST"],
-								["WOUND"] = L["WOUND"],
-								["DEBUFF"] = L["Debuff applied/faded/refreshed"],
-								["BUFF"] = L["Buff applied/faded/refreshed"],
-							}
-							vals[selectedEvent()] = nil
-							return vals
-						end,
-					},
 					animation = {
-						order = 8,
+						order = 9,
 						type = "select",
 						width = "double",
 						name = L["Animation Type"],
@@ -594,7 +585,7 @@ function mod:LoadConfig(db)
 						end,
 					},
 					xDirection = {
-						order = 9,
+						order = 10,
 						type = "select",
 						name = L["X Direction"],
 						desc = "",
@@ -605,7 +596,7 @@ function mod:LoadConfig(db)
 						}
 					},
 					yDirection = {
-						order = 10,
+						order = 11,
 						type = "select",
 						name = L["Y Direction"],
 						desc = "",
@@ -616,7 +607,7 @@ function mod:LoadConfig(db)
 						}
 					},
 					customAnimation = {
-						order = 11,
+						order = 12,
 						type = "input",
 						width = "double",
 						multiline = true,
@@ -626,14 +617,14 @@ function mod:LoadConfig(db)
 								"\nself.y + self.yDirection * self.radius * m_sin(m_pi / 2 * self.progress) end"],
 					},
 					showIcon = {
-						order = 12,
+						order = 13,
 						type = "toggle",
 						width = "full",
 						name = L["Show Icon"],
 						desc = "",
 					},
 					iconPosition = {
-						order = 13,
+						order = 14,
 						type = "select",
 						name = L["Icon Position"],
 						desc = "",
@@ -641,19 +632,17 @@ function mod:LoadConfig(db)
 							["before"] = L["Before Text"],
 							["after"] = L["After Text"],
 						},
-						disabled = function()
-							return not selectedUnitData().enabled or selectedEventData().disabled or not selectedEventData().showIcon end,
+						hidden = function() return not selectedEventData().showIcon end,
 					},
 					iconBounce = {
-						order = 14,
+						order = 15,
 						type = "toggle",
 						name = L["Bounce"],
 						desc = L["Flip position left-right."],
-						disabled = function()
-							return not selectedUnitData().enabled or selectedEventData().disabled or not selectedEventData().showIcon end,
+						hidden = function() return not selectedEventData().showIcon end,
 					},
 					font = {
-						order = 15,
+						order = 16,
 						type = "select",
 						name = L["Font"],
 						desc = "",
@@ -661,14 +650,14 @@ function mod:LoadConfig(db)
 						values = function() return AceGUIWidgetLSMlists.font end,
 					},
 					fontSize = {
-						order = 16,
+						order = 17,
 						type = "range",
 						name = L["Font Size"],
 						desc = L["There seems to be a font size limit?"],
 						min = 10, max = 25, step = 1,
 					},
 					fontFlags = {
-						order = 17,
+						order = 18,
 						type = "select",
 						name = L["Font Flags"],
 						desc = "",
@@ -680,7 +669,7 @@ function mod:LoadConfig(db)
 						},
 					},
 					scrollTime = {
-						order = 18,
+						order = 19,
 						type = "range",
 						name = L["Scroll Time"],
 						desc = "",
@@ -688,7 +677,7 @@ function mod:LoadConfig(db)
 					},
 					--[[
 					fadeTime = {
-						order = 19,
+						order = 20,
 						type = "range",
 						name = L["Fade Time"],
 						desc = "",
@@ -697,28 +686,28 @@ function mod:LoadConfig(db)
 					},
 					]]--
 					textPoint = {
-						order = 19,
+						order = 20,
 						type = "select",
 						name = L["Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
 					},
 					textRelativeTo = {
-						order = 20,
+						order = 21,
 						type = "select",
 						name = L["Relative Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
 					},
 					textX = {
-						order = 21,
+						order = 22,
 						type = "range",
 						name = L["X Offset"],
 						desc = "",
 						min = -80, max = 80, step = 1,
 					},
 					textY = {
-						order = 22,
+						order = 23,
 						type = "range",
 						name = L["Y Offset"],
 						desc = "",
@@ -988,7 +977,6 @@ function mod:UpdateFCFSettings(frame, db)
 
 			frame:EnableElement('FloatingCombatFeedback')
 
-			fcf.playerOnly = data.playerOnly
 			fcf.abbreviateNumbers = data.abbreviateNumbers
 			fcf.blacklist = CopyTable(data.blacklist)
 
@@ -1011,6 +999,7 @@ function mod:UpdateFCFSettings(frame, db)
 						fcf.tryToColorBySchool[event] = false
 						fcf.colors[event] = { r = color[1], g = color[2], b = color[3] }
 					end
+					fcf.playerOnlyEvents[event] = info.playerOnly
 					fcf.animationsByEvent[event] = {	info.animation,
 														tonumber(info.xDirection) or 1,
 														tonumber(info.yDirection) or 1,

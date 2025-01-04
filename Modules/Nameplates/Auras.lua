@@ -7,13 +7,32 @@ local LSM = E.Libs.LSM
 
 local modName = mod:GetName()
 
-local pairs, ipairs, unpack, type, tonumber = pairs, ipairs, unpack, type, tonumber
-local tinsert = table.insert
+local pairs, ipairs, unpack, type, tonumber, tostring = pairs, ipairs, unpack, type, tonumber, tostring
+local tinsert, tsort, twipe = table.insert, table.sort, table.wipe
 local floor, ceil, min, abs = math.floor, math.ceil, math.min, math.abs
 local find, gmatch, match, gsub, format = string.find, string.gmatch, string.match, string.gsub, string.format
 local GetTime, DebuffTypeColor, UnitCanAttack, GetSpellInfo, GetSpellLink, CreateFrame = GetTime, DebuffTypeColor, UnitCanAttack, GetSpellInfo, GetSpellLink, CreateFrame
 
 local dispellList, purgeList = core.DispellList[E.myclass], core.PurgeList[E.myclass]
+local filterList, checkFilters = {["FRIENDLY"] = {}, ["ENEMY"] = {}}, {}
+
+local function updateFilters(db)
+	twipe(checkFilters)
+	for _, unitType in ipairs({'FRIENDLY', 'ENEMY'}) do
+		twipe(filterList[unitType])
+		for filterName, info in pairs(db.Highlights.types[unitType].filterList) do
+			if info.shadow or info.border or info.useGlobal then
+				tinsert(filterList[unitType], {filterName = filterName,
+												priority = info.priority or 999,
+												border = info.border,
+												shadow = info.shadow,
+												info = info.useGlobal and db.global or info})
+				checkFilters[unitType] = true
+			end
+		end
+		tsort(filterList[unitType], function(a, b) return a.priority < b.priority end)
+	end
+end
 
 local funcMap = {
 	["UpdateTime"] = 'AnimateFadeOut',
@@ -22,7 +41,7 @@ local funcMap = {
 	["SetAura"] = 'TypeBorders, Highlights, CooldownDisable',
 }
 
-local function updateVisiblePlates()
+local function updateVisiblePlates(mod_db)
 	for plate in pairs(NP.VisiblePlates) do
 		for auraType, AuraType in pairs({buffs = 'Buffs', debuffs = 'Debuffs'}) do
 			local db = NP.db.units[plate.UnitType][auraType]
@@ -41,7 +60,7 @@ local function updateVisiblePlates()
 						button.bg:SetAlpha(1)
 					end
 					if button.highlightApplied then
-						mod:ClearHighlights(button, false, nil)
+						mod:ClearHighlights(mod_db, button, false, nil)
 					end
 				end
 			end
@@ -107,6 +126,14 @@ function mod:LoadConfig(db)
 		end
 		return data.global
 	end
+	local specialFilters = {
+		["Personal"] = "Personal",
+		["nonPersonal"] = "nonPersonal",
+		["CastByUnit"] = "CastByUnit",
+		["notCastByUnit"] = "notCastByUnit",
+		["Dispellable"] = "Dispellable",
+		["notDispellable"] = "notDispellable",
+	}
 	core.nameplates.args[modName] = {
 		type = "group",
 		name = L["Auras"],
@@ -162,6 +189,7 @@ function mod:LoadConfig(db)
 									["size"] = 3,
 									["color"] = { 0.93, 0.91, 0.55, 1 },
 									["shadowColor"] = { 0.93, 0.91, 0.55, 1 },
+									["priority"] = 1,
 								}
 								local _, _, icon = GetSpellInfo(spellID)
 								local link = GetSpellLink(spellID)
@@ -169,7 +197,7 @@ function mod:LoadConfig(db)
 								local string = '\124T' .. icon .. ':16:16\124t' .. link
 								core:print('ADDED', string)
 							end
-							updateVisiblePlates()
+							updateVisiblePlates(db)
 						end,
 					},
 					addFilter = {
@@ -178,7 +206,7 @@ function mod:LoadConfig(db)
 						name = L["Add Filter"],
 						desc = L["Applies highlights to all auras passing the selected filter."],
 						values = function()
-							local filters = {}
+							local filters = CopyTable(specialFilters)
 							for filterName in pairs(E.global.unitframe.aurafilters) do
 								if filterName ~= 'Blacklist' then
 									filters[filterName] = filterName
@@ -197,32 +225,24 @@ function mod:LoadConfig(db)
 								["shadowColor"] = { 0.93, 0.91, 0.55, 1 },
 							}
 							core:print('ADDED', value, L[" filter added."])
-							updateVisiblePlates()
+							updateVisiblePlates(db)
 						end,
 					},
-					removeSelected = {
+					filterPriority = {
 						order = 3,
-						type = "execute",
-						name = L["Remove Selected"],
+						type = "input",
+						name = L["Filter Priority"],
 						desc = "",
-						func = function()
-							local selected = selectedSpellorFilter()
-							local data = db.Highlights.types[selectedType()]
-							if type(selected) == 'number' then
-								data.spellList[selected] = nil
-								local _, _, icon = GetSpellInfo(selected)
-								local link = GetSpellLink(selected)
-								icon = gsub(icon, '\124', '\124\124')
-								local string = '\124T' .. icon .. ':16:16\124t' .. link
-								core:print('REMOVED', string)
-							else
-								data.filterList[selected] = nil
-								core:print('REMOVED', selected, L[" filter removed."])
-							end
-							data.selected = "GLOBAL"
-							updateVisiblePlates()
+						get = function() return tostring(getHighlightSettings(selectedType(), selectedSpellorFilter()).priority or "") end,
+						set = function(_, value)
+							getHighlightSettings(selectedType(), selectedSpellorFilter()).priority = tonumber(value) or 999
+							updateFilters(db)
+							updateVisiblePlates(db)
 						end,
-						disabled = function() return selectedSpellorFilter() == "GLOBAL" or selectedSpellorFilter() == "CURABLE" or selectedSpellorFilter() == "STEALABLE" end,
+						disabled = function()
+							return not db.Highlights.types[selectedType()].enabled
+									or (not E.global.unitframe.aurafilters[selectedSpellorFilter()]
+										and not specialFilters[selectedSpellorFilter()]) end,
 					},
 					spellOrFilterDropdown = {
 						order = 4,
@@ -264,6 +284,33 @@ function mod:LoadConfig(db)
 							return sortedKeys
 						end,
 					},
+					removeSelected = {
+						order = 5,
+						type = "execute",
+						name = L["Remove Selected"],
+						desc = "",
+						func = function()
+							local selected = selectedSpellorFilter()
+							local data = db.Highlights.types[selectedType()]
+							if type(selected) == 'number' then
+								data.spellList[selected] = nil
+								local _, _, icon = GetSpellInfo(selected)
+								local link = GetSpellLink(selected)
+								icon = gsub(icon, '\124', '\124\124')
+								local string = '\124T' .. icon .. ':16:16\124t' .. link
+								core:print('REMOVED', string)
+							else
+								data.filterList[selected] = nil
+								core:print('REMOVED', selected, L[" filter removed."])
+							end
+							data.selected = "GLOBAL"
+							updateVisiblePlates(db)
+						end,
+						hidden = function()
+							return selectedSpellorFilter() == "GLOBAL"
+									or selectedSpellorFilter() == "CURABLE"
+									or selectedSpellorFilter() == "STEALABLE" end,
+					},
 					useGlobal = {
 						order = 5,
 						type = "toggle",
@@ -280,9 +327,12 @@ function mod:LoadConfig(db)
 							local data = db.Highlights.types[selectedType()]
 							local target = type(selected) == 'number' and data.spellList[selected] or data.filterList[selected]
 							target.useGlobal = value
-							updateVisiblePlates()
+							updateVisiblePlates(db)
 						end,
-						hidden = function() return selectedSpellorFilter() == "GLOBAL" or selectedSpellorFilter() == "CURABLE" or selectedSpellorFilter() == "STEALABLE" end,
+						hidden = function()
+							return selectedSpellorFilter() == "GLOBAL"
+									or selectedSpellorFilter() == "CURABLE"
+									or selectedSpellorFilter() == "STEALABLE" end,
 						disabled = function() return selectedSpellorFilter() == "GLOBAL" or selectedSpellorFilter() == "CURABLE" or selectedSpellorFilter() == "STEALABLE" end,
 					},
 				},
@@ -297,7 +347,7 @@ function mod:LoadConfig(db)
 				get = function(info) return getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] end,
 				set = function(info, value)
 					getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] = value
-					updateVisiblePlates()
+					updateVisiblePlates(db)
 				end,
 				args = {
 					shadow = {
@@ -324,7 +374,7 @@ function mod:LoadConfig(db)
 						get = function(info) return unpack(getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]]) end,
 						set = function(info, r, g, b, a)
 							getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] = {r, g, b, a}
-							updateVisiblePlates()
+							updateVisiblePlates(db)
 						end,
 						hidden = function() return not getHighlightSettings(selectedType(), selectedSpellorFilter()).shadow end,
 					},
@@ -342,7 +392,7 @@ function mod:LoadConfig(db)
 						get = function(info) return unpack(getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]]) end,
 						set = function(info, r, g, b)
 							getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] = {r, g, b}
-							updateVisiblePlates()
+							updateVisiblePlates(db)
 						end,
 						hidden = function() return not getHighlightSettings(selectedType(), selectedSpellorFilter()).border end,
 					},
@@ -402,6 +452,7 @@ function mod:LoadConfig(db)
 		db.Highlights.types['ENEMY'] = CopyTable(db.Highlights.types['FRIENDLY'])
 	end
 end
+
 
 local directionProperties = {
 	["CENTER"] = {
@@ -599,7 +650,7 @@ function mod:HandleCurableStealable(mod_db, db, button, debuffType, unstableAffl
 									or (isDebuff and not (dispellList and dispellList[dtype]))
 									or (not isDebuff and not purgeList) then
 			if button.highlightApplied then
-				self:ClearHighlights(button, isDebuff, debuffType, unstableAffliction, vampiricTouch)
+				self:ClearHighlights(mod_db, button, isDebuff, debuffType, unstableAffliction, vampiricTouch)
 			end
 			return
 		end
@@ -630,12 +681,8 @@ function mod:SetAura(frame, guid, index, filter, isDebuff, visible)
 		local unitType = plate.UnitType
 		local attackable = parent.unit and UnitCanAttack('player', parent.unit) == 1 or (unitType and find(unitType, 'ENEMY'))
 
-		local db
-		if attackable then
-			db = mod_db.Highlights.types['ENEMY']
-		else
-			db = mod_db.Highlights.types['FRIENDLY']
-		end
+		local attackType = attackable and 'ENEMY' or 'FRIENDLY'
+		local db = mod_db.Highlights.types[attackType]
 
 		if not db.enabled then return end
 
@@ -650,40 +697,30 @@ function mod:SetAura(frame, guid, index, filter, isDebuff, visible)
 			else
 				mod:ApplyHighlight(settings, button)
 			end
-		else
-			local tempFilterList, checkFilters = {}
-			for filterName, info in pairs(db.filterList) do
-				if info.shadow or info.border or info.useGlobal then
-					tempFilterList[filterName] = info.useGlobal and db.global or info
-					checkFilters = true
-				end
-			end
-			local settings
-			if checkFilters then
-				local parent = button:GetParent()
-				local parentType = parent.type
-				local db = NP.db.units[unitType][parentType]
-				if db then
-					local duration = button.duration
-					local noDuration = (not duration or duration == 0)
-					local allowDuration = noDuration
-											or (duration and (duration > 0) and db.filters.maxDuration == 0 or duration <= db.filters.maxDuration)
-												and (db.filters.minDuration == 0 or duration >= db.filters.minDuration)
-					for filterName, db in pairs(tempFilterList) do
-						if NP:CheckFilter(name, spellID, button.isPlayer, allowDuration, noDuration, filterName) then
-							settings = db
-							break
+		elseif checkFilters[attackType] then
+			local parent = button:GetParent()
+			local parentType = parent.type
+			local np_db = NP.db.units[unitType][parentType]
+			if np_db then
+				local duration = button.duration
+				local noDuration = (not duration or duration == 0)
+				local allowDuration = noDuration
+										or (duration and (duration > 0) and np_db.filters.maxDuration == 0 or duration <= np_db.filters.maxDuration)
+											and (np_db.filters.minDuration == 0 or duration >= np_db.filters.minDuration)
+				for _, data in ipairs(filterList[attackType]) do
+					if NP:CheckFilter(name, spellID, button.isPlayer, allowDuration, noDuration, data.filterName) then
+						if data.border or data.shadow then
+							mod:ApplyHighlight(data.info, button)
+						elseif button.highlightApplied then
+							mod:ClearHighlights(button, isDebuff, debuffType, unstableAffliction, vampiricTouch)
 						end
+						return
 					end
 				end
-			end
-			if not settings then
 				mod:HandleCurableStealable(mod_db, db.special, button, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name)
-			elseif settings.border or settings.shadow then
-				mod:ApplyHighlight(settings, button)
-			elseif button.highlightApplied then
-				mod:ClearHighlights(button, isDebuff, debuffType, unstableAffliction, vampiricTouch)
 			end
+		else
+			mod:HandleCurableStealable(mod_db, db.special, button, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name)
 		end
 	end
 end
@@ -695,7 +732,10 @@ function mod:Toggle(db)
 		toggles[func] = false
 		for setting in gmatch(settings, "%a+") do
 			local config = db[setting]
-			if setting == 'Highlights' and (config.types['FRIENDLY'].enabled or config.types['ENEMY'].enabled) or config.enabled then
+			if setting == 'Highlights' and (config.types['FRIENDLY'].enabled or config.types['ENEMY'].enabled) then
+				updateFilters(db)
+				toggles[func] = not core.reload
+			elseif config.enabled then
 				toggles[func] = not core.reload
 			end
 		end
@@ -708,7 +748,7 @@ function mod:Toggle(db)
 			NP:ForEachPlate("UpdateAllFrame", true, true)
 		end
 	end
-	updateVisiblePlates()
+	updateVisiblePlates(db)
 end
 
 function mod:InitializeCallback()

@@ -18,6 +18,7 @@ mod.initialized = false
 -- Improved Counterspell, not sure why the spellid is off
 spells[55021] = "silence"
 
+local trackedCats = {}
 local eventRegistered = {
 	["SPELL_AURA_APPLIED"] = true,
 	["SPELL_AURA_REFRESH"] = true,
@@ -182,7 +183,7 @@ function mod:LoadConfig(db)
 					noCdNumbers = {
 						order = 5,
 						type = "toggle",
-						name = L["No Cooldown Numbers"],
+						name = L["Disable Cooldown"],
 						desc = L["Go to 'Cooldown Text' > 'Global' to configure."],
 					},
 					typeBorders = {
@@ -429,7 +430,6 @@ function mod:LoadConfig(db)
 					addCategory = {
 						order = 1,
 						type = "input",
-						width = "double",
 						name = L["Add Category"],
 						desc = L["Format: 'category spellID', e.g. fear 10890.\nList of all categories is available at the 'colors' section."],
 						get = function() return "" end,
@@ -460,11 +460,59 @@ function mod:LoadConfig(db)
 								end
 								db.catList[spellID] = cat
 								db.catList[cat] = spellID
+								self:SetupDRUnits(db)
+							end
+						end,
+					},
+					setupCategories = {
+						order = 2,
+						type = "execute",
+						name = L["Setup Categories"],
+						desc = "",
+						func = function()
+							local addedCats = {}
+							for tabIndex = 1, GetNumSpellTabs() do
+								local _, _, offset, numSpells = GetSpellTabInfo(tabIndex)
+
+								for spellIndex = offset + 1, offset + numSpells do
+									local spellLink = GetSpellLink(GetSpellName(spellIndex, BOOKTYPE_SPELL))
+									if spellLink then
+										local spellID = tonumber(match(spellLink, ":(%d+)"))
+
+										if spellID and spells[spellID] then
+											local cat = spells[spellID]
+											if db.catColors[cat] then
+												if not (db.catList[spellID] == cat and db.catList[cat] == spellID) then
+													if db.catList[cat] then
+														db.catList[db.catList[cat]] = nil
+														db.catList[spellID] = cat
+														db.catList[cat] = spellID
+													else
+														db.catList[spellID] = cat
+														db.catList[cat] = spellID
+														addedCats[cat] = spellID
+													end
+												end
+											end
+										end
+									end
+								end
+							end
+							if next(addedCats) then
+								for cat, spellID in pairs(addedCats) do
+									local _, _, icon = GetSpellInfo(spellID)
+									local link = GetSpellLink(spellID)
+									local iconString = '\124T' .. gsub(icon, '\124', '\124\124') .. ':16:16\124t'
+									print(format(core.customColorAlpha..L["Category \"%s\" added with %s icon."],
+										core.customColorBeta..cat..core.customColorAlpha,
+										iconString..link))
+								end
+								self:SetupDRUnits(db)
 							end
 						end,
 					},
 					removeCategory = {
-						order = 2,
+						order = 3,
 						type = "select",
 						width = "double",
 						name = L["Remove Category"],
@@ -477,6 +525,7 @@ function mod:LoadConfig(db)
 									for category, spellId in pairs(db.catList) do
 										if id == spellId then db.catList[category] = nil end
 									end
+									self:SetupDRUnits(db)
 									print(format(core.customColorAlpha..L["Category \"%s\" removed."],
 												core.customColorBeta..cat..core.customColorAlpha))
 									break
@@ -490,10 +539,27 @@ function mod:LoadConfig(db)
 									local name = GetSpellInfo(id) or ""
 									local icon = select(3, GetSpellInfo(id))
 									icon = icon and "|T"..icon..":0|t" or ""
-									values[id] = format("%s %s (%s)", icon, name, cat)
+									values[id] = format("%s %s (%s, id: %s)", icon, name, cat, id)
 								end
 							end
 							return values
+						end,
+						sorting = function()
+							local sortedKeys = {}
+							for id in pairs(db.catList) do
+								if type(id) == "number" then
+									tinsert(sortedKeys, id)
+								end
+							end
+							tsort(sortedKeys, function(a, b)
+								local catA = db.catList[a]
+								local catB = db.catList[b]
+
+								if catA ~= catB then return catA < catB end
+
+								return (GetSpellInfo(a) or "") < (GetSpellInfo(b) or "")
+							end)
+							return sortedKeys
 						end,
 					},
 				},
@@ -576,28 +642,30 @@ local function createAura(self, index, db)
     return aura
 end
 
-local function combatLogCheck(...)
+local function combatLogCheck(db, ...)
 	local event, _, eventType, sourceGUID, _, _, destGUID, _, destFlags, spellID, _, _, auraType = ...
     if event == 'COMBAT_LOG_EVENT_UNFILTERED' and not eventRegistered[eventType] then return end
 
-    local db = E.db.Extras.unitframes[modName]
-    local isAffectingPlayer, isAnotherPlayer = destGUID == UnitGUID('player')
-    if destFlags then
-        isAnotherPlayer = (band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER or band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER)
-        local isHostileOrNeutral = (band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE or band(destFlags, COMBATLOG_OBJECT_REACTION_NEUTRAL) == COMBATLOG_OBJECT_REACTION_NEUTRAL)
-
-        if (event == 'COMBAT_LOG_EVENT_UNFILTERED' and (not isHostileOrNeutral and not isAffectingPlayer)) or ((db.playersOnly and (not isAnotherPlayer or isAffectingPlayer))) then return end
-    end
-
     local needupdate = false
-    local catList = db.catList
-    local DRtime = db.DRtime
+
     if (eventType == "SPELL_AURA_APPLIED") or (eventType == "SPELL_AURA_REFRESH") or (eventType == "SPELL_CAST_SUCCESS") then
         if (auraType == "DEBUFF") or (eventType == "SPELL_CAST_SUCCESS") then
-            local drCat = spells[spellID]
+            local drCat = trackedCats[spellID]
+            if not drCat or not db.catList[drCat] then return end
 
-            if not drCat or not catList[drCat] then return end
-            if not isAnotherPlayer and not pveDR[drCat] then return end
+			if destFlags then
+				local isAffectingPlayer 	= destGUID == UnitGUID('player')
+				local isAnotherPlayer 		= (band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
+												or band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER)
+				local isHostileOrNeutral 	= (band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE
+												or band(destFlags, COMBATLOG_OBJECT_REACTION_NEUTRAL) == COMBATLOG_OBJECT_REACTION_NEUTRAL)
+
+				if not (isHostileOrNeutral or isAffectingPlayer)
+					or (db.playersOnly and not (isAnotherPlayer and not isAffectingPlayer))
+					or (not isAnotherPlayer and not pveDR[drCat])
+						then return
+				end
+			end
 
 			-- sometimes (silences) a spellcast triggers both a SPELL_CAST_SUCCESS and some other event
 			lastUpdateTime[sourceGUID] = lastUpdateTime[sourceGUID] or {}
@@ -611,9 +679,9 @@ local function combatLogCheck(...)
             if not activeGUIDs[destGUID] then activeGUIDs[destGUID] = {} end
             if not activeGUIDs[destGUID][drCat] then activeGUIDs[destGUID][drCat] = {} end
 
-            local _, _, icon = GetSpellInfo(catList[drCat])
+            local _, _, icon = GetSpellInfo(db.catList[drCat])
 			local start = activeGUIDs[destGUID][drCat].start
-            local count = (start and start + DRtime > GetTime()) and activeGUIDs[destGUID][drCat].count + 1 or 1
+            local count = (start and start + db.DRtime > GetTime()) and activeGUIDs[destGUID][drCat].count + 1 or 1
             activeGUIDs[destGUID][drCat].spellID = spellID
             activeGUIDs[destGUID][drCat].count = count
             activeGUIDs[destGUID][drCat].start = GetTime()
@@ -653,6 +721,23 @@ end
 
 function mod:SetupDRUnits(db)
 	twipe(framelist)
+	twipe(trackedCats)
+
+	local list = {}
+	for id, cat in pairs(spells) do
+		if not list[cat] then list[cat] = {} end
+		tinsert(list[cat], id)
+	end
+
+	for id, cat in pairs(db.catList) do
+		if tonumber(id) and list[cat] then
+			for _, spellID in ipairs(list[cat]) do
+				trackedCats[spellID] = cat
+			end
+		end
+	end
+
+	db = db.units
 	--[FRAME NAME]	= {UNITID,SIZE,ANCHOR,ANCHORFRAME,X,Y,"ANCHORNEXT","ANCHORPREVIOUS",nextx,nexty},
 
 	if db.player.enabled then
@@ -664,15 +749,15 @@ function mod:SetupDRUnits(db)
 	end
 
 	if db.focus.enabled then
-		framelist["ElvUF_Focus"] = {"focus", db.focus.point, db.focus.relativeTo, db.focus.xOffset, db.focus.yOffset, "LEFT","RIGHT", 2, 0}
+		framelist["ElvUF_Focus"] = {"focus", db.focus.point, db.focus.relativeTo, db.focus.xOffset, db.focus.yOffset, "LEFT", "RIGHT", 2, 0}
 	end
 
 	if db.arena.enabled then
-		framelist["ElvUF_Arena1"] = {"arena1", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT", -2, 0}
-		framelist["ElvUF_Arena2"] = {"arena2", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT", -2, 0}
-		framelist["ElvUF_Arena3"] = {"arena3", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT", -2, 0}
-		framelist["ElvUF_Arena4"] = {"arena4", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT", -2, 0}
-		framelist["ElvUF_Arena5"] = {"arena5", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT","LEFT", -2, 0}
+		framelist["ElvUF_Arena1"] = {"arena1", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT", "LEFT", -2, 0}
+		framelist["ElvUF_Arena2"] = {"arena2", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT", "LEFT", -2, 0}
+		framelist["ElvUF_Arena3"] = {"arena3", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT", "LEFT", -2, 0}
+		framelist["ElvUF_Arena4"] = {"arena4", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT", "LEFT", -2, 0}
+		framelist["ElvUF_Arena5"] = {"arena5", db.arena.point, db.arena.relativeTo, db.arena.xOffset, db.arena.yOffset, "RIGHT", "LEFT", -2, 0}
 	end
 end
 
@@ -850,12 +935,12 @@ function mod:Toggle(db)
 	if core.reload then
 		twipe(framelist)
 	else
-		self:SetupDRUnits(db.units)
+		self:SetupDRUnits(db)
 	end
-	if next(framelist) then
-		self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", combatLogCheck)
-		self:RegisterEvent("PLAYER_TARGET_CHANGED", combatLogCheck)
-		self:RegisterEvent("PLAYER_FOCUS_CHANGED", combatLogCheck)
+	if next(framelist) and next(trackedCats) then
+		self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(...) combatLogCheck(db, ...) end )
+		self:RegisterEvent("PLAYER_TARGET_CHANGED", function(...) combatLogCheck(db, ...) end )
+		self:RegisterEvent("PLAYER_FOCUS_CHANGED", function(...) combatLogCheck(db, ...) end )
 		self.initialized = true
 	elseif self.initialized then
 		self:UnregisterAllEvents()

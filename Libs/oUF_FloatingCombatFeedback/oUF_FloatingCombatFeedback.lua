@@ -300,16 +300,12 @@ local function flush(self)
 	end
 end
 
-local function Update(self, _, unit, event, flag, amount, school, texture)
+local function Update(self, _, unit, isPlayer, event, flag, amount, school, texture)
 	if self.unit ~= unit then return end
 	local element = self.FloatingCombatFeedback
-	if flag and not element.multipliersByFlag[flag] then return end
 
-	local unitGUID = UnitGUID(unit)
-	if unitGUID ~= element.unitGUID then
-		flush(element)
-		element.unitGUID = unitGUID
-	end
+	if (event ~= "BUFF" and event ~= "DEBUFF" and flag and not element.multipliersByFlag[flag])
+		or (element.playerOnlyEvents[event] and not isPlayer) then return end
 
 	local animation, fontData = element.animationsByEvent[event], element.fontData[event]
 	if not animation or not fontData then return end
@@ -507,9 +503,11 @@ local function filter(self, _, event, sourceGUID, _, sourceFlags, destGUID, _, _
     if CLEUEvents[event] then
         if guidToFrame[destGUID] then
 			for frame in next, guidToFrame[destGUID] do
-				local fcf = frame.FloatingCombatFeedback
-				if not fcf.blacklist[...] and (not fcf.playerOnly or (destGUID == playerGUID or (sourceGUID == playerGUID or hasFlag(sourceFlags, COMBATLOG_OBJECT_AFFILIATION_MINE)))) then
-					Path(frame, "COMBAT_LOG_EVENT_UNFILTERED", frame.unit, prep(event, _, ...))
+				if not frame.FloatingCombatFeedback.blacklist[...] then
+					Path(	frame, "COMBAT_LOG_EVENT_UNFILTERED", frame.unit,
+							destGUID == playerGUID or (sourceGUID == playerGUID or hasFlag(sourceFlags, COMBATLOG_OBJECT_AFFILIATION_MINE)),
+							prep(event, _, ...)
+						)
                 end
             end
         end
@@ -611,6 +609,7 @@ local function Enable(self)
 		element.bounce = {}
 		element.iconBounce = {}
 		element.fontData = {}
+		element.playerOnlyEvents = {}
 
 		element.radius = element.radius or 65
 

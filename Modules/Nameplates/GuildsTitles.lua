@@ -41,7 +41,8 @@ local GetGuildInfo = GetGuildInfo
 local UnitInRaid, UnitInParty, UnitIsPlayer, UnitGUID = UnitInRaid, UnitInParty, UnitIsPlayer, UnitGUID
 local UnitReaction, UnitName, UnitPlayerControlled, UnitCanAttack = UnitReaction, UnitName, UnitPlayerControlled, UnitCanAttack
 local UNKNOWN = UNKNOWN
-local TOOLTIP_UNIT_LEVEL_RACE_CLASS = gsub(table.concat({strsplit(1, string.format(TOOLTIP_UNIT_LEVEL_RACE_CLASS, 1, 1, 1))}), '[%d%p%s]+', '')
+local TOOLTIP_UNIT_LEVEL_CLASS = gsub(table.concat({strsplit(1, format(TOOLTIP_UNIT_LEVEL_CLASS, 1, 1, 1))}), '[%d%p%s]+', '')
+local TOOLTIP_UNIT_LEVEL = gsub(format(TOOLTIP_UNIT_LEVEL, 1), '[%s%d%p]+', '')
 local MINIMAP_TRACKING_AUCTIONEER, MINIMAP_TRACKING_BANKER,
 		MINIMAP_TRACKING_BATTLEMASTER, MINIMAP_TRACKING_TRAINER_CLASS, MINIMAP_TRACKING_INNKEEPER,
 		MINIMAP_TRACKING_VENDOR_REAGENT, MINIMAP_TRACKING_TRAINER_PROFESSION, MINIMAP_TRACKING_REPAIR,
@@ -230,7 +231,22 @@ function mod:LoadConfig(db)
 						name = core.pluginColor..L["Enable"],
 						desc = function() return db[selectedSubSection()].desc end,
 						get = function() return db[selectedSubSection()].enabled end,
-						set = function(_, value) db[selectedSubSection()].enabled = value self:Toggle(db) end,
+						set = function(_, value)
+							if isAwesome then
+								db[selectedSubSection()].enabled = value
+								self:Toggle(db)
+							else
+								for _, subSection in ipairs({'OccupationIcon', 'Titles', 'Guilds'}) do
+									if db[subSection].enabled then
+										db[selectedSubSection()].enabled = value
+										self:Toggle(db)
+										return
+									end
+								end
+								db[selectedSubSection()].enabled = value
+								E:StaticPopup_Show("PRIVATE_RL")
+							end
+						end,
 					},
 					selectedSubSection = {
 						order = 2,
@@ -1075,7 +1091,7 @@ function mod:UpdateTitle(frame, db, unit, unitTitle, name)
 end
 
 function mod:AwesomeUpdateUnitInfo(frame, db, unit)
-	if UnitIsPlayer(unit) and UnitReaction(unit, "player") ~= 2 then
+	if UnitIsPlayer(unit) then
 		local name, realm = UnitName(unit)
 		if realm or not name or name == UNKNOWN then return end
 
@@ -1083,7 +1099,7 @@ function mod:AwesomeUpdateUnitInfo(frame, db, unit)
 		scanner:SetUnit(unit)
 
 		local guildName = _G["ExtrasGT_ScanningTooltipTextLeft2"]:GetText() or GetGuildInfo(unit)
-		if not guildName or find(gsub(guildName, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
+		if not guildName or find(gsub(guildName, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_CLASS, 1, true) then
 			return
 		end
 
@@ -1095,7 +1111,16 @@ function mod:AwesomeUpdateUnitInfo(frame, db, unit)
 		local name = _G["ExtrasGT_ScanningTooltipTextLeft1"]:GetText()
 		if not name then return end
 		local description = _G["ExtrasGT_ScanningTooltipTextLeft2"]:GetText()
-		if not description or find(gsub(description, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
+		if description then
+			local cleanDesc = gsub(description, "[%s%d%p]+", "")
+			if find(cleanDesc, TOOLTIP_UNIT_LEVEL, 1, true) or find(cleanDesc, TOOLTIP_UNIT_LEVEL_CLASS, 1, true) then
+				if db.OccupationIcon.enabled and frame.UnitType == 'FRIENDLY_NPC' then
+					manageTitleFrame(frame, frame.Title, nil, db.OccupationIcon)
+					self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
+				end
+				return
+			end
+		else
 			if db.OccupationIcon.enabled and frame.UnitType == 'FRIENDLY_NPC' then
 				manageTitleFrame(frame, frame.Title, nil, db.OccupationIcon)
 				self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
@@ -1159,7 +1184,7 @@ function mod:UpdateUnitInfo(frame, db, unit)
 		scanner:SetUnit(unit)
 
 		local guildName = _G["ExtrasGT_ScanningTooltipTextLeft2"]:GetText()
-		if not guildName or find(gsub(guildName, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
+		if not guildName or find(gsub(guildName, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_CLASS, 1, true) then
 			if db.UnitTitle[name] then
 				db.UnitTitle[name] = nil
 			end
@@ -1177,7 +1202,16 @@ function mod:UpdateUnitInfo(frame, db, unit)
 		local name = _G["ExtrasGT_ScanningTooltipTextLeft1"]:GetText()
 		if not name then return end
 		local description = _G["ExtrasGT_ScanningTooltipTextLeft2"]:GetText()
-		if not description or find(gsub(description, "[%s%d%p]+", ""), TOOLTIP_UNIT_LEVEL_RACE_CLASS) then
+		if description then
+			local cleanDesc = gsub(description, "[%s%d%p]+", "")
+			if find(cleanDesc, TOOLTIP_UNIT_LEVEL, 1, true) or find(cleanDesc, TOOLTIP_UNIT_LEVEL_CLASS, 1, true) then
+				if db.OccupationIcon.enabled and frame.UnitType == 'FRIENDLY_NPC' then
+					manageTitleFrame(frame, frame.Title, nil, db.OccupationIcon)
+					self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
+				end
+				return
+			end
+		else
 			if db.OccupationIcon.enabled and frame.UnitType == 'FRIENDLY_NPC' then
 				manageTitleFrame(frame, frame.Title, nil, db.OccupationIcon)
 				self:UpdateOccupation(frame.OccupationIcon, db, unit, name)

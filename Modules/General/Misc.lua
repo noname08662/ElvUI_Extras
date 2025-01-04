@@ -905,11 +905,35 @@ function mod:ItemIcons(db)
 		end
 
 		for _, event in ipairs(chatMsgEvents) do
-			ChatFrame_AddMessageEventFilter(event, self.ItemIconsFilter)
+			local filterFuncs = ChatFrame_GetMessageEventFilters(event)
+			local hasFilter = false
+			if filterFuncs then
+				for _, filter in ipairs(filterFuncs) do
+					if filter == self.ItemIconsFilter then
+						hasFilter = true
+						break
+					end
+				end
+			end
+			if not hasFilter then
+				ChatFrame_AddMessageEventFilter(event, self.ItemIconsFilter)
+			end
 		end
 	elseif self.initialized.ItemIcons then
 		for _, event in ipairs(chatMsgEvents) do
-			ChatFrame_RemoveMessageEventFilter(event, self.ItemIconsFilter)
+			local filterFuncs = ChatFrame_GetMessageEventFilters(event)
+			local hasFilter = false
+			if filterFuncs then
+				for _, filter in ipairs(filterFuncs) do
+					if filter == self.ItemIconsFilter then
+						hasFilter = true
+						break
+					end
+				end
+			end
+			if hasFilter then
+				ChatFrame_RemoveMessageEventFilter(event, self.ItemIconsFilter)
+			end
 		end
 	end
 end
@@ -1097,9 +1121,6 @@ end
 
 
 function mod:Toggle(db)
-	if core.reload then
-		twipe(self.initialized)
-	end
 	for subMod, info in pairs(db) do
 		if self[subMod] and info.enabled ~= nil then
 			self[subMod](self, core.reload and {enabled = false} or info)

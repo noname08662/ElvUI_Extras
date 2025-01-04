@@ -9,6 +9,11 @@ end
 local data
 local inscriptionSkill, jewelcraftingSkill, enchantingSkill, blacksmithingSkill
 
+local GetItemInfo, GetItemCount = GetItemInfo, GetItemCount
+local GetNumSkillLines, GetSkillLineInfo = GetNumSkillLines, GetSkillLineInfo
+local IsSpellKnown, IsEquippableItem = IsSpellKnown, IsEquippableItem
+local UnitLevel = UnitLevel
+
 -- modified to work with 3.3.5 api
 local ProfessionNames = {
 	enUS = {

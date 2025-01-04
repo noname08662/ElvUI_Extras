@@ -6,6 +6,8 @@ local NP = E:GetModule("NamePlates")
 local modName = mod:GetName()
 local isAwesome = C_NamePlate
 
+mod.initialized = false
+
 local ipairs, pairs, print, select = ipairs, pairs, print, select
 local upper, gsub, format = string.upper, string.gsub, string.format
 local CopyTable, UnitClass = CopyTable, UnitClass
@@ -126,7 +128,14 @@ function mod:LoadConfig(db)
 						name = core.pluginColor..L["Enable"],
 						desc = function() return db[selectedSubSection()].desc end,
 						get = function() return db[selectedSubSection()].enabled end,
-						set = function(_, value) db[selectedSubSection()].enabled = value self:Toggle(db) end,
+						set = function(_, value)
+							db[selectedSubSection()].enabled = value
+							if value and not isAwesome then
+								E:StaticPopup_Show("PRIVATE_RL")
+							else
+								self:Toggle(db)
+							end
+						end,
 					},
 					selectedSubSection = {
 						order = 2,
@@ -235,7 +244,7 @@ function mod:LoadConfig(db)
 						name = L["Color by Type"],
 						desc = L["Colors the icon based on the unit type."],
 						get = function() return selectedNPCsData().colorByType end,
-						set = function(_, value) selectedNPCsData().colorByType = value NP:ConfigureAll() end,
+						set = function(_, value) selectedNPCsData().colorByType = value NP:ForEachVisiblePlate("UpdateAllFrame", true, true) end,
 					},
 					flipIcon = {
 						order = 2,
@@ -243,7 +252,7 @@ function mod:LoadConfig(db)
 						name = L["Flip Icon"],
 						desc = L["Flits the icon horizontally. Not compatible with Texture Coordinates."],
 						get = function() return selectedNPCsData().flipIcon end,
-						set = function(_, value) selectedNPCsData().flipIcon = value NP:ConfigureAll() end,
+						set = function(_, value) selectedNPCsData().flipIcon = value NP:ForEachVisiblePlate("UpdateAllFrame", true, true) end,
 					},
 					selected = {
 						order = 3,
@@ -266,7 +275,7 @@ function mod:LoadConfig(db)
 						name = L["Keep Icon"],
 						desc = L["Keep the original icon texture."],
 						get = function() return selectedNPCsData().keepOrigTex end,
-						set = function(_, value) selectedNPCsData().keepOrigTex = value NP:ConfigureAll() end,
+						set = function(_, value) selectedNPCsData().keepOrigTex = value NP:ForEachVisiblePlate("UpdateAllFrame", true, true) end,
 					},
 					texture = {
 						order = 6,
@@ -274,7 +283,7 @@ function mod:LoadConfig(db)
 						name = L["Texture"],
 						desc = "",
 						get = function() return selectedNPCsData().texture end,
-						set = function(_, value) selectedNPCsData().texture = value NP:ConfigureAll() end,
+						set = function(_, value) selectedNPCsData().texture = value NP:ForEachVisiblePlate("UpdateAllFrame", true, true) end,
 						hidden = function() return selectedSubSection() ~= 'NPCs' or selectedNPCsData().keepOrigTex end,
 						values = function()
 							local type = db.NPCs.selectedTexList
@@ -290,7 +299,7 @@ function mod:LoadConfig(db)
 				name = L["Texture Coordinates"],
 				guiInline = true,
 				get = function(info) return selectedNPCsData().texCoords[info[#info]] end,
-				set = function(info, value) selectedNPCsData().texCoords[info[#info]] = value NP:ConfigureAll() end,
+				set = function(info, value) selectedNPCsData().texCoords[info[#info]] = value NP:ForEachVisiblePlate("UpdateAllFrame", true, true) end,
 				disabled = function() return not db.NPCs.enabled end,
 				hidden = function() return selectedSubSection() ~= 'NPCs' or selectedNPCsData().keepOrigTex end,
 				args = {
@@ -397,7 +406,7 @@ function mod:LoadConfig(db)
 						name = L["Texture"],
 						desc = "",
 						get = function() return selectedPlayersData().classes[db.Players.selectedClass].texture end,
-						set = function(_, value) selectedPlayersData().classes[db.Players.selectedClass].texture = value NP:ConfigureAll() end,
+						set = function(_, value) selectedPlayersData().classes[db.Players.selectedClass].texture = value NP:ForEachVisiblePlate("UpdateAllFrame", true, true) end,
 						values = function()
 							local type = db.Players.selectedTexList
 							local list = (type == 'CLASS' and 'texClass')
@@ -560,6 +569,8 @@ function mod:UpdateClassIcon(frame, db, classList)
 	if not unitClass then
 		if classMap[unitName] then
 			self:ShowIcon(frame, classMap[unitName], db)
+		else
+			frame.ClassIcon:Hide()
 		end
 		return
 	end
@@ -572,14 +583,18 @@ function mod:UpdateClassIcon(frame, db, classList)
 			classList[unitName] = classIconPath
 			classMap[unitName] = classIconPath
 		end
+	else
+		frame.ClassIcon:Hide()
 	end
 end
 
 function mod:AwesomeUpdateClassIcon(frame, db, unit)
-	local classFile = select(2,UnitClass(unit))
-	local classIconPath = db.classes[classFile] and db.classes[classFile].texture
+	local class = select(2,UnitClass(unit))
+	local classIconPath = db.classes[class] and db.classes[class].texture
 	if classIconPath then
 		self:ShowIcon(frame, classIconPath, db)
+	else
+		frame.ClassIcon:Hide()
 	end
 end
 
@@ -591,6 +606,9 @@ function mod:UpdateAllClassIcons(db)
 			self:ShowIcon(frame, nil, db.Players.affiliations[unitType], NP.db.units[unitType].health.enable)
 		end
 	end
+end
+
+function mod:OnShow()
 end
 
 
@@ -632,6 +650,9 @@ function mod:Toggle(db, visibilityUpdate)
 			end
 		end
 		if not handleAreaUpdate then core:RegisterAreaUpdate(modName) end
+		if not isAwesome and not self:IsHooked(NP, "OnShow") then
+			self:SecureHook(NP, "OnShow")
+		end
 		if updateVisibilityState(affiliations, core:GetCurrentAreaType()) then
 			for plate in pairs(NP.CreatedPlates) do
 				local frame = plate.UnitFrame
@@ -656,9 +677,9 @@ function mod:Toggle(db, visibilityUpdate)
 						end
 					end)
 				end
-			elseif not self:IsHooked(NP, "OnShow") then
-				self:SecureHook(NP, "OnShow", function(self)
-					local frame = self.UnitFrame
+			else
+				self.OnShow = function(_, plate)
+					local frame = plate.UnitFrame
 					local unitType = frame.UnitType
 					local data = affiliations[unitType]
 					if (unitType == "FRIENDLY_PLAYER" or unitType == "ENEMY_PLAYER") and data.isShown then
@@ -666,11 +687,17 @@ function mod:Toggle(db, visibilityUpdate)
 					elseif frame.ClassIcon then
 						frame.ClassIcon:Hide()
 					end
-				end)
+				end
 			end
 		else
 			if self:IsHooked(NP, "Construct_HealthBar") then self:Unhook(NP, "Construct_HealthBar") end
-			if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
+			if self:IsHooked(NP, "OnShow") then
+				if isAwesome then
+					self:Unhook(NP, "OnShow")
+				else
+					self.OnShow = function() end
+				end
+			end
 			for plate in pairs(NP.CreatedPlates) do
 				local frame = plate.UnitFrame
 				if frame and frame.ClassIcon then
@@ -678,10 +705,15 @@ function mod:Toggle(db, visibilityUpdate)
 				end
 			end
 		end
-	else
+		self.initialized = true
+	elseif self.initialized then
 		core:RegisterAreaUpdate(modName)
 		if self:IsHooked(NP, "Construct_HealthBar") then self:Unhook(NP, "Construct_HealthBar") end
-		if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
+		if isAwesome or not core.reload then
+			if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
+		else
+			self.OnShow = function() end
+		end
 		for plate in pairs(NP.CreatedPlates) do
 			local frame = plate.UnitFrame
 			if frame and frame.ClassIcon then
@@ -689,8 +721,8 @@ function mod:Toggle(db, visibilityUpdate)
 			end
 		end
 	end
-	if not core.reload then
-		NP:ConfigureAll()
+	if self.initialized and not core.reload then
+		NP:ForEachVisiblePlate("UpdateAllFrame", true, true)
 	end
 end
 

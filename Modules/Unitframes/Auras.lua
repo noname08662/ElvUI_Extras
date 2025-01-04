@@ -9,10 +9,14 @@ local modName = mod:GetName()
 local _G, unpack, pairs, ipairs, select, tonumber, type = _G, unpack, pairs, ipairs, select, tonumber, type
 local match, format, gsub, find = string.match, string.format, string.gsub, string.find
 local floor, ceil, min, max = math.floor, math.ceil, math.min, math.max
-local tinsert = table.insert
+local tinsert, tsort, twipe = table.insert, table.sort, table.wipe
 local UnitIsUnit, CancelUnitBuff, UnitCanAttack = UnitIsUnit, CancelUnitBuff, UnitCanAttack
 local DebuffTypeColor, GetSpellInfo, GetSpellLink = DebuffTypeColor, GetSpellInfo, GetSpellLink
 
+local filterList, checkFilters = {["FRIENDLY"] = {}, ["ENEMY"] = {}}, {}
+
+mod.filterList = filterList
+mod.checkFilters = checkFilters
 mod.initialized = false
 
 function mod:CenterAuras(frame)
@@ -21,6 +25,24 @@ function mod:CenterAuras(frame)
 		if element and element.db.enable and element.PostUpdate and element['visible'..auraType] then
 			element:PostUpdate()
 		end
+	end
+end
+
+local function updateFilters(db)
+	twipe(checkFilters)
+	for _, unitType in ipairs({'FRIENDLY', 'ENEMY'}) do
+		twipe(filterList[unitType])
+		for filterName, info in pairs(db.Highlights.types[unitType].filterList) do
+			if info.shadow or info.border or info.useGlobal then
+				tinsert(filterList[unitType], {filterName = filterName,
+												priority = info.priority or 999,
+												border = info.border,
+												shadow = info.shadow,
+												info = info.useGlobal and db.global or info})
+				checkFilters[unitType] = true
+			end
+		end
+		tsort(filterList[unitType], function(a, b) return a.priority < b.priority end)
 	end
 end
 
@@ -81,6 +103,14 @@ function mod:LoadConfig(db)
 		end
 		return data.global
 	end
+	local specialFilters = {
+		["Personal"] = "Personal",
+		["nonPersonal"] = "nonPersonal",
+		["CastByUnit"] = "CastByUnit",
+		["notCastByUnit"] = "notCastByUnit",
+		["Dispellable"] = "Dispellable",
+		["notDispellable"] = "notDispellable",
+	}
 	core.unitframes.args[modName] = {
 		type = "group",
 		name = L["Auras"],
@@ -152,7 +182,7 @@ function mod:LoadConfig(db)
 						name = L["Add Filter"],
 						desc = L["Applies highlights to all auras passing the selected filter."],
 						values = function()
-							local filters = {}
+							local filters = CopyTable(specialFilters)
 							for filterName in pairs(E.global.unitframe.aurafilters) do
 								if filterName ~= 'Blacklist' then
 									filters[filterName] = filterName
@@ -169,34 +199,27 @@ function mod:LoadConfig(db)
 								["size"] = 3,
 								["color"] = { 0.93, 0.91, 0.55, 1 },
 								["shadowColor"] = { 0.93, 0.91, 0.55, 1 },
+								["priority"] = 1,
 							}
 							core:print('ADDED', value, L[" filter added."])
 							UF:Update_AllFrames()
 						end,
 					},
-					removeSelected = {
+					filterPriority = {
 						order = 3,
-						type = "execute",
-						name = L["Remove Selected"],
+						type = "input",
+						name = L["Filter Priority"],
 						desc = "",
-						func = function()
-							local selected = selectedSpellorFilter()
-							local data = db.Highlights.types[selectedType()]
-							if type(selected) == 'number' then
-								data.spellList[selected] = nil
-								local _, _, icon = GetSpellInfo(selected)
-								local link = GetSpellLink(selected)
-								icon = gsub(icon, '\124', '\124\124')
-								local string = '\124T' .. icon .. ':16:16\124t' .. link
-								core:print('REMOVED', string)
-							else
-								data.filterList[selected] = nil
-								core:print('REMOVED', selected, L[" filter removed."])
-							end
-							data.selected = "GLOBAL"
+						get = function() return tostring(getHighlightSettings(selectedType(), selectedSpellorFilter()).priority or "") end,
+						set = function(_, value)
+							getHighlightSettings(selectedType(), selectedSpellorFilter()).priority = tonumber(value) or 999
+							updateFilters(db)
 							UF:Update_AllFrames()
 						end,
-						disabled = function() return selectedSpellorFilter() == "GLOBAL" or selectedSpellorFilter() == "CURABLE" or selectedSpellorFilter() == "STEALABLE" end,
+						disabled = function()
+							return not db.Highlights.types[selectedType()].enabled
+									or (not E.global.unitframe.aurafilters[selectedSpellorFilter()]
+										and not specialFilters[selectedSpellorFilter()]) end,
 					},
 					spellOrFilterDropdown = {
 						order = 4,
@@ -238,8 +261,35 @@ function mod:LoadConfig(db)
 							return sortedKeys
 						end,
 					},
-					useGlobal = {
+					removeSelected = {
 						order = 5,
+						type = "execute",
+						name = L["Remove Selected"],
+						desc = "",
+						func = function()
+							local selected = selectedSpellorFilter()
+							local data = db.Highlights.types[selectedType()]
+							if type(selected) == 'number' then
+								data.spellList[selected] = nil
+								local _, _, icon = GetSpellInfo(selected)
+								local link = GetSpellLink(selected)
+								icon = gsub(icon, '\124', '\124\124')
+								local string = '\124T' .. icon .. ':16:16\124t' .. link
+								core:print('REMOVED', string)
+							else
+								data.filterList[selected] = nil
+								core:print('REMOVED', selected, L[" filter removed."])
+							end
+							data.selected = "GLOBAL"
+							UF:Update_AllFrames()
+						end,
+						hidden = function()
+							return selectedSpellorFilter() == "GLOBAL"
+									or selectedSpellorFilter() == "CURABLE"
+									or selectedSpellorFilter() == "STEALABLE" end,
+					},
+					useGlobal = {
+						order = 6,
 						type = "toggle",
 						name = L["Use Global Settings"],
 						desc = L["If toggled, the GLOBAL Spell or Filter entry values would be used."],
@@ -256,7 +306,10 @@ function mod:LoadConfig(db)
 							target.useGlobal = value
 							UF:Update_AllFrames()
 						end,
-						hidden = function() return selectedSpellorFilter() == "GLOBAL" or selectedSpellorFilter() == "CURABLE" or selectedSpellorFilter() == "STEALABLE" end,
+						hidden = function()
+							return selectedSpellorFilter() == "GLOBAL"
+									or selectedSpellorFilter() == "CURABLE"
+									or selectedSpellorFilter() == "STEALABLE" end,
 						disabled = function() return selectedSpellorFilter() == "GLOBAL" or selectedSpellorFilter() == "CURABLE" or selectedSpellorFilter() == "STEALABLE" end,
 					},
 				},
@@ -756,9 +809,9 @@ end
 
 function mod:UpdatePostUpdateAura(enable)
 	local dispellList, purgeList = core.DispellList[E.myclass], core.PurgeList[E.myclass]
+
 	function mod:PostUpdateAura(unit, button)
 		local db = E.db.Extras.unitframes[modName]
-
 		local attackable = UnitCanAttack('player', unit) == 1
 		local isDebuff = button.isDebuff
 
@@ -771,11 +824,8 @@ function mod:UpdatePostUpdateAura(enable)
 			end
 		end
 
-		if attackable then
-			db = db.Highlights.types['ENEMY']
-		else
-			db = db.Highlights.types['FRIENDLY']
-		end
+		local unitType = attackable and 'ENEMY' or 'FRIENDLY'
+		db = db.Highlights.types[unitType]
 
 		if not db.enabled then return end
 
@@ -790,44 +840,38 @@ function mod:UpdatePostUpdateAura(enable)
 			else
 				mod:ApplyHighlight(settings, button)
 			end
-		else
-			local tempFilterList, checkFilters = {}
-			for filterName, info in pairs(db.filterList) do
-				if info.shadow or info.border or info.useGlobal then
-					tempFilterList[filterName] = info.useGlobal and db.global or info
-					checkFilters = true
-				end
-			end
-			local settings
-			if checkFilters then
-				local parent = button:GetParent()
-				if not parent then return end
-				local grandParent = button:GetParent():GetParent()
-				if not grandParent then return end
-				local isPlayer, caster, duration = button.isPlayer, button.owner, button.duration
-				local isUnit = unit and caster and UnitIsUnit(unit, caster)
-				local db = grandParent.db[parent.type]
-				local noDuration = (not duration or duration == 0)
-				local allowDuration = noDuration or (duration and (duration > 0) and (db.maxDuration == 0 or duration <= db.maxDuration) and (db.minDuration == 0 or duration >= db.minDuration))
-				local canDispell = (parent.type == "buffs" and button.isStealable) or (parent.type == "debuffs" and debuffType and E:IsDispellableByMe(debuffType))
-				for filterName, db in pairs(tempFilterList) do
-					if UF:CheckFilter(name, caster, spellID, not attackable, isPlayer, isUnit, allowDuration, noDuration, canDispell, filterName) then
-						settings = db
-						break
+		elseif checkFilters[unitType] then
+			local parent = button:GetParent()
+			if not parent then return end
+			local grandParent = button:GetParent():GetParent()
+			if not grandParent then return end
+			local isPlayer, caster, duration = button.isPlayer, button.owner, button.duration
+			local isUnit = unit and caster and UnitIsUnit(unit, caster)
+			local db_type = grandParent.db[parent.type]
+			local noDuration = (not duration or duration == 0)
+			local allowDuration = noDuration
+									or (duration and (duration > 0)
+										and (db_type.maxDuration == 0 or duration <= db_type.maxDuration)
+										and (db_type.minDuration == 0 or duration >= db_type.minDuration))
+			local canDispell = (parent.type == "buffs" and button.isStealable) or (parent.type == "debuffs" and debuffType and E:IsDispellableByMe(debuffType))
+			for _, data in ipairs(filterList[unitType]) do
+				if UF:CheckFilter(name, caster, spellID, not attackable, isPlayer, isUnit, allowDuration, noDuration, canDispell, data.filterName) then
+					if data.border or data.shadow then
+						mod:ApplyHighlight(data.info, button)
+					elseif button.highlightApplied then
+						mod:ClearHighlights(button, isDebuff, debuffType, unstableAffliction, vampiricTouch)
 					end
+					return
 				end
 			end
-			if not settings then
-				mod:HandleCurableStealable(db.special, button, unit, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name, dispellList, purgeList)
-			elseif settings.border or settings.shadow then
-				mod:ApplyHighlight(settings, button)
-			elseif button.highlightApplied then
-				mod:ClearHighlights(button, isDebuff, debuffType, unstableAffliction, vampiricTouch)
-			end
+			mod:HandleCurableStealable(db.special, button, unit, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name, dispellList, purgeList)
+		else
+			mod:HandleCurableStealable(db.special, button, unit, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name, dispellList, purgeList)
 		end
 	end
 
 	if enable then
+		updateFilters(E.db.Extras.unitframes[modName])
 		if not self:IsHooked(UF, "PostUpdateAura") then self:SecureHook(UF, "PostUpdateAura", self.PostUpdateAura) end
 		self.initialized = true
 	elseif self.initialized then

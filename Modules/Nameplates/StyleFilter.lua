@@ -5,6 +5,7 @@ local NP = E:GetModule("NamePlates")
 
 local modName = mod:GetName()
 local activeFilters, links = {}, {}
+local isAwesome = C_NamePlate
 
 mod.initialized = false
 
@@ -121,7 +122,14 @@ function mod:LoadConfig(db)
 						name = core.pluginColor..L["Enable"],
 						desc = "",
 						get = function(info) return db.StyleFilterLinks[info[#info]] end,
-						set = function(info, value) db.StyleFilterLinks[info[#info]] = value self:Toggle(db) end,
+						set = function(info, value)
+							db.StyleFilterLinks[info[#info]] = value
+							if value and not isAwesome and not db.StyleFilterIcons.enabled then
+								E:StaticPopup_Show("PRIVATE_RL")
+							else
+								self:Toggle(db)
+							end
+						end,
 						disabled = false,
 					},
                     selectLink = {
@@ -255,7 +263,14 @@ function mod:LoadConfig(db)
 						name = core.pluginColor..L["Enable"],
 						desc = "",
 						get = function(info) return db.StyleFilterIcons[info[#info]] end,
-						set = function(info, value) db.StyleFilterIcons[info[#info]] = value self:Toggle(db) end,
+						set = function(info, value)
+							db.StyleFilterIcons[info[#info]] = value
+							if value and not isAwesome and not db.StyleFilterLinks.enabled then
+								E:StaticPopup_Show("PRIVATE_RL")
+							else
+								self:Toggle(db)
+							end
+						end,
 					},
                     selectedForIcon = {
                         order = 2,
@@ -881,23 +896,22 @@ function mod:Toggle(db)
 			end)
 		end
 		if triggersEnabled then
-			NP.StyleFilterCustomChecks = NP.StyleFilterCustomChecks or {}
 			for filterName, info in pairs(db.StyleFilterTriggers.filtersData) do
 				if find(info.triggersString or "", "%S+") then
 					local luaFunction = loadstring(info.triggersString)
 					if luaFunction then
-						NP.StyleFilterCustomChecks[filterName.."_Extras"] = luaFunction
+						NP:StyleFilterAddCustomCheck(filterName.."_Extras", luaFunction)
 					else
-						NP.StyleFilterCustomChecks[filterName.."_Extras"] = nil
+						NP:StyleFilterRemoveCustomCheck(filterName.."_Extras")
 						core:print('LUA', L[modName], L["The generated custom looting method did not return a function."])
 					end
 				else
-					NP.StyleFilterCustomChecks[filterName.."_Extras"] = nil
+					NP:StyleFilterRemoveCustomCheck(filterName.."_Extras")
 				end
 			end
 		elseif NP.StyleFilterCustomChecks then
 			for filterName in pairs(db.StyleFilterTriggers.filtersData) do
-				NP.StyleFilterCustomChecks[filterName.."_Extras"] = nil
+				NP:StyleFilterRemoveCustomCheck(filterName.."_Extras")
 			end
 		end
 		if linksEnabled then

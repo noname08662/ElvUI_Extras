@@ -278,6 +278,7 @@ function mod:Toggle(db)
 		for _, func in pairs({'UpdateNudgeFrame', 'NudgeMover', 'ResetMovers'}) do
 			if not self:IsHooked(E, func) then self:SecureHook(E, func) end
 		end
+		setMovers(true)
 		self.initialized = true
 	elseif self.initialized then
 		for _, func in pairs({'UpdateNudgeFrame', 'NudgeMover', 'ResetMovers'}) do
@@ -297,8 +298,8 @@ function mod:Toggle(db)
 			nudge.resetButton:Point("TOP", nudge, "CENTER", 0, 2)
 			nudge:Size(200, 110)
 		end
+		setMovers()
 	end
-	setMovers(db.enabled)
 end
 
 function mod:InitializeCallback()
