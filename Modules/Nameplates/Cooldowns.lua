@@ -6,7 +6,7 @@ local LSM = E.Libs.LSM
 local LAI = E.Libs.LAI
 
 local modName = mod:GetName()
-local activeCooldowns, petSpells, testSpells, testing = {}, {}, {}, false
+local activeCooldowns, petSpells, testing = {}, {}, false
 local highlightedSpells = {["ENEMY_PLAYER"] = {}, ["FRIENDLY_PLAYER"] = {}}
 local edgeFile = LSM:Fetch("border", "ElvUI GlowBorder")
 local isAwesome = C_NamePlate
@@ -127,28 +127,16 @@ local function testMode(db)
 	if not testing then return end
 
     local spellList = data.spellList
-    local spellIDs = {}
+    local testSpells = {}
 
-    local index = 0
-    for id in pairs(spellList) do
-        index = index + 1
-        if random() < 1 / index then
-            tinsert(spellIDs, id)
+	if not next(spellList) then
+        for id, duration in pairs(fallbackSpells) do
+            spellList[id] = duration
         end
     end
 
-    if #spellIDs == 0 then
-        for id in pairs(fallbackSpells) do
-            tinsert(spellIDs, id)
-        end
-    end
-
-    local numSpells = random(2, 7)
-    for _ = 1, numSpells do
-        local spellID = spellIDs[random(#spellIDs)]
-        local duration = spellList[spellID] or fallbackSpells[spellID]
+    for spellID, duration in pairs(spellList) do
         local startTime = GetTime() - random(0, duration/2)
-
         tinsert(testSpells, {
 						spellID = spellID,
 						startTime = startTime,
@@ -493,6 +481,10 @@ function mod:LoadConfig(db)
 						get = function(info) return selectedTypeData()[info[#info]] end,
 						set = function(info, value)
 							selectedTypeData()[info[#info]] = value
+							if not value and testing then
+								testing = false
+								testMode(db)
+							end
 							if value and not isAwesome then
 								E:StaticPopup_Show("PRIVATE_RL")
 							else
