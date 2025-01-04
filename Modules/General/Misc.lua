@@ -1126,6 +1126,7 @@ function mod:Toggle(db)
 			self[subMod](self, core.reload and {enabled = false} or info)
 		end
 	end
+	if core.reload then twipe(self.initialized) end
 end
 
 function mod:InitializeCallback()

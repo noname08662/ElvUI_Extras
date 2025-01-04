@@ -709,7 +709,7 @@ function mod:Toggle(db, visibilityUpdate)
 	elseif self.initialized then
 		core:RegisterAreaUpdate(modName)
 		if self:IsHooked(NP, "Construct_HealthBar") then self:Unhook(NP, "Construct_HealthBar") end
-		if isAwesome or not core.reload then
+		if isAwesome then
 			if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
 		else
 			self.OnShow = function() end

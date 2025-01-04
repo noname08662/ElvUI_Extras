@@ -15,11 +15,12 @@ f.lastUpdate = 0
 
 mod.f = f
 mod.initialized = false
+mod.mouselooktimer = 1
 
 local format = string.format
 local abs, sqrt, exp, min, max = math.abs, math.sqrt, math.exp, math.min, math.max
 local pairs, ipairs, loadstring, setfenv = pairs, ipairs, loadstring, setfenv
-local GetCursorPosition = GetCursorPosition
+local GetCursorPosition, IsMouselooking = GetCursorPosition, IsMouselooking
 
 hooksecurefunc(f, "Hide", function()
 	for frame in pairs(NP.VisiblePlates) do
@@ -249,7 +250,7 @@ function mod:PlateFade(frame, timeToFade, endAlpha)
 	self.hooks[NP].PlateFade(NP, frame, timeToFade, frame:GetAlpha(),
 		endAlpha *
 		max(
-			min(1 * exp(-sqrt((abs(frameX - centerX)/centerX)^2 + (abs(frameY - centerY)/centerY)^2)^centerCurve * falloffRate), 1),
+			min(exp(-sqrt((abs(frameX - centerX)/centerX)^2 + (abs(frameY - centerY)/centerY)^2)^centerCurve * falloffRate), 1),
 			minOpacity
 		)
 	)
@@ -261,8 +262,8 @@ function mod:PlateFadeMouse(frame, timeToFade, endAlpha)
 		endAlpha *
 		max(
 			min(
-				1 * exp(-sqrt((abs(frameX - centerX)/centerX)^2 + (abs(frameY - centerY)/centerY)^2)^centerCurve * falloffRate)
-					+ 1 * exp(-sqrt(((self.mouseX - frameX)/screenWidth)^2 + ((self.mouseY - frameY)/screenHeight)^2)^mouseCurve * mouseFalloffRate),
+				exp(-sqrt((abs(frameX - centerX)/centerX)^2 + (abs(frameY - centerY)/centerY)^2)^centerCurve * falloffRate)
+					+ exp(-sqrt(((self.mouseX - frameX)/screenWidth)^2 + ((self.mouseY - frameY)/screenHeight)^2)^mouseCurve * mouseFalloffRate),
 				1
 			),
 			minOpacity
@@ -276,18 +277,34 @@ local function buildOnUpdateFunc(db)
         format(
             [[
                 %s
+                %s
                     %s
                     for frame in pairs(NP.VisiblePlates) do
                         %s
                     end
                 %s
             ]],
+            (db.throttle > 0 or db.enableMouse) and [[
+				local self, elapsed = ...
+			]] or "",
             db.throttle > 0 and [[
-                local self, elapsed = ...
-                self.lastUpdate = self.lastUpdate + elapsed
-                if self.lastUpdate >= self.throttle then
-            ]] or "",
-            db.enableMouse and "mod.mouseX, mod.mouseY = GetCursorPosition()" or "",
+				self.lastUpdate = self.lastUpdate + elapsed
+				if self.lastUpdate >= self.throttle then
+			]] or "",
+            db.enableMouse and [[
+				if IsMouselooking() then
+					mod.mouseX = mod.mouseX + (centerX - mod.mouseX) * (elapsed * 5)
+					mod.mouseY = mod.mouseY + (centerY - mod.mouseY) * (elapsed * 5)
+					mod.mouselooktimer = 0.01
+				elseif mod.mouselooktimer >= 1 then
+					mod.mouseX, mod.mouseY = GetCursorPosition()
+				else
+					local targetX, targetY = GetCursorPosition()
+					mod.mouseX = mod.mouseX + (targetX - mod.mouseX) * (elapsed * 20)
+					mod.mouseY = mod.mouseY + (targetY - mod.mouseY) * (elapsed * 20)
+					mod.mouselooktimer = mod.mouselooktimer + mod.mouselooktimer * (elapsed * 20)
+				end
+			]] or "",
             (db.ignoreTarget and db.ignoreStyled) and
                 format([[
                     if not (frame.isTarget or frame.AlphaChanged) then
@@ -317,6 +334,9 @@ local function buildOnUpdateFunc(db)
         NP = NP,
         mod = mod,
         GetCursorPosition = GetCursorPosition,
+		IsMouselooking = IsMouselooking,
+		centerX = centerX,
+		centerY = centerY,
         pairs = pairs,
     })
     return luaFunction
@@ -348,8 +368,8 @@ function mod:Toggle(db, visibilityUpdate)
 					frame:SetAlpha(
 						max(
 							min(
-								1 * exp(-sqrt((abs(frameX - centerX)/centerX)^2 + (abs(frameY - centerY)/centerY)^2)^centerCurve * falloffRate)
-									+ 1 * exp(-sqrt(((self.mouseX - frameX)/screenWidth)^2 + ((self.mouseY - frameY)/screenHeight)^2)^mouseCurve * mouseFalloffRate),
+								exp(-sqrt((abs(frameX - centerX)/centerX)^2 + (abs(frameY - centerY)/centerY)^2)^centerCurve * falloffRate)
+									+ exp(-sqrt(((self.mouseX - frameX)/screenWidth)^2 + ((self.mouseY - frameY)/screenHeight)^2)^mouseCurve * mouseFalloffRate),
 								1
 							),
 							minOpacity
@@ -362,7 +382,7 @@ function mod:Toggle(db, visibilityUpdate)
 					local frameX, frameY = frame:GetCenter()
 					frame:SetAlpha(
 						max(
-							min(1 * exp(-sqrt((abs(frameX - centerX)/centerX)^2 + (abs(frameY - centerY)/centerY)^2)^centerCurve * falloffRate), 1),
+							min(exp(-sqrt((abs(frameX - centerX)/centerX)^2 + (abs(frameY - centerY)/centerY)^2)^centerCurve * falloffRate), 1),
 							minOpacity
 						)
 					)

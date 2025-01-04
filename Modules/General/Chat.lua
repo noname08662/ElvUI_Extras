@@ -891,7 +891,6 @@ local function setupCompactChat(db)
 
 			local function ChatModOptionsDropDown_Initialize(self, level)
 				local isRightSide = self == RightChatModFrame
-				local data = E.db.Extras.general[modName].CompactChat
 
 				if level == 1 then
 					local info = UIDropDownMenu_CreateInfo()
@@ -927,8 +926,8 @@ local function setupCompactChat(db)
 					for i = 1, NUM_CHAT_WINDOWS do
 						local chatFrame = _G["ChatFrame"..i]
 						local id = chatFrame:GetID()
-						if (isRightSide and data.rightSideChats[id]) or (not isRightSide and chatFrame.isDocked) then
-							info.text = ((isRightSide and data.selectedRightTab or data.selectedLeftTab) == id
+						if (isRightSide and db.rightSideChats[id]) or (not isRightSide and chatFrame.isDocked) then
+							info.text = ((isRightSide and db.selectedRightTab or db.selectedLeftTab) == id
 											and core.customColorAlpha or core.customColorBeta) .. chatFrame.name
 							info.hasArrow = isRightClick
 							info.notCheckable = true
@@ -2335,6 +2334,7 @@ function mod:InitializeCallback()
 	local db = E.db.Extras.general[modName]
 	mod:LoadConfig(db)
 	mod:Toggle(core.reload and {SearchFilter = {}, CompactChat = {}, ChatEditBox = {}} or db)
+	if core.reload then twipe(self.initialized) end
 end
 
 core.modules[modName] = mod.InitializeCallback
