@@ -1441,6 +1441,14 @@ function mod:Toggle(db)
 	end
 
 	if next(enabled) then
+		if not self:IsHooked(E, "ToggleOptionsUI") then
+			self:SecureHook(E, "ToggleOptionsUI", function()
+				if testing and ElvUIGUIFrame and not ElvUIGUIFrame:IsShown() then
+					testing = false
+					testMode(db)
+				end
+			end)
+		end
 		core:RegisterAreaUpdate(modName, function()
 			scanTool:SetOwner(WorldFrame, "ANCHOR_NONE")
 			local currentArea = core:GetCurrentAreaType()
@@ -1470,6 +1478,7 @@ function mod:Toggle(db)
 		end)
 		self.initialized = true
 	elseif self.initialized then
+		if self:IsHooked(E, "ToggleOptionsUI") then self:Unhook(E, "ToggleOptionsUI") end
 		self:UnregisterAllEvents()
 		core:RegisterAreaUpdate(modName)
 		twipe(activeCooldowns)
