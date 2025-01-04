@@ -52,6 +52,7 @@ What's inside:
 	(QuestIcons) - self-explanatory;
 	(StyleFilter) - filter linking, arbitrary icons, additional triggers (Lua);
 	(Targets) - target names with optional highlights;
+	(DepthOfField) - pseudo DoF alpha fading effect;
 [Unitframes]:
 	(AuraBars) - texts, icon;
 	(Auras) - flexible aura highlighting;
