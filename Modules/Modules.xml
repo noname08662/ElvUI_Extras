@@ -6,7 +6,6 @@
 	<Include file="General\MoversPlus.lua"/>>
 	<Include file="General\CustomCommands.lua"/>>
 	<Include file="General\Chat.lua"/>>
-	<Include file="General\SecureExecution.lua"/>>
 
 	<Include file="Blizzard\Automation.lua"/>>
 	<Include file="Blizzard\LootStyle.lua"/>>
