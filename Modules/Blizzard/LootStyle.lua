@@ -1239,13 +1239,13 @@ function mod:Toggle(db)
 	for subMod, info in pairs(db) do
 		self[subMod](self, core.reload and {enabled = false} or info)
 	end
-	if core.reload then twipe(self.initialized) end
 end
 
 function mod:InitializeCallback()
 	local db = E.db.Extras.blizzard[modName]
 	mod:LoadConfig(db)
 	mod:Toggle(db)
+	if core.reload then twipe(mod.initialized) end
 end
 
 core.modules[modName] = mod.InitializeCallback

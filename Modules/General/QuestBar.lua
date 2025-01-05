@@ -354,7 +354,6 @@ function mod:InitializeCallback()
 
 	if not E.private.actionbar.enable then return end
 	mod:Toggle(db)
-	if core.reload then twipe(self.initialized) end
 end
 
 core.modules[modName] = mod.InitializeCallback

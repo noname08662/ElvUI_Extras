@@ -306,7 +306,6 @@ function mod:InitializeCallback()
 	local db = E.db.Extras.general[modName]
 	mod:LoadConfig(db)
 	mod:Toggle(db)
-	if core.reload then wipe(self.initialized) end
 end
 
 core.modules[modName] = mod.InitializeCallback

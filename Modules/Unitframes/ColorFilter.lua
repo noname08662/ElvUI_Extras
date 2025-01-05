@@ -1677,6 +1677,19 @@ function mod:UpdateAll(db)
 	twipe(metaTable.statusbars)
 	twipe(conditionsFuncs)
 
+	if core.reload then
+		local bars = {"Health", "Power", "Castbar"}
+		for _, frame in ipairs(core:AggregateUnitFrames()) do
+			for _, statusbar in ipairs(bars) do
+				if frame[statusbar] then
+					updateHooks(frame, false, statusbar)
+					frame[statusbar]:ForceUpdate()
+				end
+			end
+		end
+		return
+	end
+
 	local enabled = false
 
 	for _, frame in ipairs(core:AggregateUnitFrames()) do

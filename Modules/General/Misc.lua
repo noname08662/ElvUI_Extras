@@ -892,11 +892,15 @@ function mod:ItemIcons(db)
 
 				for _, info in ipairs(messages[frame]) do
 					local msg = info.msg
-					frame:AddMessage(gsub(msg, "(\124c%x+\124Hitem:.-\124h\124r)",
-						function(link)
-							local texture = GetItemIcon(link)
-							return (db.orientation == "left") and "\124T"..(texture or "")..":"..db.size.."\124t"..link
-																or link.."\124T"..(texture or "")..":"..db.size.."\124t"
+					frame:AddMessage(gsub(msg, "(.*)(\124c%x+\124Hitem:.-\124h\124r)",
+						function(prev, link)
+							if not find(prev, "\124t$") then
+								local texture = GetItemIcon(link)
+								return prev .. ((db.orientation == "left") and "\124T"..(texture or "")..":"..db.size.."\124t"..link
+																	or link.."\124T"..(texture or "")..":"..db.size.."\124t")
+							else
+								return prev..link
+							end
 						end),
 						info.r, info.g, info.b)
 				end
@@ -1126,13 +1130,13 @@ function mod:Toggle(db)
 			self[subMod](self, core.reload and {enabled = false} or info)
 		end
 	end
-	if core.reload then twipe(self.initialized) end
 end
 
 function mod:InitializeCallback()
 	local db = E.db.Extras.general[modName]
 	mod:LoadConfig(db)
 	mod:Toggle(db)
+	if core.reload then twipe(mod.initialized) end
 end
 
 core.modules[modName] = mod.InitializeCallback

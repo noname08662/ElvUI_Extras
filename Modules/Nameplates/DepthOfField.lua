@@ -344,8 +344,6 @@ end
 
 
 function mod:Toggle(db, visibilityUpdate)
-	if self:IsHooked(NP, "PlateFade") then self:Unhook(NP, "PlateFade") end
-	if self:IsHooked(NP, "OnCreated") then self:Unhook(NP, "OnCreated") end
 	if not core.reload and db.enabled then
 		if not visibilityUpdate then
 			if db['showAll'] then
@@ -361,6 +359,8 @@ function mod:Toggle(db, visibilityUpdate)
 
 			updateScreenDimensions()
 
+			if self:IsHooked(NP, "PlateFade") then self:Unhook(NP, "PlateFade") end
+			if self:IsHooked(NP, "OnCreated") then self:Unhook(NP, "OnCreated") end
 			if db.enableMouse then
 				self:SecureHook(NP, "OnCreated", function(_, plate)
 					local frame = plate.UnitFrame
@@ -508,6 +508,9 @@ function mod:Toggle(db, visibilityUpdate)
 		self:UnregisterAllEvents()
 		f:SetScript("OnUpdate", nil)
 		f:Hide()
+		if self:IsHooked(NP, "PlateFade") then self:Unhook(NP, "PlateFade") end
+		if self:IsHooked(NP, "OnCreated") then self:Unhook(NP, "OnCreated") end
+		NP:ForEachVisiblePlate("PlateFade")
 	end
 end
 

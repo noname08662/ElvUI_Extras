@@ -965,13 +965,15 @@ function mod:ConstructFCF(frame, info)
 end
 
 function mod:UpdateFCFSettings(frame, db)
-	if not core.reload then
+	if core.reload then
+		return
+	else
 		frame:DisableElement('FloatingCombatFeedback')
 	end
 	local enabled
 	local data = db.units[frame.unitframeType]
 	if data then
-		if not core.reload and data.enabled then
+		if data.enabled then
 			self:ConstructFCF(frame, data)
 			local fcf = frame.FloatingCombatFeedback
 

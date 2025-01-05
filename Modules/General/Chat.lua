@@ -2334,7 +2334,7 @@ function mod:InitializeCallback()
 	local db = E.db.Extras.general[modName]
 	mod:LoadConfig(db)
 	mod:Toggle(core.reload and {SearchFilter = {}, CompactChat = {}, ChatEditBox = {}} or db)
-	if core.reload then twipe(self.initialized) end
+	if core.reload then twipe(mod.initialized) end
 end
 
 core.modules[modName] = mod.InitializeCallback
