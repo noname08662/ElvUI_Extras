@@ -26,6 +26,16 @@ local ITEM_SET_BONUS = gsub(format(ITEM_SET_BONUS, 1), "[1%p]+", "")
 local procStats = core.Misc_data and core.Misc_data[GetLocale()] or {}
 local allTipScrits = {}
 
+local function colorizeLine(text, r, g, b)
+	local hexCode = E:RGBToHex(r, g, b)
+	local hexReplacement = format("|r%s", hexCode)
+
+	text = gsub(text, "|r", hexReplacement)
+	text = format("%s%s|r", hexCode, text)
+
+	return text
+end
+
 local function runAllScripts(tt)
 	for _, script in pairs(allTipScrits) do
 		script(tt)
@@ -891,7 +901,7 @@ function mod:ItemIcons(db)
 				frame:Clear()
 
 				for _, info in ipairs(messages[frame]) do
-					local msg = info.msg
+					local msg = colorizeLine(info.msg, info.r, info.g, info.b)
 					frame:AddMessage(gsub(msg, "(.*)(\124c%x+\124Hitem:.-\124h\124r)",
 						function(prev, link)
 							if not find(prev, "\124t$") then
