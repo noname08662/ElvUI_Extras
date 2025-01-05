@@ -405,9 +405,9 @@ function mod:LoadConfig()
                     },
 					keybind = {
 						order = 2,
-						type = "input",
+						type = "keybinding",
 						name = L["Keybind"],
-						desc = L["ALT-CTRL-F, SHIFT-T, W, BUTTON4, etc."],
+						desc = "",
 						set = function(_, value)
 							if db.buttons[selectedButton()] and find(value, "%S+") then
 								db.buttons[selectedButton()].keybind = value
@@ -1072,177 +1072,177 @@ function mod:SetButtonIcon(button, info, tabsIconInfo)
 
 			GameTooltip:Hide()
 		end)
-	end
 
-	button.iconHandler = CreateFrame("Frame", nil, button)
-	button.iconHandler:SetScript("OnUpdate", function(_, elapsed)
-		timeElapsed = timeElapsed + elapsed
+		button.iconHandler = button.iconHandler or CreateFrame("Frame", nil, button)
+		button.iconHandler:SetScript("OnUpdate", function(_, elapsed)
+			timeElapsed = timeElapsed + elapsed
 
-		if timeElapsed > throttle then
-			timeElapsed = 0
+			if timeElapsed > throttle then
+				timeElapsed = 0
 
-			if button:blockFunc() then
-				if enabled then
-					button.texture:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-					button:SetBackdropBorderColor(bR, bG, bB)
-					button.shadow:SetBackdropBorderColor(sR, sG, sB, sA)
-					button.shadow:SetScale(sS)
-					button.cooldown:Hide()
-					button.macroText:SetText("")
-				end
-				return
-			end
-
-			local found = false
-
-			for _, tab in ipairs(tabsIconInfo) do
-				local func = tab.func
-
-				for _, frame in ipairs(existingFrames) do
-					local unit = frame.unit
-					if frame:IsShown() and unit and func(frame, unit) then
-						found = unit
-						self:PrepSecureButtons(button, unit, tab, screenWidth, screenHeight)
-						break
+				if button:blockFunc() then
+					if enabled then
+						button.texture:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+						button:SetBackdropBorderColor(bR, bG, bB)
+						button.shadow:SetBackdropBorderColor(sR, sG, sB, sA)
+						button.shadow:SetScale(sS)
+						button.cooldown:Hide()
+						button.macroText:SetText("")
 					end
+					return
 				end
 
-				if not found and tab.scanPlates then
-					for _, plate in pairs(GetNamePlates()) do
-						local frame, unit = plate.UnitFrame, plate.unit
-						if frame and unit and func(frame, unit, true) then
+				local found = false
+
+				for _, tab in ipairs(tabsIconInfo) do
+					local func = tab.func
+
+					for _, frame in ipairs(existingFrames) do
+						local unit = frame.unit
+						if frame:IsShown() and unit and func(frame, unit) then
 							found = unit
+							self:PrepSecureButtons(button, unit, tab, screenWidth, screenHeight)
 							break
 						end
 					end
-				end
 
-				if found then
-					if not enabled then break end
+					if not found and tab.scanPlates then
+						for _, plate in pairs(GetNamePlates()) do
+							local frame, unit = plate.UnitFrame, plate.unit
+							if frame and unit and func(frame, unit, true) then
+								found = unit
+								break
+							end
+						end
+					end
 
-					button:SetBackdropBorderColor(unpack(tab.borderColor))
-					button.shadow:SetBackdropBorderColor(unpack(tab.shadowColor))
-					button.shadow:SetScale(tab.shadowSize)
+					if found then
+						if not enabled then break end
 
-					if tab.namePos then
-						local name = UnitName(found) or ""
+						button:SetBackdropBorderColor(unpack(tab.borderColor))
+						button.shadow:SetBackdropBorderColor(unpack(tab.shadowColor))
+						button.shadow:SetScale(tab.shadowSize)
 
-						if name ~= button.currentName then
-							button.name:SetText(tab.abbreviateName and abbrev(name) or name)
+						if tab.namePos then
+							local name = UnitName(found) or ""
 
-							if tab.reactionName or tab.className then
-								local _, class = UnitClass(found)
+							if name ~= button.currentName then
+								button.name:SetText(tab.abbreviateName and abbrev(name) or name)
 
-								if class and tab.className and UnitIsPlayer(found) then
-									local values = ElvUFColors.class[class]
-									local r, g, b
+								if tab.reactionName or tab.className then
+									local _, class = UnitClass(found)
 
-									if values then
-										r, g, b = values[1], values[2], values[3]
+									if class and tab.className and UnitIsPlayer(found) then
+										local values = ElvUFColors.class[class]
+										local r, g, b
+
+										if values then
+											r, g, b = values[1], values[2], values[3]
+										else
+											r, g, b = unpack(info.icon.font.color)
+										end
+
+										button.name:SetTextColor(r, g, b)
 									else
-										r, g, b = unpack(info.icon.font.color)
+										local reaction = UnitReaction(found, "player")
+										local values = reaction and ElvUFColors.reaction[reaction]
+										local r, g, b
+
+										if values then
+											r, g, b = values[1], values[2], values[3]
+										else
+											r, g, b = unpack(info.icon.font.color)
+										end
+
+										button.name:SetTextColor(r, g, b)
 									end
-
-									button.name:SetTextColor(r, g, b)
-								else
-									local reaction = UnitReaction(found, "player")
-									local values = reaction and ElvUFColors.reaction[reaction]
-									local r, g, b
-
-									if values then
-										r, g, b = values[1], values[2], values[3]
-									else
-										r, g, b = unpack(info.icon.font.color)
-									end
-
-									button.name:SetTextColor(r, g, b)
 								end
+
+								button.currentName = name
+							end
+						end
+
+						local id = tab.id
+
+						if button.isHovered and id ~= button.currentId then
+							updateTip(button, id)
+						end
+
+						if id then
+							local cdInfo = tab.cdInfo
+							local start, duration, enable = cdInfo.start, cdInfo.duration, cdInfo.enable
+
+							if not enable then
+								start, duration, enable = tab.cdCheck()
+
+								cdInfo.start = start
+								cdInfo.duration = duration
+								cdInfo.enable = enable
 							end
 
-							button.currentName = name
-						end
-					end
-
-					local id = tab.id
-
-					if button.isHovered and id ~= button.currentId then
-						updateTip(button, id)
-					end
-
-					if id then
-						local cdInfo = tab.cdInfo
-						local start, duration, enable = cdInfo.start, cdInfo.duration, cdInfo.enable
-
-						if not enable then
-							start, duration, enable = tab.cdCheck()
-
-							cdInfo.start = start
-							cdInfo.duration = duration
-							cdInfo.enable = enable
-						end
-
-						if enable then
-							if (start + duration) - GetTime() > 0 then
-								button.cooldown:SetCooldown(start, duration)
-								button.cooldown:Show()
+							if enable then
+								if (start + duration) - GetTime() > 0 then
+									button.cooldown:SetCooldown(start, duration)
+									button.cooldown:Show()
+								else
+									button.cooldown:Hide()
+									twipe(cdInfo)
+								end
 							else
 								button.cooldown:Hide()
 								twipe(cdInfo)
 							end
+
+							button.currentId = id
+							button.texture:SetTexture(tab.texture == "" and tab.idTexture or tab.texture)
 						else
+							button.currentId = nil
+							button.texture:SetTexture(tab.texture)
 							button.cooldown:Hide()
-							twipe(cdInfo)
 						end
 
-						button.currentId = id
-						button.texture:SetTexture(tab.texture == "" and tab.idTexture or tab.texture)
-					else
+						if tab.macroText then
+							button.macroText:SetText(tab.macroText or "")
+						else
+							button.macroText:SetText("")
+						end
+
+						if tab.idSpell then
+							button.count:SetText("")
+						else
+							local count = GetItemCount(id)
+							button.count:SetText(count > 1 and count or "")
+						end
+
+						break
+					end
+				end
+
+				if found then
+					if enabled then
+						button.texture:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+						button:SetBackdropBorderColor(bR, bG, bB)
+						button.shadow:SetBackdropBorderColor(sR, sG, sB, sA)
+						button.shadow:SetScale(sS)
 						button.currentId = nil
-						button.texture:SetTexture(tab.texture)
+						button.currentName = nil
 						button.cooldown:Hide()
-					end
-
-					if tab.macroText then
-						button.macroText:SetText(tab.macroText or "")
-					else
 						button.macroText:SetText("")
-					end
-
-					if tab.idSpell then
 						button.count:SetText("")
-					else
-						local count = GetItemCount(id)
-						button.count:SetText(count > 1 and count or "")
+						button.name:SetText("")
+
+						if button.isHovered then
+							GameTooltip:Hide()
+						end
 					end
 
-					break
-				end
-			end
-
-			if found then
-				if enabled then
-					button.texture:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-					button:SetBackdropBorderColor(bR, bG, bB)
-					button.shadow:SetBackdropBorderColor(sR, sG, sB, sA)
-					button.shadow:SetScale(sS)
-					button.currentId = nil
-					button.currentName = nil
-					button.cooldown:Hide()
-					button.macroText:SetText("")
-					button.count:SetText("")
-					button.name:SetText("")
-
-					if button.isHovered then
-						GameTooltip:Hide()
+					if button.targetSecureFrame then
+						self:PostClick(button)
 					end
 				end
-
-				if button.targetSecureFrame then
-					self:PostClick(button)
-				end
 			end
-		end
-	end)
+		end)
+	end
 end
 
 function mod:EncodeName(name, screenWidth, screenHeight)
@@ -1472,7 +1472,7 @@ function mod:PostClick(button)
 	button.isScaning = false
 	button.startTime = GetTime()
 	button:HookScript("OnUpdate", function(self)
-		if not frame or not frame:IsShown() or UnitExists('target') or GetTime() - self.startTime > 0.1 then
+		if not frame or not frame:IsShown() or GetTime() - self.startTime > 0.1 then
 			if self.targetSecureFrame then
 				self.targetSecureFrame:SetClampedToScreen(true)
 				self.targetSecureFrame:SetClampRectInsets(0, 0, 0, 0)

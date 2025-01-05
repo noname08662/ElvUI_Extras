@@ -16,6 +16,8 @@ f.lastUpdate = 0
 mod.f = f
 mod.initialized = false
 mod.mouselooktimer = 1
+mod.mouseX = 0
+mod.mouseY = 0
 
 local format = string.format
 local abs, sqrt, exp, min, max = math.abs, math.sqrt, math.exp, math.min, math.max
@@ -510,7 +512,9 @@ function mod:Toggle(db, visibilityUpdate)
 		f:Hide()
 		if self:IsHooked(NP, "PlateFade") then self:Unhook(NP, "PlateFade") end
 		if self:IsHooked(NP, "OnCreated") then self:Unhook(NP, "OnCreated") end
-		NP:ForEachVisiblePlate("PlateFade")
+		if not core.reload then
+			NP:ForEachVisiblePlate("UpdateAllFrame", nil, true)
+		end
 	end
 end
 
