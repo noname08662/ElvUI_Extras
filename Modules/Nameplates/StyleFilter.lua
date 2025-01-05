@@ -12,7 +12,6 @@ mod.initialized = false
 local ipairs, pairs, next, unpack, loadstring = ipairs, pairs, next, unpack, loadstring
 local tremove, twipe = table.remove, table.wipe
 local format, find = string.format, string.find
-local max = math.max
 
 local E_UIFrameFadeIn, E_UIFrameFadeOut = E.UIFrameFadeIn, E.UIFrameFadeOut
 
@@ -47,7 +46,7 @@ local function updateAllIcons(db, enabled)
 					icon:Size(iconData.size)
 					icon:Point(iconData.point, frame.Health:IsShown() and frame.Health or frame.Name, iconData.relativeTo,
 								iconData.xOffset, iconData.yOffset)
-					icon:SetFrameLevel(max(1,frame:GetFrameLevel() + iconData.level))
+					icon:SetFrameLevel(frame:GetFrameLevel() + iconData.level)
 					icon.tex:SetTexture(iconData.tex)
 					icon.level = iconData.level
 					icon.point = iconData.point
@@ -855,7 +854,7 @@ function mod:Toggle(db)
 										icon:CreateBackdrop('Transparent')
 									end
 									icon:Size(iconData.size)
-									icon:SetFrameLevel(max(1,frame:GetFrameLevel() + iconData.level))
+									icon:SetFrameLevel(frame:GetFrameLevel() + iconData.level)
 									icon.tex = icon:CreateTexture(nil, "ARTWORK")
 									icon.tex:SetTexture(iconData.tex)
 									icon.tex:SetTexCoord(unpack(E.TexCoords))
@@ -964,7 +963,7 @@ function mod:Toggle(db)
 								icon:CreateBackdrop('Transparent')
 							end
 							icon:Size(iconData.size)
-							icon:SetFrameLevel(max(1,frame:GetFrameLevel() + iconData.level))
+							icon:SetFrameLevel(frame:GetFrameLevel() + iconData.level)
 							icon.tex = icon:CreateTexture(nil, "ARTWORK")
 							icon.tex:SetTexture(iconData.tex)
 							icon.tex:SetAllPoints()
@@ -996,7 +995,7 @@ function mod:Toggle(db)
 			if not self:IsHooked(NP, 'ResetNameplateFrameLevel') then self:SecureHook(NP, 'ResetNameplateFrameLevel', function(self, frame)
 					if frame.styleIcons then
 						for _, icon in pairs(frame.styleIcons) do
-							icon:SetFrameLevel(max(1,frame:GetFrameLevel() + icon.level))
+							icon:SetFrameLevel(frame:GetFrameLevel() + icon.level)
 						end
 					end
 				end)

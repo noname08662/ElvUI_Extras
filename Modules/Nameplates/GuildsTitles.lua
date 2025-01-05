@@ -33,7 +33,6 @@ mod.initialized = false
 local scanner = CreateFrame("GameTooltip", "ExtrasGT_ScanningTooltip", nil, "GameTooltipTemplate")
 scanner:SetOwner(WorldFrame, "ANCHOR_NONE")
 
-local max = math.max
 local _G, pairs, ipairs, tonumber, select = _G, pairs, ipairs, tonumber, select
 local twipe, tinsert, tsort = table.wipe, table.insert, table.sort
 local format, find, gsub, sub = string.format, string.find, string.gsub, string.sub
@@ -990,7 +989,7 @@ local function manageTitleFrame(frame, title, db, db_icon)
 		title:Height(db.fontSize)
 		title:ClearAllPoints()
 		title:Point(db.point, health:IsShown() and health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
-		title:SetFrameLevel(max(1, frame:GetFrameLevel() + db.level))
+		title:SetFrameLevel(frame:GetFrameLevel() + db.level)
 	end
 	if db_icon then
 		local occupationIcon = frame.OccupationIcon
@@ -1000,7 +999,7 @@ local function manageTitleFrame(frame, title, db, db_icon)
 		occupationIcon:Point(db_icon.point,
 							db_icon.anchor ~= "FRAME" and title or (health:IsShown() and health) or frame.Name,
 							db_icon.relativeTo, db_icon.xOffset, db_icon.yOffset)
-		occupationIcon:SetFrameLevel(max(1,frame:GetFrameLevel() + db_icon.level))
+		occupationIcon:SetFrameLevel(frame:GetFrameLevel() + db_icon.level)
 
 		if db_icon.backdrop then
 			if not occupationIcon.backdrop then
@@ -1480,8 +1479,8 @@ function mod:Toggle(db)
 						local unitType = frame.UnitType or select(2,NP:GetUnitInfo(frame))
 						if unitType and (unitType == "FRIENDLY_NPC" or unitType == "ENEMY_NPC") then
 							local level = frame:GetFrameLevel()
-							frame.Title:SetFrameLevel(max(1, level + db.Titles[unitType].level))
-							frame.OccupationIcon:SetFrameLevel(max(1, level + db.OccupationIcon.level))
+							frame.Title:SetFrameLevel(level + db.Titles[unitType].level)
+							frame.OccupationIcon:SetFrameLevel(level + db.OccupationIcon.level)
 						end
 					end
 				end)

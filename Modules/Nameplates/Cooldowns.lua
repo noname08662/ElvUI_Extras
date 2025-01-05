@@ -116,9 +116,9 @@ local resetCooldowns = {
 }
 
 
-local function testMode(db)
+local function testMode(db, force)
 	local data = db[db.selectedType]
-	if not data.isShown then return end
+	if not force and not data.isShown then return end
 
 	twipe(activeCooldowns)
 	for plate in pairs(NP.VisiblePlates) do
@@ -826,7 +826,6 @@ function mod:LoadConfig(db)
 					enabled = {
 						order = 1,
 						type = "toggle",
-						width = "full",
 						name = L["Show"],
 						desc = "",
 					},
@@ -847,6 +846,13 @@ function mod:LoadConfig(db)
 							["TOP"] = L["Up"],
 							["BOTTOM"] = L["Down"],
 						},
+					},
+					alpha = {
+						order = 4,
+						type = "range",
+						name = L["Alpha"],
+						desc = "",
+						min = 0.1, max = 1, step = 0.01,
 					},
 				},
 			},
@@ -1172,7 +1178,7 @@ function mod:AttachCooldownsToPlate(db, plate, cooldowns, unitType)
 				cdFrame.texture = cdFrame:CreateTexture(nil, "ARTWORK")
 				cdFrame.texture:SetInside(cdFrame, E.mult, E.mult)
 				cdFrame.fill = cdFrame:CreateTexture(nil, "OVERLAY")
-				cdFrame.fill:SetTexture(0, 0, 0, 0.8)
+				cdFrame.fill:SetTexture(0, 0, 0, db.cooldownFill.alpha or 0.8)
 				cdFrame.text = cdFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 				cdFrame.text:SetFont(LSM:Fetch("font", db_text.font), db_text.size, db_text.flag)
 				cdFrame.text:Point("CENTER", cdFrame, "CENTER", db_text.xOffset, db_text.yOffset)
@@ -1307,11 +1313,16 @@ end
 
 function mod:Toggle(db, visibilityUpdate)
 	if not core.reload and (db['FRIENDLY_PLAYER'].enabled or db['ENEMY_PLAYER'].enabled) then
-		if not self:IsHooked(E, "ToggleOptionsUI") then
+		if (not ElvUIGUIFrame or not self:IsHooked(ElvUIGUIFrame, "OnHide")) and not self:IsHooked(E, "ToggleOptionsUI") then
 			self:SecureHook(E, "ToggleOptionsUI", function()
-				if testing and ElvUIGUIFrame and not ElvUIGUIFrame:IsShown() then
-					testing = false
-					testMode(db)
+				if ElvUIGUIFrame and not self:IsHooked(ElvUIGUIFrame, "OnHide") then
+					self:SecureHookScript(ElvUIGUIFrame, "OnHide", function()
+						if testing then
+							testing = false
+							testMode(db, true)
+						end
+					end)
+					self:Unhook(E, "ToggleOptionsUI")
 				end
 			end)
 		end

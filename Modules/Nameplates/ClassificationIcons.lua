@@ -552,7 +552,7 @@ function mod:ShowIcon(frame, texture, db)
 		classIcon.backdrop:Hide()
 	end
 
-	classIcon:SetFrameLevel(db.frameLevel)
+	classIcon:SetFrameLevel(frame:GetFrameLevel() + db.frameLevel)
 	classIcon:Size(db.width, db.height)
 
 	db = db.points

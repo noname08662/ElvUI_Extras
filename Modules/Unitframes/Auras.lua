@@ -31,15 +31,20 @@ end
 local function updateFilters(db)
 	twipe(checkFilters)
 	for _, unitType in ipairs({'FRIENDLY', 'ENEMY'}) do
-		twipe(filterList[unitType])
+		filterList[unitType] = {[true] = {}, [false] = {}}
+		checkFilters[unitType] = {}
 		for filterName, info in pairs(db.Highlights.types[unitType].filterList) do
 			if info.shadow or info.border or info.useGlobal then
-				tinsert(filterList[unitType], {filterName = filterName,
-												priority = info.priority or 999,
-												border = info.border,
-												shadow = info.shadow,
-												info = info.useGlobal and db.global or info})
-				checkFilters[unitType] = true
+				for isDebuff, entry in pairs({[true] = "treatBuffs", [false] = "treatDebuffs"}) do
+					if info[entry] then
+						tinsert(filterList[unitType][isDebuff], {	filterName = filterName,
+																	priority = info.priority or 999,
+																	border = info.border,
+																	shadow = info.shadow,
+																	info = info.useGlobal and db.global or info,	})
+						checkFilters[unitType][isDebuff] = true
+					end
+				end
 			end
 		end
 		tsort(filterList[unitType], function(a, b) return a.priority < b.priority end)
@@ -335,15 +340,43 @@ function mod:LoadConfig(db)
 					UF:Update_AllFrames()
 				end,
 				args = {
-					shadow = {
+					treatDebuffs = {
 						order = 1,
+						type = "toggle",
+						name = L["Buffs"],
+						desc = "",
+						hidden = function()
+							local currSelected = selectedSpellorFilter()
+							return not db.Highlights.types[selectedType()].enabled
+									or type(currSelected) == 'number'
+									or currSelected == "GLOBAL"
+									or currSelected == "CURABLE"
+									or currSelected == "STEALABLE"
+						end,
+					},
+					treatBuffs = {
+						order = 2,
+						type = "toggle",
+						name = L["Debuffs"],
+						desc = "",
+						hidden = function()
+							local currSelected = selectedSpellorFilter()
+							return not db.Highlights.types[selectedType()].enabled
+									or type(currSelected) == 'number'
+									or currSelected == "GLOBAL"
+									or currSelected == "CURABLE"
+									or currSelected == "STEALABLE"
+						end,
+					},
+					shadow = {
+						order = 3,
 						type = "toggle",
 						width = "full",
 						name = L["Enable Shadow"],
 						desc = "",
 					},
 					size = {
-						order = 2,
+						order = 4,
 						type = "range",
 						name = L["Size"],
 						desc = "",
@@ -351,7 +384,7 @@ function mod:LoadConfig(db)
 						hidden = function() return not getHighlightSettings(selectedType(), selectedSpellorFilter()).shadow end,
 					},
 					shadowColor = {
-						order = 3,
+						order = 5,
 						type = "color",
 						name = L["Shadow Color"],
 						desc = "",
@@ -364,13 +397,13 @@ function mod:LoadConfig(db)
 						hidden = function() return not getHighlightSettings(selectedType(), selectedSpellorFilter()).shadow end,
 					},
 					border = {
-						order = 4,
+						order = 6,
 						type = "toggle",
 						name = L["Enable Border"],
 						desc = "",
 					},
 					color = {
-						order = 5,
+						order = 7,
 						type = "color",
 						name = L["Border Color"],
 						desc = "",
@@ -848,7 +881,7 @@ function mod:UpdatePostUpdateAura(database, enable)
 				else
 					mod:ApplyHighlight(settings, button)
 				end
-			elseif checkFilters[unitType] then
+			elseif checkFilters[unitType][isDebuff or false] then
 				local parent = button:GetParent()
 				if not parent then return end
 				local grandParent = button:GetParent():GetParent()
@@ -862,7 +895,7 @@ function mod:UpdatePostUpdateAura(database, enable)
 											and (db_type.maxDuration == 0 or duration <= db_type.maxDuration)
 											and (db_type.minDuration == 0 or duration >= db_type.minDuration))
 				local canDispell = (parent.type == "buffs" and button.isStealable) or (parent.type == "debuffs" and debuffType and E:IsDispellableByMe(debuffType))
-				for _, data in ipairs(filterList[unitType]) do
+				for _, data in ipairs(filterList[unitType][isDebuff or false]) do
 					if UF:CheckFilter(name, caster, spellID, not attackable, isPlayer, isUnit, allowDuration, noDuration, canDispell, data.filterName) then
 						if data.border or data.shadow then
 							mod:ApplyHighlight(data.info, button)

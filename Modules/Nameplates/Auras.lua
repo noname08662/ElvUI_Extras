@@ -19,15 +19,20 @@ local filterList, checkFilters = {["FRIENDLY"] = {}, ["ENEMY"] = {}}, {}
 local function updateFilters(db)
 	twipe(checkFilters)
 	for _, unitType in ipairs({'FRIENDLY', 'ENEMY'}) do
-		twipe(filterList[unitType])
+		filterList[unitType] = {[true] = {}, [false] = {}}
+		checkFilters[unitType] = {}
 		for filterName, info in pairs(db.Highlights.types[unitType].filterList) do
 			if info.shadow or info.border or info.useGlobal then
-				tinsert(filterList[unitType], {filterName = filterName,
-												priority = info.priority or 999,
-												border = info.border,
-												shadow = info.shadow,
-												info = info.useGlobal and db.global or info})
-				checkFilters[unitType] = true
+				for isDebuff, entry in pairs({[true] = "treatBuffs", [false] = "treatDebuffs"}) do
+					if info[entry] then
+						tinsert(filterList[unitType][isDebuff], {	filterName = filterName,
+																	priority = info.priority or 999,
+																	border = info.border,
+																	shadow = info.shadow,
+																	info = info.useGlobal and db.global or info,	})
+						checkFilters[unitType][isDebuff] = true
+					end
+				end
 			end
 		end
 		tsort(filterList[unitType], function(a, b) return a.priority < b.priority end)
@@ -304,6 +309,7 @@ function mod:LoadConfig(db)
 								core:print('REMOVED', selected, L[" filter removed."])
 							end
 							data.selected = "GLOBAL"
+							updateFilters(db)
 							updateVisiblePlates(db)
 						end,
 						hidden = function()
@@ -347,18 +353,47 @@ function mod:LoadConfig(db)
 				get = function(info) return getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] end,
 				set = function(info, value)
 					getHighlightSettings(selectedType(), selectedSpellorFilter())[info[#info]] = value
+					updateFilters(db)
 					updateVisiblePlates(db)
 				end,
 				args = {
-					shadow = {
+					treatDebuffs = {
 						order = 1,
+						type = "toggle",
+						name = L["Buffs"],
+						desc = "",
+						hidden = function()
+							local currSelected = selectedSpellorFilter()
+							return not db.Highlights.types[selectedType()].enabled
+									or type(currSelected) == 'number'
+									or currSelected == "GLOBAL"
+									or currSelected == "CURABLE"
+									or currSelected == "STEALABLE"
+						end,
+					},
+					treatBuffs = {
+						order = 2,
+						type = "toggle",
+						name = L["Debuffs"],
+						desc = "",
+						hidden = function()
+							local currSelected = selectedSpellorFilter()
+							return not db.Highlights.types[selectedType()].enabled
+									or type(currSelected) == 'number'
+									or currSelected == "GLOBAL"
+									or currSelected == "CURABLE"
+									or currSelected == "STEALABLE"
+						end,
+					},
+					shadow = {
+						order = 3,
 						type = "toggle",
 						width = "full",
 						name = L["Enable Shadow"],
 						desc = "",
 					},
 					size = {
-						order = 2,
+						order = 4,
 						type = "range",
 						name = L["Size"],
 						desc = "",
@@ -366,7 +401,7 @@ function mod:LoadConfig(db)
 						hidden = function() return not getHighlightSettings(selectedType(), selectedSpellorFilter()).shadow end,
 					},
 					shadowColor = {
-						order = 3,
+						order = 5,
 						type = "color",
 						name = L["Shadow Color"],
 						desc = "",
@@ -379,13 +414,13 @@ function mod:LoadConfig(db)
 						hidden = function() return not getHighlightSettings(selectedType(), selectedSpellorFilter()).shadow end,
 					},
 					border = {
-						order = 4,
+						order = 6,
 						type = "toggle",
 						name = L["Enable Border"],
 						desc = "",
 					},
 					color = {
-						order = 5,
+						order = 7,
 						type = "color",
 						name = L["Border Color"],
 						desc = "",
@@ -570,12 +605,12 @@ function mod:CenterAlignAuras(frame, db)
 end
 
 function mod:Update_AurasPosition(frame, db)
-	if not E.db.Extras.nameplates[modName].CenteredAuras.enabled then return end
 	mod:CenterAlignAuras(frame, db)
 end
 
 function mod:UpdateElement_Auras(frame)
-	if not frame.Health:IsShown() or not E.db.Extras.nameplates[modName].CenteredAuras.enabled then return end
+	if not frame.Health:IsShown() then return end
+
 	local db = NP.db.units[frame.UnitType].buffs
 	if db.enable and not (frame.UnitTrivial and NP.db.trivial) then
 		if frame.Buffs.visibleBuffs and frame.Buffs.visibleBuffs > 0 then
@@ -697,7 +732,7 @@ function mod:SetAura(frame, guid, index, filter, isDebuff, visible)
 			else
 				mod:ApplyHighlight(settings, button)
 			end
-		elseif checkFilters[attackType] then
+		elseif checkFilters[attackType][isDebuff or false] then
 			local parent = button:GetParent()
 			local parentType = parent.type
 			local np_db = NP.db.units[unitType][parentType]
@@ -707,7 +742,7 @@ function mod:SetAura(frame, guid, index, filter, isDebuff, visible)
 				local allowDuration = noDuration
 										or (duration and (duration > 0) and np_db.filters.maxDuration == 0 or duration <= np_db.filters.maxDuration)
 											and (np_db.filters.minDuration == 0 or duration >= np_db.filters.minDuration)
-				for _, data in ipairs(filterList[attackType]) do
+				for _, data in ipairs(filterList[attackType][isDebuff or false]) do
 					if NP:CheckFilter(name, spellID, button.isPlayer, allowDuration, noDuration, data.filterName) then
 						if data.border or data.shadow then
 							mod:ApplyHighlight(data.info, button)

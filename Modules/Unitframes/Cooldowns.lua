@@ -878,6 +878,7 @@ function mod:LoadConfig(db)
 					enabled = {
 						order = 0,
 						type = "toggle",
+						width = "full",
 						name = L["Show"],
 						desc = "",
 					},
@@ -904,6 +905,14 @@ function mod:LoadConfig(db)
 							["TOP"] = L["Up"],
 							["BOTTOM"] = L["Down"],
 						},
+					},
+					alpha = {
+						order = 4,
+						type = "range",
+						name = L["Alpha"],
+						desc = "",
+						min = 0.1, max = 1, step = 0.01,
+						disabled = function() return not selectedUnitData().enabled or selectedUnitData().cooldownFill.classic end,
 					},
 				},
 			},
@@ -1227,10 +1236,11 @@ function mod:AttachCooldowns(database, frame, cooldowns)
 				cdFrame.texture = cdFrame:CreateTexture(nil, "ARTWORK")
 				cdFrame.texture:SetInside(cdFrame, E.mult, E.mult)
 				cdFrame.fill = cdFrame:CreateTexture(nil, "OVERLAY")
-				cdFrame.fill:SetTexture(0, 0, 0, 0.8)
+				cdFrame.fill:SetTexture(0, 0, 0, db_cooldownFill.alpha or 0.8)
 				cdFrame.cooldown = CreateFrame("Cooldown", "$parentCD", cdFrame, "CooldownFrameTemplate")
 				cdFrame.cooldown:SetAllPoints(cdFrame.texture)
-				cdFrame.text = cdFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+				cdFrame.text = ((db_cooldownFill.enabled and db_cooldownFill.classic) and cdFrame.cooldown
+								or cdFrame):CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 				cdFrame.text:SetFont(LSM:Fetch("font", db_text.font), db_text.size, db_text.flag)
 				cdFrame.text:Point("CENTER", cdFrame, "CENTER", db_text.xOffset, db_text.yOffset)
 				cdFrame:SetTemplate()
@@ -1441,11 +1451,16 @@ function mod:Toggle(db)
 	end
 
 	if next(enabled) then
-		if not self:IsHooked(E, "ToggleOptionsUI") then
+		if (not ElvUIGUIFrame or not self:IsHooked(ElvUIGUIFrame, "OnHide")) and not self:IsHooked(E, "ToggleOptionsUI") then
 			self:SecureHook(E, "ToggleOptionsUI", function()
-				if testing and ElvUIGUIFrame and not ElvUIGUIFrame:IsShown() then
-					testing = false
-					testMode(db)
+				if ElvUIGUIFrame and not self:IsHooked(ElvUIGUIFrame, "OnHide") then
+					self:SecureHookScript(ElvUIGUIFrame, "OnHide", function()
+						if testing then
+							testing = false
+							testMode(db)
+						end
+					end)
+					self:Unhook(E, "ToggleOptionsUI")
 				end
 			end)
 		end
