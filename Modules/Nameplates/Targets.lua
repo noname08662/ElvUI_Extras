@@ -1486,8 +1486,15 @@ function mod:Toggle(db, visibilityUpdate)
 		end
 		self.initialized = true
 	elseif self.initialized then
-		for _, func in ipairs({"Construct_Name", "CacheGroupUnits", "OnShow", "OnHide", "Update_CPoints", "UpdateElement_All"}) do
+		for _, func in ipairs({"Construct_Name", "CacheGroupUnits", "OnShow", "Update_CPoints", "UpdateElement_All"}) do
 			if self:IsHooked(NP, func) then self:Unhook(NP, func) end
+		end
+		if self:IsHooked(NP, "OnHide") then
+			if isAwesome or not core.reload then
+				self:Unhook(NP, "OnHide")
+			else
+				self.OnHide = function() end
+			end
 		end
 		self:UnregisterAllEvents()
 		self:UpdateAllFrames(db)

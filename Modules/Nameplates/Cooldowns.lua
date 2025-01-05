@@ -1460,7 +1460,13 @@ function mod:Toggle(db, visibilityUpdate)
 		self:UnregisterAllEvents()
 		if self:IsHooked(E, "ToggleOptionsUI") then self:Unhook(E, "ToggleOptionsUI") end
 		if self:IsHooked(NP, "Construct_HealthBar") then self:Unhook(NP, "Construct_HealthBar") end
-		if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
+		if self:IsHooked(NP, "OnShow") then
+			if isAwesome or not core.reload then
+				self:Unhook(NP, "OnShow")
+			else
+				self.OnShow = function() end
+			end
+		end
 		for frame in pairs(NP.CreatedPlates) do
 			local plate = frame.UnitFrame
 			if plate and plate.CDTracker then
