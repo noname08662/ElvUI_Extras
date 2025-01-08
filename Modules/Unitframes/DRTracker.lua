@@ -42,7 +42,6 @@ local ERR_NOT_IN_COMBAT, InCombatLockdown = ERR_NOT_IN_COMBAT, InCombatLockdown
 P["Extras"]["unitframes"][modName] = {
 	["selectedUnit"] = 'target',
 	["selectedCat"] = 'fear',
-	["playersOnly"] = false,
 	["DRtime"] = 18,
 	["catList"] = {},
 	["catColors"] = {
@@ -156,44 +155,17 @@ function mod:LoadConfig(db)
 				disabled = function() return not selectedUnitData().enabled or not ufUnitData().enable end,
 				args = {
 					DRtime = {
-						order = 2,
+						order = 1,
 						type = "range",
+						width = "double",
 						min = 16, max = 20, step = 1,
 						name = L["DR Time"],
 						desc = L["DRtime controls how long it takes for the icons to reset. Several factors can affect how DR resets. If you are experiencing constant problems with DR reset accuracy, you can change this value."],
 						get = function() return db.DRtime end,
 						set = function(_, value) db.DRtime = value self:Toggle(db) end,
 					},
-					test = {
-						order = 3,
-						type = "execute",
-						name = L["Test"],
-						desc = "",
-						func = function() mod:TDR(db) end,
-					},
-					playersOnly = {
-						order = 4,
-						type = "toggle",
-						name = L["Players Only"],
-						desc = L["Ignore NPCs when setting up icons."],
-						get = function() return db.playersOnly end,
-						set = function(_, value) db.playersOnly = value self:Toggle(db) end,
-						hidden = function() return selectedUnit() == 'arena' end,
-					},
-					noCdNumbers = {
-						order = 5,
-						type = "toggle",
-						name = L["Disable Cooldown"],
-						desc = L["Go to 'Cooldown Text' > 'Global' to configure."],
-					},
-					typeBorders = {
-						order = 6,
-						type = "toggle",
-						name = L["Color Borders"],
-						desc = "",
-					},
 					growthDir = {
-						order = 7,
+						order = 2,
 						type = "select",
 						name = L["Growth Direction"],
 						desc = "",
@@ -204,46 +176,65 @@ function mod:LoadConfig(db)
 							["BOTTOM"] = L["Down"],
 						},
 					},
+					test = {
+						order = 3,
+						type = "execute",
+						name = L["Test"],
+						desc = "",
+						func = function() mod:TDR(db) end,
+					},
 					point = {
-						order = 8,
+						order = 4,
 						type = "select",
 						name = L["Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
 					},
 					relativeTo = {
-						order = 9,
+						order = 5,
 						type = "select",
 						name = L["Relative Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
 					},
 					xOffset = {
-						order = 10,
+						order = 6,
 						type = "range",
 						min = -80, max = 80, step = 1,
 						name = L["X Offset"],
 						desc = "",
 					},
 					yOffset = {
-						order = 11,
+						order = 7,
 						type = "range",
 						min = -80, max = 80, step = 1,
 						name = L["Y Offset"],
 						desc = "",
 					},
 					spacing = {
-						order = 12,
+						order = 8,
 						type = "range",
 						min = 0, max = 16, step = 1,
 						name = L["Spacing"],
 						desc = "",
 					},
 					iconSize = {
-						order = 13,
+						order = 9,
 						type = "range",
 						min = 4, max = 128, step = 1,
 						name = L["Icon Size"],
+						desc = "",
+					},
+					noCdNumbers = {
+						order = 10,
+						type = "toggle",
+						name = L["Disable Cooldown"],
+						desc = L["Go to 'Cooldown Text' > 'Global' to configure."],
+					},
+					typeBorders = {
+						order = 11,
+						type = "toggle",
+						name = L["Color Borders"],
 						desc = "",
 					},
 					--[[
@@ -653,27 +644,28 @@ local function combatLogCheck(db, ...)
             local drCat = trackedCats[spellID]
             if not drCat or not db.catList[drCat] then return end
 
-			if destFlags then
-				local isAffectingPlayer 	= destGUID == UnitGUID('player')
-				local isAnotherPlayer 		= (band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
-												or band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER)
-				local isHostileOrNeutral 	= (band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE
-												or band(destFlags, COMBATLOG_OBJECT_REACTION_NEUTRAL) == COMBATLOG_OBJECT_REACTION_NEUTRAL)
+			local isAnotherPlayer 		= (band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
+											or band(destFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER)
+			local isHostileOrNeutral 	= (band(destFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) == COMBATLOG_OBJECT_REACTION_HOSTILE
+											or band(destFlags, COMBATLOG_OBJECT_REACTION_NEUTRAL) == COMBATLOG_OBJECT_REACTION_NEUTRAL)
 
-				if not (isHostileOrNeutral or isAffectingPlayer)
-					or (db.playersOnly and not (isAnotherPlayer and not isAffectingPlayer))
-					or (not isAnotherPlayer and not pveDR[drCat])
-						then return
-				end
+			if not (isHostileOrNeutral or destGUID == E.myguid)
+				or not (isAnotherPlayer or pveDR[drCat])
+					then return
 			end
 
 			-- sometimes (silences) a spellcast triggers both a SPELL_CAST_SUCCESS and some other event
-			lastUpdateTime[sourceGUID] = lastUpdateTime[sourceGUID] or {}
-			local lastUpdate = lastUpdateTime[sourceGUID][spellID] or 0
-			local currentTime = GetTime()
-			if currentTime - lastUpdate < 1 then return end
-			lastUpdateTime[sourceGUID][spellID] = currentTime
-
+			local lastUpdate = lastUpdateTime[sourceGUID] and lastUpdateTime[sourceGUID][spellID]
+			if lastUpdate then
+				local currentTime = GetTime()
+				if destGUID == lastUpdate[2] and currentTime - lastUpdate[1] < 0.1 then
+					return
+				else
+					lastUpdateTime[sourceGUID][spellID] = {currentTime, destGUID}
+				end
+			else
+				lastUpdateTime[sourceGUID] = {[spellID] = {GetTime(), destGUID}}
+			end
             local color = db.catColors[drCat]
 
             if not activeGUIDs[destGUID] then activeGUIDs[destGUID] = {} end

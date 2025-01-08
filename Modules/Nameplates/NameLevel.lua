@@ -312,7 +312,7 @@ function mod:Toggle(db)
 	local enabled = {}
 	for _, type in ipairs({'FRIENDLY_PLAYER', 'FRIENDLY_NPC', 'ENEMY_PLAYER', 'ENEMY_NPC'}) do
 		if not db[type] then
-			db[type]  = CopyTable(db['FRIENDLY_PLAYER'])
+			db[type] = CopyTable(db['FRIENDLY_PLAYER'])
 		end
 		for _, element in ipairs({'Name', 'Level'}) do
 			if db[type][element].enabled then

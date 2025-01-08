@@ -14,10 +14,81 @@ local UnitIsUnit, CancelUnitBuff, UnitCanAttack = UnitIsUnit, CancelUnitBuff, Un
 local DebuffTypeColor, GetSpellInfo, GetSpellLink = DebuffTypeColor, GetSpellInfo, GetSpellLink
 
 local filterList, checkFilters = {["FRIENDLY"] = {}, ["ENEMY"] = {}}, {}
+local iconPositions = {}
 
 mod.filterList = filterList
 mod.checkFilters = checkFilters
 mod.initialized = false
+
+local directionProperties = {
+	["CENTER"] = {
+		isVertical = true,
+		firstInRowPoint = 'BOTTOM',
+		subsequentPoint = 'BOTTOMLEFT',
+		framePoint = 'BOTTOM',
+		growthX = 1,
+	},
+	["TOP"] = {
+		isVertical = true,
+		firstInRowPoint = 'BOTTOM',
+		subsequentPoint = 'BOTTOMLEFT',
+		framePoint = 'BOTTOM',
+		growthX = 1,
+	},
+	["BOTTOM"] = {
+		isVertical = true,
+		isReverse = true,
+		firstInRowPoint = 'TOP',
+		subsequentPoint = 'TOPLEFT',
+		framePoint = 'TOP',
+		growthX = 1,
+	},
+	["LEFT"] = {
+		isVertical = false,
+		firstInRowPoint = 'RIGHT',
+		subsequentPoint = 'TOPRIGHT',
+		framePoint = 'RIGHT',
+		growthX = 1,
+	},
+	["RIGHT"] = {
+		isVertical = false,
+		isReverse = true,
+		firstInRowPoint = 'LEFT',
+		subsequentPoint = 'TOPLEFT',
+		framePoint = 'LEFT',
+		growthX = 1,
+	},
+	["TOPLEFT"] = {
+		isVertical = true,
+		firstInRowPoint = 'BOTTOM',
+		subsequentPoint = 'BOTTOMLEFT',
+		framePoint = 'BOTTOM',
+		growthX = 1,
+	},
+	["TOPRIGHT"] = {
+		isVertical = true,
+		firstInRowPoint = 'BOTTOM',
+		subsequentPoint = 'BOTTOMLEFT',
+		framePoint = 'BOTTOM',
+		growthX = -1,
+	},
+	["BOTTOMLEFT"] = {
+		isVertical = true,
+		isReverse = true,
+		firstInRowPoint = 'TOP',
+		subsequentPoint = 'TOPLEFT',
+		framePoint = 'TOP',
+		growthX = 1,
+	},
+	["BOTTOMRIGHT"] = {
+		isVertical = true,
+		isReverse = true,
+		firstInRowPoint = 'TOP',
+		subsequentPoint = 'TOPLEFT',
+		framePoint = 'TOP',
+		growthX = -1,
+	}
+}
 
 function mod:CenterAuras(frame)
 	for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
@@ -48,6 +119,180 @@ local function updateFilters(db)
 			end
 		end
 		tsort(filterList[unitType], function(a, b) return a.priority < b.priority end)
+	end
+end
+
+local function cachePositions(disable)
+	if disable then
+		if mod.ishooked then
+			if E.Options and E.Options.args.unitframe then
+				if E.Options.args.CustomTweaks then
+					for _, setting in ipairs({"spacing", "units"}) do
+						if not mod:IsHooked(E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting], "set") then
+							mod:Unhook(E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting], "set")
+						end
+					end
+				end
+				for frameType in pairs(core:getAllFrameTypes()) do
+					if E.Options.args.unitframe.args[frameType] then
+						for _, auraType in ipairs({"buffs", "debuffs"}) do
+							if mod:IsHooked(E.Options.args.unitframe.args[frameType].args[auraType], "set") then
+								mod:Unhook(E.Options.args.unitframe.args[frameType].args[auraType], "set")
+							end
+						end
+					end
+				end
+			elseif mod:IsHooked(E, "ToggleOptionsUI") then
+				mod:Unhook(E, "ToggleOptionsUI")
+			end
+			mod.ishooked = false
+		end
+		return
+	end
+	local customTweaksUnits = E.db.CustomTweaks and E.db.CustomTweaks.AuraIconSpacing.units
+	local customTweaksSpacing = E.db.CustomTweaks and E.db.CustomTweaks.AuraIconSpacing.spacing
+	for frameType in pairs(core:getAllFrameTypes()) do
+		if UF.db.units[frameType] then
+			iconPositions[frameType] = {}
+			for _, auraType in ipairs({"buffs", "debuffs"}) do
+				local data = UF.db.units[frameType][auraType]
+
+				if data then
+					iconPositions[frameType][auraType] = { positions = {}, sizes = {} }
+
+					local cache = iconPositions[frameType][auraType]
+					local anchorPoint = data.anchorPoint
+					local points = directionProperties[anchorPoint]
+					local isVertical = points.isVertical
+					local isReverse = points.isReverse
+					local firstInRowPoint = points.firstInRowPoint
+					local subsequentPoint = points.subsequentPoint
+					local framePoint = points.framePoint
+					local growthX = points.growthX
+					local spacing = (customTweaksUnits and customTweaksUnits[frameType]) and customTweaksSpacing or E.Spacing
+					local offset, perRow = (data.sizeOverride or 0) + spacing, data.perrow
+
+					for numElements = 1, perRow * data.numrows do
+						cache.positions[numElements] = {}
+						local lastAnchor = nil
+
+						for i = 1, numElements do
+							if i == (perRow * floor((i-1) / perRow) + 1) then
+								local numOtherRow = min(perRow, (numElements - (perRow * floor((i-1) / perRow))))
+								local OtherRowSize = (numOtherRow * offset)
+								local xOffset = (isVertical and -(OtherRowSize - offset) / 2 or ((isReverse and 1 or -1) * offset * floor((i-1) / perRow))) * growthX
+								local yOffset = isVertical and ((isReverse and -1 or 1) * offset * floor((i-1) / perRow)) or -(OtherRowSize - offset) / 2
+
+								cache.positions[numElements][i] = {
+									point = firstInRowPoint,
+									firstInRow = true,
+									relativeTo = framePoint,
+									xOffset = xOffset,
+									yOffset = yOffset
+								}
+							else
+								local xOffset = (isVertical and offset or 0) * growthX
+								local yOffset = isVertical and 0 or offset
+
+								cache.positions[numElements][i] = {
+									point = subsequentPoint,
+									anchor = lastAnchor,
+									relativeTo = subsequentPoint,
+									xOffset = xOffset,
+									yOffset = yOffset
+								}
+							end
+							lastAnchor = i
+						end
+
+						local numRows = ceil(numElements/perRow)
+						local width = max(offset, offset * min(perRow, numElements) - spacing)
+						local height = max(offset, offset * numRows - spacing)
+						cache.sizes[numElements] = {
+							isVertical and width or height,
+							isVertical and height or width
+						}
+					end
+				end
+			end
+		end
+	end
+	if not mod.ishooked then
+		if E.Options and E.Options.args.unitframe then
+			if E.Options.args.CustomTweaks and E.private.CustomTweaks.AuraIconSpacing then
+				for _, setting in ipairs({"spacing", "units"}) do
+					if not mod:IsHooked(E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting], "set") then
+						mod:RawHook(E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting], "set",
+							function(info, key, value)
+								if setting == 'units' then
+									E.db.CustomTweaks.AuraIconSpacing.units[key] = value
+								else
+									E.db.CustomTweaks.AuraIconSpacing[setting] = key
+								end
+								cachePositions()
+								mod.hooks[E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting]].set(info,key,value)
+								for _, frame in ipairs(core:AggregateUnitFrames()) do
+									mod:CenterAuras(frame)
+								end
+							end
+						)
+					end
+				end
+			end
+			for frameType in pairs(core:getAllFrameTypes()) do
+				if E.Options.args.unitframe.args[frameType] then
+					for _, auraType in ipairs({"buffs", "debuffs"}) do
+						if not mod:IsHooked(E.Options.args.unitframe.args[frameType].args[auraType], "set") then
+							mod:RawHook(E.Options.args.unitframe.args[frameType].args[auraType], "set", function(info, value)
+								E.db.unitframe.units[frameType][auraType][info[#info]] = value
+								cachePositions()
+								mod.hooks[E.Options.args.unitframe.args[frameType].args[auraType]].set(info, value)
+							end)
+						end
+					end
+				end
+			end
+		elseif not mod:IsHooked(E, "ToggleOptionsUI") then
+			mod:SecureHook(E, "ToggleOptionsUI", function()
+				if E.Options.args.unitframe then
+					if E.Options.args.CustomTweaks and E.private.CustomTweaks.AuraIconSpacing then
+						for _, setting in ipairs({"spacing", "units"}) do
+							if not mod:IsHooked(E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting], "set") then
+								mod:RawHook(E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting], "set",
+									function(info, key, value)
+										if setting == 'units' then
+											E.db.CustomTweaks.AuraIconSpacing.units[key] = value
+										else
+											E.db.CustomTweaks.AuraIconSpacing[setting] = key
+										end
+										cachePositions()
+										mod.hooks[E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting]].set(info,key,value)
+										for _, frame in ipairs(core:AggregateUnitFrames()) do
+											mod:CenterAuras(frame)
+										end
+									end
+								)
+							end
+						end
+					end
+					for frameType in pairs(core:getAllFrameTypes()) do
+						if E.Options.args.unitframe.args[frameType] then
+							for _, auraType in ipairs({"buffs", "debuffs"}) do
+								if not mod:IsHooked(E.Options.args.unitframe.args[frameType].args[auraType], "set") then
+									mod:RawHook(E.Options.args.unitframe.args[frameType].args[auraType], "set", function(info, value)
+										E.db.unitframe.units[frameType][auraType][info[#info]] = value
+										cachePositions()
+										mod.hooks[E.Options.args.unitframe.args[frameType].args[auraType]].set(info, value)
+									end)
+								end
+							end
+						end
+					end
+					mod:Unhook(E, "ToggleOptionsUI")
+				end
+			end)
+		end
+		mod.ishooked = true
 	end
 end
 
@@ -474,188 +719,87 @@ end
 
 function mod:UpdateCenteredAuras(enable)
 	if enable then
-		local function locals(self)
+		cachePositions()
+
+		function mod:CenterAlignAuras(self, numElements, auraType, auraTypeRef)
+			if not numElements or numElements == 0 then return end
+
 			local parent = self:GetParent()
-			local db = parent.db
-			local buffs = parent.Buffs
-			local debuffs = parent.Debuffs
-			local numBuffs = self.visibleBuffs
-			local numDebuffs = self.visibleDebuffs
-			local offsetb = (buffs.size + buffs.spacing)
-			local offsetd = (debuffs.size + debuffs.spacing)
-			local perRowb = db.buffs.perrow
-			local perRowd = db.debuffs.perrow
-			local numRowsb = db.buffs.numrows
-			local numRowsd = db.debuffs.numrows
+			local overRide = parent.db[auraType] and parent.db[auraType].sizeOverride
 
-			return buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd, numRowsb, numRowsd
-		end
+			if overRide and overRide > 0 then
+				local frame = parent[auraTypeRef]
+				local data = iconPositions[parent.unitframeType][frame.type]
+				local points = data.positions[numElements]
 
-		local directionProperties = {
-			["CENTER"] = {
-				isVertical = true,
-				firstInRowPoint = 'BOTTOM',
-				subsequentPoint = 'BOTTOMLEFT',
-				framePoint = 'BOTTOM',
-				growthX = 1,
-			},
-			["TOP"] = {
-				isVertical = true,
-				firstInRowPoint = 'BOTTOM',
-				subsequentPoint = 'BOTTOMLEFT',
-				framePoint = 'BOTTOM',
-				growthX = 1,
-			},
-			["BOTTOM"] = {
-				isVertical = true,
-				isReverse = true,
-				firstInRowPoint = 'TOP',
-				subsequentPoint = 'TOPLEFT',
-				framePoint = 'TOP',
-				growthX = 1,
-			},
-			["LEFT"] = {
-				isVertical = false,
-				firstInRowPoint = 'RIGHT',
-				subsequentPoint = 'TOPRIGHT',
-				framePoint = 'RIGHT',
-				growthX = 1,
-			},
-			["RIGHT"] = {
-				isVertical = false,
-				isReverse = true,
-				firstInRowPoint = 'LEFT',
-				subsequentPoint = 'TOPLEFT',
-				framePoint = 'LEFT',
-				growthX = 1,
-			},
-			["TOPLEFT"] = {
-				isVertical = true,
-				firstInRowPoint = 'BOTTOM',
-				subsequentPoint = 'BOTTOMLEFT',
-				framePoint = 'BOTTOM',
-				growthX = 1,
-			},
-			["TOPRIGHT"] = {
-				isVertical = true,
-				firstInRowPoint = 'BOTTOM',
-				subsequentPoint = 'BOTTOMLEFT',
-				framePoint = 'BOTTOM',
-				growthX = -1,
-			},
-			["BOTTOMLEFT"] = {
-				isVertical = true,
-				isReverse = true,
-				firstInRowPoint = 'TOP',
-				subsequentPoint = 'TOPLEFT',
-				framePoint = 'TOP',
-				growthX = 1,
-			},
-			["BOTTOMRIGHT"] = {
-				isVertical = true,
-				isReverse = true,
-				firstInRowPoint = 'TOP',
-				subsequentPoint = 'TOPLEFT',
-				framePoint = 'TOP',
-				growthX = -1,
-			}
-		}
-
-		function mod:CenterAlignAuras(frame, numElements, perRow, offset)
-			if not numElements or perRow == 1 then return end
-
-			local anchorPoint = frame.anchorPoint
-			local points = directionProperties[anchorPoint]
-			local isVertical = points.isVertical
-			local isReverse = points.isReverse
-			local firstInRowPoint = points.firstInRowPoint
-			local subsequentPoint = points.subsequentPoint
-			local framePoint = points.framePoint
-			local growthX = points.growthX
-
-			for i = 1, numElements do
-				local child = frame[i]
-				if child then
-					child:ClearAllPoints()
-					if i == (perRow * floor(i / perRow) + 1) then
-						local numOtherRow = min(perRow, (numElements - (perRow * floor(i / perRow))))
-						local OtherRowSize = (numOtherRow * offset)
-						local xOffset = (isVertical and -(OtherRowSize - offset) / 2 or ((isReverse and 1 or -1) * offset * floor(i / perRow))) * growthX
-						local yOffset = isVertical and ((isReverse and -1 or 1) * offset * floor(i / perRow)) or -(OtherRowSize - offset) / 2
-						child:Point(firstInRowPoint, frame, framePoint, xOffset, yOffset)
-						anchorPoint = child
-					else
-						local xOffset = (isVertical and offset or 0) * growthX
-						local yOffset = isVertical and 0 or offset
-						child:Point(subsequentPoint, anchorPoint, subsequentPoint, xOffset, yOffset)
-						anchorPoint = child
+				for i = 1, numElements do
+					local child = frame[i]
+					if child then
+						local vals = points[i]
+						child:ClearAllPoints()
+						child:Point(vals.point, vals.firstInRow and frame or frame[vals.anchor], vals.relativeTo, vals.xOffset, vals.yOffset)
 					end
 				end
-			end
+				local height, width = unpack(data.sizes[numElements])
+				frame:Size(height, width)
 
-			local spacing = frame.spacing
-			local numRows = ceil(numElements/perRow)
-			local width = max(offset, offset * min(perRow, numElements) - spacing)
-			local height = max(offset, offset * numRows - spacing)
-
-			frame:Size(isVertical and width or height, isVertical and height or width)
-
-			if frame.auraBarsHolder then
-				frame.auraBarsHolder:Height(isVertical and height or width)
+				if frame.auraBarsHolder then
+					frame.auraBarsHolder:Height(width)
+				end
 			end
 		end
 
 		function mod:UpdateBuffsHeaderPosition()
-			local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd = locals(self)
+			local numDebuffs = self.visibleDebuffs
 			if not numDebuffs or numDebuffs == 0 then
-				mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
+				mod:CenterAlignAuras(self, self.visibleBuffs, 'buffs', 'Buffs')
 			else
-				mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
-				mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
+				mod:CenterAlignAuras(self, numDebuffs, 'debuffs', 'Debuffs')
+				mod:CenterAlignAuras(self, self.visibleBuffs, 'buffs', 'Buffs')
 			end
 		end
 
 		function mod:UpdateDebuffsHeaderPosition()
-			local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd = locals(self)
+			local numBuffs = self.visibleBuffs
 			if not numBuffs or numBuffs == 0 then
-				mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
+				mod:CenterAlignAuras(self, self.visibleDebuffs, 'debuffs', 'Debuffs')
 			else
-				mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
-				mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
+				mod:CenterAlignAuras(self, self.visibleDebuffs, 'debuffs', 'Debuffs')
+				mod:CenterAlignAuras(self, numBuffs, 'buffs', 'Buffs')
 			end
 		end
 
 		function mod:UpdateBuffsPositionAndDebuffHeight()
-			local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd = locals(self)
+			local numDebuffs = self.visibleDebuffs
 			if not numDebuffs or numDebuffs == 0 then
-				mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
+				mod:CenterAlignAuras(self, self.visibleBuffs, 'buffs', 'Buffs')
 			else
-				mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
-				mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
+				mod:CenterAlignAuras(self, numDebuffs, 'debuffs', 'Debuffs')
+				mod:CenterAlignAuras(self, self.visibleBuffs, 'buffs', 'Buffs')
 			end
 		end
 
 		function mod:UpdateDebuffsPositionAndBuffHeight()
-			local buffs, debuffs, numDebuffs, numBuffs, offsetb, offsetd, perRowb, perRowd = locals(self)
+			local numBuffs = self.visibleBuffs
 			if not numBuffs or numBuffs == 0 then
-				mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
+				mod:CenterAlignAuras(self, self.visibleDebuffs, 'debuffs', 'Debuffs')
 			else
-				mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
-				mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
+				mod:CenterAlignAuras(self, self.visibleDebuffs, 'debuffs', 'Debuffs')
+				mod:CenterAlignAuras(self, numBuffs, 'buffs', 'Buffs')
 			end
 		end
 
 		function mod:UpdateBuffsHeight()
-			local buffs, _, _, numBuffs, offsetb, _, perRowb = locals(self)
+			local numBuffs = self.visibleBuffs
 			if numBuffs and numBuffs > 0 then
-				mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
+				mod:CenterAlignAuras(self, numBuffs, 'buffs', 'Buffs')
 			end
 		end
 
 		function mod:UpdateDebuffsHeight()
-			local _, debuffs, numDebuffs, _, _, offsetd, _, perRowd = locals(self)
+			local numDebuffs = self.visibleDebuffs
 			if numDebuffs and numDebuffs > 0 then
-				mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
+				mod:CenterAlignAuras(self, numDebuffs, 'debuffs', 'Debuffs')
 			end
 		end
 
@@ -673,78 +817,68 @@ function mod:UpdateCenteredAuras(enable)
 				return
 			end
 
-			local auraBars = frame.AuraBars
 			local db = frame.db
-			if db.aurabar.enable then
+			if db.aurabar.enable and db.aurabar.attachTo ~= "FRAME" then
+				local attachTo, anchorPoint, anchorTo
 
-				local numElements, perRow, attachTo
 				if db.aurabar.attachTo == "BUFFS" then
 					attachTo = frame.Buffs
-					numElements = attachTo.visibleBuffs or 0
-					perRow = db.buffs.perrow
+					local numElements = attachTo.visibleBuffs or 0
+					local offset = attachTo.size + attachTo.spacing
+
+					if db.aurabar.anchorPoint == "BELOW" then
+						anchorPoint, anchorTo = "TOP", "BOTTOM"
+					else
+						anchorPoint, anchorTo = "BOTTOM", "TOP"
+					end
+
+					attachTo.auraBarsHolder = attachTo.auraBarsHolder or CreateFrame("Frame")
+					attachTo.auraBarsHolder:ClearAllPoints()
+					attachTo.auraBarsHolder:Point(anchorPoint, attachTo)
+					attachTo.auraBarsHolder:Size(offset*max(1,db.buffs.perrow)-attachTo.spacing, offset*max(1,numElements)-attachTo.spacing)
+
+					mod:CenterAlignAuras(attachTo, numElements, 'buffs', 'Buffs')
 				elseif db.aurabar.attachTo == "DEBUFFS" then
 					attachTo = frame.Debuffs
-					numElements = attachTo.visibleDebuffs or 0
-					perRow = db.debuffs.perrow
-				end
+					local numElements = attachTo.visibleDebuffs or 0
+					local offset = attachTo.size + attachTo.spacing
 
-				if not attachTo then return end
+					if db.aurabar.anchorPoint == "BELOW" then
+						anchorPoint, anchorTo = "TOP", "BOTTOM"
+					else
+						anchorPoint, anchorTo = "BOTTOM", "TOP"
+					end
 
-				local anchorPoint, anchorTo = "BOTTOM", "TOP"
-				if db.aurabar.anchorPoint == "BELOW" then
-					anchorPoint, anchorTo = "TOP", "BOTTOM"
-				end
+					attachTo.auraBarsHolder = attachTo.auraBarsHolder or CreateFrame("Frame")
+					attachTo.auraBarsHolder:ClearAllPoints()
+					attachTo.auraBarsHolder:Point(anchorPoint, attachTo)
+					attachTo.auraBarsHolder:Size(offset*max(1,db.debuffs.perrow)-attachTo.spacing, offset*max(1,numElements)-attachTo.spacing)
 
-				local offset = attachTo.size + attachTo.spacing
-				local width = offset * max(1, perRow) - attachTo.spacing
-				local height = offset * max(1, numElements) - attachTo.spacing
-
-				attachTo.auraBarsHolder = attachTo.auraBarsHolder or CreateFrame("Frame")
-				attachTo.auraBarsHolder:ClearAllPoints()
-				attachTo.auraBarsHolder:Point(anchorPoint, attachTo, anchorPoint, 0, 0)
-				attachTo.auraBarsHolder:Width(width, height)
-
-				mod:CenterAlignAuras(attachTo, numElements, perRow, offset)
-
-				attachTo = attachTo.auraBarsHolder
-
-				local yOffset
-				local spacing = (((db.aurabar.attachTo == "FRAME" and 3) or (db.aurabar.attachTo == "PLAYER_AURABARS" and 4) or 2) * frame.SPACING)
-				local border = (((db.aurabar.attachTo == "FRAME" or db.aurabar.attachTo == "PLAYER_AURABARS") and 2 or 1) * frame.BORDER)
-
-				if db.aurabar.anchorPoint == "BELOW" then
-					yOffset = -spacing + border - (not db.aurabar.yOffset and 0 or db.aurabar.yOffset)
+					mod:CenterAlignAuras(attachTo, numElements, 'debuffs', 'Debuffs')
 				else
-					yOffset = spacing - border + (not db.aurabar.yOffset and 0 or db.aurabar.yOffset)
+					return
 				end
 
-				local xOffset = (db.aurabar.attachTo == "FRAME" and frame.SPACING or 0)
-				local offsetLeft = xOffset + ((db.aurabar.attachTo == "FRAME" and ((anchorTo == "TOP" and frame.ORIENTATION ~= "LEFT") or (anchorTo == "BOTTOM" and frame.ORIENTATION == "LEFT"))) and frame.POWERBAR_OFFSET or 0)
-				local offsetRight = -xOffset - ((db.aurabar.attachTo == "FRAME" and ((anchorTo == "TOP" and frame.ORIENTATION ~= "RIGHT") or (anchorTo == "BOTTOM" and frame.ORIENTATION == "RIGHT"))) and frame.POWERBAR_OFFSET or 0)
-
+				local auraBars = frame.AuraBars
 				auraBars:ClearAllPoints()
-				auraBars:Point(anchorPoint.."LEFT", attachTo, anchorTo.."LEFT", offsetLeft, yOffset)
-				auraBars:Point(anchorPoint.."RIGHT", attachTo, anchorTo.."RIGHT", offsetRight, yOffset)
+				auraBars:Point(anchorPoint.."LEFT", attachTo.auraBarsHolder, anchorTo.."LEFT")
+				auraBars:Point(anchorPoint.."RIGHT", attachTo.auraBarsHolder, anchorTo.."RIGHT")
 				auraBars:SetAnchors()
 			end
 		end
 
-		function mod:UpdateFrame(frame, db)
+		function mod:UpdateFrame(frame)
 			local buffs = frame.Buffs
 			local debuffs = frame.Debuffs
 			local numBuffs = buffs.visibleBuffs
 			local numDebuffs = debuffs.visibleDebuffs
-			local offsetb = (buffs.size + buffs.spacing)
-			local offsetd = (debuffs.size + debuffs.spacing)
-			local perRowb = db.buffs.perrow
-			local perRowd = db.debuffs.perrow
 
 			if numDebuffs and numDebuffs > 0 then
-				mod:CenterAlignAuras(debuffs, numDebuffs, perRowd, offsetd)
+				mod:CenterAlignAuras(debuffs, debuffs.visibleDebuffs, 'debuffs', 'Debuffs')
 			end
 
 			if numBuffs and numBuffs > 0 then
-				mod:CenterAlignAuras(buffs, numBuffs, perRowb, offsetb)
+				mod:CenterAlignAuras(buffs, buffs.visibleBuffs, 'buffs', 'Buffs')
 			end
 		end
 
@@ -756,6 +890,8 @@ function mod:UpdateCenteredAuras(enable)
 		end
 		core:Tag('centerAuras', nil, function(_, frame) E:ScheduleTimer(function() self:CenterAuras(frame) end, 0.1) end)
 	else
+		cachePositions(true)
+
 		for _, func in ipairs({'Configure_Auras', 'Configure_AuraBars', 'UpdateBuffsHeaderPosition', 'UpdateDebuffsHeaderPosition', 'UpdateBuffsPositionAndDebuffHeight', 'UpdateDebuffsPositionAndBuffHeight', 'UpdateDebuffsHeight', 'UpdateBuffsHeight'}) do
 			if self:IsHooked(UF, func) then self:Unhook(UF, func) end
 		end

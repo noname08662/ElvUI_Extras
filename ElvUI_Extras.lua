@@ -42,8 +42,6 @@ core.DispellList = {
 
 core.SpellLists = {
 	["DEFAULTS"] = {
-		-- Stolen from Icicle
-
 		-- Misc
 		[11732] = 120,	-- Healthstone
 		[26297] = 180,	-- Berserking
@@ -87,7 +85,6 @@ core.SpellLists = {
 		[48707] = 45,	-- Anti-Magic Shell
 		[49576] = 25,	-- Death Grip
 		[47528] = 10,	-- Mind Freeze
-		[49222] = 60,	-- Bone Shield
 		[51052] = 120,	-- Anti-Magic Zone
 		[49203] = 60,	-- Hungering Cold
 		[49028] = 90, 	-- Dancing Rune Weapon
@@ -304,51 +301,8 @@ core.SpellLists = {
 		[50613] = 120,  -- Arcane Torrent
 		[20549] = 120,  -- War Stomp
 	},
-	["PETS"] = {
-		-- Hunter
-		[61685] = 25,	-- Charge
-		[50519] = 60,	-- Sonic Blast
-		[50245] = 40,	-- Pin
-		[50433] = 10,	-- Ankle Crack
-		[26090] = 30,	-- Pummel
-		[57386] = 60,	-- Stampede
-		[50541] = 60,	-- Clench
-		[26064] = 60,	-- Shell Shield
-		[35346] = 15,	-- Time Warp
-		[54644] = 10,	-- Frost Breath
-		[50479] = 40,	-- Nether Shock
-		[50518] = 40,	-- Ravage
-		[35387] = 10,	-- Corrosive Spit
-		[54706] = 40,	-- Vemom Web Spray
-		[4167] 	= 40,	-- Web
-		[50274] = 12,	-- Spore Cloud
-		[54680] = 10,	-- Monstrous Bite
-		[50271] = 10,	-- Tendon Rip
-		[50318] = 60,	-- Serenity Dust
-		[50498] = 60,	-- Tear Armor
-		[50285] = 40,	-- Dust Cloud
-		[56626] = 10,	-- Sting
-		[24604] = 40,	-- Furious Howl
-		[24423] = 10,	-- Demoralizing Screech
-		[58604] = 10,	-- Lava Breath
-		[53490] = 180,	-- Bullheaded
-		[23145] = 32,	-- Dive
-		[55709] = 480,	-- Heart of the Phoenix
-		[53426] = 180,	-- Lick Your Wounds
-		[53401] = 45,	-- Rabid
-		[53476] = 30,	-- Intervene
-		[53480] = 60,	-- Roar of Sacrifice
-		[53478] = 360,	-- Last Stand
-		[53517] = 180,	-- Roar of Recovery
-
-		-- Warlock
-		[19647] = 24,	-- Spell Lock
-		[47986]	= 60,	-- Sacrifice
-
-		-- Mage
-		[33395] = 25,	-- Freeze
-	},
 }
+
 
 local AddOnName = ...
 local isAwesome = C_NamePlate and E.private.nameplates.enable
@@ -361,7 +315,6 @@ local plateAnchoring = core.plateAnchoring
 local taggedFrames = core.taggedFrames
 local areaUpdates = core.areaUpdates
 
-local CreateFrame, UIParent, UIDropDownMenu_Refresh = CreateFrame, UIParent, UIDropDownMenu_Refresh
 local _G, unpack, pairs, ipairs, select, tonumber, print = _G, unpack, pairs, ipairs, select, tonumber, print
 local gsub, find, sub, lower, upper = string.gsub, string.find, string.sub, string.lower, string.upper
 local format, match, gmatch = string.format, string.match, string.gmatch
@@ -404,25 +357,35 @@ end
 
 
 -- make worlmap quests open quest log on ctrl-click
-if not core:IsHooked("WorldMapQuestFrame_OnMouseUp") then
-	core:SecureHook("WorldMapQuestFrame_OnMouseUp", function(self)
-		if InCombatLockdown() then
-			return
-		elseif IsControlKeyDown() then
-			if not QuestLogFrame:IsShown() then
-				ShowUIPanel(QuestLogFrame)
-			end
-
-			QuestLog_SetSelection(self.questLogIndex)
-			QuestLog_Update()
+core:SecureHook("WorldMapQuestFrame_OnMouseUp", function(self)
+	if InCombatLockdown() then
+		return
+	elseif IsControlKeyDown() then
+		if not QuestLogFrame:IsShown() then
+			ShowUIPanel(QuestLogFrame)
 		end
-	end)
-end
+
+		QuestLog_SetSelection(self.questLogIndex)
+		QuestLog_Update()
+	end
+end)
 
 
 -- restored raid controls
+local stateHandler = CreateFrame("Frame", nil, UIParent, "SecureHandlerStateTemplate")
+stateHandler:SetAttribute("_onstate-combatstate", [[
+	local t, a = self:GetFrameRef("maintank"), self:GetFrameRef("mainassist")
+	if t and a then
+		t:ClearAllPoints()
+		t:Hide()
+		a:ClearAllPoints()
+		a:Hide()
+	end
+]])
+RegisterStateDriver(stateHandler, "combatstate", "[combat] hide; show")
+
 local function createSecurePromoteButton(name, role)
-    local button = CreateFrame("Button", name, UIParent, "SecureActionButtonTemplate")
+    local button = CreateFrame("Button", name, UIParent, "SecureActionButtonTemplate", "SecureHandlerStateTemplate")
     button:SetFrameStrata("TOOLTIP")
     button:Hide()
 
@@ -431,9 +394,9 @@ local function createSecurePromoteButton(name, role)
     button:SetAttribute("action", "toggle")
 
 	button:RegisterEvent("PLAYER_REGEN_DISABLED")
-	button:RegisterEvent("PLAYER_REGEN_ENABLED")
 
-	RegisterStateDriver(button, "visibility", "[combat] hide")
+	stateHandler:SetFrameRef(role, button)
+
     return button
 end
 
@@ -453,18 +416,10 @@ local function setButton(unit, button, newButton)
 		button:SetButtonState("NORMAL")
 	end)
 	newButton:SetScript("PostClick", function()
-		button:GetScript("OnClick")(button)
+		CloseDropDownMenus()
 	end)
-	newButton:SetScript("OnEvent", function(self, event)
-		if event == "PLAYER_REGEN_DISABLED" then
-			self:EnableMouse(false)
-			button:EnableMouse(false)
-            button:SetAlpha(0.5)
-		else
-			self:EnableMouse(true)
-			button:EnableMouse(true)
-            button:SetAlpha(1)
-		end
+	newButton:SetScript("OnEvent", function(self)
+		if self:IsShown() then CloseDropDownMenus() end
 	end)
 	newButton:Show()
 end
@@ -472,64 +427,49 @@ end
 local secureTankButton = createSecurePromoteButton("ElvUI_SecureTankButton", "maintank")
 local secureAssistButton = createSecurePromoteButton("ElvUI_SecureAssistButton", "mainassist")
 
-if not core:IsHooked("UnitPopup_OnClick") then
-    core:SecureHook("UnitPopup_OnClick", function(self)
-        local button = self.value
-        local dropdownFrame = UIDROPDOWNMENU_INIT_MENU
+core:SecureHook("UnitPopup_ShowMenu", function(_, _, unit)
+	if UIDROPDOWNMENU_MENU_LEVEL ~= 1 or InCombatLockdown() then return end
 
-        if button == "RAID_MAINTANK" or button == "RAID_MAINASSIST" then
-           UIDropDownMenu_Refresh(dropdownFrame, nil, 1)
-        end
-    end)
-end
-
-if not core:IsHooked("UnitPopup_ShowMenu") then
-    core:SecureHook("UnitPopup_ShowMenu", function(_, _, unit)
-        if UIDROPDOWNMENU_MENU_LEVEL ~= 1 then return end
-
-		for i = 1, UIDROPDOWNMENU_MAXBUTTONS do
-			local button = _G["DropDownList1Button"..i]
-			if button and button:IsShown() then
-				if button.value == "RAID_MAINTANK" then
-					setButton(unit, button, secureTankButton)
-				elseif button.value == "RAID_MAINASSIST" then
-					setButton(unit, button, secureAssistButton)
-				end
+	for i = 1, UIDROPDOWNMENU_MAXBUTTONS do
+		local button = _G["DropDownList1Button"..i]
+		if button and button:IsShown() then
+			if button.value == "RAID_MAINTANK" then
+				setButton(unit, button, secureTankButton)
+			elseif button.value == "RAID_MAINASSIST" then
+				setButton(unit, button, secureAssistButton)
 			end
 		end
-    end)
-end
+	end
+end)
 
-if not core:IsHooked("UnitPopup_HideButtons") then
-    core:SecureHook("UnitPopup_HideButtons", function()
-        local dropdownMenu = UIDROPDOWNMENU_INIT_MENU
-		local isAuthority = IsPartyLeader() or IsRaidOfficer()
+core:SecureHook("UnitPopup_HideButtons", function()
+	local dropdownMenu = UIDROPDOWNMENU_INIT_MENU
+	local isAuthority = IsPartyLeader() or IsRaidOfficer()
 
-		if dropdownMenu.which ~= "RAID" or not isAuthority then return end
+	if dropdownMenu.which ~= "RAID" or not isAuthority or InCombatLockdown() then return end
 
-        for index, value in ipairs(UnitPopupMenus[dropdownMenu.which]) do
-            if value == "RAID_MAINTANK" then
-				local role = select(10,GetRaidRosterInfo(dropdownMenu.userData))
-				if role ~= "MAINTANK" or not dropdownMenu.name then
-					UnitPopupShown[UIDROPDOWNMENU_MENU_LEVEL][index] = 1
-				end
-			elseif value == "RAID_MAINASSIST" then
-				local role = select(10,GetRaidRosterInfo(dropdownMenu.userData))
-				if role ~= "MAINASSIST" or not dropdownMenu.name then
-					UnitPopupShown[UIDROPDOWNMENU_MENU_LEVEL][index] = 1
-				end
-            end
-        end
-    end)
-end
+	for index, value in ipairs(UnitPopupMenus[dropdownMenu.which]) do
+		if value == "RAID_MAINTANK" then
+			local role = select(10,GetRaidRosterInfo(dropdownMenu.userData))
+			if role ~= "MAINTANK" or not dropdownMenu.name then
+				UnitPopupShown[UIDROPDOWNMENU_MENU_LEVEL][index] = 1
+			end
+		elseif value == "RAID_MAINASSIST" then
+			local role = select(10,GetRaidRosterInfo(dropdownMenu.userData))
+			if role ~= "MAINASSIST" or not dropdownMenu.name then
+				UnitPopupShown[UIDROPDOWNMENU_MENU_LEVEL][index] = 1
+			end
+		end
+	end
+end)
 
-if not core:IsHooked(DropDownList1, "OnHide") then
-	core:SecureHookScript(DropDownList1, "OnHide", function()
-		if InCombatLockdown() then return end
-        secureTankButton:Hide()
-        secureAssistButton:Hide()
-	end)
-end
+core:SecureHookScript(DropDownList1, "OnHide", function()
+	if InCombatLockdown() then return end
+	secureTankButton:ClearAllPoints()
+	secureAssistButton:ClearAllPoints()
+	secureTankButton:Hide()
+	secureAssistButton:Hide()
+end)
 
 
 function core:getAllFrameTypes()
@@ -887,9 +827,7 @@ if isAwesome then
 		end
 	end)
 
-	if not core:IsHooked(NP, "OnUpdate") then
-		core:RawHook(NP, "OnUpdate", function(self) self:SetScript("OnUpdate", nil) end)
-	end
+	core:RawHook(NP, "OnUpdate", function(self) self:SetScript("OnUpdate", nil) end)
 end
 --
 

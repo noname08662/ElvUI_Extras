@@ -244,7 +244,7 @@ function mod:LoadConfig(db)
 						name = L["Color by Type"],
 						desc = L["Colors the icon based on the unit type."],
 						get = function() return selectedNPCsData().colorByType end,
-						set = function(_, value) selectedNPCsData().colorByType = value NP:ForEachVisiblePlate("UpdateAllFrame", true, true) end,
+						set = function(_, value) selectedNPCsData().colorByType = value NP:ForEachVisiblePlate("UpdateAllFrame", nil, true) end,
 					},
 					flipIcon = {
 						order = 2,
@@ -252,7 +252,7 @@ function mod:LoadConfig(db)
 						name = L["Flip Icon"],
 						desc = L["Flits the icon horizontally. Not compatible with Texture Coordinates."],
 						get = function() return selectedNPCsData().flipIcon end,
-						set = function(_, value) selectedNPCsData().flipIcon = value NP:ForEachVisiblePlate("UpdateAllFrame", true, true) end,
+						set = function(_, value) selectedNPCsData().flipIcon = value NP:ForEachVisiblePlate("UpdateAllFrame", nil, true) end,
 					},
 					selected = {
 						order = 3,
@@ -275,7 +275,7 @@ function mod:LoadConfig(db)
 						name = L["Keep Icon"],
 						desc = L["Keep the original icon texture."],
 						get = function() return selectedNPCsData().keepOrigTex end,
-						set = function(_, value) selectedNPCsData().keepOrigTex = value NP:ForEachVisiblePlate("UpdateAllFrame", true, true) end,
+						set = function(_, value) selectedNPCsData().keepOrigTex = value NP:ForEachVisiblePlate("UpdateAllFrame", nil, true) end,
 					},
 					texture = {
 						order = 6,
@@ -283,7 +283,7 @@ function mod:LoadConfig(db)
 						name = L["Texture"],
 						desc = "",
 						get = function() return selectedNPCsData().texture end,
-						set = function(_, value) selectedNPCsData().texture = value NP:ForEachVisiblePlate("UpdateAllFrame", true, true) end,
+						set = function(_, value) selectedNPCsData().texture = value NP:ForEachVisiblePlate("UpdateAllFrame", nil, true) end,
 						hidden = function() return selectedSubSection() ~= 'NPCs' or selectedNPCsData().keepOrigTex end,
 						values = function()
 							local type = db.NPCs.selectedTexList
@@ -299,7 +299,7 @@ function mod:LoadConfig(db)
 				name = L["Texture Coordinates"],
 				guiInline = true,
 				get = function(info) return selectedNPCsData().texCoords[info[#info]] end,
-				set = function(info, value) selectedNPCsData().texCoords[info[#info]] = value NP:ForEachVisiblePlate("UpdateAllFrame", true, true) end,
+				set = function(info, value) selectedNPCsData().texCoords[info[#info]] = value NP:ForEachVisiblePlate("UpdateAllFrame", nil, true) end,
 				disabled = function() return not db.NPCs.enabled end,
 				hidden = function() return selectedSubSection() ~= 'NPCs' or selectedNPCsData().keepOrigTex end,
 				args = {
@@ -406,7 +406,7 @@ function mod:LoadConfig(db)
 						name = L["Texture"],
 						desc = "",
 						get = function() return selectedPlayersData().classes[db.Players.selectedClass].texture end,
-						set = function(_, value) selectedPlayersData().classes[db.Players.selectedClass].texture = value NP:ForEachVisiblePlate("UpdateAllFrame", true, true) end,
+						set = function(_, value) selectedPlayersData().classes[db.Players.selectedClass].texture = value NP:ForEachVisiblePlate("UpdateAllFrame", nil, true) end,
 						values = function()
 							local type = db.Players.selectedTexList
 							local list = (type == 'CLASS' and 'texClass')
@@ -722,7 +722,7 @@ function mod:Toggle(db, visibilityUpdate)
 		end
 	end
 	if self.initialized and not core.reload then
-		NP:ForEachVisiblePlate("UpdateAllFrame", true, true)
+		NP:ForEachVisiblePlate("UpdateAllFrame", nil, true)
 	end
 end
 

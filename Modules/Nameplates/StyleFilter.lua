@@ -1029,7 +1029,9 @@ function mod:Toggle(db)
 			end
 		end
 		updateAllIcons(db, false)
-		recheckAllPlates()
+		if not core.reload then
+			recheckAllPlates()
+		end
     end
 end
 

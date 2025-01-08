@@ -6,15 +6,88 @@ local LAI = E.Libs.LAI
 local LSM = E.Libs.LSM
 
 local modName = mod:GetName()
+local iconPositions = {}
 
 local pairs, ipairs, unpack, type, tonumber, tostring = pairs, ipairs, unpack, type, tonumber, tostring
 local tinsert, tsort, twipe = table.insert, table.sort, table.wipe
-local floor, ceil, min, abs = math.floor, math.ceil, math.min, math.abs
+local floor, ceil, min, max, abs = math.floor, math.ceil, math.min, math.max, math.abs
 local find, gmatch, match, gsub, format = string.find, string.gmatch, string.match, string.gsub, string.format
 local GetTime, DebuffTypeColor, UnitCanAttack, GetSpellInfo, GetSpellLink, CreateFrame = GetTime, DebuffTypeColor, UnitCanAttack, GetSpellInfo, GetSpellLink, CreateFrame
 
 local dispellList, purgeList = core.DispellList[E.myclass], core.PurgeList[E.myclass]
 local filterList, checkFilters = {["FRIENDLY"] = {}, ["ENEMY"] = {}}, {}
+
+
+local directionProperties = {
+	["CENTER"] = {
+		isVertical = true,
+		firstInRowPoint = 'BOTTOM',
+		subsequentPoint = 'BOTTOMLEFT',
+		framePoint = 'BOTTOM',
+		growthX = 1,
+	},
+	["TOP"] = {
+		isVertical = true,
+		firstInRowPoint = 'BOTTOM',
+		subsequentPoint = 'BOTTOMLEFT',
+		framePoint = 'BOTTOM',
+		growthX = 1,
+	},
+	["BOTTOM"] = {
+		isVertical = true,
+		isReverse = true,
+		firstInRowPoint = 'TOP',
+		subsequentPoint = 'TOPLEFT',
+		framePoint = 'TOP',
+		growthX = 1,
+	},
+	["LEFT"] = {
+		isVertical = false,
+		firstInRowPoint = 'RIGHT',
+		subsequentPoint = 'TOPRIGHT',
+		framePoint = 'RIGHT',
+		growthX = 1,
+	},
+	["RIGHT"] = {
+		isVertical = false,
+		isReverse = true,
+		firstInRowPoint = 'LEFT',
+		subsequentPoint = 'TOPLEFT',
+		framePoint = 'LEFT',
+		growthX = 1,
+	},
+	["TOPLEFT"] = {
+		isVertical = true,
+		firstInRowPoint = 'BOTTOM',
+		subsequentPoint = 'BOTTOMLEFT',
+		framePoint = 'BOTTOM',
+		growthX = 1,
+	},
+	["TOPRIGHT"] = {
+		isVertical = true,
+		firstInRowPoint = 'BOTTOM',
+		subsequentPoint = 'BOTTOMLEFT',
+		framePoint = 'BOTTOM',
+		growthX = -1,
+	},
+	["BOTTOMLEFT"] = {
+		isVertical = true,
+		isReverse = true,
+		firstInRowPoint = 'TOP',
+		subsequentPoint = 'TOPLEFT',
+		framePoint = 'TOP',
+		growthX = 1,
+	},
+	["BOTTOMRIGHT"] = {
+		isVertical = true,
+		isReverse = true,
+		firstInRowPoint = 'TOP',
+		subsequentPoint = 'TOPLEFT',
+		framePoint = 'TOP',
+		growthX = -1,
+	}
+}
+
 
 local function updateFilters(db)
 	twipe(checkFilters)
@@ -36,6 +109,122 @@ local function updateFilters(db)
 			end
 		end
 		tsort(filterList[unitType], function(a, b) return a.priority < b.priority end)
+	end
+end
+
+local function cachePositions(disable)
+	if disable then
+		if mod.ishooked then
+			if E.Options and E.Options.args.nameplate then
+				for _, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
+												["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
+					for _, auraType in ipairs({"buffsGroup", "debuffsGroup"}) do
+						if mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraType], "set") then
+							mod:Unhook(E.Options.args.nameplate.args[unitGroup].args[auraType], "set")
+						end
+					end
+				end
+			elseif mod:IsHooked(E, "ToggleOptionsUI") then
+				mod:Unhook(E, "ToggleOptionsUI")
+			end
+			mod.ishooked = false
+		end
+		return
+	end
+    for _, unitType in ipairs({"FRIENDLY_PLAYER", "ENEMY_PLAYER", "FRIENDLY_NPC", "ENEMY_NPC"}) do
+        iconPositions[unitType] = {}
+        for _, auraType in ipairs({"buffs", "debuffs"}) do
+            iconPositions[unitType][auraType] = { positions = {}, sizes = {} }
+
+            local cache = iconPositions[unitType][auraType]
+            local data = NP.db.units[unitType][auraType]
+            local anchorPoint = data.anchorPoint
+            local points = directionProperties[anchorPoint]
+            local isVertical = points.isVertical
+            local isReverse = points.isReverse
+            local firstInRowPoint = points.firstInRowPoint
+            local subsequentPoint = points.subsequentPoint
+            local framePoint = points.framePoint
+            local growthX = points.growthX
+            local offset, spacing, perRow = data.size + data.spacing, data.spacing, data.perrow
+
+            for numElements = 1, perRow * data.numrows do
+                cache.positions[numElements] = {}
+                local lastAnchor = nil
+
+                for i = 1, numElements do
+                    if i == (perRow * floor((i-1) / perRow) + 1) then
+                        local numOtherRow = min(perRow, (numElements - (perRow * floor((i-1) / perRow))))
+                        local OtherRowSize = (numOtherRow * offset)
+                        local xOffset = (isVertical and -(OtherRowSize - offset) / 2 or ((isReverse and 1 or -1) * offset * floor((i-1) / perRow))) * growthX
+                        local yOffset = isVertical and ((isReverse and -1 or 1) * offset * floor((i-1) / perRow)) or -(OtherRowSize - offset) / 2
+
+                        cache.positions[numElements][i] = {
+                            point = firstInRowPoint,
+                            firstInRow = true,
+                            relativeTo = framePoint,
+                            xOffset = xOffset,
+                            yOffset = yOffset
+                        }
+                    else
+                        local xOffset = (isVertical and offset or 0) * growthX
+                        local yOffset = isVertical and 0 or offset
+
+                        cache.positions[numElements][i] = {
+                            point = subsequentPoint,
+                            anchor = lastAnchor,
+                            relativeTo = subsequentPoint,
+                            xOffset = xOffset,
+                            yOffset = yOffset
+                        }
+                    end
+                    lastAnchor = i
+                end
+
+                local numRows = ceil(numElements/perRow)
+                local width = max(offset, offset * min(perRow, numElements) - spacing)
+                local height = max(offset, offset * numRows - spacing)
+                cache.sizes[numElements] = {
+                    isVertical and width or height,
+                    isVertical and height or width
+                }
+            end
+        end
+    end
+	if not mod.ishooked then
+		if E.Options and E.Options.args.nameplate then
+			for unitType, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
+											["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
+				for auraType, auraGroup in pairs({["buffs"] = 'buffsGroup', ["debuffs"] = 'debuffsGroup'}) do
+					if not mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set") then
+						mod:RawHook(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set", function(info, value)
+							E.db.nameplates.units[unitType][auraType][info[#info]] = value
+							cachePositions()
+							mod.hooks[E.Options.args.nameplate.args[unitGroup].args[auraGroup]].set(info, value)
+						end)
+					end
+				end
+			end
+		elseif not mod:IsHooked(E, "ToggleOptionsUI") then
+			mod:SecureHook(E, "ToggleOptionsUI", function()
+				if E.Options.args.nameplate then
+					for unitType, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
+													["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
+						for auraType, auraGroup in pairs({["buffs"] = 'buffsGroup', ["debuffs"] = 'debuffsGroup'}) do
+							if not mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set") then
+								mod:RawHook(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set", function(info, value)
+									E.db.nameplates.units[unitType][auraType][info[#info]] = value
+									cachePositions()
+									mod.hooks[E.Options.args.nameplate.args[unitGroup].args[auraGroup]].set(info, value)
+								end)
+							end
+						end
+					end
+					mod:Unhook(E, "ToggleOptionsUI")
+				end
+			end)
+		end
+		mod.ishooked = true
 	end
 end
 
@@ -70,7 +259,7 @@ local function updateVisiblePlates(mod_db)
 				end
 			end
 		end
-		NP.OnShow(plate:GetParent(), nil, true)
+		NP:UpdateAllFrame(plate, nil, true)
 	end
 end
 
@@ -489,123 +678,24 @@ function mod:LoadConfig(db)
 end
 
 
-local directionProperties = {
-	["CENTER"] = {
-		isVertical = true,
-		firstInRowPoint = 'BOTTOM',
-		subsequentPoint = 'BOTTOMLEFT',
-		framePoint = 'BOTTOM',
-		growthX = 1,
-	},
-	["TOP"] = {
-		isVertical = true,
-		firstInRowPoint = 'BOTTOM',
-		subsequentPoint = 'BOTTOMLEFT',
-		framePoint = 'BOTTOM',
-		growthX = 1,
-	},
-	["BOTTOM"] = {
-		isVertical = true,
-		isReverse = true,
-		firstInRowPoint = 'TOP',
-		subsequentPoint = 'TOPLEFT',
-		framePoint = 'TOP',
-		growthX = 1,
-	},
-	["LEFT"] = {
-		isVertical = false,
-		firstInRowPoint = 'RIGHT',
-		subsequentPoint = 'TOPRIGHT',
-		framePoint = 'RIGHT',
-		growthX = 1,
-	},
-	["RIGHT"] = {
-		isVertical = false,
-		isReverse = true,
-		firstInRowPoint = 'LEFT',
-		subsequentPoint = 'TOPLEFT',
-		framePoint = 'LEFT',
-		growthX = 1,
-	},
-	["TOPLEFT"] = {
-		isVertical = true,
-		firstInRowPoint = 'BOTTOM',
-		subsequentPoint = 'BOTTOMLEFT',
-		framePoint = 'BOTTOM',
-		growthX = 1,
-	},
-	["TOPRIGHT"] = {
-		isVertical = true,
-		firstInRowPoint = 'BOTTOM',
-		subsequentPoint = 'BOTTOMLEFT',
-		framePoint = 'BOTTOM',
-		growthX = -1,
-	},
-	["BOTTOMLEFT"] = {
-		isVertical = true,
-		isReverse = true,
-		firstInRowPoint = 'TOP',
-		subsequentPoint = 'TOPLEFT',
-		framePoint = 'TOP',
-		growthX = 1,
-	},
-	["BOTTOMRIGHT"] = {
-		isVertical = true,
-		isReverse = true,
-		firstInRowPoint = 'TOP',
-		subsequentPoint = 'TOPLEFT',
-		framePoint = 'TOP',
-		growthX = -1,
-	}
-}
+function mod:Update_AurasPosition(frame)
+    local numElements = frame.type == 'debuffs' and frame.visibleDebuffs or frame.visibleBuffs
 
-function mod:CenterAlignAuras(frame, db)
-	local aurasFrame = frame
-	local offset, spacing, perRow = db.size + db.spacing, db.spacing, db.perrow
-	local numElements = aurasFrame.type == 'debuffs' and aurasFrame.visibleDebuffs or aurasFrame.visibleBuffs
+	if numElements and numElements > 0 then
+		local data = iconPositions[frame:GetParent().UnitType][frame.type]
+		local points = data.positions[numElements]
 
-	local anchorPoint = db.anchorPoint
-	local points = directionProperties[anchorPoint]
-	local isVertical = points.isVertical
-	local isReverse = points.isReverse
-	local firstInRowPoint = points.firstInRowPoint
-	local subsequentPoint = points.subsequentPoint
-	local framePoint = points.framePoint
-	local growthX = points.growthX
-
-	for i = 1, numElements do
-		local child = frame[i]
-		if child then
-			child:ClearAllPoints()
-			if i == (perRow * floor(i / perRow) + 1) then
-				local numOtherRow = min(perRow, (numElements - (perRow * floor(i / perRow))))
-				local OtherRowSize = (numOtherRow * offset)
-				local xOffset = (isVertical and -(OtherRowSize - offset) / 2 or ((isReverse and 1 or -1) * offset * floor(i / perRow))) * growthX
-				local yOffset = isVertical and ((isReverse and -1 or 1) * offset * floor(i / perRow)) or -(OtherRowSize - offset) / 2
-				child:Point(firstInRowPoint, aurasFrame, framePoint, xOffset, yOffset)
-				anchorPoint = child
-			else
-				local xOffset = (isVertical and offset or 0) * growthX
-				local yOffset = isVertical and 0 or offset
-				child:Point(subsequentPoint, anchorPoint, subsequentPoint, xOffset, yOffset)
-				anchorPoint = child
+		for i = 1, numElements do
+			local child = frame[i]
+			if child then
+				local vals = points[i]
+				child:ClearAllPoints()
+				child:Point(vals.point, vals.firstInRow and frame or frame[vals.anchor], vals.relativeTo, vals.xOffset, vals.yOffset)
 			end
 		end
+
+		frame:Size(unpack(data.sizes[numElements]))
 	end
-
-	local numRows = ceil(numElements / perRow)
-    local maxWidth = min(numElements, perRow) * offset - spacing
-    local maxHeight = numRows * offset - spacing
-
-	if isVertical then
-        aurasFrame:Size(maxWidth, maxHeight)
-    else
-        aurasFrame:Size(maxHeight, maxWidth)
-    end
-end
-
-function mod:Update_AurasPosition(frame, db)
-	mod:CenterAlignAuras(frame, db)
 end
 
 function mod:UpdateElement_Auras(frame)
@@ -614,13 +704,13 @@ function mod:UpdateElement_Auras(frame)
 	local db = NP.db.units[frame.UnitType].buffs
 	if db.enable and not (frame.UnitTrivial and NP.db.trivial) then
 		if frame.Buffs.visibleBuffs and frame.Buffs.visibleBuffs > 0 then
-			mod:CenterAlignAuras(frame.Buffs, db)
+			mod:Update_AurasPosition(frame.Buffs)
 		end
 	end
 	db = NP.db.units[frame.UnitType].debuffs
 	if db.enable and not (frame.UnitTrivial and NP.db.trivial) then
 		if frame.Debuffs.visibleDebuffs and frame.Debuffs.visibleDebuffs > 0 then
-			mod:CenterAlignAuras(frame.Debuffs, db)
+			mod:Update_AurasPosition(frame.Debuffs)
 		end
 	end
 end
@@ -773,6 +863,9 @@ function mod:Toggle(db)
 			elseif config.enabled then
 				toggles[func] = not core.reload
 			end
+			if setting == 'CenteredAuras' then
+				cachePositions(not config.enabled)
+			end
 		end
 	end
 	for func, enable in pairs(toggles) do
@@ -780,10 +873,11 @@ function mod:Toggle(db)
 			if not self:IsHooked(NP, func) then self:SecureHook(NP, func, self[func]) end
 		elseif self:IsHooked(NP, func) then
 			self:Unhook(NP, func)
-			NP:ForEachPlate("UpdateAllFrame", true, true)
 		end
 	end
-	updateVisiblePlates(db)
+	if not core.reload then
+		updateVisiblePlates(db)
+	end
 end
 
 function mod:InitializeCallback()

@@ -6,15 +6,16 @@ local LSM = E.Libs.LSM
 local LAI = E.Libs.LAI
 
 local modName = mod:GetName()
-local activeCooldowns, petSpells, testing = {}, {}, false
+local activeCooldowns, testing = {}, false
 local highlightedSpells = {["ENEMY_PLAYER"] = {}, ["FRIENDLY_PLAYER"] = {}}
 local edgeFile = LSM:Fetch("border", "ElvUI GlowBorder")
 local isAwesome = C_NamePlate
 
 local band = bit.band
-local _G, pairs, ipairs, select, unpack, tonumber, next = _G, pairs, ipairs, select, unpack, tonumber, next
+local _G, pairs, ipairs, select, unpack, next = _G, pairs, ipairs, select, unpack, next
+local tonumber, tostring, loadstring, setfenv = tonumber, tostring, loadstring, setfenv
 local gsub, upper, match, find, format = string.gsub, string.upper, string.match, string.find, string.format
-local random, floor, min, ceil, abs = math.random, math.floor, math.min, math.ceil, math.abs
+local random, floor, min, ceil = math.random, math.floor, math.min, math.ceil
 local tinsert, tremove, tsort, twipe = table.insert, table.remove, table.sort, table.wipe
 local GetSpellInfo, GetSpellLink, GetTime = GetSpellInfo, GetSpellLink, GetTime
 local UnitIsPlayer, UnitExists, UnitName = UnitIsPlayer, UnitExists, UnitName
@@ -22,12 +23,14 @@ local COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_CONTROL_PLAYER = COMBATLOG_
 local UNITNAME_SUMMON_TITLES = {gsub(format(UNITNAME_SUMMON_TITLE1, 1), '[%d%p%s]+', ''), gsub(format(UNITNAME_SUMMON_TITLE3, 1), '[%d%p%s]+', ''), gsub(format(UNITNAME_SUMMON_TITLE5, 1), '[%d%p%s]+', '')}
 
 mod.initialized = false
+mod.activeCooldowns = activeCooldowns
 mod.iconPositions = {["FRIENDLY_PLAYER"] = {}, ["ENEMY_PLAYER"] = {}}
 
 local allSpells = {}
 local compareFuncs = {}
 local borderCustomColor = {}
 local borderColor = {}
+local onUpdates = {}
 local fills = {}
 
 local iconPositions = mod.iconPositions
@@ -116,17 +119,16 @@ local resetCooldowns = {
 }
 
 
-local function testMode(db, force)
-	local data = db[db.selectedType]
-	if not force and not data.isShown then return end
-
+local function testMode(db)
 	twipe(activeCooldowns)
 	for plate in pairs(NP.VisiblePlates) do
-		if plate.CDTracker then plate.CDTracker:Hide() end
+		for _, f in pairs(plate.CDTracker or {}) do
+			f:Hide()
+		end
 	end
 	if not testing then return end
 
-    local spellList = data.spellList
+    local spellList = db[db.selectedType].spellList
     local testSpells = {}
 
 	if not next(spellList) then
@@ -134,7 +136,9 @@ local function testMode(db, force)
             spellList[id] = duration
         end
     end
+	spellList[42292] = nil
 
+	local hasTrinket = false
     for spellID, duration in pairs(spellList) do
         local startTime = GetTime() - random(0, duration/2)
         tinsert(testSpells, {
@@ -144,21 +148,24 @@ local function testMode(db, force)
 						icon = select(3, GetSpellInfo(spellID)),
 						isTrinket = trinkets[spellID]
 					})
+		hasTrinket = hasTrinket or trinkets[spellID]
     end
 
-	tinsert(testSpells, {
-					spellID = 59752,
-					startTime = GetTime() - random(0, 120/2),
-					endTime = GetTime() - random(0, 120/2) + 120,
-					icon = select(3, GetSpellInfo(59752)),
-					isTrinket = true,
-				})
+	if not hasTrinket then
+		tinsert(testSpells, {
+						spellID = 59752,
+						startTime = GetTime() - random(0, 120/2),
+						endTime = GetTime() - random(0, 120/2) + 120,
+						icon = select(3, GetSpellInfo(59752)),
+						isTrinket = true,
+					})
+	end
 
 	for plate in pairs(NP.VisiblePlates) do
 		local unitType = plate.UnitType
 		if unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER' then
-			activeCooldowns[plate.UnitName] = testSpells
-			mod:AttachCooldownsToPlate(db[unitType], plate, activeCooldowns[plate.UnitName], unitType)
+			activeCooldowns[plate.UnitName..'true'] = testSpells
+			mod:AttachCooldowns(plate, testSpells, unitType)
 		end
 	end
 end
@@ -297,32 +304,95 @@ local function createFillFunction(db_cooldownFill, db_icons)
     end
 end
 
+local function createOnUpdateFunction(db)
+	local luaFunction = loadstring(
+		format(
+			[[
+				local self, elapsed = ...
+				self.timeElapsed = (self.timeElapsed or 0) + elapsed
 
-local function getColorByTimeFriend(_, remainingTime, totalTime)
-    local percentage = remainingTime / totalTime
-    return percentage, 1 - percentage
+				if self.timeElapsed > %d then
+					self.timeElapsed = 0
+
+					local endTime = self.endTime
+					local remaining = endTime - GetTime()
+
+					if remaining <= 0 then
+						self:Hide()
+
+						local plate = self:GetParent():GetParent()
+						local cooldowns = self.cooldowns
+						for i = #cooldowns, 1, -1 do
+							if cooldowns[i].endTime < GetTime() then
+								tremove(cooldowns, i)
+							end
+						end
+						if next(cooldowns) then
+							mod:AttachCooldowns(plate, cooldowns, plate.UnitType)
+						end
+						return
+					end
+
+					%s
+					%s
+
+					%s
+					%s
+					%s
+					%s
+				end
+			]],
+			(db.icons.throttle),
+			(db.text.enabled or db.cooldownFill.enabled or db.icons.borderColor) and "local startTime = self.startTime" or "",
+			(db.cooldownFill.enabled or db.icons.animateFadeOut or db.icons.borderColor) and [[
+				local progress = remaining / (self.endTime - self.startTime)
+			]] or "",
+			(db.text.enabled) and "self.text:SetText(ceil(remaining))" or "",
+			(db.cooldownFill.enabled) and "self:fillOn(progress)" or "",
+			(db.icons.borderColor) and "self:SetBackdropBorderColor(self:col(progress))" or "",
+			(db.icons.animateFadeOut) and [[
+				if progress < 0.25 and remaining < 6 then
+					local f = abs(0.5 - GetTime() % 1) * 3
+					self:SetAlpha(f)
+				else
+					self:SetAlpha(1)
+				end
+			]] or ""
+		)
+	)
+
+	setfenv(luaFunction, {
+		mod = mod,
+		GetTime = GetTime,
+		next = next,
+		ceil = ceil,
+		abs = abs,
+		tremove = tremove,
+	})
+
+	return luaFunction
 end
 
-local function getColorByTimeEnemy(_, remainingTime, totalTime)
-    local percentage = remainingTime / totalTime
-    return 1 - percentage, percentage
+
+local function getColorByTimeFriend(_, progress)
+    return progress, 1 - progress
+end
+
+local function getColorByTimeEnemy(_, progress)
+    return 1 - progress, progress
 end
 
 
 local function cache(db, visibilityUpdate)
 	twipe(allSpells)
-	if not visibilityUpdate then
-		twipe(petSpells)
-		for spellID in pairs(db.petSpells) do
-			petSpells[spellID] = true
-		end
-	end
     for _, unitType in ipairs({"FRIENDLY_PLAYER", "ENEMY_PLAYER"}) do
 		local type_db = db[unitType]
 
-		if type_db.enabled and type_db.isShown then
-			for id, cdTime in pairs(type_db.spellList) do
-				allSpells[id] = cdTime
+		if type_db.enabled then
+			if type_db.isShown then
+				for id, cdTime in pairs(type_db.spellList) do
+					allSpells[id] = cdTime
+				end
 			end
 
 			if not visibilityUpdate then
@@ -383,22 +453,44 @@ local function cache(db, visibilityUpdate)
 				borderCustomColor[unitType] = icons.borderCustomColor[1] > 0 or icons.borderCustomColor[2] > 0 or icons.borderCustomColor[3] > 0
 				borderColor[unitType] = unitType == 'ENEMY_PLAYER' and getColorByTimeEnemy or getColorByTimeFriend
 				fills[unitType] = createFillFunction(type_db.cooldownFill, icons)
+				onUpdates[unitType] = createOnUpdateFunction(type_db)
 			end
 		end
     end
-	for frame in pairs(NP.CreatedPlates) do
-		local plate = frame.UnitFrame
-		if plate then
-			local tracker = plate.CDTracker
-			if not tracker then
-				plate.CDTracker = CreateFrame("Frame", '$parentCDTracker', plate)
-				tracker = plate.CDTracker
-				tracker.cooldowns = {}
-				tracker:Hide()
+	if not visibilityUpdate then
+		for frame in pairs(NP.CreatedPlates) do
+			local plate = frame.UnitFrame
+			if plate then
+				plate.CDTracker = mod:ConstructCDTracker(db, plate)
+				for unitType, f in pairs(plate.CDTracker) do
+					local cooldowns = f.cooldowns
+					for i = #cooldowns, 1, -1 do
+						cooldowns[i]:Hide()
+					end
+					twipe(cooldowns)
+					f:SetFrameLevel(plate:GetFrameLevel() + db[unitType].header.level)
+				end
 			end
-			for i = #tracker.cooldowns, 1, -1 do
-				tracker.cooldowns[i]:Hide()
-				tracker.cooldowns[i] = nil
+		end
+		for plate in pairs(NP.VisiblePlates) do
+			local unitType = plate.UnitType
+			local data = db[unitType]
+			local tracker = plate.CDTracker[unitType]
+
+			if data and data.isShown then
+				local cooldowns = activeCooldowns[
+									plate.UnitName..(plate.isPlayerString or tostring(unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER'))]
+				if cooldowns and next(cooldowns) then
+					if plate.isPlayerString == 'true' then
+						mod:AttachCooldowns(plate, cooldowns, unitType)
+					else
+						mod:HandlePets(plate, plate.UnitName)
+					end
+				else
+					tracker:Hide()
+				end
+			elseif tracker then
+				tracker:Hide()
 			end
 		end
 	end
@@ -406,7 +498,6 @@ end
 
 
 P["Extras"]["nameplates"][modName] = {
-	["petSpells"] = {},
 	["FRIENDLY_PLAYER"] = {
 		["enabled"] = false,
 		["showAll"] = true,
@@ -599,7 +690,6 @@ function mod:LoadConfig(db)
 				set = function(info, value)
 					selectedTypeData()[info[#info-1]][info[#info]] = value
 					cache(db)
-					NP:ForEachVisiblePlate("UpdateAllFrame", true, true)
 				end,
 				disabled = function() return not selectedTypeData().enabled end,
 				args = {
@@ -653,7 +743,6 @@ function mod:LoadConfig(db)
 				set = function(info, value)
 					selectedTypeData()[info[#info-1]][info[#info]] = value
 					cache(db)
-					NP:ForEachVisiblePlate("UpdateAllFrame", true, true)
 				end,
 				disabled = function() return not selectedTypeData().enabled end,
 				args = {
@@ -758,7 +847,7 @@ function mod:LoadConfig(db)
 				get = function(info) return selectedTypeData()[info[#info-1]][info[#info]] end,
 				set = function(info, value)
 					selectedTypeData()[info[#info-1]][info[#info]] = value
-					NP:ForEachVisiblePlate("UpdateAllFrame", true, true)
+					cache(db)
 				end,
 				disabled = function() return not selectedTypeData().enabled end,
 				args = {
@@ -819,7 +908,6 @@ function mod:LoadConfig(db)
 				set = function(info, value)
 					selectedTypeData()[info[#info-1]][info[#info]] = value
 					cache(db)
-					NP:ForEachVisiblePlate("UpdateAllFrame", true, true)
 				end,
 				disabled = function() return not selectedTypeData().enabled end,
 				args = {
@@ -878,7 +966,7 @@ function mod:LoadConfig(db)
 								local _, _, icon = GetSpellInfo(spellID)
 								local string = '\124T' .. gsub(icon, '\124', '\124\124') .. ':16:16\124t' .. GetSpellLink(spellID)
 								core:print('ADDED', string)
-								NP:ForEachVisiblePlate("UpdateAllFrame", true, true)
+								NP:ForEachVisiblePlate("UpdateAllFrame", nil, true)
 							end
 						end,
 					},
@@ -894,7 +982,7 @@ function mod:LoadConfig(db)
 							local _, _, icon = GetSpellInfo(spellID)
 							local string = '\124T' .. gsub(icon, '\124', '\124\124') .. ':16:16\124t' .. GetSpellLink(spellID)
 							core:print('REMOVED', string)
-							NP:ForEachVisiblePlate("UpdateAllFrame", true, true)
+							NP:ForEachVisiblePlate("UpdateAllFrame", nil, true)
 						end,
 						disabled = function() return not selectedTypeData().spellList[selectedSpell()] end,
 					},
@@ -908,7 +996,6 @@ function mod:LoadConfig(db)
 						set = function(_, value)
 							selectedTypeData().spellList = CopyTable(core.SpellLists[value] or db[value].spellList)
 							cache(db)
-							NP:ForEachVisiblePlate("UpdateAllFrame", true, true)
 						end,
 						values = function()
 							local values = {
@@ -985,6 +1072,7 @@ function mod:LoadConfig(db)
 					shadow = {
 						order = 5,
 						type = "toggle",
+						width = "full",
 						name = L["Shadow"],
 						desc = L["For the important stuff."],
 						get = function()
@@ -993,21 +1081,12 @@ function mod:LoadConfig(db)
 						end,
 						set = function(_, value)
 							selectedTypeData().highlightedSpells[selectedSpell()].enabled = value
-							NP:ForEachVisiblePlate("UpdateAllFrame", true, true)
+							NP:ForEachVisiblePlate("UpdateAllFrame", nil, true)
 						end,
 						disabled = function() return not (selectedTypeData().enabled and selectedSpell()) end,
 					},
-					petSpell = {
-						order = 6,
-						type = "toggle",
-						name = L["Pet Ability"],
-						desc = L["Pet casts require some special treatment."],
-						get = function() return db.petSpells[selectedSpell()] end,
-						set = function(_, value) db.petSpells[selectedSpell()] = value end,
-						disabled = function() return not (selectedTypeData().enabled and selectedSpell()) end,
-					},
 					shadowSize = {
-						order = 7,
+						order = 6,
 						type = "range",
 						name = L["Shadow Size"],
 						desc = "",
@@ -1018,15 +1097,15 @@ function mod:LoadConfig(db)
 						end,
 						set = function(_, value)
 							selectedTypeData().highlightedSpells[selectedSpell()].size = value
-							NP:ForEachVisiblePlate("UpdateAllFrame", true, true)
+							NP:ForEachVisiblePlate("UpdateAllFrame", nil, true)
 						end,
-						disabled = function()
+						hidden = function()
 							return not selectedTypeData().enabled
 								or not selectedTypeData().highlightedSpells[selectedSpell()]
 								or not selectedTypeData().highlightedSpells[selectedSpell()].enabled end,
 					},
 					shadowColor = {
-						order = 8,
+						order = 7,
 						type = "color",
 						hasAlpha = true,
 						name = L["Shadow Color"],
@@ -1037,9 +1116,9 @@ function mod:LoadConfig(db)
 						end,
 						set = function(_, r, g, b, a)
 							selectedTypeData().highlightedSpells[selectedSpell()].color = { r, g, b, a }
-							NP:ForEachVisiblePlate("UpdateAllFrame", true, true)
+							NP:ForEachVisiblePlate("UpdateAllFrame", nil, true)
 						end,
-						disabled = function()
+						hidden = function()
 							return not selectedTypeData().enabled
 								or not selectedTypeData().highlightedSpells[selectedSpell()]
 								or not selectedTypeData().highlightedSpells[selectedSpell()].enabled end,
@@ -1051,39 +1130,37 @@ function mod:LoadConfig(db)
 	if not next(db['FRIENDLY_PLAYER'].spellList) then
 		db['FRIENDLY_PLAYER'].spellList = CopyTable(core.SpellLists["DEFAULTS"])
 	end
-	if not next(db.petSpells) then
-		db.petSpells = CopyTable(core.SpellLists["PETS"])
-	end
 	if not db['ENEMY_PLAYER'] then
 		db['ENEMY_PLAYER'] = CopyTable(db['FRIENDLY_PLAYER'])
 	end
 end
 
 
-local function combatLogEvent(db, _, ...)
+local function combatLogEvent(_, ...)
     local _, eventType, _, sourceName, sourceFlags, _, _, _, spellID = ...
 
     if eventType == "SPELL_CAST_SUCCESS" and sourceName then
 		local cdTime = allSpells[spellID]
-		if cdTime and ((band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
-									or band(sourceFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER)) then
+		local isPlayer = band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
+		if cdTime and (isPlayer or band(sourceFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER) then
 			local startTime = GetTime()
-			mod:UpdateCooldowns(db, match(sourceName, '%P+'), spellID, startTime, startTime + cdTime)
+			mod:UpdateCooldowns(match(sourceName, '%P+'), spellID, startTime, startTime + cdTime, isPlayer)
 		end
     end
 end
 
 
-function mod:UpdateCooldowns(db, playerName, spellID, startTime, endTime)
+function mod:UpdateCooldowns(playerName, spellID, startTime, endTime, isPlayer)
     local remaining = endTime - GetTime()
     if remaining <= 0 then return end
 
-	local activeCds = activeCooldowns[playerName]
+	local hash = playerName..tostring(isPlayer)
+	local activeCds = activeCooldowns[hash]
     local resetSpell = resetCooldowns[spellID]
 
 	if not activeCds then
-		activeCooldowns[playerName] = {}
-		activeCds = activeCooldowns[playerName]
+		activeCooldowns[hash] = {}
+		activeCds = activeCooldowns[hash]
 	elseif resetSpell then
 		for i = #activeCds, 1, -1 do
 			if resetSpell[activeCds[i].spellID] then
@@ -1091,6 +1168,7 @@ function mod:UpdateCooldowns(db, playerName, spellID, startTime, endTime)
 			end
 		end
 	end
+
     tinsert(activeCds, {
 						spellID = spellID,
 						startTime = startTime,
@@ -1098,64 +1176,66 @@ function mod:UpdateCooldowns(db, playerName, spellID, startTime, endTime)
 						icon = select(3, GetSpellInfo(spellID)),
 						isTrinket = trinkets[spellID]
 					})
-    self:UpdatePlates(db, playerName)
+    self:UpdatePlates(playerName, isPlayer, hash)
 end
 
-function mod:HandlePets(db, plate, petName, unit)
+function mod:HandlePets(plate, petName, unit)
 	local ownerName = getPetOwner(plate.unit or plate:GetParent().unit or unit or petName)
 	if ownerName then
-		activeCooldowns[ownerName] = activeCooldowns[ownerName] or {}
-		if petName ~= ownerName then
-			for _, spellInfo in ipairs(activeCooldowns[petName]) do
-				tinsert(activeCooldowns[ownerName], spellInfo)
-			end
-			activeCooldowns[petName] = nil
+		local hash = ownerName..'true'
+		local cooldowns = activeCooldowns[hash]
+		local petCooldowns = activeCooldowns[petName..'false']
+		if not cooldowns then
+			activeCooldowns[hash] = {}
+			cooldowns = activeCooldowns[hash]
 		end
+		for _, spellInfo in ipairs(petCooldowns) do
+			tinsert(cooldowns, spellInfo)
+		end
+		twipe(petCooldowns)
 		for plate in pairs(NP.VisiblePlates) do
-			local unitName, unitType = plate.UnitName, plate.UnitType
-			if unitName == ownerName and (unitType == 'ENEMY_PLAYER' or unitType == 'FRIENDLY_PLAYER') then
-				self:AttachCooldownsToPlate(db[unitType], plate, activeCooldowns[ownerName], unitType)
+			local unitType = plate.UnitType
+			if plate.UnitName == ownerName and (unitType == 'ENEMY_PLAYER' or unitType == 'FRIENDLY_PLAYER') then
+				self:AttachCooldowns(plate, cooldowns, unitType)
 				return
 			end
 		end
 	end
 end
 
-function mod:UpdatePlates(db, playerName)
+function mod:UpdatePlates(playerName, isPlayer, hash)
 	for plate in pairs(NP.VisiblePlates) do
 		if plate.UnitName == playerName then
-			local cooldowns = activeCooldowns[playerName]
+			local cooldowns = activeCooldowns[hash]
 			if cooldowns and next(cooldowns) then
-				local unitType = plate.UnitType
-				if unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER' then
-					self:AttachCooldownsToPlate(db[unitType], plate, cooldowns, unitType)
-				elseif unitType then
-					self:HandlePets(db, plate, playerName)
+				if isPlayer then
+					self:AttachCooldowns(plate, cooldowns, plate.UnitType)
+				else
+					self:HandlePets(plate, playerName)
 				end
-			elseif plate.CDTracker then
-				plate.CDTracker:Hide()
+				return
 			end
-			return
 		end
 	end
 end
 
-function mod:AttachCooldownsToPlate(db, plate, cooldowns, unitType)
-	local tracker = plate.CDTracker
+function mod:AttachCooldowns(plate, cooldowns, unitType)
+	local tracker = (plate.CDTracker or {})[unitType]
 
-	if not db.enabled or not tracker or not db.isShown then return end
+	if not tracker or not tracker.db.isShown then
+		return
+	end
 
+	local db = tracker.db
 	local db_header = db.header
 	local db_icons = db.icons
 	local db_text = db.text
 	local db_spellList = db.spellList
-
 	local health = plate.Health
-	local level = plate:GetFrameLevel() + db_header.level
+
 	tracker:ClearAllPoints()
-	tracker:Point(db_header.point, (health and health:IsShown()) and health or plate.Name,
-							db_header.relativeTo, db_header.xOffset, db_header.yOffset)
-	tracker:SetFrameLevel(level)
+	tracker:Point(db_header.point, health:IsShown() and health or plate.Name,
+				db_header.relativeTo, db_header.xOffset, db_header.yOffset)
 
 	tsort(cooldowns, compareFuncs[unitType])
 
@@ -1184,38 +1264,28 @@ function mod:AttachCooldownsToPlate(db, plate, cooldowns, unitType)
 				cdFrame.text:Point("CENTER", cdFrame, "CENTER", db_text.xOffset, db_text.yOffset)
 				cdFrame:SetTemplate()
 				cdFrame.shadow = CreateFrame("Frame", nil, cdFrame)
-				cdFrame.shadow:SetFrameLevel(level - 1)
+				cdFrame.shadow:SetFrameLevel(plate:GetFrameLevel() + db.header.level)
+				if db.cooldownFill.enabled then
+					cdFrame.fillOn = fills[unitType]
+					cdFrame:fillOn((endTime - GetTime()) / (endTime - startTime))
+				end
+				if db_text.enabled then
+					cdFrame.text:SetText(ceil(endTime - GetTime()))
+				end
+				if borderCustomColor[unitType] then
+					cdFrame:SetBackdropBorderColor(unpack(db_icons.borderCustomColor))
+				elseif db_icons.borderColor then
+					cdFrame.col = borderColor[unitType]
+					cdFrame:SetBackdropBorderColor(cdFrame:col(endTime - GetTime() / (endTime - startTime)))
+				end
 				tinsert(tracker.cooldowns, cdFrame)
 			end
-
-			if db.cooldownFill.enabled then
-				cdFrame.fillOn = fills[unitType]
-				cdFrame.fillOn(cdFrame, ((endTime - GetTime()) / (endTime - startTime)))
-			end
-
-			if db_text.enabled then
-				cdFrame.text:SetText(ceil(endTime - GetTime()))
-				cdFrame.textOn = true
-			end
-
-			if borderCustomColor[unitType] then
-				cdFrame:SetBackdropBorderColor(unpack(db_icons.borderCustomColor))
-			elseif db_icons.borderColor then
-				cdFrame.col = borderColor[unitType]
-				cdFrame:SetBackdropBorderColor(cdFrame:col(endTime - GetTime(), endTime - startTime))
-			end
-
-			cdFrame.texture:SetTexture(cd.icon)
-
 			cdFrame.endTime = endTime
 			cdFrame.startTime = startTime
-			cdFrame.spellID = cd.spellID
-			cdFrame.throttle = db_icons.throttle
-			cdFrame.animateFadeOut = db_icons.animateFadeOut
+			cdFrame.cooldowns = cooldowns
 
-			cdFrame:SetScript("OnUpdate", function(self, elapsed)
-				mod:OnUpdateCooldown(self, elapsed, cooldowns, db, tracker, unitType)
-			end)
+			cdFrame.texture:SetTexture(cd.icon)
+			cdFrame:SetScript("OnUpdate", onUpdates[unitType])
 
 			shown = shown + 1
 		end
@@ -1259,52 +1329,44 @@ function mod:RepositionIcons(tracker, shown, unitType)
 	tracker:Show()
 end
 
-function mod:OnUpdateCooldown(cooldown, elapsed, cooldowns, db, tracker, unitType)
-    cooldown.timeElapsed = (cooldown.timeElapsed or 0) + elapsed
+function mod:ConstructCDTracker(db, plate)
+	local tracker = plate.CDTracker
+	if tracker then
+		for _, unitType in ipairs({"FRIENDLY_PLAYER", "ENEMY_PLAYER"}) do
+			local data = db[unitType]
+			if data.enabled then
+				local typeFrame = (plate.CDTracker or {})[unitType]
+				if not typeFrame then
+					typeFrame = CreateFrame("Frame", nil, plate)
+					typeFrame:SetFrameLevel(plate:GetFrameLevel() + data.header.level)
+					typeFrame:Hide()
 
-    if cooldown.timeElapsed > cooldown.throttle then
-        cooldown.timeElapsed = 0
-
-		local endTime = cooldown.endTime
-		local startTime = cooldown.startTime
-        local remaining = endTime - GetTime()
-
-        if cooldown.textOn then
-            cooldown.text:SetText(ceil(remaining))
-        end
-
-        if cooldown.fillOn then
-			cooldown.fillOn(cooldown, (remaining / (endTime - startTime)))
-        end
-
-        if cooldown.col then
-			cooldown:SetBackdropBorderColor(cooldown:col(remaining, endTime - startTime))
-        end
-
-		if cooldown.animateFadeOut then
-			local progress = remaining / (cooldown.endTime - cooldown.startTime)
-			if progress < 0.25 and remaining < 6 then
-				local f = abs(0.5 - GetTime() % 1) * 3
-				cooldown:SetAlpha(f)
-			else
-				cooldown:SetAlpha(1)
+					typeFrame.cooldowns = {}
+					typeFrame.db = data
+				end
+				tracker[unitType] = typeFrame
+			elseif (plate.CDTracker or {})[unitType] then
+				plate.CDTracker[unitType]:Hide()
+				plate.CDTracker[unitType] = nil
 			end
 		end
+	else
+		tracker = {}
+		for _, unitType in ipairs({"FRIENDLY_PLAYER", "ENEMY_PLAYER"}) do
+			local data = db[unitType]
+			if data.enabled then
+				local typeFrame = CreateFrame("Frame", nil, plate)
+				typeFrame:SetFrameLevel(plate:GetFrameLevel() + data.header.level)
+				typeFrame:Hide()
 
-		if remaining > 0 then return end
+				typeFrame.cooldowns = {}
+				typeFrame.db = data
 
-		cooldown:Hide()
-
-		for i = #cooldowns, 1, -1 do
-			if cooldowns[i].endTime < GetTime() then
-				tremove(cooldowns, i)
+				tracker[unitType] = typeFrame
 			end
 		end
-
-		if tracker:IsShown() then
-			mod:AttachCooldownsToPlate(db, tracker:GetParent(), cooldowns, unitType)
-		end
-    end
+	end
+	return tracker
 end
 
 function mod:OnShow()
@@ -1319,7 +1381,7 @@ function mod:Toggle(db, visibilityUpdate)
 					self:SecureHookScript(ElvUIGUIFrame, "OnHide", function()
 						if testing then
 							testing = false
-							testMode(db, true)
+							testMode(db)
 						end
 					end)
 					self:Unhook(E, "ToggleOptionsUI")
@@ -1335,30 +1397,9 @@ function mod:Toggle(db, visibilityUpdate)
 		end)
 		if updateVisibilityState(db, core:GetCurrentAreaType()) then
 			cache(db, visibilityUpdate)
-			for plate in pairs(NP.VisiblePlates) do
-				local tracker = plate.CDTracker
-				local unitType = plate.UnitType
-				local data = db[unitType]
-				if data and data.isShown then
-					local cooldowns = activeCooldowns[plate.UnitName]
-					if cooldowns and next(cooldowns) then
-						if unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER' then
-							self:AttachCooldownsToPlate(data, plate, cooldowns, unitType)
-						elseif unitType then
-							self:HandlePets(db, plate, plate.UnitName)
-						end
-					else
-						tracker:Hide()
-					end
-				else
-					tracker:Hide()
-				end
-			end
 			if not self:IsHooked(NP, "Construct_HealthBar") then
 				self:SecureHook(NP, "Construct_HealthBar", function(_, plate)
-					plate.CDTracker = CreateFrame("Frame", '$parentCDTracker', plate)
-					plate.CDTracker.cooldowns = {}
-					plate.CDTracker:Hide()
+					plate.CDTracker = mod:ConstructCDTracker(db, plate)
 				end)
 			end
 			if not isAwesome then
@@ -1366,12 +1407,15 @@ function mod:Toggle(db, visibilityUpdate)
 					if not self:IsHooked(NP, event) then
 						self:SecureHook(NP, event, function()
 							if UnitExists(unit) then
-								local name = UnitName(unit)
-								if activeCooldowns[name] and not UnitIsPlayer(unit) then
-									for frame in pairs(NP.VisiblePlates) do
-										local unitType = frame.UnitType
-										if frame.UnitName == name and (unitType == "FRIENDLY_NPC" or unitType == "ENEMY_NPC") then
-											mod:HandlePets(db, frame, name, unit)
+								if not UnitIsPlayer(unit) then
+									local name = UnitName(unit)
+									local hash = (name or "")..'false'
+									if activeCooldowns[hash] then
+										for frame in pairs(NP.VisiblePlates) do
+											local unitType = frame.UnitType
+											if frame.UnitName == name and (unitType == "FRIENDLY_NPC" or unitType == "ENEMY_NPC") then
+												mod:HandlePets(frame, name, unit)
+											end
 										end
 									end
 								end
@@ -1382,10 +1426,10 @@ function mod:Toggle(db, visibilityUpdate)
 				self:RegisterEvent("PLAYER_TARGET_CHANGED", function()
 					if UnitExists('target') then
 						local name = UnitName('target')
-						if activeCooldowns[name] and not UnitIsPlayer('target') then
+						if activeCooldowns[(name or "")..'false'] then
 							for frame in pairs(NP.VisiblePlates) do
 								if frame:GetParent():GetAlpha() == 1 then
-									mod:HandlePets(db, frame, name, 'target')
+									mod:HandlePets(frame, name, 'target')
 								end
 							end
 						end
@@ -1394,43 +1438,41 @@ function mod:Toggle(db, visibilityUpdate)
 			end
 			self.OnShow = function(_, self)
 				local plate = self.UnitFrame
-				local tracker = plate.CDTracker
+				local playerName = plate.UnitName
 				local unitType = plate.UnitType
-				local data = db[unitType]
+				local isPlayer = unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER'
 
-				if data and data.isShown then
-					local playerName = plate.UnitName
-					local activeCds = activeCooldowns[playerName]
-					if activeCds then
-						for i = #activeCds, 1, -1 do
-							if activeCds[i].endTime < GetTime() then
-								tremove(activeCds, i)
-							end
+				plate.isPlayerString = tostring(isPlayer)
+
+				for _, f in pairs(plate.CDTracker) do
+					f:Hide()
+				end
+
+				local activeCds = activeCooldowns[playerName..plate.isPlayerString]
+				if activeCds then
+					for i = #activeCds, 1, -1 do
+						if activeCds[i].endTime < GetTime() then
+							tremove(activeCds, i)
 						end
-						if next(activeCds) then
-							if (unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER') then
-								mod:AttachCooldownsToPlate(data, plate, activeCds, unitType)
-							elseif unitType then
-								tracker:Hide()
-								mod:HandlePets(db, plate, playerName)
-							end
-						else
-							tracker:Hide()
-						end
-					else
-						tracker:Hide()
 					end
-				else
-					tracker:Hide()
+					if next(activeCds) then
+						if isPlayer then
+							mod:AttachCooldowns(plate, activeCds, unitType)
+						else
+							mod:HandlePets(plate, playerName)
+						end
+					end
 				end
 			end
 			if not self:IsHooked(NP, "OnShow") then self:SecureHook(NP, "OnShow") end
-			self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(...) combatLogEvent(db, ...) end)
-			core:RegisterNPElement('CDTracker', function(unitType, frame, element)
-				if frame.CDTracker and (unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER') then
-					local points = db[unitType].header
-					frame.CDTracker:ClearAllPoints()
-					frame.CDTracker:Point(points.point, element, points.relativeTo, points.xOffset, points.yOffset)
+			self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", combatLogEvent)
+			core:RegisterNPElement('CDTracker', function(unitType, plate, element)
+				if plate.CDTracker and (unitType == 'FRIENDLY_PLAYER' or unitType == 'ENEMY_PLAYER') then
+					for _, f in pairs(plate.CDTracker) do
+						local points = db[unitType].header
+						f:ClearAllPoints()
+						f:Point(points.point, element, points.relativeTo, points.xOffset, points.yOffset)
+					end
 				end
 			end)
 		else
@@ -1455,9 +1497,11 @@ function mod:Toggle(db, visibilityUpdate)
 		end
 		self.initialized = true
 	elseif self.initialized then
+		testing = false
 		core:RegisterAreaUpdate(modName)
 		core:RegisterNPElement('CDTracker')
 		self:UnregisterAllEvents()
+		if ElvUIGUIFrame and self:IsHooked(ElvUIGUIFrame, "OnHide") then self:Unhook(ElvUIGUIFrame, "OnHide") end
 		if self:IsHooked(E, "ToggleOptionsUI") then self:Unhook(E, "ToggleOptionsUI") end
 		if self:IsHooked(NP, "Construct_HealthBar") then self:Unhook(NP, "Construct_HealthBar") end
 		if self:IsHooked(NP, "OnShow") then
@@ -1470,7 +1514,9 @@ function mod:Toggle(db, visibilityUpdate)
 		for frame in pairs(NP.CreatedPlates) do
 			local plate = frame.UnitFrame
 			if plate and plate.CDTracker then
-				plate.CDTracker:Hide()
+				for _, f in pairs(plate.CDTracker) do
+					f:Hide()
+				end
 				plate.CDTracker = nil
 			end
 		end

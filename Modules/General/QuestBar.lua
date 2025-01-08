@@ -17,7 +17,7 @@ local GetItemInfo, GetAuctionItemClasses = GetItemInfo, GetAuctionItemClasses
 local GetActionInfo, PickupAction, IsModifierKeyDown = GetActionInfo, PickupAction, IsModifierKeyDown
 local GetItemSpell, NUM_ACTIONBAR_BUTTONS = GetItemSpell, NUM_ACTIONBAR_BUTTONS
 local RegisterStateDriver, UnregisterStateDriver = RegisterStateDriver, UnregisterStateDriver
-local NUM_BAG_SLOTS = NUM_BAG_SLOTS
+local NUM_BAG_SLOTS, ERR_NOT_IN_COMBAT = NUM_BAG_SLOTS, ERR_NOT_IN_COMBAT
 
 
 P["Extras"]["general"][modName] = {
@@ -219,6 +219,9 @@ function mod:CreateQuestBar(db)
 	AB.handledBars["bar"..modName] = bar
 	E:CreateMover(bar, "ElvAB_QuestBar", L["bar"..modName], nil, nil, nil,"ALL,ACTIONBARS",nil,"actionbar,barQuestBar")
 
+	AB.db["bar"..modName].widthMult = 1
+	AB.db["bar"..modName].heightMult = 1
+
 	local localizedQuestItemType = select(12,GetAuctionItemClasses())
 	local function BlockAction(self, button)
 		if incombat then return end
@@ -256,6 +259,10 @@ function mod:CheckQuestItems(db)
         for slot = 1, GetContainerNumSlots(bag) do
             local itemID = GetContainerItemID(bag, slot)
             if itemID then
+				if not GetItemInfo(itemID) then
+					E:ScheduleTimer(function() self:CheckQuestItems(db) self.updatePending = false end, 0.1)
+					return true
+				end
 				local quetItem = GetContainerItemQuestInfo(bag, slot)
 				if quetItem and GetItemSpell(itemID) and not db.blacklist[itemID] then
 					tinsert(questItems, {bag = bag, slot = slot, itemID = itemID})
@@ -264,32 +271,39 @@ function mod:CheckQuestItems(db)
         end
     end
 
-    for _, button in ipairs(bar.buttons) do
-        PickupAction(button._state_action)
-        ClearCursor()
-        button:SetAttribute("itemID", nil)
-    end
+	local itemCount = #questItems
+	if itemCount ~= self.itemCount then
+		ClearCursor()
 
-    local actives = 0
-    for i = 1, #questItems do
-        local questItem = questItems[i]
-        local button = bar.buttons[i]
-        if button then
-            PickupContainerItem(questItem.bag, questItem.slot)
-            PlaceAction(button._state_action)
-            ClearCursor()
-            button:SetAttribute("itemID", questItem.itemID)
-            actives = actives + 1
-        end
-    end
+		for _, button in ipairs(bar.buttons) do
+			PickupAction(button._state_action)
+			ClearCursor()
+			button:SetAttribute("itemID", nil)
+		end
 
-    bar.db.buttons = actives
-    if actives == 0 then
-        bar.db.visibility = "hide"
-    else
-        bar.db.visibility = db.visibility
-    end
-    AB:PositionAndSizeBar("bar" .. modName)
+		local actives = 0
+		for i = 1, #questItems do
+			local questItem = questItems[i]
+			local button = bar.buttons[i]
+			if button then
+				PickupContainerItem(questItem.bag, questItem.slot)
+				PlaceAction(button._state_action)
+				ClearCursor()
+				button:SetAttribute("itemID", questItem.itemID)
+				actives = actives + 1
+			end
+		end
+
+		bar.db.buttons = actives
+		if actives == 0 then
+			bar.db.visibility = "hide"
+		else
+			bar.db.visibility = db.visibility
+		end
+		AB:PositionAndSizeBar("bar" .. modName)
+
+		self.itemCount = itemCount
+	end
 end
 
 
@@ -320,12 +334,28 @@ function mod:Toggle(db)
 		self:RegisterEvent("PLAYER_REGEN_DISABLED", function() incombat = true end)
 		self:RegisterEvent("PLAYER_REGEN_ENABLED", function()
 			incombat = false
-			self:CheckQuestItems(db)
+			if not self.updatePending then
+				self:CheckQuestItems(db)
+			end
 		end)
-		self:RegisterEvent("BAG_UPDATE", function() mod:CheckQuestItems(db) end)
+		self:RegisterEvent("BAG_UPDATE", function()
+			if not self.updatePending then
+				self.updatePending = E:ScheduleTimer(function() self.updatePending = self:CheckQuestItems(db) end, 0.1)
+			else
+				E:CancelTimer(self.updatePending)
+				self.updatePending = E:ScheduleTimer(function() self.updatePending = self:CheckQuestItems(db) end, 0.1)
+			end
+		end)
 		E:EnableMover("ElvAB_QuestBar")
 		SLASH_QUESTBARRESTORE1 = "/questbarRestore"
-		SlashCmdList["QUESTBARRESTORE"] = function() twipe(db.blacklist) mod:CheckQuestItems(db) end
+		SlashCmdList["QUESTBARRESTORE"] = function()
+			if incombat then
+				print(core.customColorBad..ERR_NOT_IN_COMBAT)
+			else
+				twipe(db.blacklist)
+				mod:CheckQuestItems(db)
+			end
+		end
 		self:CheckQuestItems(db)
 		self.initialized = true
 	elseif self.initialized then
@@ -345,6 +375,7 @@ function mod:Toggle(db)
 			hash_SlashCmdList["/QUESTBARRESTORE"] = nil
 			bar.db.enabled = false
         end
+		self.itemCount = nil
     end
 end
 
