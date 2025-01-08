@@ -83,6 +83,11 @@ end
 
 function mod:tagFunc(frame, unit)
 	if tcontains(framelist, frame) then
+		if frame.CDTracker then
+			for _, f in pairs(frame.CDTracker) do
+				f:Hide()
+			end
+		end
 		local name = UnitName(unit)
 		if name then
 			local isPlayer = UnitIsPlayer(unit)
@@ -109,7 +114,6 @@ function mod:tagFunc(frame, unit)
 						end
 					end
 					mod:AttachCooldowns(frame, cooldowns)
-					return
 				end
 			else
 				local petCooldowns = activeCooldowns[name..'false']
@@ -142,11 +146,6 @@ function mod:tagFunc(frame, unit)
 						end
 					end
 				end
-			end
-		end
-		if frame.CDTracker then
-			for _, f in pairs(frame.CDTracker) do
-				f:Hide()
 			end
 		end
 	end
