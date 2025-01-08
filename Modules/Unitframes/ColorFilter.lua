@@ -1662,6 +1662,7 @@ function mod:UpdateAll(db)
 					if targetBar.flashTexture then
 						targetBar.flashTexture:Hide()
 					end
+					targetBar:SetScript('OnUpdate', nil)
 					if metaTable.events[unit] then
 						metaFrame[unit]:UnregisterAllEvents()
 						metaFrame[unit]:SetScript('OnEvent', nil)
@@ -1755,8 +1756,6 @@ function mod:UpdateAll(db)
 									end
 								end
 							end)
-						else
-							targetBar:SetScript('OnUpdate', nil)
 						end
 						for i = #metaTable.statusbars[unit][statusbar].tabs, 1, -1 do
 							local tab = metaTable.statusbars[unit][statusbar].tabs[i]

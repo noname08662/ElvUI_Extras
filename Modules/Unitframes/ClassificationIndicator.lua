@@ -7,7 +7,7 @@ local modName = mod:GetName()
 local pairs, ipairs = pairs, ipairs
 local rad = math.rad
 local tinsert = table.insert
-local lower, gsub, upper, find, format = string.lower, string.gsub, string.upper, string.find, string.format
+local gsub, upper, find, format, match = string.gsub, string.upper, string.find, string.format, string.match
 local UnitClass, UnitIsPlayer, UnitClassification = UnitClass, UnitIsPlayer, UnitClassification
 
 mod.initialized = false
@@ -63,7 +63,7 @@ function mod:LoadConfig(db)
 		for _, frame in ipairs(units) do
 			local unitframeType = frame.unitframeType
 			if frame.classificationIndicator and db.units[unitframeType] and db.units[unitframeType].enabled then
-				frame:UpdateAllElements('ForceUpdate')
+				self:UpdateElement(frame, frame.unit, db.units[unitframeType])
 			end
 		end
 	end
@@ -151,7 +151,9 @@ function mod:LoadConfig(db)
 						desc = "",
 						get = function(info) return selectedUnitData()[info[#info]] end,
 						set = function(info, value) selectedUnitData()[info[#info]] = value updateAllElements() end,
-						hidden = function() return not (find(selectedUnit(), 'target') or find(selectedUnit(), 'focus')) end,
+						hidden = function()
+							return selectedUnit() ~= 'boss' and not (find(selectedUnit(), 'target') or find(selectedUnit(), 'focus'))
+						end,
 					},
 					unitTypeDropdown = {
 						order = 6,
@@ -178,6 +180,7 @@ function mod:LoadConfig(db)
 							end
 							return list
 						end,
+						hidden = function() return selectedUnit() == 'boss' end,
 					},
 					spacer = {
 						order = 7,
@@ -189,14 +192,18 @@ function mod:LoadConfig(db)
 						type = "toggle",
 						name = L["Use Nameplates' Icons"],
 						desc = "",
-						hidden = function() local type = selectedUnitData().selectedEnemyType return type ~= lower(type) end,
+						hidden = function()
+							return not (find(selectedUnit(), 'target') or find(selectedUnit(), 'focus') or selectedUnit() == 'boss')
+						end,
 					},
 					colorByType = {
 						order = 9,
 						type = "toggle",
 						name = L["Color by Type"],
 						desc = L["Color enemy NPC icon based on the unit type."],
-						hidden = function() local type = selectedUnitData().selectedEnemyType return type ~= lower(type) end,
+						hidden = function()
+							return not (find(selectedUnit(), 'target') or find(selectedUnit(), 'focus') or selectedUnit() == 'boss')
+						end,
 					},
 					texListSelector = {
 						order = 10,
@@ -410,33 +417,20 @@ function mod:LoadConfig(db)
 end
 
 
-function mod:tagFunc(frame, unit)
-	mod:UpdateElement(frame, unit, E.db.Extras.unitframes[modName].units[frame.unitframeType])
-end
-
 function mod:UpdateElement(frame, unit, db)
 	if not unit or not db or not db.enabled then return end
 
 	local classificationIndicator = frame.classificationIndicator
 	local unitClassification = UnitClassification(unit)
 	local enemyType, colorByType, texture, r, g, b
-	local unitframeType = frame.unitframeType
 
 	if UnitIsPlayer(unit) then
-		if (find(unitframeType, 'target') or find(unitframeType, 'focus')) and not db.enableClasses then
-			classificationIndicator:Hide()
-			return
-		end
 		local _, class = UnitClass(unit)
 		if class then
 			enemyType = db[class]
 			texture = db[class].texture
 		end
-	else
-		if not (find(unitframeType, 'target') or find(unitframeType, 'focus')) or not db.enableNPCs then
-			classificationIndicator:Hide()
-			return
-		end
+	elseif db.enableNPCs then
 		for type, color in pairs({worldboss = {1,0.5,1}, elite = {1,1,0}, rare = {1,1,1}, rareelite = {0.5,1,1}}) do
 			if unitClassification == type then
 				enemyType = db[type]
@@ -515,13 +509,15 @@ function mod:ManageClassificationIndicator(db, frame, unit)
 	frame.classificationIndicator = classificationIndicator
 end
 
-
 function mod:Toggle(db)
 	local units = db.units
 	local enabled
 	for _, frame in ipairs(core:AggregateUnitFrames()) do
 		local unitframeType = frame.unitframeType
 		if not core.reload and units[unitframeType] and units[unitframeType].enabled then
+			if match(unitframeType, '%w+target') or match(unitframeType, 'boss%d?$') then
+				frame.__elements['classificationIcon'] = function(frame, _, unit) self:UpdateElement(frame, unit, units[unitframeType]) end
+			end
 			self:ManageClassificationIndicator(units, frame, unitframeType)
 			self:UpdateElement(frame, frame.unit, units[unitframeType])
 			enabled = true
@@ -530,13 +526,21 @@ function mod:Toggle(db)
 		end
 	end
 	if enabled then
-		core:Tag("classification", self.tagFunc, function(_, frame)
-			local unitframeType = frame.unitframeType
-			if units[unitframeType] and units[unitframeType].enabled then
-				self:ManageClassificationIndicator(units, frame, unitframeType)
-				self:UpdateElement(frame, frame.unit, units[unitframeType])
+		core:Tag("classification",
+			function(_, frame, unit)
+				self:UpdateElement(frame, unit, units[frame.unitframeType])
+			end,
+			function(_, frame)
+				local unitframeType = frame.unitframeType
+				if units[unitframeType] and units[unitframeType].enabled then
+					if match(unitframeType, '%w+target') or match(unitframeType, 'boss%d?$') then
+						frame.__elements['classificationIcon'] = function(frame, _, unit) self:UpdateElement(frame, unit, units[unitframeType]) end
+					end
+					self:ManageClassificationIndicator(units, frame, unitframeType)
+					self:UpdateElement(frame, frame.unit, units[unitframeType])
+				end
 			end
-		end)
+		)
 		self.initialized = true
 	elseif self.initialized then
 		core:Untag("classification")

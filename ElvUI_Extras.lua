@@ -1043,8 +1043,9 @@ function core:Tag(name, tagfunc, updatefunc)
 
 	if updatefunc and not next(frameUpdates) then
 		for _, frame in ipairs(self:AggregateUnitFrames()) do
-			local type_db = E.db.unitframe.units[frame.unitframeType]
-			if type_db and type_db.enable then
+			local frameType = frame.unitframeType
+			local type_db = E.db.unitframe.units[frameType]
+			if type_db and type_db.enable and not (match(frameType, '%w+target') or match(frameType, 'boss%d?$')) then
 				if not taggedFrames[frame] then
 					frame.updatesHandler = frame:CreateFontString(nil, "OVERLAY")
 					frame.updatesHandler:FontTemplate()
@@ -1062,12 +1063,14 @@ function core:Tag(name, tagfunc, updatefunc)
 				local groupFunc = "Update_"..frameTypeCapital.."Frames"
 				if (UF[func] or UF[groupFunc]) and not self:IsHooked(UF, UF[func] and func or groupFunc) then
 					self:SecureHook(UF, UF[func] and func or groupFunc, function(self, frame, ...)
-						if not taggedFrames[frame] then
-							frame.updatesHandler = frame:CreateFontString(nil, "OVERLAY")
-							frame.updatesHandler:FontTemplate()
-							frame:Tag(frame.updatesHandler, "[updateshandler]")
+						if not (match(frame.unitframeType, '%w+target') or match(frame.unitframeType, 'boss%d?$')) then
+							if not taggedFrames[frame] then
+								frame.updatesHandler = frame:CreateFontString(nil, "OVERLAY")
+								frame.updatesHandler:FontTemplate()
+								frame:Tag(frame.updatesHandler, "[updateshandler]")
 
-							taggedFrames[frame] = true
+								taggedFrames[frame] = true
+							end
 						end
 						for _, updateFunc in pairs(frameUpdates) do
 							updateFunc(self, frame, ...)

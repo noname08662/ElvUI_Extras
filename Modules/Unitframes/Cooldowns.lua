@@ -1576,6 +1576,7 @@ function mod:SetupCooldowns(db, visibilityUpdate)
 
 					if db_type and db_type.enabled and db_type.isShown then
 						local cooldowns = activeCooldowns[(UnitName(unit) or "")..'true']
+
 						if not UnitExists(unit) then
 							frame.lastGUID = nil
 						else
