@@ -321,8 +321,7 @@ local format, match, gmatch = string.format, string.match, string.gmatch
 local max, ceil, floor = math.max, math.ceil, math.floor
 local tinsert, twipe, tsort = table.insert, table.wipe, table.sort
 local UnitGUID, UnitClass, UnitExists, UnitAura = UnitGUID, UnitClass, UnitExists, UnitAura
-local UnitThreatSituation, GetThreatStatusColor = UnitThreatSituation, GetThreatStatusColor
-local UnitReaction, UnitIsPlayer, UnitCanAttack = UnitReaction, UnitIsPlayer, UnitCanAttack
+local UnitReaction, UnitIsPlayer, UnitCanAttack, UnitThreatSituation = UnitReaction, UnitIsPlayer, UnitCanAttack, UnitThreatSituation
 local GetNumMacroIcons, GetMacroIconInfo, GameTooltip = GetNumMacroIcons, GetMacroIconInfo, GameTooltip
 local UnitPopupMenus, UnitPopupShown = UnitPopupMenus, UnitPopupShown
 local GetRaidRosterInfo, IsPartyLeader, IsRaidOfficer = GetRaidRosterInfo, IsPartyLeader, IsRaidOfficer
@@ -1014,45 +1013,28 @@ end
 
 
 function core:Tag(name, tagfunc, updatefunc)
-	if tagfunc and not next(nameUpdates) then
-		ElvUF.Tags.Events["updateshandler"] = "UNIT_NAME_UPDATE"
-		ElvUF.Tags.Methods["updateshandler"] = function(unit)
-			local frame = UF[unit]
-			local guid = UnitGUID(unit)
-
-			if frame and guid ~= frame.lastGUID then
-				if frame.ThreatIndicator and (frame.db.threatStyle == 'BORDERS' or frame.db.threatStyle == 'HEALTHBORDERS') then
-					local status = UnitThreatSituation(unit)
-					frame.ThreatIndicator:PostUpdate(unit, status, GetThreatStatusColor(status))
-				end
-
-				for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
-					if frame[auraType] and frame[auraType].db.enable and frame[auraType].PostUpdate then
-						frame[auraType]:PostUpdate()
-					end
-				end
-
-				for _, func in pairs(nameUpdates) do
-					func(nil, frame, unit)
-				end
-				frame.lastGUID = guid
-			end
-		end
-	end
 	nameUpdates[name] = tagfunc
 
 	if updatefunc and not next(frameUpdates) then
+		local wrongEvents = {
+			['DisableElement'] = true,
+			['ForceUpdate'] = true,
+		}
 		for _, frame in ipairs(self:AggregateUnitFrames()) do
 			local frameType = frame.unitframeType
 			local type_db = E.db.unitframe.units[frameType]
-			if type_db and type_db.enable and not (match(frameType, '%w+target') or match(frameType, 'boss%d?$')) then
-				if not taggedFrames[frame] then
-					frame.updatesHandler = frame:CreateFontString(nil, "OVERLAY")
-					frame.updatesHandler:FontTemplate()
-					frame:Tag(frame.updatesHandler, "[updateshandler]")
-
-					taggedFrames[frame] = true
+			if not taggedFrames[frame] and type_db and type_db.enable and not (match(frameType, '%w+target') or match(frameType, 'boss%d?$')) then
+				self:SecureHook(frame, "UpdateAllElements", function(frame, event)
+					if not wrongEvents[event] and frame.unit then
+						for _, updateFunc in pairs(nameUpdates) do
+							updateFunc(_, frame, frame.unit)
+						end
+					end
+				end)
+				if frameType == 'target' or frameType == 'focus' then
+					frame:RegisterEvent(format("PLAYER_%s_CHANGED", upper(frameType)), frame.UpdateAllElements)
 				end
+				taggedFrames[frame] = true
 			end
 		end
 		for frameType in pairs(self:getAllFrameTypes()) do
@@ -1063,14 +1045,19 @@ function core:Tag(name, tagfunc, updatefunc)
 				local groupFunc = "Update_"..frameTypeCapital.."Frames"
 				if (UF[func] or UF[groupFunc]) and not self:IsHooked(UF, UF[func] and func or groupFunc) then
 					self:SecureHook(UF, UF[func] and func or groupFunc, function(self, frame, ...)
-						if not (match(frame.unitframeType, '%w+target') or match(frame.unitframeType, 'boss%d?$')) then
-							if not taggedFrames[frame] then
-								frame.updatesHandler = frame:CreateFontString(nil, "OVERLAY")
-								frame.updatesHandler:FontTemplate()
-								frame:Tag(frame.updatesHandler, "[updateshandler]")
-
-								taggedFrames[frame] = true
+						local unitframeType = frame.unitframeType
+						if not taggedFrames[frame] and not (match(unitframeType, '%w+target') or match(unitframeType, 'boss%d?$')) then
+							core:SecureHook(frame, "UpdateAllElements", function(frame, event)
+								if not wrongEvents[event] and frame.unit then
+									for _, updateFunc in pairs(nameUpdates) do
+										updateFunc(_, frame, frame.unit)
+									end
+								end
+							end)
+							if unitframeType == 'target' or unitframeType == 'focus' then
+								frame:RegisterEvent(format("PLAYER_%s_CHANGED", upper(frameType)), frame.UpdateAllElements)
 							end
+							taggedFrames[frame] = true
 						end
 						for _, updateFunc in pairs(frameUpdates) do
 							updateFunc(self, frame, ...)
@@ -1083,19 +1070,16 @@ function core:Tag(name, tagfunc, updatefunc)
 	frameUpdates[name] = updatefunc
 end
 
+
 function core:Untag(name)
 	nameUpdates[name] = nil
-	if not next(nameUpdates) then
-		ElvUF.Tags.Events["updateshandler"] = nil
-		ElvUF.Tags.Methods["updateshandler"] = nil
-	end
-
 	frameUpdates[name] = nil
+
 	if not next(frameUpdates) then
 		for _, frame in ipairs({self:AggregateUnitFrames()}) do
 			if taggedFrames[frame] then
-				frame.updatesHandler:Hide()
-				frame.updatesHandler = nil
+				self:Unhook(frame, "UpdateAllElements")
+
 				taggedFrames[frame] = nil
 			end
 		end
