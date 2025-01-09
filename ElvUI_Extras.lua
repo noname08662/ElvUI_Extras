@@ -1070,7 +1070,6 @@ function core:Tag(name, tagfunc, updatefunc)
 	frameUpdates[name] = updatefunc
 end
 
-
 function core:Untag(name)
 	nameUpdates[name] = nil
 	frameUpdates[name] = nil
@@ -1897,10 +1896,6 @@ function core:Initialize()
 
 	-- update new elements
 	core:SecureHook(E, "ToggleOptionsUI", function()
-		local tagGroup = E.Options.args.tagGroup
-		if tagGroup and tagGroup.args.Miscellaneous.args.updateshandler then
-			tagGroup.args.Miscellaneous.args.updateshandler.hidden = true
-		end
 		if E.Options.args.nameplate then
 			for unitType, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
 											["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do

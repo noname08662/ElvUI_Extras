@@ -14,70 +14,60 @@ mod.metaFrame = metaFrame
 mod.updatePending = false
 mod.initialized = false
 
-local pairs, ipairs, tonumber, tostring, unpack, loadstring, pcall = pairs, ipairs, tonumber, tostring, unpack, loadstring, pcall
+local pairs, ipairs, tonumber, tostring, unpack, loadstring, type = pairs, ipairs, tonumber, tostring, unpack, loadstring, type
 local find, gsub, match, gmatch, upper, lower, format = string.find, string.gsub, string.match, string.gmatch, string.upper, string.lower, string.format
 local tinsert, twipe, tremove = table.insert, table.wipe, table.remove
 local GetNumPartyMembers, GetNumRaidMembers = GetNumPartyMembers, GetNumRaidMembers
 local InCombatLockdown, GetTime, CopyTable = InCombatLockdown, GetTime, CopyTable
 
 
-function mod:tagFunc(frame)
-	for _, statusbar in pairs(metaTable.statusbars[frame.unitframeType] or {}) do
-		if frame[statusbar] then
-			frame[statusbar]:ForceUpdate()
-		end
-	end
-end
-
 local function toggleHook(target, hook, extension)
-	if hook then
-		if not mod:IsHooked(UF, target) then
-			mod:SecureHook(UF, target, extension)
-		end
-	else
-		if mod:IsHooked(UF, target) then
-			mod:Unhook(UF, target, extension)
-		end
-	end
+    if hook then
+        if not mod:IsHooked(UF, target) then
+            mod:SecureHook(UF, target, extension)
+        end
+    else
+        if mod:IsHooked(UF, target) then
+            mod:Unhook(UF, target, extension)
+        end
+    end
 end
 
 local function updateHooks(frame, hook, statusbar)
-	if statusbar == 'Castbar' then
-		toggleHook("PostCastStart", hook, mod.PostCastStart)
-		toggleHook("PostCastStop", hook, mod.PostCastStop)
-
-		frame[statusbar].PostCastStart = UF.PostCastStart
-		frame[statusbar].PostCastStop = UF.PostCastStop
-		if hook then
-			if not mod:IsHooked(frame[statusbar], "OnUpdate") then
-				frame[statusbar].CFtimeElapsed = 0
-				mod:SecureHookScript(frame[statusbar], "OnUpdate", function(self, elapsed)
-					self.CFtimeElapsed = self.CFtimeElapsed + elapsed
-					if self.CFtimeElapsed > 0.05 then
-						self.CFtimeElapsed = 0
-						mod.PostCastStart(self)
-						if frame.colorFilter[statusbar].colorApplied then
-							self.receivedColor = true
-						elseif self.receivedColor then
-							self:PostCastStart()
-							self.receivedColor = false
-						end
-					end
-				end)
-			end
-		elseif mod:IsHooked(frame[statusbar], "OnUpdate") then
-			mod:Unhook(frame[statusbar], "OnUpdate")
-		end
-	else
-		toggleHook("PostUpdate"..statusbar.."Color", hook, statusbar == 'Health' and mod.PostUpdateHealthColor or mod.PostUpdatePowerColor)
-
-		frame[statusbar]['PostUpdateColor'] = UF['PostUpdate'..statusbar..'Color']
-	end
-
-	if frame.ThreatIndicator then
-		frame.ThreatIndicator.PostUpdate = UF.UpdateThreat
-	end
+    if statusbar == 'Castbar' then
+        toggleHook("PostCastStart", hook, mod.PostCastStart)
+        toggleHook("PostCastStop", hook, mod.PostCastStop)
+        frame[statusbar].PostCastStart = UF.PostCastStart
+        frame[statusbar].PostCastStop = UF.PostCastStop
+        if hook then
+            if not mod:IsHooked(frame[statusbar], "OnUpdate") then
+                frame[statusbar].CFtimeElapsed = 0
+                mod:SecureHookScript(frame[statusbar], "OnUpdate", function(self, elapsed)
+                    self.CFtimeElapsed = self.CFtimeElapsed + elapsed
+                    if self.CFtimeElapsed > 0.05 then
+                        self.CFtimeElapsed = 0
+                        mod.PostCastStart(self)
+                        if frame.colorFilter[statusbar].colorApplied then
+                            self.receivedColor = true
+                        elseif self.receivedColor then
+                            self:PostCastStart()
+                            self.receivedColor = false
+                        end
+                    end
+                end)
+            end
+        elseif mod:IsHooked(frame[statusbar], "OnUpdate") then
+            mod:Unhook(frame[statusbar], "OnUpdate")
+        end
+    else
+        toggleHook("PostUpdate"..statusbar.."Color", hook, statusbar == 'Health' and mod.PostUpdateHealthColor or mod.PostUpdatePowerColor)
+        frame[statusbar]['PostUpdateColor'] = UF['PostUpdate'..statusbar..'Color']
+    end
+    if frame.ThreatIndicator then
+        frame.ThreatIndicator.PostUpdate = UF.UpdateThreat
+    end
 end
+
 
 local function constructAnimation(bar, colorFilter)
 	colorFilter.flashTexture = bar:CreateTexture(nil, 'OVERLAY')
@@ -335,10 +325,14 @@ function mod:LoadConfig(db)
 						type = "toggle",
 						name = L["Frequent Updates"],
 						desc = "",
-						disabled = function() return greyed() or selectedBar() == 'Castbar' end,
-						hidden = function() return selectedBar() == 'Castbar' end,
 						get = function(info) return selectedBarData()[info[#info]] end,
 						set = function(info, value) selectedBarData()[info[#info]] = value self:Toggle(db) end,
+						disabled = function()
+							return greyed() or selectedBar() == 'Castbar' or match(selectedUnit(), '%w+target') or match(selectedUnit(), 'boss%d?$')
+						end,
+						hidden = function()
+							return selectedBar() == 'Castbar' or match(selectedUnit(), '%w+target') or match(selectedUnit(), 'boss%d?$')
+						end,
 					},
 					updateThrottle = {
 						order = 6,
@@ -346,10 +340,15 @@ function mod:LoadConfig(db)
 						min = 0, max = 10, step = 0.1,
 						name = L["Throttle Time"],
 						desc = "",
-						disabled = function() return greyed() or not selectedBarData().frequentUpdates end,
-						hidden = function() return selectedBar() == 'Castbar' end,
 						get = function(info) return selectedBarData()[info[#info]] end,
 						set = function(info, value) selectedBarData()[info[#info]] = value self:Toggle(db) end,
+						disabled = function()
+							return greyed() or not selectedBarData().frequentUpdates or selectedBar() == 'Castbar'
+									or match(selectedUnit(), '%w+target') or match(selectedUnit(), 'boss%d?$')
+						end,
+						hidden = function()
+							return selectedBar() == 'Castbar' or match(selectedUnit(), '%w+target') or match(selectedUnit(), 'boss%d?$')
+						end,
 					},
 					events = {
 						order = 7,
@@ -358,9 +357,14 @@ function mod:LoadConfig(db)
 						width = "double",
 						name = L["Events (optional)"],
 						desc = L["UNIT_AURA CHAT_MSG_WHISPER etc."],
-						hidden = function() return selectedBar() == 'Castbar' end,
 						get = function() return selectedBarData().events or "" end,
 						set = function(_, value) selectedBarData().events = value self:Toggle(db) end,
+						disabled = function()
+							return greyed() or selectedBar() == 'Castbar' or match(selectedUnit(), '%w+target') or match(selectedUnit(), 'boss%d?$')
+						end,
+						hidden = function()
+							return selectedBar() == 'Castbar' or match(selectedUnit(), '%w+target') or match(selectedUnit(), 'boss%d?$')
+						end,
 					},
 				},
 			},
@@ -753,8 +757,10 @@ function mod:LoadConfig(db)
 							["Power"] = L["Power"],
 							["NONE"] = L["None"],
 						},
-						hidden = function() return selectedBar() == 'Castbar'
-												or not selectedTabData().highlight.borders.enabled end,
+						hidden = function()
+							return selectedBar() == 'Castbar'
+								or not (selectedUFData().infoPanel and selectedUFData().infoPanel.enable)
+								or not selectedTabData().highlight.borders.enabled end,
 						disabled = function()
 							return greyed()
 								or not (selectedUFData().classbar and selectedUFData().classbar.enable) end,
@@ -773,7 +779,8 @@ function mod:LoadConfig(db)
 						},
 						hidden = function()
 							return selectedBar() == 'Castbar'
-								or customFrames[selectedUnit()] or not selectedTabData().highlight.borders.enabled end,
+								or not (selectedUFData().infoPanel and selectedUFData().infoPanel.enable)
+								or not selectedTabData().highlight.borders.enabled end,
 						disabled = function()
 							return greyed() or not (selectedUFData().infoPanel and selectedUFData().infoPanel.enable) end,
 					},
@@ -1023,7 +1030,7 @@ function mod:ConstructHighlight(frame)
 	end
 end
 
-function mod:SortMentions(frame, conditions, mentionedByUnit, statusbarToUpd)
+function mod:SortMentions(conditions, mentionedByUnit, statusbarToUpd, targetTabIndex)
 	for tabsStateCondition in gmatch(conditions, '@@%[(.-)%]@@') do
 		local _, endPos, unit, statusbar, tabIndex = find(tabsStateCondition, '([^,%s]+),%s*([^,%s]+),%s*([%d]+)')
 		local _, _, operator, triggerCount = find(tabsStateCondition, ',%s*([~=<>]*)%s*([%d]+)', endPos)
@@ -1035,20 +1042,17 @@ function mod:SortMentions(frame, conditions, mentionedByUnit, statusbarToUpd)
 			end)
 			tabIndex = tonumber(tabIndex)
 
-			local mentions = {}
-			for _, info in ipairs(frame.colorFilter[statusbar].mentions or {}) do
-				mentions[info.frame] = mentions[info.frame] or {}
-				mentions[info.frame][info.unit..info.statusbar..info.tabIndex] = true
-			end
 			for _, mentionedFrame in pairs(metaTable.units[unit] or {}) do
-				if not mentions[mentionedFrame] or not mentions[mentionedFrame][unit..statusbar..tabIndex] then
-					mentionedFrame.colorFilter[statusbar].mentions = mentionedFrame.colorFilter[statusbar].mentions or {}
-					tinsert(mentionedFrame.colorFilter[statusbar].mentions,
-										{	frame = frame,
-											statusbar = statusbarToUpd,
-											unit = mentionedByUnit,
-											tabIndex = tabIndex
-										})
+				mentionedFrame.colorFilter[statusbar].mentions = mentionedFrame.colorFilter[statusbar].mentions or {}
+
+				for _, f in pairs(metaTable.units[mentionedByUnit] or {}) do
+					mentionedFrame.colorFilter[statusbar].mentions[f:GetName()..statusbarToUpd] = {
+						frame = f,
+						statusbar = statusbarToUpd,
+						unit = mentionedByUnit,
+						tabIndex = tabIndex,
+						targetTabIndex = targetTabIndex,
+					}
 				end
 			end
 			conditions = gsub(conditions, '@@%[.-%]@@',
@@ -1420,11 +1424,12 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 end
 
 function mod:UpdateMentions(bar)
-	for _, mentionInfo in pairs(bar.mentions) do
-		local frame, statusbar, tabIndex = mentionInfo.frame, mentionInfo.statusbar, mentionInfo.tabIndex
+	for _, info in pairs(bar.mentions) do
+		local frame, statusbar, tabIndex, targetTabIndex = info.frame, info.statusbar, info.tabIndex, info.targetTabIndex
 		local targetBar = frame.colorFilter[statusbar]
-		if (bar.appliedColorTabIndex == tabIndex and targetBar.appliedColorTabIndex ~= tabIndex)
-		 or (bar.appliedColorTabIndex ~= tabIndex and targetBar.appliedColorTabIndex == tabIndex) and frame[statusbar]:IsShown() then
+
+		if frame[statusbar]:IsShown() and (bar.appliedColorTabIndex == tabIndex and targetBar.appliedColorTabIndex ~= targetTabIndex)
+									or (bar.appliedColorTabIndex ~= tabIndex and targetBar.appliedColorTabIndex == targetTabIndex) then
 			frame[statusbar]:ForceUpdate()
 		end
 	end
@@ -1588,6 +1593,7 @@ function mod:PostUpdateHealthColor()
 	local colorFilter = frame.colorFilter
 	if not colorFilter then return end
 
+--print(frame:GetName(), unitInfo, unitInfo and unitInfo.Health)
 	local unitInfo = metaTable.statusbars[frame.unitframeType]
 	if unitInfo and unitInfo.Health and frame:IsShown() then
 		mod:ParseTabs(frame, 'Health', frame.unit, unitInfo.Health.tabs, true)
@@ -1599,7 +1605,7 @@ function mod:PostUpdatePowerColor()
 	local colorFilter = frame.colorFilter
 	if not (colorFilter and colorFilter.Power) then return end
 
-	local unitInfo = metaTable.statusbars[(self.origParent or self:GetParent()).unitframeType]
+	local unitInfo = metaTable.statusbars[(self.origParent or frame).unitframeType]
 	if unitInfo and unitInfo.Power and frame:IsShown() then
 		mod:ParseTabs(frame, 'Power', frame.unit, unitInfo.Power.tabs, true)
 	end
@@ -1667,6 +1673,17 @@ function mod:UpdateAll(db)
 						metaFrame[unit]:UnregisterAllEvents()
 						metaFrame[unit]:SetScript('OnEvent', nil)
 					end
+					if frame[statusbar] then
+						updateHooks(frame, false, statusbar)
+						frame[statusbar]:ForceUpdate()
+						frame[statusbar]:SetStatusBarTexture(LSM:Fetch("statusbar", UF.db.statusbar))
+					end
+				end
+				for k, v in pairs(frame.colorFilter) do
+					if type(v) == 'table' and v.Hide then
+						v:Hide()
+						frame.colorFilter[k] = nil
+					end
 				end
 				frame.colorFilter:Hide()
 				frame.colorFilter = nil
@@ -1678,20 +1695,9 @@ function mod:UpdateAll(db)
 	twipe(metaTable.statusbars)
 	twipe(conditionsFuncs)
 
-	if core.reload then
-		local bars = {"Health", "Power", "Castbar"}
-		for _, frame in ipairs(core:AggregateUnitFrames()) do
-			for _, statusbar in ipairs(bars) do
-				if frame[statusbar] then
-					updateHooks(frame, false, statusbar)
-					frame[statusbar]:ForceUpdate()
-				end
-			end
-		end
-		return
-	end
+	if core.reload then return end
 
-	local enabled = false
+	local enabled = {frames = {}, tabs = {}}
 
 	for _, frame in ipairs(core:AggregateUnitFrames()) do
 		local unit = frame.unitframeType
@@ -1709,7 +1715,8 @@ function mod:UpdateAll(db)
 			for statusbar, bar in pairs(db.units[unit].statusbars) do
 				local targetBar = frame.colorFilter[statusbar]
 				if targetBar and bar.enabled then
-					enabled = true
+					enabled[statusbar] = true
+
 					local barInfo = metaTable.statusbars[unit][statusbar]
 					if not barInfo then
 						metaTable.statusbars[unit][statusbar] = CopyTable(bar)
@@ -1760,28 +1767,12 @@ function mod:UpdateAll(db)
 						for i = #metaTable.statusbars[unit][statusbar].tabs, 1, -1 do
 							local tab = metaTable.statusbars[unit][statusbar].tabs[i]
 							if tab.enabled and find(tab.conditions, '%S+') then
-								local conditions = self:SortMentions(frame, tab.conditions, unit, statusbar)
-								if conditions then
-									local luaFunction, errorMsg = loadstring(format([[
-										local frame, unit, statusCheck, countCheck = ...
-										%s
-									]], conditions))
-									if not luaFunction then
-										core:print('LUA', L["Color Filter"], errorMsg)
-										conditionsFuncs[tab] = function() return end
-									else
-										local success, result = pcall(luaFunction, frame, unit, statusCheck, countCheck)
-										if not success then
-											core:print('FAIL', L["Color Filter"], result)
-											conditionsFuncs[tab] = function() return end
-										else
-											conditionsFuncs[tab] = luaFunction
-										end
-									end
-									tab.fetchedTexture = LSM:Fetch("statusbar", tab.texture)
-								else
-									return
-								end
+								tinsert(enabled.tabs, {
+									tab = tab,
+									unit = unit,
+									statusbar = statusbar,
+									targetTabIndex = i,
+								})
 							else
 								tremove(metaTable.statusbars[unit][statusbar].tabs, i)
 							end
@@ -1798,12 +1789,39 @@ function mod:UpdateAll(db)
 					end
 				end
 				if frame[statusbar] then
-					updateHooks(frame, enabled, statusbar)
-					frame[statusbar]:ForceUpdate()
+                    tinsert(enabled.frames, {
+                        frame = frame,
+                        statusbar = statusbar,
+                    })
 				end
 			end
 		end
 	end
+	for _, data in ipairs(enabled.tabs) do
+		local tab, unit, statusbar, targetTabIndex = data.tab, data.unit, data.statusbar, data.targetTabIndex
+		local conditions = self:SortMentions(tab.conditions, unit, statusbar, targetTabIndex)
+		if conditions then
+			local luaFunction, errorMsg = loadstring(format([[
+				local frame, unit, statusCheck, countCheck = ...
+				%s
+			]], conditions))
+			if not luaFunction then
+				core:print('LUA', L["Color Filter"], errorMsg)
+				conditionsFuncs[tab] = function() return end
+			else
+				conditionsFuncs[tab] = luaFunction
+			end
+			tab.fetchedTexture = LSM:Fetch("statusbar", tab.texture)
+		else
+			return
+		end
+	end
+    for _, info in ipairs(enabled.frames) do
+        local frame = info.frame
+        local statusbar = info.statusbar
+		updateHooks(frame, enabled[statusbar], statusbar)
+		frame[statusbar]:ForceUpdate()
+    end
 end
 
 
@@ -1818,7 +1836,7 @@ function mod:Toggle(db)
 		for _, func in ipairs({'Construct_Castbar', 'Construct_PowerBar', 'UpdateThreat'}) do
 			if not self:IsHooked(UF, func) then self:SecureHook(UF, func, self[func]) end
 		end
-		core:Tag("colorfilter", self.tagFunc, function()
+		core:Tag("colorfilter", nil, function()
 			if not self.updatePending then
 				self.updatePending = E:ScheduleTimer(function() self:UpdateAll(db) self.updatePending = false end, 0.1)
 			else
