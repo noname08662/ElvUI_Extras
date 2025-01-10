@@ -1326,7 +1326,7 @@ function mod:RepositionIcons(tracker, shown, unitType)
         local highlight = highlights[cdFrame.spellID]
         if highlight and highlight.enabled then
             cdFrame.shadow:SetOutside(cdFrame, highlight.size, highlight.size)
-            cdFrame.shadow:SetBackdrop({edgeFile = edgeFile, edsgeSize = E:Scale(highlight.size)})
+            cdFrame.shadow:SetBackdrop({edgeFile = edgeFile, edgeSize = E:Scale(highlight.size)})
             cdFrame.shadow:SetBackdropBorderColor(unpack(highlight.color))
             cdFrame.shadow:Show()
         else
