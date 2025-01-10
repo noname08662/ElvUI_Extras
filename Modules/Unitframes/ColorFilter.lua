@@ -17,7 +17,6 @@ mod.initialized = false
 local pairs, ipairs, tonumber, tostring, unpack, loadstring, type = pairs, ipairs, tonumber, tostring, unpack, loadstring, type
 local find, gsub, match, gmatch, upper, lower, format = string.find, string.gsub, string.match, string.gmatch, string.upper, string.lower, string.format
 local tinsert, twipe, tremove = table.insert, table.wipe, table.remove
-local GetNumPartyMembers, GetNumRaidMembers = GetNumPartyMembers, GetNumRaidMembers
 local InCombatLockdown, GetTime, CopyTable = InCombatLockdown, GetTime, CopyTable
 
 
@@ -1100,7 +1099,7 @@ function mod:UpdateGlow(frame, colors, statusbar, unit, showGlow, highlight)
 				castbarIcon:SetScale(glow.castbarIconSize)
 				castbarIcon.shadow:SetBackdropBorderColor(unpack(glow.castbarIconColors))
 				castbarIcon.shadow:Show()
-			elseif castbarIcon:IsShown() then
+			else
 				castbarIcon.shadow:Hide()
 			end
 		end
@@ -1121,7 +1120,7 @@ function mod:UpdateGlow(frame, colors, statusbar, unit, showGlow, highlight)
 				health:SetScale(appliedGlowColors.Power.highlight.glow.size)
 				health.shadow:SetBackdropBorderColor(r, g, b, a or 1)
 				health.shadow:Show()
-			elseif statusbar == 'Power' and not appliedGlowColors.Health.applied and colorFilter.Health:IsShown() then
+			elseif statusbar == 'Power' and not appliedGlowColors.Health.applied then
 				colorFilter.Health.shadow:Hide()
 			end
 		end
@@ -1428,7 +1427,7 @@ function mod:UpdateMentions(bar)
 		local frame, statusbar, tabIndex, targetTabIndex = info.frame, info.statusbar, info.tabIndex, info.targetTabIndex
 		local targetBar = frame.colorFilter[statusbar]
 
-		if frame[statusbar]:IsShown() and (bar.appliedColorTabIndex == tabIndex and targetBar.appliedColorTabIndex ~= targetTabIndex)
+		if (bar.appliedColorTabIndex == tabIndex and targetBar.appliedColorTabIndex ~= targetTabIndex)
 									or (bar.appliedColorTabIndex ~= tabIndex and targetBar.appliedColorTabIndex == targetTabIndex) then
 			frame[statusbar]:ForceUpdate()
 		end
@@ -1477,7 +1476,7 @@ function mod:UpdateThreat(unit, status)
 			if metaTable.statusbars[unitframeType] then
 				for statusbar in pairs(metaTable.statusbars[unitframeType]) do
 					local parentBar = frame[statusbar]
-					if parentBar and parentBar:IsShown() then
+					if parentBar then
 						parentBar:ForceUpdate()
 					end
 				end
@@ -1487,8 +1486,9 @@ function mod:UpdateThreat(unit, status)
 end
 
 
-function mod:ParseTabs(frame, statusbar, unit, tabs, isPostUpdate)
+function mod:ParseTabs(frame, statusbar, unit, tabs)
 	local targetBar = frame.colorFilter[statusbar]
+
 	for tabIndex, tab in ipairs(tabs) do
 		-- if colored already, do not check tabs with lower priority
 		if targetBar.appliedColorTabIndex and tabIndex > targetBar.appliedColorTabIndex then break end
@@ -1498,6 +1498,7 @@ function mod:ParseTabs(frame, statusbar, unit, tabs, isPostUpdate)
 			-- no retriggering please
 			local flash = tab.flash
 			local flashTexture = targetBar.flashTexture
+
 			if flash.enabled and (not colors or colors.f ~= false) then
 				local flashColors = flash.colors
 				local r, g, b = flashColors[1], flashColors[2], flashColors[3]
@@ -1511,7 +1512,7 @@ function mod:ParseTabs(frame, statusbar, unit, tabs, isPostUpdate)
 				anim.fadein:SetDuration(flash.speed)
 				anim.fadeout:SetDuration(flash.speed)
 				anim:Play()
-			elseif flashTexture and flashTexture:IsShown() then
+			else
 				flashTexture.anim:Stop()
 				flashTexture:Hide()
 			end
@@ -1523,20 +1524,15 @@ function mod:ParseTabs(frame, statusbar, unit, tabs, isPostUpdate)
 				r, g, b = colors.mR and colors.mR or r, colors.mG and colors.mG or g, colors.mB and colors.mB or b
 			end
 
-			if tab.enableColors then
-				if not colors or colors.m ~= false then
-					frame[statusbar]:SetStatusBarColor(r, g, b)
-				elseif not isPostUpdate then
-					frame[statusbar]:ForceUpdate()
-				end
+			if tab.enableColors and (not colors or colors.m ~= false) then
+				frame[statusbar]:SetStatusBarColor(r, g, b)
 			end
+
 			if tab.enableTexture then
 				if not colors then
 					frame[statusbar]:SetStatusBarTexture(tab.fetchedTexture)
 				elseif colors.mT then
 					frame[statusbar]:SetStatusBarTexture(colors.mT)
-				elseif not isPostUpdate then
-					frame[statusbar]:SetStatusBarTexture(LSM:Fetch("statusbar", UF.db.statusbar))
 				end
 			end
 
@@ -1578,10 +1574,8 @@ function mod:ParseTabs(frame, statusbar, unit, tabs, isPostUpdate)
 			end
 
 			local flashTexture = targetBar.flashTexture
-			if flashTexture:IsShown() then
-				flashTexture.anim:Stop()
-				flashTexture:Hide()
-			end
+			flashTexture.anim:Stop()
+			flashTexture:Hide()
 		end
 	end
 	targetBar.lastUpdate = GetTime()
@@ -1593,10 +1587,9 @@ function mod:PostUpdateHealthColor()
 	local colorFilter = frame.colorFilter
 	if not colorFilter then return end
 
---print(frame:GetName(), unitInfo, unitInfo and unitInfo.Health)
 	local unitInfo = metaTable.statusbars[frame.unitframeType]
-	if unitInfo and unitInfo.Health and frame:IsShown() then
-		mod:ParseTabs(frame, 'Health', frame.unit, unitInfo.Health.tabs, true)
+	if unitInfo and unitInfo.Health then
+		mod:ParseTabs(frame, 'Health', frame.unit, unitInfo.Health.tabs)
 	end
 end
 
@@ -1606,8 +1599,8 @@ function mod:PostUpdatePowerColor()
 	if not (colorFilter and colorFilter.Power) then return end
 
 	local unitInfo = metaTable.statusbars[(self.origParent or frame).unitframeType]
-	if unitInfo and unitInfo.Power and frame:IsShown() then
-		mod:ParseTabs(frame, 'Power', frame.unit, unitInfo.Power.tabs, true)
+	if unitInfo and unitInfo.Power then
+		mod:ParseTabs(frame, 'Power', frame.unit, unitInfo.Power.tabs)
 	end
 end
 
@@ -1617,8 +1610,8 @@ function mod:CastOnupdate()
 	if not (colorFilter and colorFilter.Castbar) then return end
 
 	local unitInfo = metaTable.statusbars[frame.unitframeType]
-	if unitInfo and unitInfo.Castbar and frame:IsShown() then
-		mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs, true)
+	if unitInfo and unitInfo.Castbar then
+		mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs)
 	end
 end
 
@@ -1628,8 +1621,8 @@ function mod:PostCastStart()
 	if not (colorFilter and colorFilter.Castbar) then return end
 
 	local unitInfo = metaTable.statusbars[frame.unitframeType]
-	if unitInfo and unitInfo.Castbar and frame:IsShown() then
-		mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs, true)
+	if unitInfo and unitInfo.Castbar then
+		mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs)
 	end
 end
 
@@ -1642,7 +1635,7 @@ function mod:PostCastStop()
 	if unitInfo and unitInfo.Castbar then
 		colorFilter = colorFilter.Castbar
 		if colorFilter.mentions then
-			mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs, true)
+			mod:ParseTabs(frame, 'Castbar', frame.unit, unitInfo.Castbar.tabs)
 		end
 	end
 end
@@ -1732,15 +1725,8 @@ function mod:UpdateAll(db)
 							if not metaFrame[unit]:GetScript('OnEvent') then
 								metaFrame[unit]:SetScript('OnEvent', function()
 									for _, frame in ipairs(unitInfo) do
-										if frame:IsShown() and (not frame.id
-																or (frame.isForced
-																	or (GetNumPartyMembers() >= 1 or GetNumRaidMembers() >= 1))) then
-											for _, statusbar in ipairs(eventsInfo) do
-												local frameBar = frame[statusbar]
-												if frameBar:IsShown() then
-													frameBar:ForceUpdate()
-												end
-											end
+										for _, statusbar in ipairs(eventsInfo) do
+											frame[statusbar]:ForceUpdate()
 										end
 									end
 								end)
@@ -1753,14 +1739,7 @@ function mod:UpdateAll(db)
 								if GetTime() - self.lastUpdate < updateThrottle then return end
 
 								for _, frame in ipairs(unitInfo) do
-									if frame:IsShown() and (not frame.id
-																or (frame.isForced
-																	or (GetNumPartyMembers() >= 1 or GetNumRaidMembers() >= 1))) then
-										local frameBar = frame[statusbar]
-										if frameBar:IsShown() then
-											frameBar:ForceUpdate()
-										end
-									end
+									frame[statusbar]:ForceUpdate()
 								end
 							end)
 						end

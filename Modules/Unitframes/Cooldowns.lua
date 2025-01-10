@@ -21,10 +21,6 @@ local borderCustomColor = {
 	["FRIENDLY_PLAYER"] = {},
 	["ENEMY_PLAYER"] = {},
 }
-local borderColor = {
-	["FRIENDLY_PLAYER"] = {},
-	["ENEMY_PLAYER"] = {},
-}
 local fills = {
 	["FRIENDLY_PLAYER"] = {},
 	["ENEMY_PLAYER"] = {},
@@ -421,14 +417,14 @@ local function createFillFunction(db_cooldownFill, db_icons)
     end
 end
 
-local function createOnUpdateFunction(db)
+local function createOnUpdateFunction(db, unitType)
 	local luaFunction = loadstring(
 		format(
 			[[
 				local self, elapsed = ...
 				self.timeElapsed = (self.timeElapsed or 0) + elapsed
 
-				if self.timeElapsed > %d then
+				if self.timeElapsed > %f then
 					self.timeElapsed = 0
 
 					local endTime = self.endTime
@@ -466,7 +462,9 @@ local function createOnUpdateFunction(db)
 			]] or "",
 			(db.text.enabled) and "self.text:SetText(ceil(remaining))" or "",
 			(db.cooldownFill.enabled and not db.cooldownFill.classic) and "self:fillOn(progress)" or "",
-			(db.icons.borderColor) and "self:SetBackdropBorderColor(self:col(progress))" or "",
+			(db.icons.borderColor) and format(
+				"self:SetBackdropBorderColor(%s)", unitType == 'ENEMY_PLAYER' and "1 - progress, progress" or "progress, 1 - progress"
+			) or "",
 			(db.icons.animateFadeOut) and [[
 				if progress < 0.25 and remaining < 6 then
 					local f = abs(0.5 - GetTime() % 1) * 3
@@ -488,15 +486,6 @@ local function createOnUpdateFunction(db)
 	})
 
 	return luaFunction
-end
-
-
-local function getColorByTimeFriend(_, progress)
-    return progress, 1 - progress
-end
-
-local function getColorByTimeEnemy(_, progress)
-    return 1 - progress, progress
 end
 
 
@@ -567,9 +556,8 @@ local function cache(db, frameType, visibilityUpdate)
 				end
 				compareFuncs[unitType][frameType] = createCompareFunction(icons.sorting, icons.trinketOnTop)
 				borderCustomColor[unitType][frameType] = icons.borderCustomColor[1] > 0 or icons.borderCustomColor[2] > 0 or icons.borderCustomColor[3] > 0
-				borderColor[unitType][frameType] = unitType and getColorByTimeEnemy or getColorByTimeFriend
 				fills[unitType][frameType] = createFillFunction(data.cooldownFill, icons)
-				onUpdates[unitType][frameType] = createOnUpdateFunction(data)
+				onUpdates[unitType][frameType] = createOnUpdateFunction(data, unitType)
 			end
 		end
 	end
@@ -1390,6 +1378,7 @@ function mod:AttachCooldowns(frame, cooldowns)
 
 			local endTime = cd.endTime
 			local startTime = cd.startTime
+			local progress = (endTime - GetTime()) / (endTime - startTime)
 
 			if not cdFrame then
 				cdFrame = CreateFrame("Frame", nil, tracker)
@@ -1397,40 +1386,59 @@ function mod:AttachCooldowns(frame, cooldowns)
 				cdFrame:SetTemplate()
 				cdFrame.texture = cdFrame:CreateTexture(nil, "ARTWORK")
 				cdFrame.texture:SetInside(cdFrame, E.mult, E.mult)
-				cdFrame.fill = cdFrame:CreateTexture(nil, "OVERLAY")
-				cdFrame.fill:SetTexture(0, 0, 0, db_cooldownFill.alpha or 0.8)
-				cdFrame.cooldown = CreateFrame("Cooldown", "$parentCD", cdFrame, "CooldownFrameTemplate")
-				cdFrame.cooldown:SetAllPoints(cdFrame.texture)
-				cdFrame.text = ((db_cooldownFill.enabled and db_cooldownFill.classic) and cdFrame.cooldown
-								or cdFrame):CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-				cdFrame.text:SetFont(LSM:Fetch("font", db_text.font), db_text.size, db_text.flag)
-				cdFrame.text:Point("CENTER", cdFrame, "CENTER", db_text.xOffset, db_text.yOffset)
 				cdFrame:SetTemplate()
 				cdFrame.shadow = CreateFrame("Frame", nil, cdFrame)
 				cdFrame.shadow:SetFrameLevel(db.header.level - 1)
 				if db_cooldownFill.enabled then
 					if db_cooldownFill.classic then
-						CooldownFrame_SetTimer(cdFrame.cooldown, startTime, endTime - startTime, 1)
+						cdFrame.cooldown = CreateFrame("Cooldown", "$parentCD", cdFrame, "CooldownFrameTemplate")
+						cdFrame.cooldown:SetAllPoints(cdFrame.texture)
 						if db_cooldownFill.reversed then
 							cdFrame.cooldown:SetReverse(true)
 						else
 							cdFrame.cooldown:SetReverse(false)
 						end
+						cdFrame.classicTimer = true
 					else
+						cdFrame.fill = cdFrame:CreateTexture(nil, "OVERLAY")
+						cdFrame.fill:SetTexture(0, 0, 0, db_cooldownFill.alpha or 0.8)
 						cdFrame.fillOn = fills[unitType][frameType]
-						cdFrame:fillOn((endTime - GetTime()) / (endTime - startTime))
+						cdFrame:fillOn(progress)
 					end
 				end
 				if db_text.enabled then
+					cdFrame.text = ((db_cooldownFill.enabled and db_cooldownFill.classic) and cdFrame.cooldown
+									or cdFrame):CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+					cdFrame.text:SetFont(LSM:Fetch("font", db_text.font), db_text.size, db_text.flag)
+					cdFrame.text:Point("CENTER", cdFrame, "CENTER", db_text.xOffset, db_text.yOffset)
 					cdFrame.text:SetText(ceil(cd.endTime - GetTime()))
 				end
 				if borderCustomColor[unitType][frameType] then
 					cdFrame:SetBackdropBorderColor(unpack(db_icons.borderCustomColor))
 				elseif db_icons.borderColor then
-					cdFrame.col = borderColor[unitType][frameType]
-					cdFrame:SetBackdropBorderColor(cdFrame:col(endTime - GetTime() / (endTime - startTime)))
+					if unitType == 'ENEMY_PLAYER' then
+						cdFrame:SetBackdropBorderColor(1 - progress, progress)
+					else
+						cdFrame:SetBackdropBorderColor(progress, 1 - progress)
+					end
 				end
 				tinsert(tracker.cooldowns, cdFrame)
+			else
+				if cdFrame.classicTimer then
+					CooldownFrame_SetTimer(cdFrame.cooldown, startTime, endTime - startTime, 1)
+				elseif db_cooldownFill.enabled then
+					cdFrame:fillOn(progress)
+				end
+				if db_text.enabled then
+					cdFrame.text:SetText(ceil(cd.endTime - GetTime()))
+				end
+				if db_icons.borderColor then
+					if unitType == 'ENEMY_PLAYER' then
+						cdFrame:SetBackdropBorderColor(1 - progress, progress)
+					else
+						cdFrame:SetBackdropBorderColor(progress, 1 - progress)
+					end
+				end
 			end
 			cdFrame.endTime = endTime
 			cdFrame.startTime = startTime

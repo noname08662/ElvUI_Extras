@@ -6,7 +6,6 @@ assert(oUF, "oUF FloatingCombatFeedback was unable to locate oUF install")
 
 local _G = getfenv(0)
 local b_and = _G.bit.band
-local hooksecurefunc = _G.hooksecurefunc
 local m_cos = _G.math.cos
 local m_pi = _G.math.pi
 local m_random = _G.math.random
@@ -557,7 +556,6 @@ local function GUIDe(frame, unit)
 	unGUIDe(frame)
 end
 
-local hookedFrames = {}
 local cleuElements = {}
 
 function oUF:uaeHook(event)
@@ -574,12 +572,6 @@ local function EnableCLEU(element, state, force)
 		if element.useCLEU then
 			frame:UnregisterEvent("UNIT_COMBAT", Path)
 			oUF.CLEUDispatcher:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-
-			if not hookedFrames[frame] then
-				hooksecurefunc(frame, "UpdateAllElements", oUF.uaeHook)
-				hookedFrames[frame] = true
-			end
-
 			GUIDe(frame, frame.unit)
 
 			cleuElements[element] = true

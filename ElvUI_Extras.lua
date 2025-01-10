@@ -1019,6 +1019,7 @@ function core:Tag(name, tagfunc, updatefunc)
 		local wrongEvents = {
 			['DisableElement'] = true,
 			['ForceUpdate'] = true,
+			['AurabarsMovers_UpdateAllElements'] = true,
 		}
 		for _, frame in ipairs(self:AggregateUnitFrames()) do
 			local frameType = frame.unitframeType
@@ -1026,8 +1027,12 @@ function core:Tag(name, tagfunc, updatefunc)
 			if not taggedFrames[frame] and type_db and type_db.enable and not (match(frameType, '%w+target') or match(frameType, 'boss%d?$')) then
 				self:SecureHook(frame, "UpdateAllElements", function(frame, event)
 					if not wrongEvents[event] and frame.unit then
-						for _, updateFunc in pairs(nameUpdates) do
-							updateFunc(_, frame, frame.unit)
+						local guid = UnitGUID(frame.unit)
+						if guid and guid ~= frame.lastGUID then
+							for _, updateFunc in pairs(nameUpdates) do
+								updateFunc(_, frame, frame.unit)
+							end
+							frame.lastGUID = guid
 						end
 					end
 				end)
@@ -1049,8 +1054,12 @@ function core:Tag(name, tagfunc, updatefunc)
 						if not taggedFrames[frame] and not (match(unitframeType, '%w+target') or match(unitframeType, 'boss%d?$')) then
 							core:SecureHook(frame, "UpdateAllElements", function(frame, event)
 								if not wrongEvents[event] and frame.unit then
-									for _, updateFunc in pairs(nameUpdates) do
-										updateFunc(_, frame, frame.unit)
+									local guid = UnitGUID(frame.unit)
+									if guid and guid ~= frame.lastGUID then
+										for _, updateFunc in pairs(nameUpdates) do
+											updateFunc(_, frame, frame.unit)
+										end
+										frame.lastGUID = guid
 									end
 								end
 							end)

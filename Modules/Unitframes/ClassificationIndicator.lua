@@ -12,6 +12,8 @@ local UnitClass, UnitIsPlayer, UnitClassification = UnitClass, UnitIsPlayer, Uni
 
 mod.initialized = false
 
+local classifications = {worldboss = {1,0.5,1}, elite = {1,1,0}, rare = {1,1,1}, rareelite = {0.5,1,1}}
+
 
 P["Extras"]["unitframes"][modName] = {
 	["selectedUnit"] = "target",
@@ -425,13 +427,18 @@ function mod:UpdateElement(frame, unit, db)
 	local enemyType, colorByType, texture, r, g, b
 
 	if UnitIsPlayer(unit) then
-		local _, class = UnitClass(unit)
-		if class then
-			enemyType = db[class]
-			texture = db[class].texture
+		if db.enableClasses then
+			local _, class = UnitClass(unit)
+			if class then
+				enemyType = db[class]
+				texture = db[class].texture
+			end
+		else
+			classificationIndicator:Hide()
+			return
 		end
 	elseif db.enableNPCs then
-		for type, color in pairs({worldboss = {1,0.5,1}, elite = {1,1,0}, rare = {1,1,1}, rareelite = {0.5,1,1}}) do
+		for type, color in pairs(classifications) do
 			if unitClassification == type then
 				enemyType = db[type]
 				if enemyType and enemyType.NPIcon then
