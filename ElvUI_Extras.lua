@@ -1,4 +1,4 @@
-﻿local E, L, _, P = unpack(ElvUI)
+local E, L, _, P = unpack(ElvUI)
 local core = E:NewModule("Extras", "AceHook-3.0", "AceEvent-3.0")
 local UF = E:GetModule("UnitFrames")
 local NP = E:GetModule("NamePlates")
@@ -1958,13 +1958,7 @@ function core:Initialize()
 
 	self:SecureHook(E, "SetMoversClampedToScreen", function(_, toggle)
 		self.reload = not toggle
-		self.plateAnchoring = {
-			["Elite"] = function(unitType)
-				if unitType == "ENEMY_NPC" or unitType == "FRIENDLY_NPC" then
-					return NP.db.units[unitType].eliteIcon
-				end
-			end
-		}
+		E.globalShadow = nil
 		for _, module in pairs(self.modules) do
 			module()
 		end
