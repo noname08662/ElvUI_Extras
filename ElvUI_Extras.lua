@@ -1028,7 +1028,7 @@ function core:Tag(name, tagfunc, updatefunc)
 				self:SecureHook(frame, "UpdateAllElements", function(frame, event)
 					if not wrongEvents[event] and frame.unit then
 						local guid = UnitGUID(frame.unit)
-						if guid ~= frame.lastGUID then
+						if guid and guid ~= frame.lastGUID then
 							for _, updateFunc in pairs(nameUpdates) do
 								updateFunc(_, frame, frame.unit)
 							end
@@ -1036,6 +1036,7 @@ function core:Tag(name, tagfunc, updatefunc)
 						end
 					end
 				end)
+				self:SecureHookScript(frame, "OnHide", function(self) self.lastGUID = nil end)
 				if frameType == 'target' or frameType == 'focus' then
 					frame:RegisterEvent(format("PLAYER_%s_CHANGED", upper(frameType)), frame.UpdateAllElements)
 				end
@@ -1055,7 +1056,7 @@ function core:Tag(name, tagfunc, updatefunc)
 							core:SecureHook(frame, "UpdateAllElements", function(frame, event)
 								if not wrongEvents[event] and frame.unit then
 									local guid = UnitGUID(frame.unit)
-									if guid ~= frame.lastGUID then
+									if guid and guid ~= frame.lastGUID then
 										for _, updateFunc in pairs(nameUpdates) do
 											updateFunc(_, frame, frame.unit)
 										end
@@ -1063,6 +1064,7 @@ function core:Tag(name, tagfunc, updatefunc)
 									end
 								end
 							end)
+							core:SecureHookScript(frame, "OnHide", function(self) self.lastGUID = nil end)
 							if unitframeType == 'target' or unitframeType == 'focus' then
 								frame:RegisterEvent(format("PLAYER_%s_CHANGED", upper(frameType)), frame.UpdateAllElements)
 							end
