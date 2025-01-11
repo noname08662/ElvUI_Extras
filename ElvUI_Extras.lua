@@ -1959,22 +1959,11 @@ function core:Initialize()
     end
 
 	self:SecureHook(E, "SetMoversClampedToScreen", function(_, toggle)
-		if not self.reload or toggle then
-			self.reload = not toggle
-			E.globalShadow = nil
-			for _, module in pairs(self.modules) do
-				module()
-			end
-		end
-	end)
-
-	self:RawHook(E.data, "SetProfile", function(...)
-		self.reload = true
+		self.reload = not toggle
 		E.globalShadow = nil
 		for _, module in pairs(self.modules) do
 			module()
 		end
-		self.hooks[E.data].SetProfile(...)
 	end)
 
 	local shadow_db = E.globalShadow
