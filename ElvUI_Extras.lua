@@ -1,4 +1,4 @@
-﻿local E, L, _, P = unpack(ElvUI)
+local E, L, _, P = unpack(ElvUI)
 local core = E:NewModule("Extras", "AceHook-3.0", "AceEvent-3.0")
 local UF = E:GetModule("UnitFrames")
 local NP = E:GetModule("NamePlates")
@@ -1959,11 +1959,22 @@ function core:Initialize()
     end
 
 	self:SecureHook(E, "SetMoversClampedToScreen", function(_, toggle)
-		self.reload = not toggle
+		if not self.reload or toggle then
+			self.reload = not toggle
+			E.globalShadow = nil
+			for _, module in pairs(self.modules) do
+				module()
+			end
+		end
+	end)
+
+	self:RawHook(E.data, "SetProfile", function(...)
+		self.reload = true
 		E.globalShadow = nil
 		for _, module in pairs(self.modules) do
 			module()
 		end
+		self.hooks[E.data].SetProfile(...)
 	end)
 
 	local shadow_db = E.globalShadow
