@@ -143,7 +143,7 @@ function mod:LoadConfig(db)
 						desc = "",
 						get = function(info) return selectedUnitData()[info[#info]] end,
 						set = function(info, value) selectedUnitData()[info[#info]] = value updateAllElements() end,
-						hidden = function() return not (find(selectedUnit(), 'target') or find(selectedUnit(), 'focus')) end,
+						hidden = function() return selectedUnit() == 'boss' end,
 					},
 					enableNPCs = {
 						order = 5,
