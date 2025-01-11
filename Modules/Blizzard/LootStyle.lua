@@ -1003,7 +1003,7 @@ function mod:StyledLootings(db)
 						if not rollResult then
 							return false,
 									format("[\124T%s:%d\124t]|r%s%s, %s%s",
-										rollIcons[rollType], db.iconSize,
+										rollIcons[rollType], (db.iconSize or 0),
 										itemLink, quantity, formattedName, mod.lootInfoPrints or ''),
 									...
 						end
@@ -1016,13 +1016,13 @@ function mod:StyledLootings(db)
 
 						return false,
 								format("%s[%d\124T%s:%d\124t]|r%s%s, %s%s",
-									rollColor, rollResult, rollIcons[rollType], db.iconSize,
+									rollColor, rollResult, rollIcons[rollType], (db.iconSize or 0),
 									itemLink, quantity, formattedName, mod.lootInfoPrints or ''),
 								...
 					else
 						return false,
 								format("[\124T%s:%d\124t]|r%s%s%s",
-									rollIcons[rollType], db.iconSize,
+									rollIcons[rollType], (db.iconSize or 0),
 									itemLink, quantity, mod.lootInfoPrints or ''),
 								...
 					end

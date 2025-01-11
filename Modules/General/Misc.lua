@@ -875,8 +875,8 @@ function mod:ItemIcons(db)
 			function mod:ItemIconsFilter(_, msg, ...)
 				msg = gsub(msg, "(\124%x%x%x%x%x%x%x%x%x\124[Hh]item:.-\124[hH]\124[rR])", function(link)
 					return (db.orientation == "left")
-							and "\124T" .. (GetItemIcon(link) or "Interface\\Icons\\INV_Misc_QuestionMark") .. ":" .. db.size .. "\124t" .. link
-							or link .. "\124T" .. (GetItemIcon(link) or "Interface\\Icons\\INV_Misc_QuestionMark") .. ":" .. db.size .. "\124t"
+							and "\124T" .. (GetItemIcon(link) or "Interface\\Icons\\INV_Misc_QuestionMark") .. ":" .. (db.size or 0) .. "\124t" .. link
+							or link .. "\124T" .. (GetItemIcon(link) or "Interface\\Icons\\INV_Misc_QuestionMark") .. ":" .. (db.size or 0).. "\124t"
 				end)
 				return false, msg, ...
 			end
