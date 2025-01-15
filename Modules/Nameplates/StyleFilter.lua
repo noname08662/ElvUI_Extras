@@ -777,6 +777,7 @@ function mod:Toggle(db)
     if not core.reload and (linksEnabled or iconsEnabled or triggersEnabled) then
 		if self:IsHooked(NP, 'StyleFilterPass') then self:Unhook(NP, 'StyleFilterPass') end
 		if self:IsHooked(NP, 'StyleFilterClear') then self:Unhook(NP, 'StyleFilterClear') end
+		if self:IsHooked(NP, 'StyleFilterConditionCheck') then self:Unhook(NP, 'StyleFilterConditionCheck') end
 		if self:IsHooked(NP, 'OnShow') then self:Unhook(NP, 'OnShow') end
 		if not self:IsHooked(NP, 'StyleFilterConfigure') then self:RawHook(NP, 'StyleFilterConfigure', function()
 				twipe(links)
@@ -851,20 +852,16 @@ function mod:Toggle(db)
 			end)
 		end
 		if triggersEnabled then
-			if not self:IsHooked(NP, "StyleFilterConditionCheck") then
-				self:RawHook(NP, "StyleFilterConditionCheck", function(self, frame, filter, trigger, ...)
-					local customCheck = customChecks[filter]
-					if customCheck then
-						if customCheck(frame, filter, trigger, ...) then
-							mod.hooks[NP].StyleFilterConditionCheck(self, frame, filter, trigger, ...)
-						end
-					else
+			self:RawHook(NP, 'StyleFilterConditionCheck', function(self, frame, filter, trigger, ...)
+				local customCheck = customChecks[filter]
+				if customCheck then
+					if customCheck(frame, filter, trigger, ...) then
 						mod.hooks[NP].StyleFilterConditionCheck(self, frame, filter, trigger, ...)
 					end
-				end)
-			end
-		elseif self:IsHooked(NP, "StyleFilterConditionCheck") then
-			self:Unhook(NP, "StyleFilterConditionCheck")
+				else
+					mod.hooks[NP].StyleFilterConditionCheck(self, frame, filter, trigger, ...)
+				end
+			end)
 		end
 		if linksEnabled then
 			if not self:IsHooked(NP, 'OnHide') then self:SecureHook(NP, 'OnHide') end
@@ -933,7 +930,7 @@ function mod:Toggle(db)
 		recheckAllPlates()
 		self.initialized = true
 	elseif self.initialized then
-		for _, func in pairs({'StyleFilterPass', 'StyleFilterClear', 'StyleFilterConfigure',
+		for _, func in pairs({'StyleFilterPass', 'StyleFilterClear', 'StyleFilterConfigure', 'StyleFilterConditionCheck',
 								'OnShow', 'StyleFilterUpdate', 'Construct_HealthBar', 'ResetNameplateFrameLevel'}) do
 			if self:IsHooked(NP, func) then self:Unhook(NP, func) end
 		end
