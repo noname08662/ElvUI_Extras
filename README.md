@@ -20,6 +20,7 @@ What's inside:
 		 arbitrary tooltip notes for most of the in-game tooltips;
 		 internal cds at trinket tooltips;
 		 rdf queue tracker;
+		 tier information as greentext at item tooltips;
 [Blizzard]:
 	(Automation) - auto-gossip;
 		       auto-fill "DELETE";
