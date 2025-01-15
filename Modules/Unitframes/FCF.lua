@@ -9,7 +9,7 @@ local modName = mod:GetName()
 local pairs, ipairs, loadstring, pcall, type, tonumber, select, unpack = pairs, ipairs, loadstring, pcall, type, tonumber, select, unpack
 local random = math.random
 local find, gsub, match, format = string.find, string.gsub, string.match, string.format
-local tsort, tinsert = table.sort, table.insert
+local tsort, tinsert, twipe = table.sort, table.insert, table.wipe
 local GetSpellInfo, GetSpellLink, CopyTable = GetSpellInfo, GetSpellLink, CopyTable
 local SCHOOL_MASK_NONE, SCHOOL_MASK_PHYSICAL, SCHOOL_MASK_HOLY, SCHOOL_MASK_FIRE,
 		SCHOOL_MASK_NATURE, SCHOOL_MASK_FROST, SCHOOL_MASK_SHADOW, SCHOOL_MASK_ARCANE =
@@ -492,21 +492,71 @@ function mod:LoadConfig(db)
 							["BUFF"] = L["Buff applied/faded/refreshed"],
 						},
 					},
-					disabled = {
+					removeFilter = {
 						order = 3,
+						type = "select",
+						name = L["Remove Selected"],
+						desc = "",
+						values = function()
+							local filters = {}
+							for filterName in pairs(selectedEventData().filters or {}) do
+								filters[filterName] = filterName
+							end
+							return filters
+						end,
+						get = function() return "" end,
+						set = function(_, value)
+							local data = selectedEventData()
+							if not data.spellList then
+								data.filters = {}
+							end
+							data.filters[value] = nil
+							core:print('ADDED', value, L[" filter removed."])
+							self:UpdateAll(db)
+						end,
+						hidden = function() return not find(selectedEvent(), "BUFF") end,
+					},
+					addFilter = {
+						order = 4,
+						type = "select",
+						name = L["Add Filter"],
+						desc = L["Spells outside the selected whitelist filters will not be displayed."],
+						values = function()
+							local filters = {}
+							for filterName, info in pairs(E.global.unitframe.aurafilters) do
+								if info.type == "Whitelist" then
+									filters[filterName] = filterName
+								end
+							end
+							return filters
+						end,
+						get = function() return "" end,
+						set = function(_, value)
+							local data = selectedEventData()
+							if not data.spellList then
+								data.filters = {}
+							end
+							data.filters[value] = true
+							core:print('ADDED', value, L[" filter added."])
+							self:UpdateAll(db)
+						end,
+						hidden = function() return not find(selectedEvent(), "BUFF") end,
+					},
+					disabled = {
+						order = 5,
 						type = "toggle",
 						disabled = false,
 						name = L["Disable Event"],
 						desc = "",
 					},
 					playerOnly = {
-						order = 4,
+						order = 6,
 						type = "toggle",
 						name = L["Player Only"],
 						desc = L["Handle only player combat log events."],
 					},
 					school = {
-						order = 5,
+						order = 7,
 						type = "select",
 						name = L["School"],
 						desc = "",
@@ -543,14 +593,14 @@ function mod:LoadConfig(db)
 						hidden = function() return selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL' end,
 					},
 					tryToColorBySchool = {
-						order = 6,
+						order = 8,
 						type = "toggle",
 						name = L["Use School Colors"],
 						desc = L["Not every event is eligible for this. But some are."],
 						hidden = function() return selectedEvent() ~= 'WOUND' and selectedEvent() ~= 'HEAL' end,
 					},
 					color = {
-						order = 7,
+						order = 9,
 						type = "color",
 						name = L["Color"],
 						desc = "",
@@ -558,7 +608,7 @@ function mod:LoadConfig(db)
 						set = function(_, r, g, b) selectedEventData().color = {r, g, b} self:UpdateAll(db) end,
 					},
 					colorSchool = {
-						order = 8,
+						order = 10,
 						type = "color",
 						name = L["Color (School)"],
 						desc = "",
@@ -571,7 +621,7 @@ function mod:LoadConfig(db)
 						end,
 					},
 					animation = {
-						order = 9,
+						order = 11,
 						type = "select",
 						width = "double",
 						name = L["Animation Type"],
@@ -585,7 +635,7 @@ function mod:LoadConfig(db)
 						end,
 					},
 					xDirection = {
-						order = 10,
+						order = 12,
 						type = "select",
 						name = L["X Direction"],
 						desc = "",
@@ -596,7 +646,7 @@ function mod:LoadConfig(db)
 						}
 					},
 					yDirection = {
-						order = 11,
+						order = 13,
 						type = "select",
 						name = L["Y Direction"],
 						desc = "",
@@ -607,7 +657,7 @@ function mod:LoadConfig(db)
 						}
 					},
 					customAnimation = {
-						order = 12,
+						order = 14,
 						type = "input",
 						width = "double",
 						multiline = true,
@@ -617,14 +667,14 @@ function mod:LoadConfig(db)
 								"\nself.y + self.yDirection * self.radius * m_sin(m_pi / 2 * self.progress) end"],
 					},
 					showIcon = {
-						order = 13,
+						order = 15,
 						type = "toggle",
 						width = "full",
 						name = L["Show Icon"],
 						desc = "",
 					},
 					iconPosition = {
-						order = 14,
+						order = 16,
 						type = "select",
 						name = L["Icon Position"],
 						desc = "",
@@ -635,14 +685,14 @@ function mod:LoadConfig(db)
 						hidden = function() return not selectedEventData().showIcon end,
 					},
 					iconBounce = {
-						order = 15,
+						order = 17,
 						type = "toggle",
 						name = L["Bounce"],
 						desc = L["Flip position left-right."],
 						hidden = function() return not selectedEventData().showIcon end,
 					},
 					font = {
-						order = 16,
+						order = 18,
 						type = "select",
 						name = L["Font"],
 						desc = "",
@@ -650,14 +700,14 @@ function mod:LoadConfig(db)
 						values = function() return AceGUIWidgetLSMlists.font end,
 					},
 					fontSize = {
-						order = 17,
+						order = 19,
 						type = "range",
 						name = L["Font Size"],
 						desc = L["There seems to be a font size limit?"],
 						min = 10, max = 25, step = 1,
 					},
 					fontFlags = {
-						order = 18,
+						order = 20,
 						type = "select",
 						name = L["Font Flags"],
 						desc = "",
@@ -669,7 +719,7 @@ function mod:LoadConfig(db)
 						},
 					},
 					scrollTime = {
-						order = 19,
+						order = 21,
 						type = "range",
 						name = L["Scroll Time"],
 						desc = "",
@@ -677,7 +727,7 @@ function mod:LoadConfig(db)
 					},
 					--[[
 					fadeTime = {
-						order = 20,
+						order = 22,
 						type = "range",
 						name = L["Fade Time"],
 						desc = "",
@@ -686,28 +736,28 @@ function mod:LoadConfig(db)
 					},
 					]]--
 					textPoint = {
-						order = 20,
+						order = 23,
 						type = "select",
 						name = L["Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
 					},
 					textRelativeTo = {
-						order = 21,
+						order = 24,
 						type = "select",
 						name = L["Relative Point"],
 						desc = "",
 						values = E.db.Extras.pointOptions,
 					},
 					textX = {
-						order = 22,
+						order = 25,
 						type = "range",
 						name = L["X Offset"],
 						desc = "",
 						min = -80, max = 80, step = 1,
 					},
 					textY = {
-						order = 23,
+						order = 26,
 						type = "range",
 						name = L["Y Offset"],
 						desc = "",
@@ -992,6 +1042,22 @@ function mod:UpdateFCFSettings(frame, db)
 						else
 							fcf.formats[event] = "%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t"
 							fcf.iconFormats[event] = {"%1$s |T%2$s:0:0:0:0:64:64:4:60:4:60|t", "|T%2$s:0:0:0:0:64:64:4:60:4:60|t %1$s"}
+						end
+					end
+					if event == "BUFF" or event == "DEBUFF" then
+						if info.filters and next(info.filters) then
+							for filterName in pairs(info.filters) do
+								local filter = E.global.unitframe.aurafilters[filterName]
+								if filter then
+									for spellID in pairs(filter.spells) do
+										fcf.filterAuras[event][spellID] = true
+									end
+								else
+									info.filters[filterName] = nil
+								end
+							end
+						else
+							twipe(fcf.filterAuras[event])
 						end
 					end
 					if info.tryToColorBySchool then

@@ -1,4 +1,4 @@
-local E, L, _, P = unpack(ElvUI)
+﻿local E, L, _, P = unpack(ElvUI)
 local core = E:NewModule("Extras", "AceHook-3.0", "AceEvent-3.0")
 local UF = E:GetModule("UnitFrames")
 local NP = E:GetModule("NamePlates")
@@ -817,13 +817,37 @@ if isAwesome then
 	core.SPELL_AURA_REMOVED = true
 	core.SPELL_AURA_REFRESH = true
 
-	core:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(_, _, eventType, _, _, _, dstGUID)
-		if core[eventType] then
-			local frame = NP:SearchNameplateByGUID(dstGUID)
-			if frame then
-				NP:UpdateElement_Auras(frame)
+	core:SecureHook(NP, "StyleFilterConfigure", function()
+		if NP.StyleFilterTriggerEvents.UNIT_AURA or NP.StyleFilterTriggerEvents.UNIT_AURA then
+			for filterName, filter in pairs(E.global.nameplates.filters) do
+				local t = filter.triggers
+				if t and E.db.nameplates and E.db.nameplates.filters then
+					if E.db.nameplates.filters[filterName] and E.db.nameplates.filters[filterName].triggers
+							and E.db.nameplates.filters[filterName].triggers.enable and filter.actions.nameOnly then
+						core:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(_, _, eventType, _, _, _, dstGUID)
+							if core[eventType] then
+								local frame = NP:SearchNameplateByGUID(dstGUID)
+								if frame then
+									if frame.NameOnlyChanged then
+										frame.Health:Show() -- UpdateElement_Auras' first line blocks any update
+									end
+									NP:UpdateElement_Auras(frame)
+								end
+							end
+						end)
+						return
+					end
+				end
 			end
 		end
+		core:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(_, _, eventType, _, _, _, dstGUID)
+			if core[eventType] then
+				local frame = NP:SearchNameplateByGUID(dstGUID)
+				if frame then
+					NP:UpdateElement_Auras(frame)
+				end
+			end
+		end)
 	end)
 
 	core:RawHook(NP, "OnUpdate", function(self) self:SetScript("OnUpdate", nil) end)

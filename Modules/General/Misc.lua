@@ -6,6 +6,7 @@ local S = E:GetModule("Skins")
 local modName = mod:GetName()
 local alertFrame
 local chatTypeIndexToName = {}
+local tierSets
 
 mod.initialized = {}
 
@@ -22,6 +23,8 @@ local ITEM_SPELL_TRIGGER_ONEQUIP = "^"..ITEM_SPELL_TRIGGER_ONEQUIP
 local ITEM_SPELL_TRIGGER_ONUSE = "^"..ITEM_SPELL_TRIGGER_ONUSE
 local ITEM_COOLDOWN_TOTAL = format(gsub(ITEM_COOLDOWN_TOTAL, "[%(%)]", ""), gsub(SECONDS_ABBR, "%.$", ""))
 local ITEM_SET_BONUS = gsub(format(ITEM_SET_BONUS, 1), "[1%p]+", "")
+local ITEM_SOULBOUND, ITEM_BIND_ON_EQUIP, ITEM_BIND_ON_PICKUP, ITEM_BIND_ON_USE =
+		ITEM_SOULBOUND, ITEM_BIND_ON_EQUIP, ITEM_BIND_ON_PICKUP, ITEM_BIND_ON_USE
 
 local procStats = core.Misc_data and core.Misc_data[GetLocale()] or {}
 local allTipScrits = {}
@@ -82,6 +85,12 @@ P["Extras"]["general"][modName] = {
 	["InternalCooldowns"] = {
 		["enabled"] = false,
 		["desc"] = L["Displays internal cooldowns on trinket tooltips."],
+	},
+	["TierText"] = {
+		["enabled"] = false,
+		["desc"] = L["Enables tooltips to display which set an item belongs to."],
+		["storedItems"] = {},
+		["selectedItem"] = "",
 	},
 	["ItemIcons"] = {
 		["enabled"] = false,
@@ -155,6 +164,7 @@ P["Extras"]["general"][modName] = {
 
 function mod:LoadConfig(db)
 	local function selectedSubSection() return db.selectedSubSection end
+	local function selectedItem() return db.TierText.selectedItem end
 	core.general.args[modName] = {
 		type = "group",
 		name = L["Misc."],
@@ -244,6 +254,62 @@ function mod:LoadConfig(db)
 						min = 8, max = 32, step = 1,
 						name = L["Icon Size"],
 						desc = L["The size of the icon in the chat frame."],
+					},
+				},
+			},
+			TierText = {
+				type = "group",
+				name = L["Settings"],
+				guiInline = true,
+				disabled = function(info) return not db[info[#info-1]].enabled end,
+				hidden = function() return selectedSubSection() ~= 'TierText' end,
+				args = {
+					addItem = {
+						order = 1,
+						type = "input",
+						name = L["Add Item (ID)"],
+						desc = "",
+						get = function() return "" end,
+						set = function(_, value)
+							if value and tonumber(value) and GetItemInfo(value) then
+								db[selectedSubSection()].storedItems[value] = ""
+								db[selectedSubSection()].selectedItem = value
+							end
+						end,
+					},
+					selectedItem = {
+						order = 2,
+						type = "select",
+						name = L["Select Item"],
+						desc = "",
+						values = function()
+							local vals = {}
+							for id in pairs(db[selectedSubSection()].storedItems) do
+								vals[id] = GetItemInfo(id) or id
+							end
+							return vals
+						end,
+					},
+					itemText = {
+						order = 3,
+						type = "input",
+						name = L["Item Text"],
+						desc = "",
+						get = function() return db[selectedSubSection()].storedItems[selectedItem()] or "" end,
+						set = function(_, value) db[selectedSubSection()].storedItems[selectedItem()] = value self:TierText(db.TierText) end,
+						disabled = function(info) return not db[info[#info-1]].enabled or selectedItem() == "" end,
+					},
+					removeSelected = {
+						order = 4,
+						type = "execute",
+						name = L["Remove Selected"],
+						desc = "",
+						func = function()
+							db[selectedSubSection()].storedItems[selectedItem()] = nil
+							db[selectedSubSection()].selectedItem = ""
+							self:TierText(db.TierText)
+						end,
+						disabled = function(info) return not db[info[#info-1]].enabled or selectedItem() == "" end,
 					},
 				},
 			},
@@ -444,31 +510,37 @@ function mod:LoadConfig(db)
 end
 
 
-function mod:InternalCooldowns(db)
+function mod:TierText(db)
 	if db.enabled then
+		tierSets = CopyTable(core.Misc_data.tierSets)
+		for id, text in pairs(db.storedItems) do
+			if text ~= "" then
+				tierSets[id] = text
+			end
+		end
+
 		local function appendICD(tt)
 			local _, itemLink = tt:GetItem()
 			if not itemLink then return end
 
-			local itemID = match(itemLink, "item:(%d+)")
-			if not itemID then return end
-
-			local data = procStats[itemID]
-			if not data then return end
-
-			local greentexts = 1
-			for i = 1, tt:NumLines() do
-				local leftLine = _G[tt:GetName().."TextLeft"..i]
-				if leftLine then
-					local lineText = leftLine:GetText()
-					if lineText and (find(lineText, ITEM_SPELL_TRIGGER_ONEQUIP) or find(lineText, ITEM_SPELL_TRIGGER_ONUSE)
-								or find(lineText, ITEM_SET_BONUS)) then
-						if greentexts == data.pos then
-							leftLine:SetText(lineText.." "..format(data.text, format(ITEM_COOLDOWN_TOTAL, data.cooldown)))
+			local tierText = tierSets[match(itemLink, "item:(%d+)")]
+			if tierText then
+				for i = 1, tt:NumLines() do
+					local leftLine = _G[tt:GetName().."TextLeft"..i]
+					if leftLine then
+						local lineText = leftLine:GetText()
+						if lineText and (find(lineText, ITEM_SOULBOUND) or find(lineText, ITEM_BIND_ON_EQUIP)
+									or find(lineText, ITEM_BIND_ON_PICKUP) or find(lineText, ITEM_BIND_ON_USE)) then
+							leftLine:SetText(format("|cff00ff00%s|r", tierText))
+							leftLine = _G[tt:GetName().."TextLeft"..i+1]
+							if leftLine then -- bugs out on shopping tips otherwise
+								leftLine:SetText(format("%s\n%s", lineText, leftLine:GetText() or ""))
+							else
+								tt:AddLine(lineText, 1, 1, 1)
+							end
 							tt:Show()
-							break
+							return
 						end
-						greentexts = greentexts + 1
 					end
 				end
 			end
@@ -486,11 +558,14 @@ function mod:InternalCooldowns(db)
 		if not self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
 			self:SecureHookScript(ShoppingTooltip2, 'OnTooltipSetItem', runAllScripts)
 		end
-		allTipScrits['icd'] = appendICD
-		self.initialized.InternalCooldowns = true
-	elseif self.initialized.InternalCooldowns then
-		allTipScrits['icd'] = nil
-		if not E.db.Extras.general[modName].TooltipNotes.enabled then
+		if not self:IsHooked(ShoppingTooltip3, 'OnTooltipSetItem') then
+			self:SecureHookScript(ShoppingTooltip3, 'OnTooltipSetItem', runAllScripts)
+		end
+		allTipScrits['sets'] = appendICD
+		self.initialized.TierText = true
+	elseif self.initialized.TierText then
+		allTipScrits['sets'] = nil
+		if not (E.db.Extras.general[modName].TooltipNotes.enabled or E.db.Extras.general[modName].InternalCooldowns.enabled) then
 			if self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
 				self:Unhook(GameTooltip, 'OnTooltipSetItem')
 			end
@@ -502,6 +577,75 @@ function mod:InternalCooldowns(db)
 			end
 			if self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
 				self:Unhook(ShoppingTooltip2, 'OnTooltipSetItem')
+			end
+			if self:IsHooked(ShoppingTooltip3, 'OnTooltipSetItem') then
+				self:Unhook(ShoppingTooltip3, 'OnTooltipSetItem')
+			end
+		end
+	end
+end
+
+function mod:InternalCooldowns(db)
+	if db.enabled then
+		local function appendICD(tt)
+			local _, itemLink = tt:GetItem()
+			if not itemLink then return end
+
+			local data = procStats[match(itemLink, "item:(%d+)")]
+			if data then
+				local greentexts = 1
+				for i = 1, tt:NumLines() do
+					local leftLine = _G[tt:GetName().."TextLeft"..i]
+					if leftLine then
+						local lineText = leftLine:GetText()
+						if lineText and (find(lineText, ITEM_SPELL_TRIGGER_ONEQUIP) or find(lineText, ITEM_SPELL_TRIGGER_ONUSE)
+									or find(lineText, ITEM_SET_BONUS)) then
+							if greentexts == data.pos then
+								leftLine:SetText(lineText.." "..format(data.text, format(ITEM_COOLDOWN_TOTAL, data.cooldown)))
+								tt:Show()
+								break
+							end
+							greentexts = greentexts + 1
+						end
+					end
+				end
+			end
+		end
+
+		if not self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
+			self:SecureHookScript(GameTooltip, 'OnTooltipSetItem', runAllScripts)
+		end
+		if not self:IsHooked(ItemRefTooltip, 'OnTooltipSetItem') then
+			self:SecureHookScript(ItemRefTooltip, 'OnTooltipSetItem', runAllScripts)
+		end
+		if not self:IsHooked(ShoppingTooltip1, 'OnTooltipSetItem') then
+			self:SecureHookScript(ShoppingTooltip1, 'OnTooltipSetItem', runAllScripts)
+		end
+		if not self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
+			self:SecureHookScript(ShoppingTooltip2, 'OnTooltipSetItem', runAllScripts)
+		end
+		if not self:IsHooked(ShoppingTooltip3, 'OnTooltipSetItem') then
+			self:SecureHookScript(ShoppingTooltip3, 'OnTooltipSetItem', runAllScripts)
+		end
+		allTipScrits['icd'] = appendICD
+		self.initialized.InternalCooldowns = true
+	elseif self.initialized.InternalCooldowns then
+		allTipScrits['icd'] = nil
+		if not (E.db.Extras.general[modName].TooltipNotes.enabled or E.db.Extras.general[modName].TierText.enabled) then
+			if self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
+				self:Unhook(GameTooltip, 'OnTooltipSetItem')
+			end
+			if self:IsHooked(ItemRefTooltip, 'OnTooltipSetItem') then
+				self:Unhook(ItemRefTooltip, 'OnTooltipSetItem')
+			end
+			if self:IsHooked(ShoppingTooltip1, 'OnTooltipSetItem') then
+				self:Unhook(ShoppingTooltip1, 'OnTooltipSetItem')
+			end
+			if self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
+				self:Unhook(ShoppingTooltip2, 'OnTooltipSetItem')
+			end
+			if self:IsHooked(ShoppingTooltip3, 'OnTooltipSetItem') then
+				self:Unhook(ShoppingTooltip3, 'OnTooltipSetItem')
 			end
 		end
 	end
@@ -839,6 +983,9 @@ function mod:TooltipNotes(db)
 		if not self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
 			self:SecureHookScript(ShoppingTooltip2, 'OnTooltipSetItem', runAllScripts)
 		end
+		if not self:IsHooked(ShoppingTooltip3, 'OnTooltipSetItem') then
+			self:SecureHookScript(ShoppingTooltip3, 'OnTooltipSetItem', runAllScripts)
+		end
 		allTipScrits['notes'] = handler
 		self.initialized.TooltipNotes = true
 	elseif self.initialized.TooltipNotes then
@@ -849,7 +996,7 @@ function mod:TooltipNotes(db)
 		for _, func in pairs({'OnShow', 'OnTooltipSetUnit', 'OnTooltipSetSpell'}) do
 			if self:IsHooked(GameTooltip, func) then self:Unhook(GameTooltip, func) end
 		end
-		if not E.db.Extras.general[modName].InternalCooldowns.enabled then
+		if not (E.db.Extras.general[modName].InternalCooldowns.enabled or E.db.Extras.general[modName].TierText.enabled) then
 			if self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
 				self:Unhook(GameTooltip, 'OnTooltipSetItem')
 			end
@@ -861,6 +1008,9 @@ function mod:TooltipNotes(db)
 			end
 			if self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
 				self:Unhook(ShoppingTooltip2, 'OnTooltipSetItem')
+			end
+			if self:IsHooked(ShoppingTooltip3, 'OnTooltipSetItem') then
+				self:Unhook(ShoppingTooltip3, 'OnTooltipSetItem')
 			end
 		end
 	end

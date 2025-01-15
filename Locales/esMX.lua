@@ -1133,3 +1133,11 @@ L["Enable Mouse"] = "Habilitar ratón"
 L["Also calculate cursor proximity."] = "Calcular también la proximidad del cursor."
 L["Ignore Styled"] = "Ignorar estilizados"
 L["Ignore Target"] = "Ignorar objetivo"
+L["Spells outside the selected whitelist filters will not be displayed."] =
+	"Los hechizos fuera de los filtros de lista blanca seleccionados no se mostrarán."
+L["Enables tooltips to display which set an item belongs to."] = "Habilita las descripciones emergentes para mostrar a qué conjunto pertenece un objeto."
+L["TierText"] = "Texto de nivel"
+L["Select Item"] = "Seleccionar artículo"
+L["Add Item (ID)"] = "Agregar artículo (ID)"
+L["Item Text"] = "Texto del artículo"
+

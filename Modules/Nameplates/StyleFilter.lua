@@ -4,10 +4,11 @@ local mod = core:NewModule("StyleFilter", "AceHook-3.0", "AceEvent-3.0")
 local NP = E:GetModule("NamePlates")
 
 local modName = mod:GetName()
-local activeFilters, links = {}, {}
+local activeFilters, links, customChecks = {}, {}, {}
 local isAwesome = C_NamePlate
 
 mod.initialized = false
+mod.customChecks = customChecks
 
 local ipairs, pairs, next, unpack, loadstring = ipairs, pairs, next, unpack, loadstring
 local tremove, twipe = table.remove, table.wipe
@@ -29,39 +30,41 @@ local function updateAllIcons(db, enabled)
 			for plate in pairs(NP.CreatedPlates) do
 				local frame = plate.UnitFrame
 				local icons = frame.styleIcons
-				if icons then
-					local icon = icons[filterName]
-					if not icon then
-						icons[filterName] = CreateFrame("Frame", nil, frame)
-						icon = icons[filterName]
-						if iconData.backdrop then
-							icon:CreateBackdrop('Transparent')
-						end
-						icon.tex = icon:CreateTexture(nil, "ARTWORK")
-						icon.tex:SetAllPoints()
-						icon.tex:SetTexCoord(unpack(E.TexCoords))
-						mod:SecureHook(icon, "SetAlpha", function(f, alpha) if alpha == 0 then f:Hide() end end)
-					end
-					icon:ClearAllPoints()
-					icon:Size(iconData.size)
-					icon:Point(iconData.point, frame.Health:IsShown() and frame.Health or frame.Name, iconData.relativeTo,
-								iconData.xOffset, iconData.yOffset)
-					icon:SetFrameLevel(frame:GetFrameLevel() + iconData.level)
-					icon.tex:SetTexture(iconData.tex)
-					icon.level = iconData.level
-					icon.point = iconData.point
-					icon.relativeTo = iconData.relativeTo
-					icon.xOffset = iconData.xOffset
-					icon.yOffset = iconData.yOffset
-					if icon.backdrop then
-						if not iconData.backdrop then
-							icon.backdrop:Hide()
-						else
-							icon.backdrop:Show()
-						end
-					elseif iconData.backdrop then
+				if not icons then
+					frame.styleIcons = {}
+					icons = frame.styleIcons
+				end
+				local icon = icons[filterName]
+				if not icon then
+					icons[filterName] = CreateFrame("Frame", nil, frame)
+					icon = icons[filterName]
+					if iconData.backdrop then
 						icon:CreateBackdrop('Transparent')
 					end
+					icon.tex = icon:CreateTexture(nil, "ARTWORK")
+					icon.tex:SetAllPoints()
+					icon.tex:SetTexCoord(unpack(E.TexCoords))
+					mod:SecureHook(icon, "SetAlpha", function(f, alpha) if alpha == 0 then f:Hide() end end)
+				end
+				icon:ClearAllPoints()
+				icon:Size(iconData.size)
+				icon:Point(iconData.point, frame.Health:IsShown() and frame.Health or frame.Name, iconData.relativeTo,
+							iconData.xOffset, iconData.yOffset)
+				icon:SetFrameLevel(frame:GetFrameLevel() + iconData.level)
+				icon.tex:SetTexture(iconData.tex)
+				icon.level = iconData.level
+				icon.point = iconData.point
+				icon.relativeTo = iconData.relativeTo
+				icon.xOffset = iconData.xOffset
+				icon.yOffset = iconData.yOffset
+				if icon.backdrop then
+					if not iconData.backdrop then
+						icon.backdrop:Hide()
+					else
+						icon.backdrop:Show()
+					end
+				elseif iconData.backdrop then
+					icon:CreateBackdrop('Transparent')
 				end
 			end
 		end
@@ -74,6 +77,7 @@ local function updateAllIcons(db, enabled)
 					icon:Hide()
 					icons[filterName] = nil
 				end
+				frame.styleIcons = nil
 			end
 		end
 	end
@@ -234,6 +238,10 @@ function mod:LoadConfig(db)
                             self:Toggle(db)
                         end,
 						hidden = function() return #db.StyleFilterLinks.links == 0 end,
+						disabled = function()
+							return not db.StyleFilterLinks.enabled
+								or not E.global.nameplates.filters[db.StyleFilterLinks.links[selectedLink()].target or ""]
+						end,
                     },
 				},
 			},
@@ -509,33 +517,29 @@ end
 function mod:StyleFilterPassLinks(frame, actions, pass)
     if pass then return end
 
-	local filters = E.global.nameplates.filters
+	local link = links[actions]
+	if link then
+		local apply = link.apply
 
-	for target, info in pairs(links) do
-		if filters[target].actions == actions then
-			local apply = info.apply
+		frame.filteringOthers = frame.filteringOthers or {}
+		frame.filteringOthers[apply] = link.target
 
-			frame.filteringOthers = frame.filteringOthers or {}
-			frame.filteringOthers[apply] = target
-
-			activeFilters[apply] = activeFilters[apply] or { count = 0, frames = {} }
-			if not activeFilters[apply].frames[frame] then
-				activeFilters[apply].frames[frame] = true
-				activeFilters[apply].count = activeFilters[apply].count + 1
-			end
-
-			frame.trigger = frame.trigger or (activeFilters[apply].count == 1)
+		activeFilters[apply] = activeFilters[apply] or { count = 0, frames = {} }
+		if not activeFilters[apply].frames[frame] then
+			activeFilters[apply].frames[frame] = true
+			activeFilters[apply].count = activeFilters[apply].count + 1
 		end
+
+		frame.trigger = frame.trigger or (activeFilters[apply].count == 1)
 	end
 end
 
 function mod:StyleFilterPassIcons(frame, actions)
-	local filters = E.global.nameplates.filters
-
-	for target, info in pairs(links) do
-		if filters[target].actions == actions then
-			local icon = frame.styleIcons[target]
-			if info.iconData.backdrop then
+	local link = links[actions]
+	if link then
+		local icon = frame.styleIcons[link.target]
+		if icon then
+			if link.iconData.backdrop then
 				local color = actions.color.border and actions.color.borderColor
 				if color then
 					icon.backdrop:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
@@ -550,44 +554,13 @@ function mod:StyleFilterPassIcons(frame, actions)
 end
 
 function mod:StyleFilterPass(_, frame, actions, pass)
-	local filters = E.global.nameplates.filters
+	local link = links[actions]
     if pass then
-		for target, info in pairs(links) do
-			local iconData = info.iconData
-			if iconData and filters[target].actions == actions then
-				local icon = frame.styleIcons[target]
-				if iconData.backdrop then
-					local color = actions.color.border and actions.color.borderColor
-					if color then
-						icon.backdrop:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
-					else
-						icon.backdrop:SetBackdropBorderColor(unpack(E.media.bordercolor))
-					end
-				end
-				icon:Show()
-				E_UIFrameFadeIn(nil, icon, 0.1, icon:GetAlpha(), 1)
-			end
-		end
-	else
-		for target, info in pairs(links) do
-			if filters[target].actions == actions then
-				if info.link then
-					local apply = info.apply
-
-					frame.filteringOthers = frame.filteringOthers or {}
-					frame.filteringOthers[apply] = target
-
-					activeFilters[apply] = activeFilters[apply] or { count = 0, frames = {} }
-					if not activeFilters[apply].frames[frame] then
-						activeFilters[apply].frames[frame] = true
-						activeFilters[apply].count = activeFilters[apply].count + 1
-					end
-
-					frame.trigger = frame.trigger or (activeFilters[apply].count == 1)
-				end
-				local iconData = info.iconData
-				if iconData then
-					local icon = frame.styleIcons[target]
+		if link then
+			local iconData = link.iconData
+			if iconData then
+				local icon = frame.styleIcons[link.target]
+				if icon then
 					if iconData.backdrop then
 						local color = actions.color.border and actions.color.borderColor
 						if color then
@@ -599,6 +572,37 @@ function mod:StyleFilterPass(_, frame, actions, pass)
 					icon:Show()
 					E_UIFrameFadeIn(nil, icon, 0.1, icon:GetAlpha(), 1)
 				end
+			end
+		end
+	elseif link then
+		if link.link then
+			local apply = link.apply
+
+			frame.filteringOthers = frame.filteringOthers or {}
+			frame.filteringOthers[apply] = link.target
+
+			activeFilters[apply] = activeFilters[apply] or { count = 0, frames = {} }
+			if not activeFilters[apply].frames[frame] then
+				activeFilters[apply].frames[frame] = true
+				activeFilters[apply].count = activeFilters[apply].count + 1
+			end
+
+			frame.trigger = frame.trigger or (activeFilters[apply].count == 1)
+		end
+		local iconData = link.iconData
+		if iconData then
+			local icon = frame.styleIcons[link.target]
+			if icon then
+				if iconData.backdrop then
+					local color = actions.color.border and actions.color.borderColor
+					if color then
+						icon.backdrop:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
+					else
+						icon.backdrop:SetBackdropBorderColor(unpack(E.media.bordercolor))
+					end
+				end
+				icon:Show()
+				E_UIFrameFadeIn(nil, icon, 0.1, icon:GetAlpha(), 1)
 			end
 		end
 	end
@@ -706,34 +710,6 @@ function mod:StyleFilterUpdate(self, frame, ...)
 end
 
 
-function mod:Construct_HealthBar(_, frame)
-	frame.styleIcons = {}
-	local icons = frame.styleIcons
-	for filterName, info in pairs(links) do
-		local iconData = info.iconData
-		if iconData then
-			icons[filterName] = CreateFrame("Frame", nil, frame)
-			local icon = icons[filterName]
-			if iconData.backdrop then
-				icon:CreateBackdrop('Transparent')
-			end
-			icon:Hide()
-			icon:Size(iconData.size)
-			icon.tex = icon:CreateTexture(nil, "ARTWORK")
-			icon.tex:SetTexture(iconData.tex)
-			icon.tex:SetAllPoints()
-			icon.tex:SetTexCoord(unpack(E.TexCoords))
-			icon.level = iconData.level
-			icon.point = iconData.point
-			icon.relativeTo = iconData.relativeTo
-			icon.xOffset = iconData.xOffset
-			icon.yOffset = iconData.yOffset
-			mod:SecureHook(icon, "SetAlpha", function(f, alpha) if alpha == 0 then f:Hide() end end)
-		end
-	end
-end
-
-
 function mod:OnShowLinks(self, ...)
 	local frame = self.UnitFrame
 
@@ -799,8 +775,6 @@ function mod:Toggle(db)
 
 	local linksEnabled, iconsEnabled, triggersEnabled = db.StyleFilterLinks.enabled, db.StyleFilterIcons.enabled, db.StyleFilterTriggers.enabled
     if not core.reload and (linksEnabled or iconsEnabled or triggersEnabled) then
-		local filters = E.global.nameplates.filters
-
 		if self:IsHooked(NP, 'StyleFilterPass') then self:Unhook(NP, 'StyleFilterPass') end
 		if self:IsHooked(NP, 'StyleFilterClear') then self:Unhook(NP, 'StyleFilterClear') end
 		if self:IsHooked(NP, 'OnShow') then self:Unhook(NP, 'OnShow') end
@@ -808,27 +782,27 @@ function mod:Toggle(db)
 				twipe(links)
 				twipe(activeFilters)
 
-				filters = E.global.nameplates.filters
+				local filters = E.global.nameplates.filters
 
 				if db.StyleFilterLinks.enabled then
 					for i = #db.StyleFilterLinks.links, 1, -1 do
 						local link = db.StyleFilterLinks.links[i]
 						if link then
 							local target, apply = link.target, link.apply
-							if not filters[target] or not filters[apply] then
+							if not filters[target] then
 								tremove(db.StyleFilterLinks.links, i)
-							elseif filters[target].triggers and filters[apply].actions then
-								links[target] = { link = link, apply = apply }
+							elseif filters[apply] then
+								if filters[target].triggers and filters[apply].actions then
+									links[filters[target].actions] = { target = target, link = link, apply = apply }
+								end
 							end
 						end
 					end
 				end
 				if db.StyleFilterIcons.enabled then
-					local removed = {}
-
 					for filterName, iconData in pairs(db.StyleFilterIcons.iconsData) do
-						if not filters[filterName] then
-							removed[filterName] = false
+						local filterData = filters[filterName]
+						if not filterData then
 							for plate in pairs(NP.CreatedPlates) do
 								local frame = plate.UnitFrame
 								local icons = frame.styleIcons
@@ -837,49 +811,13 @@ function mod:Toggle(db)
 									icons[filterName] = nil
 								end
 							end
-						else
-							removed[filterName] = iconData
-							for plate in pairs(NP.CreatedPlates) do
-								local frame = plate.UnitFrame
-								local icons = frame.styleIcons
-								if not icons then
-									frame.styleIcons = {}
-									icons = frame.styleIcons
-								end
-								local icon = icons[filterName]
-								if not icon then
-									icons[filterName] = CreateFrame("Frame", nil, frame)
-									icon = icons[filterName]
-									if iconData.backdrop then
-										icon:CreateBackdrop('Transparent')
-									end
-									icon:Size(iconData.size)
-									icon:SetFrameLevel(frame:GetFrameLevel() + iconData.level)
-									icon.tex = icon:CreateTexture(nil, "ARTWORK")
-									icon.tex:SetTexture(iconData.tex)
-									icon.tex:SetTexCoord(unpack(E.TexCoords))
-									icon.tex:SetAllPoints()
-									icon.level = iconData.level
-									icon.point = iconData.point
-									icon.relativeTo = iconData.relativeTo
-									icon.xOffset = iconData.xOffset
-									icon.yOffset = iconData.yOffset
-									mod:SecureHook(icon, "SetAlpha", function(f, alpha) if alpha == 0 then f:Hide() end end)
-								end
-								icon:Hide()
-							end
-						end
-					end
-					for filterName, iconData in pairs(removed) do
-						if not iconData then
 							db.StyleFilterIcons.iconsData[filterName] = nil
-							if links[filterName] and not links[filterName].link then
-								links[filterName] = nil
-							end
-						elseif not links[filterName] then
-							links[filterName] = { iconData = iconData }
 						else
-							links[filterName].iconData = iconData
+							if not links[filterData.actions] then
+								links[filterData.actions] = { target = filterName, iconData = iconData }
+							else
+								links[filterData.actions].iconData = iconData
+							end
 						end
 					end
 				end
@@ -887,7 +825,25 @@ function mod:Toggle(db)
 					for filterName in pairs(db.StyleFilterTriggers.filtersData) do
 						if not filters[filterName] then
 							db.StyleFilterTriggers.filtersData[filterName] = nil
-							NP.StyleFilterCustomChecks[filterName.."_Extras"] = nil
+						end
+					end
+					twipe(customChecks)
+
+					for filterName, info in pairs(db.StyleFilterTriggers.filtersData) do
+						if filters[filterName] then
+							if find(info.triggersString or "", "%S+") then
+								local luaFunction = loadstring(info.triggersString)
+								if luaFunction then
+									customChecks[filters[filterName]] = luaFunction
+								else
+									customChecks[filters[filterName]] = nil
+									core:print('LUA', L[modName], L["The generated custom looting method did not return a function."])
+								end
+							else
+								customChecks[filters[filterName]] = nil
+							end
+						else
+							db.StyleFilterTriggers.filtersData[filterName] = nil
 						end
 					end
 				end
@@ -895,32 +851,22 @@ function mod:Toggle(db)
 			end)
 		end
 		if triggersEnabled then
-			for filterName, info in pairs(db.StyleFilterTriggers.filtersData) do
-				if find(info.triggersString or "", "%S+") then
-					local luaFunction = loadstring(info.triggersString)
-					if luaFunction then
-						NP:StyleFilterAddCustomCheck(filterName.."_Extras", luaFunction)
+			if not self:IsHooked(NP, "StyleFilterConditionCheck") then
+				self:RawHook(NP, "StyleFilterConditionCheck", function(self, frame, filter, trigger, ...)
+					local customCheck = customChecks[filter]
+					if customCheck then
+						if customCheck(frame, filter, trigger, ...) then
+							mod.hooks[NP].StyleFilterConditionCheck(self, frame, filter, trigger, ...)
+						end
 					else
-						NP:StyleFilterRemoveCustomCheck(filterName.."_Extras")
-						core:print('LUA', L[modName], L["The generated custom looting method did not return a function."])
+						mod.hooks[NP].StyleFilterConditionCheck(self, frame, filter, trigger, ...)
 					end
-				else
-					NP:StyleFilterRemoveCustomCheck(filterName.."_Extras")
-				end
+				end)
 			end
-		elseif NP.StyleFilterCustomChecks then
-			for filterName in pairs(db.StyleFilterTriggers.filtersData) do
-				NP:StyleFilterRemoveCustomCheck(filterName.."_Extras")
-			end
+		elseif self:IsHooked(NP, "StyleFilterConditionCheck") then
+			self:Unhook(NP, "StyleFilterConditionCheck")
 		end
 		if linksEnabled then
-			for _, link in pairs(db.StyleFilterLinks.links) do
-				local target, apply = link.target, link.apply
-				if filters[target] and filters[apply]
-				 and filters[target].triggers and filters[apply].actions then
-					links[target] = { link = link, apply = apply }
-				end
-			end
 			if not self:IsHooked(NP, 'OnHide') then self:SecureHook(NP, 'OnHide') end
 			if not self:IsHooked(NP, 'StyleFilterUpdate') then self:RawHook(NP, 'StyleFilterUpdate') end
 			if iconsEnabled then
@@ -934,64 +880,31 @@ function mod:Toggle(db)
 			end
 		end
 		if iconsEnabled then
-			local removed = {}
-			for filterName, iconData in pairs(db.StyleFilterIcons.iconsData) do
-				if not iconData then
-					removed[filterName] = false
-					for plate in pairs(NP.CreatedPlates) do
-						local frame = plate.UnitFrame
-						local icons = frame.styleIcons
-						if icons and icons[filterName] then
-							icons[filterName]:Hide()
-							icons[filterName] = nil
-						end
-					end
-				else
-					removed[filterName] = iconData
-					for plate in pairs(NP.CreatedPlates) do
-						local frame = plate.UnitFrame
-						local icons = frame.styleIcons
-						if not icons then
-							frame.styleIcons = {}
-							icons = frame.styleIcons
-						end
+			if not self:IsHooked(NP, 'Construct_HealthBar') then
+				self:SecureHook(NP, 'Construct_HealthBar', function(_, frame)
+					frame.styleIcons = {}
+					local icons = frame.styleIcons
+					for filterName, iconData in pairs(db.StyleFilterIcons.iconsData) do
+						icons[filterName] = CreateFrame("Frame", nil, frame)
 						local icon = icons[filterName]
-						if not icon then
-							icons[filterName] = CreateFrame("Frame", nil, frame)
-							icon = icons[filterName]
-							if iconData.backdrop then
-								icon:CreateBackdrop('Transparent')
-							end
-							icon:Size(iconData.size)
-							icon:SetFrameLevel(frame:GetFrameLevel() + iconData.level)
-							icon.tex = icon:CreateTexture(nil, "ARTWORK")
-							icon.tex:SetTexture(iconData.tex)
-							icon.tex:SetAllPoints()
-							icon.tex:SetTexCoord(unpack(E.TexCoords))
-							mod:SecureHook(icon, "SetAlpha", function(f, alpha) if alpha == 0 then f:Hide() end end)
+						if iconData.backdrop then
+							icon:CreateBackdrop('Transparent')
 						end
+						icon:Hide()
+						icon:Size(iconData.size)
+						icon.tex = icon:CreateTexture(nil, "ARTWORK")
+						icon.tex:SetTexture(iconData.tex)
+						icon.tex:SetAllPoints()
+						icon.tex:SetTexCoord(unpack(E.TexCoords))
 						icon.level = iconData.level
 						icon.point = iconData.point
 						icon.relativeTo = iconData.relativeTo
 						icon.xOffset = iconData.xOffset
 						icon.yOffset = iconData.yOffset
-						icon:Hide()
+						mod:SecureHook(icon, "SetAlpha", function(f, alpha) if alpha == 0 then f:Hide() end end)
 					end
-				end
+				end)
 			end
-			for filterName, iconData in pairs(removed) do
-				if not iconData then
-					db.StyleFilterIcons.iconsData[filterName] = nil
-					if links[filterName] and not links[filterName].link then
-						links[filterName] = nil
-					end
-				elseif not links[filterName] then
-					links[filterName] = { iconData = iconData }
-				else
-					links[filterName].iconData = iconData
-				end
-			end
-			if not self:IsHooked(NP, 'Construct_HealthBar') then self:SecureHook(NP, 'Construct_HealthBar') end
 			if not self:IsHooked(NP, 'ResetNameplateFrameLevel') then self:SecureHook(NP, 'ResetNameplateFrameLevel', function(self, frame)
 					if frame.styleIcons then
 						for _, icon in pairs(frame.styleIcons) do
@@ -1016,17 +929,13 @@ function mod:Toggle(db)
 			core:RegisterNPElement('styleIcons')
 			updateAllIcons(db, false)
 		end
+		NP:StyleFilterConfigure()
 		recheckAllPlates()
 		self.initialized = true
 	elseif self.initialized then
 		for _, func in pairs({'StyleFilterPass', 'StyleFilterClear', 'StyleFilterConfigure',
 								'OnShow', 'StyleFilterUpdate', 'Construct_HealthBar', 'ResetNameplateFrameLevel'}) do
 			if self:IsHooked(NP, func) then self:Unhook(NP, func) end
-		end
-		if NP.StyleFilterCustomChecks then
-			for filterName in pairs(db.StyleFilterTriggers.filtersData) do
-				NP.StyleFilterCustomChecks[filterName.."_Extras"] = nil
-			end
 		end
 		updateAllIcons(db, false)
 		if not core.reload then

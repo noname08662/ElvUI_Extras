@@ -299,12 +299,16 @@ local function flush(self)
 	end
 end
 
-local function Update(self, _, unit, isPlayer, event, flag, amount, school, texture)
+local function Update(self, _, unit, isPlayer, event, flag, amount, school, texture, spellId)
 	if self.unit ~= unit then return end
 	local element = self.FloatingCombatFeedback
 
-	if (event ~= "BUFF" and event ~= "DEBUFF" and flag and not element.multipliersByFlag[flag])
-		or (element.playerOnlyEvents[event] and not isPlayer) then return end
+	if event ~= "BUFF" and event ~= "DEBUFF" then
+		if (flag and not element.multipliersByFlag[flag])
+			or (element.playerOnlyEvents[event] and not isPlayer) then return end
+	elseif next(element.filterAuras[event]) and not (element.filterAuras[event][spellId] or element.filterAuras[event][GetSpellInfo(spellId)]) then
+		return
+	end
 
 	local animation, fontData = element.animationsByEvent[event], element.fontData[event]
 	if not animation or not fontData then return end
@@ -458,7 +462,7 @@ local function prep(event, _, ...)
 		event = "INTERRUPT"
     end
 
-    return event, flag, amount or 0, school or SCHOOL_MASK_NONE, texture
+    return event, flag, amount or 0, school or SCHOOL_MASK_NONE, texture, spellId
 end
 
 local playerGUID = UnitGUID("player")
@@ -602,6 +606,7 @@ local function Enable(self)
 		element.iconBounce = {}
 		element.fontData = {}
 		element.playerOnlyEvents = {}
+		element.filterAuras = {["BUFF"] = {}, ["DEBUFF"] = {}}
 
 		element.radius = element.radius or 65
 

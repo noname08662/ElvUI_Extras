@@ -584,7 +584,7 @@ local function setupSearchFilter(db)
 						if level == 1 then
 							for j, event in ipairs({"LIVE", "HISTORY", "ALL",
 													"SAY", "YELL", "PARTY", "RAID",
-													"BATTLEGROUND", "GUILD", "WHISPER", "CHANNEL", "OTHER" }) do
+													"BATTLEGROUND", "GUILD", "WHISPER", "CHANNEL", "OTHER"}) do
 								if j <= 3 or not frame.searchArgs["ALL"] then
 									local info = UIDropDownMenu_CreateInfo()
 									info.text = event == "LIVE" and L["Live"] or event == "HISTORY" and L["History"] or event == "ALL" and L["All"] or localizedTypes[event]
@@ -825,13 +825,10 @@ local function setupCompactChat(db)
 				db.selectedLeftTab = id
 			end
 
-			local alertTabs = alertingTabs[(isRightSide and 'right' or 'left')]
-			alertTabs[id] = nil
+			alertingTabs[(isRightSide and 'right' or 'left')][id] = nil
 
-			if not next(alertingTabs) then
-				local button = (isRightSide and RightChatPanel or LeftChatPanel).tabManagerButton
-				button:StopFlashing(button.flash:GetAlpha())
-			end
+			local button = (isRightSide and RightChatPanel or LeftChatPanel).tabManagerButton
+			button:StopFlashing(button.flash:GetAlpha())
 		end
 
 		local function moveChatFrame(chatFrame, id, moveDir)
