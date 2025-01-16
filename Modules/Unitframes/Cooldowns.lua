@@ -1398,6 +1398,7 @@ function mod:AttachCooldowns(frame, cooldowns)
 						else
 							cdFrame.cooldown:SetReverse(false)
 						end
+						CooldownFrame_SetTimer(cdFrame.cooldown, startTime, endTime - startTime, 1)
 						cdFrame.classicTimer = true
 					else
 						cdFrame.fill = cdFrame:CreateTexture(nil, "OVERLAY")
