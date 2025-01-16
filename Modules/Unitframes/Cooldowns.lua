@@ -6,6 +6,7 @@ local LAI = E.Libs.LAI
 
 local modName = mod:GetName()
 local activeCooldowns, framelist, testing = {}, {}, false
+local thinBorders = E:GetModule("UnitFrames").thinBorders
 local edgeFile = LSM:Fetch("border", "ElvUI GlowBorder")
 
 local allSpells = {}
@@ -555,7 +556,8 @@ local function cache(db, frameType, visibilityUpdate)
 					end
 				end
 				compareFuncs[unitType][frameType] = createCompareFunction(icons.sorting, icons.trinketOnTop)
-				borderCustomColor[unitType][frameType] = icons.borderCustomColor[1] > 0 or icons.borderCustomColor[2] > 0 or icons.borderCustomColor[3] > 0
+				borderCustomColor[unitType][frameType] =
+					not icons.borderColor and (icons.borderCustomColor[1] > 0 or icons.borderCustomColor[2] > 0 or icons.borderCustomColor[3] > 0)
 				fills[unitType][frameType] = createFillFunction(data.cooldownFill, icons)
 				onUpdates[unitType][frameType] = createOnUpdateFunction(data, unitType)
 			end
@@ -1383,10 +1385,9 @@ function mod:AttachCooldowns(frame, cooldowns)
 			if not cdFrame then
 				cdFrame = CreateFrame("Frame", nil, tracker)
 				cdFrame:Size(db_icons.size, db_icons.size)
-				cdFrame:SetTemplate()
+				cdFrame:SetTemplate(nil, nil, nil, thinBorders, true)
 				cdFrame.texture = cdFrame:CreateTexture(nil, "ARTWORK")
 				cdFrame.texture:SetInside(cdFrame, E.mult, E.mult)
-				cdFrame:SetTemplate()
 				cdFrame.shadow = CreateFrame("Frame", nil, cdFrame)
 				cdFrame.shadow:SetFrameLevel(db.header.level - 1)
 				if db_cooldownFill.enabled then
