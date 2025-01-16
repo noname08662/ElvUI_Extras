@@ -284,7 +284,7 @@ local function parseCollectionString(conditions)
         if filterName and filter[filterName] and value then
             operator = operator ~= '' and operator or '=='
             local formattedCondition = formatCondition(filterName, operator, value)
-            formattedConditions = gsub(formattedConditions, pair, formattedCondition)
+            formattedConditions = gsub(formattedConditions, pair, formattedCondition, 1)
         else
             core:print('FORMATTING', L["Bags"])
             return
