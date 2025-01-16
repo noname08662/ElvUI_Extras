@@ -2632,7 +2632,6 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 	else
 		local oldID = button.itemID
 		local itemID = B_GetItemID(nil, bagID, slotID)
-		local itemCount = GetItemCount(itemID)
 
 		if button.shouldEvaluate then
 			local currentSection = bagMap[slotID]
