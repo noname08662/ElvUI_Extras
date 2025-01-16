@@ -2653,7 +2653,7 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 		elseif not oldID then
 			local targetSection
 			buttonMap[f][button] = nil
-			if not button:IsVisible() then
+			if not f:IsShown() then
 				button.highlight:Show()
 			end
 
