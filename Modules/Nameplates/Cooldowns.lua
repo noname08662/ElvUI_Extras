@@ -442,7 +442,8 @@ local function cache(db, visibilityUpdate)
 					end
 				end
 				compareFuncs[unitType] = createCompareFunction(icons.sorting, icons.trinketOnTop)
-				borderCustomColor[unitType] = icons.borderCustomColor[1] > 0 or icons.borderCustomColor[2] > 0 or icons.borderCustomColor[3] > 0
+				borderCustomColor[unitType] =
+					not icons.borderColor and (icons.borderCustomColor[1] > 0 or icons.borderCustomColor[2] > 0 or icons.borderCustomColor[3] > 0)
 				fills[unitType] = createFillFunction(type_db.cooldownFill, icons)
 				onUpdates[unitType] = createOnUpdateFunction(type_db, unitType)
 			end
@@ -1246,10 +1247,9 @@ function mod:AttachCooldowns(plate, cooldowns, unitType)
 			if not cdFrame then
 				cdFrame = CreateFrame("Frame", nil, tracker)
 				cdFrame:Size(db_icons.size)
-				cdFrame:SetTemplate()
+				cdFrame:SetTemplate(nil, nil, nil, E.PixelMode)
 				cdFrame.texture = cdFrame:CreateTexture(nil, "ARTWORK")
 				cdFrame.texture:SetInside(cdFrame, E.mult, E.mult)
-				cdFrame:SetTemplate()
 				cdFrame.shadow = CreateFrame("Frame", nil, cdFrame)
 				cdFrame.shadow:SetFrameLevel(plate:GetFrameLevel() + db.header.level)
 				if db.cooldownFill.enabled then
