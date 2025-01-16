@@ -97,8 +97,8 @@ local function parseCollectionString(conditions)
         local pair, filterName, operator, value, amount = match(condition, '(([^%s%p]*)@(%p*)([^%s%p]*)@*([+%d]*))')
 		if filterName and filter[filterName] and value then
 			local formattedCondition = formatCondition(filterName, operator ~= '' and operator or '==',
-														value, amount ~= '' and (tonumber(amount) or format("'%s'", amount or 1)) or 1)
-			formattedConditions = gsub(formattedConditions, gsub(pair, "([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1"), formattedCondition)
+														value, amount ~= '' and (tonumber(amount) or format('"%s"', amount or 1)) or 1)
+			formattedConditions = gsub(formattedConditions, gsub(pair, '([%(%)%.%%%+%-%*%?%[%^%$])', '%%%1'), formattedCondition, 1)
 		else
 			core:print('FORMATTING', L["Automations"])
 			return
