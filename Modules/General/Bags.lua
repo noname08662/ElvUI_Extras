@@ -7,7 +7,7 @@ local LSM = E.Libs.LSM
 local LibProcessable = LibStub("LibProcessable")
 
 local modName = mod:GetName()
-local buttonMap, itemCounts, tooltipInfo = {}, {}, {}
+local buttonMap, tooltipInfo = {}, {}
 local equipmentSets = {}
 local removingBag = false
 
@@ -15,7 +15,6 @@ mod.initialized = {}
 mod.localhooks = {}
 
 mod.buttonMap = buttonMap
-mod.itemCounts = itemCounts
 
 local prospectingSpellID = 31252
 local disenchantingSpellID = 13262
@@ -1618,7 +1617,6 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 					local button = bag[slotID]
 					if button.hasItem then
 						local itemID = B_GetItemID(nil, bagID, slotID)
-						itemCounts[itemID] = GetItemCount(itemID)
 						button.itemID = itemID
 						tinsert(buttons, button)
 					else
@@ -1888,7 +1886,6 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
             for _, button in ipairs(buttonsSpecial) do
 				if button.hasItem then
 					local itemID = B_GetItemID(nil, bagID, button.slotID)
-					itemCounts[itemID] = GetItemCount(itemID)
 					button.itemID = itemID
 					tinsert(processedSection.buttons, button)
 					section.storedPositions[bagID..'-'..button.slotID] = #processedSection.buttons
@@ -2620,7 +2617,6 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 		button:Hide()
 		local itemID = button.itemID
 		if itemID then
-			itemCounts[itemID] = GetItemCount(itemID)
 			button.itemID = nil
 			local currentSection = bagMap[slotID]
 			if currentSection then
@@ -2659,7 +2655,7 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 		elseif not oldID then
 			local targetSection
 			buttonMap[f][button] = nil
-			if itemCounts[itemID] ~= itemCount and not button:IsVisible() then
+			if not button:IsVisible() then
 				button.highlight:Show()
 			end
 
@@ -2715,10 +2711,6 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 			end
 			button.atHeader = nil
 		end
-		if oldID and oldID ~= itemID then
-			itemCounts[oldID] = GetItemCount(oldID)
-		end
-		itemCounts[itemID] = itemCount
 		button.itemID = itemID
 	end
 end
