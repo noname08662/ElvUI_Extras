@@ -70,8 +70,9 @@ end
 
 local function constructAnimation(bar, colorFilter)
 	colorFilter.flashTexture = bar:CreateTexture(nil, 'OVERLAY')
-	colorFilter.flashTexture:SetAllPoints(bar:GetStatusBarTexture())
+	colorFilter.flashTexture:SetAllPoints(bar)
 	colorFilter.flashTexture:SetTexture(E.media.blankTex)
+	colorFilter.flashTexture:Hide()
 
 	colorFilter.flashTexture.anim = colorFilter.flashTexture:CreateAnimationGroup("Flash")
 	colorFilter.flashTexture.anim.fadein = colorFilter.flashTexture.anim:CreateAnimation("ALPHA", "FadeIn")
@@ -969,7 +970,6 @@ function mod:ConstructHighlight(frame)
 		colorFilter.appliedBordersColors.Health = { applied = false, override = false }
 
 		constructAnimation(frame.Health, colorFilter.Health)
-		colorFilter.Health.flashTexture:Hide()
 
 		colorFilter.Health.shadow:Hide()
 
@@ -989,7 +989,6 @@ function mod:ConstructHighlight(frame)
 		colorFilter.appliedBordersColors.Power = { applied = false, override = false }
 
 		constructAnimation(power, colorFilter.Power)
-		colorFilter.Power.flashTexture:Hide()
 
 		colorFilter.Power.shadow:Hide()
 	end
@@ -1007,7 +1006,6 @@ function mod:ConstructHighlight(frame)
 		colorFilter.appliedBordersColors.Castbar = { applied = false }
 
 		constructAnimation(castbar, colorFilter.Castbar)
-		colorFilter.Castbar.flashTexture:Hide()
 
 		colorFilter.Castbar.shadow:Hide()
 		if castbar.Icon then
@@ -1660,6 +1658,7 @@ function mod:UpdateAll(db)
 					local targetBar = colorFilter[statusbar]
 					if targetBar.flashTexture then
 						targetBar.flashTexture:Hide()
+						targetBar.flashTexture = nil
 					end
 					targetBar:SetScript('OnUpdate', nil)
 					if metaTable.events[unit] then
