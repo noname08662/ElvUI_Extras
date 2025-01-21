@@ -54,10 +54,35 @@ local function handleMessageFilter(events, filterFunc, shouldAdd)
     end
 end
 
-local function simulateLootRoll()
+local function simulateLootRoll(db)
 	local itemID = 49623
-	local name, itemLink, quality = GetItemInfo(itemID)
-	local db = E.db.Extras.blizzard[modName].LootBars
+	local name, itemLink, quality, name1, itemLink1, quality1, texture1, _, _, texture = GetItemInfo(itemID)
+
+	if not quality then
+		for bagID = 0, NUM_BAG_SLOTS do
+			for slotID = 1, GetContainerNumSlots(bagID) do
+				itemID = GetContainerItemID(bagID, slotID)
+				if itemID then
+					name, itemLink, quality, _, _, _, _, _, _, texture = GetItemInfo(itemID)
+					if quality then
+						if quality > 1 then
+							break
+						else
+							name1, itemLink1, quality1, texture1 = name, itemLink, quality, texture
+						end
+					end
+				end
+			end
+		end
+	end
+	if not quality then
+		if quality1 then
+			name, itemLink, quality, texture = name1, itemLink1, quality1, texture1
+		else
+			return
+		end
+	end
+
 	local FRAME_WIDTH, FRAME_HEIGHT = db.widthBar, db.heightBar
 
 	testlootbar = testlootbar or CreateFrame("Frame", "extrastestlootbar", E.UIParent)
@@ -84,7 +109,7 @@ local function simulateLootRoll()
 	itemButton.icon = itemButton:CreateTexture(nil, "OVERLAY")
 	itemButton.icon:SetAllPoints()
 	itemButton.icon:SetTexCoord(unpack(E.TexCoords))
-	itemButton.icon:SetTexture("Interface\\Icons\\INV_Axe_113")
+	itemButton.icon:SetTexture(texture)
 
 	testlootbar.itemButton = itemButton
 
@@ -460,7 +485,7 @@ function mod:LoadConfig(db)
 				name = L["Loot Bars"],
 				guiInline = true,
 				get = function(info) return db.LootBars[info[#info]] end,
-				set = function(info, value) db.LootBars[info[#info]] = value simulateLootRoll() self:Toggle(db) end,
+				set = function(info, value) db.LootBars[info[#info]] = value simulateLootRoll(db.LootBars) self:Toggle(db) end,
 				args = {
 					enabled = {
 						order = 1,

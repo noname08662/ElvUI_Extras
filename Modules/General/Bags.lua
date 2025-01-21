@@ -1633,39 +1633,41 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
     self:HandleSortButton(f, true, isBank, numColumns, buttonSize, buttonSpacing)
 
     if next(layoutSections) then
-		local cleanup = {}
-		for i, section in ipairs(sections) do
-			if section.isSpecialBag then
-				local bagID = section.bagID
-				if buttonMap[bagID] then
-					local numSlots, bagType = GetContainerNumFreeSlots(bagID)
-					if numSlots == 0 or (not bagType or bagType == 0) or (db.specialBags[bagID] and db.specialBags[bagID] ~= GetBagName(bagID)) then
-						buttonMap[bagID] = {}
-						db.specialBags[bagID] = false
-						tremove(sections, i)
-						tremove(layoutSections, i)
-						cleanup[bagID] = true
-					end
-				end
-			end
-		end
-		if next(cleanup) then
-			for _, section in ipairs(layoutSections) do
-				if section.isSpecialBag and cleanup[section.bagID] then
-					for _, button in ipairs(section.buttons) do
-						if button.highlight then
-							button.highlight:Hide()
-							button.highlight = nil
+		if not isBank or f:IsShown() then
+			local cleanup = {}
+			for i, section in ipairs(sections) do
+				if section.isSpecialBag then
+					local bagID = section.bagID
+					if buttonMap[bagID] then
+						local numSlots, bagType = GetContainerNumFreeSlots(bagID)
+						if numSlots == 0 or (not bagType or bagType == 0) or (db.specialBags[bagID] and db.specialBags[bagID] ~= GetBagName(bagID)) then
+							buttonMap[bagID] = {}
+							db.specialBags[bagID] = false
+							tremove(sections, i)
+							tremove(layoutSections, i)
+							cleanup[bagID] = true
 						end
 					end
-					local frame = section.frame
-					if frame then
-						frame:Hide()
-						section.frame = nil
-					end
 				end
 			end
-			if E.RefreshGUI then E:RefreshGUI() end
+			if next(cleanup) then
+				for _, section in ipairs(layoutSections) do
+					if section.isSpecialBag and cleanup[section.bagID] then
+						for _, button in ipairs(section.buttons) do
+							if button.highlight then
+								button.highlight:Hide()
+								button.highlight = nil
+							end
+						end
+						local frame = section.frame
+						if frame then
+							frame:Hide()
+							section.frame = nil
+						end
+					end
+				end
+				if E.RefreshGUI then E:RefreshGUI() end
+			end
 		end
 		local currentRowColumns
 		for i, section in ipairs(layoutSections) do

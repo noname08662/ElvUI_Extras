@@ -73,7 +73,7 @@ local iconPositions = mod.iconPositions
 
 for frameType, number in pairs({['arena'] = 5, ['party'] = 5, ['raid'] = 40}) do
 	for i = 1, number do
-		petList[frameType..i] =  format("%s%s%s", frameType, i, 'pet')
+		petList[frameType..i] = format("%s%s%s", frameType, i, 'pet')
 	end
 end
 
