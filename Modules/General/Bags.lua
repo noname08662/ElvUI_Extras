@@ -25,7 +25,8 @@ local _G, unpack, pairs, ipairs, select, print, next, setfenv = _G, unpack, pair
 local tonumber, tostring, loadstring, pcall, type = tonumber, tostring, loadstring, pcall, type
 local tinsert, tremove, twipe, tsort, tconcat = table.insert, table.remove, table.wipe, table.sort, table.concat
 local min, max, floor, ceil, huge, pi = min, max, floor, ceil, math.huge, math.pi
-local find, format, lower, match, gmatch, gsub = string.find, string.format, string.lower, string.match, string.gmatch, string.gsub
+local find, format, lower = string.find, string.format, string.lower
+local match, gmatch, gsub = string.match, string.gmatch, string.gsub
 local UIParent, GameTooltip_Hide, InCombatLockdown, UnitFactionGroup = UIParent, GameTooltip_Hide, InCombatLockdown, UnitFactionGroup
 local GetItemInfo, GetInventoryItemTexture, GetBagName, GetCursorInfo = GetItemInfo, GetInventoryItemTexture, GetBagName, GetCursorInfo
 local ContainerIDToInventoryID, GetContainerItemID = ContainerIDToInventoryID, GetContainerItemID
@@ -112,6 +113,20 @@ local inventorySlotIDs = {
     ["INVTYPE_RANGED"] = 18,
     ["INVTYPE_THROWN"] = 18,
     ["INVTYPE_RELIC"] = 18,
+}
+
+local bagIDToInventoryID = {
+    [1] = 20,
+    [2] = 21,
+    [3] = 22,
+    [4] = 23,
+    [5] = 68,
+    [6] = 69,
+    [7] = 70,
+    [8] = 71,
+    [9] = 72,
+    [10] = 73,
+    [11] = 74,
 }
 
 
@@ -467,6 +482,7 @@ function mod:UpdateButtonPositions(button, bagMap, bagID, slotID, currentSection
 						currentSection.db.storedPositions[otherButton.bagID..'-'..otherButton.slotID] = j
 					end
 				end
+				break
 			end
 		end
 	end
@@ -1634,39 +1650,34 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 
     if next(layoutSections) then
 		if not isBank or f:IsShown() then
-			local cleanup = {}
-			for i, section in ipairs(sections) do
-				if section.isSpecialBag then
+			for i = #sections, 1, -1 do
+				local section = sections[i]
+				if section and section.isSpecialBag then
 					local bagID = section.bagID
 					if buttonMap[bagID] then
-						local numSlots, bagType = GetContainerNumFreeSlots(bagID)
-						if numSlots == 0 or (not bagType or bagType == 0) or (db.specialBags[bagID] and db.specialBags[bagID] ~= GetBagName(bagID)) then
+						local bagName = GetBagName(bagID)
+						if not GetInventoryItemID("player", bagIDToInventoryID[bagID])
+								or (bagName and db.specialBags[bagID] and db.specialBags[bagID] ~= bagName) then
 							buttonMap[bagID] = {}
 							db.specialBags[bagID] = false
 							tremove(sections, i)
-							tremove(layoutSections, i)
-							cleanup[bagID] = true
-						end
-					end
-				end
-			end
-			if next(cleanup) then
-				for _, section in ipairs(layoutSections) do
-					if section.isSpecialBag and cleanup[section.bagID] then
-						for _, button in ipairs(section.buttons) do
-							if button.highlight then
-								button.highlight:Hide()
-								button.highlight = nil
+							local targetSection = layoutSections[i]
+							for _, button in ipairs(targetSection.buttons) do
+								if button.highlight then
+									button.highlight:Hide()
+									button.highlight = nil
+								end
 							end
-						end
-						local frame = section.frame
-						if frame then
-							frame:Hide()
-							section.frame = nil
+							local frame = targetSection.frame
+							if frame then
+								frame:Hide()
+								targetSection.frame = nil
+							end
+							tremove(layoutSections, i)
+							if E.RefreshGUI then E:RefreshGUI() end
 						end
 					end
 				end
-				if E.RefreshGUI then E:RefreshGUI() end
 			end
 		end
 		local currentRowColumns
@@ -1701,17 +1712,17 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 				["size"] = 13,
 				["flags"] = "OUTLINE",
 				["point"] = "BOTTOMLEFT",
-				["relativeTo"] = "TOPLEFT",
+				["relativeTo"] = "BOTTOMRIGHT",
 				["xOffset"] = 0,
 				["yOffset"] = 0,
 			},
 			["icon"] = {
-				["enabled"] = false,
+				["enabled"] = true,
 				["texture"] = GetInventoryItemTexture("player", ContainerIDToInventoryID(bagID)),
 				["point"] = "TOPLEFT",
 				["relativeTo"] = "TOPLEFT",
 				["xOffset"] = 0,
-				["yOffset"] = 0,
+				["yOffset"] = 2,
 				["toText"] = false,
 				["size"] = 16,
 			},
@@ -1720,7 +1731,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 		}
 		db.specialBags[bagID] = GetBagName(bagID)
 		tinsert(sections, 1, specialSection)
-		if f.emptyButton then
+		if f.emptyButton and (not f.forceShow or not f:IsShown()) then
 			f.emptyButton.highlight.tex:SetTexture("Interface\\Buttons\\UI-Common-MouseHilight")
 			f.emptyButton.highlight.tex:SetVertexColor(0, 1, 1)
 			E:UIFrameFadeIn(f.emptyButton.highlight, 1, f.emptyButton.highlight:GetAlpha(), 1)
@@ -2545,6 +2556,14 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 				button:Show()
 			end
 		end
+		for hash in pairs(section.db.storedPositions) do
+			local bagID, slotID = match(hash, "(.+)-(.+)")
+			local bag = f.Bags[tonumber(bagID)]
+			local button = bag and bag[tonumber(slotID)]
+			if button and not button.hasItem then
+				section.db.storedPositions[hash] = nil
+			end
+		end
 		self:UpdateSection(f, section, numColumns, buttonSize, buttonSpacing)
 	end
 
@@ -2607,10 +2626,10 @@ end
 function mod:UpdateSlot(self, f, bagID, slotID)
 	local bag = f.Bags[bagID]
 	local bagMap = buttonMap[bagID]
-
-	if not bag or not bag[slotID] or not bagMap or (bag.numSlots ~= GetContainerNumSlots(bagID)) then return end
-
 	local layout = f.currentLayout
+
+	if not (layout and bag and bag[slotID] and bagMap) or (bag.numSlots ~= GetContainerNumSlots(bagID)) then return end
+
     local button = bag[slotID]
 	local bagType = bag.type
 
@@ -3034,7 +3053,7 @@ function mod:SplitHandler(self, button)
         if button == 'LeftButton' then
             local stackCount = select(2, B_GetItemInfo(nil, bagID, slotID))
             if not stackCount or stackCount == 1 then return end
-            local split = floor(stackCount / 2)
+            local splitHalf = floor(stackCount / 2)
             local _, freeBagID, freeSlotID
 
 			if isBagsExtendedV2 then
@@ -3047,7 +3066,7 @@ function mod:SplitHandler(self, button)
 				_, freeBagID, freeSlotID = mod:FindEmpty(nil, f)
 			end
             if freeSlotID then
-                B_SplitItem(nil, bagID, slotID, split)
+                B_SplitItem(nil, bagID, slotID, splitHalf)
                 B_PickupItem(nil, freeBagID, freeSlotID)
             else
                 print(core.customColorBad..ERR_SPLIT_FAILED)

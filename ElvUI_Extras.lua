@@ -813,10 +813,6 @@ if isAwesome then
 		return core.hooks[LAI].GUIDAura(self, guid, index, filter, ...)
 	end
 
-	core.SPELL_AURA_APPLIED = true
-	core.SPELL_AURA_REMOVED = true
-	core.SPELL_AURA_REFRESH = true
-
 	core:SecureHook(NP, "StyleFilterConfigure", function()
 		if NP.StyleFilterTriggerEvents.UNIT_AURA or NP.StyleFilterTriggerEvents.UNIT_AURA then
 			for filterName, filter in pairs(E.global.nameplates.filters) do
@@ -824,9 +820,10 @@ if isAwesome then
 				if t and E.db.nameplates and E.db.nameplates.filters then
 					if E.db.nameplates.filters[filterName] and E.db.nameplates.filters[filterName].triggers
 							and E.db.nameplates.filters[filterName].triggers.enable and filter.actions.nameOnly then
-						core:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(_, _, eventType, _, _, _, dstGUID)
-							if core[eventType] then
-								local frame = NP:SearchNameplateByGUID(dstGUID)
+						core:RegisterEvent("UNIT_AURA", function(_, unit)
+							if find(unit, 'nameplate', 1, true) then
+								local plate = GetNamePlateForUnit(unit)
+								local frame = plate and plate.UnitFrame
 								if frame then
 									if frame.NameOnlyChanged then
 										frame.Health:Show() -- UpdateElement_Auras' first line blocks any update
@@ -840,9 +837,10 @@ if isAwesome then
 				end
 			end
 		end
-		core:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", function(_, _, eventType, _, _, _, dstGUID)
-			if core[eventType] then
-				local frame = NP:SearchNameplateByGUID(dstGUID)
+		core:RegisterEvent("UNIT_AURA", function(_, unit)
+			if find(unit, 'nameplate', 1, true) then
+				local plate = GetNamePlateForUnit(unit)
+				local frame = plate and plate.UnitFrame
 				if frame then
 					NP:UpdateElement_Auras(frame)
 				end
@@ -1837,7 +1835,7 @@ function core:GetOptions()
 				args = {
 					colors = {
 						type = "group",
-						name = L["Version: "].."1.08",
+						name = L["Version: "].."1.09",
 						guiInline = true,
 						get = function(info) return colorConvert(E.db.Extras[info[#info]]) end,
 						set = function(info, r, g, b)

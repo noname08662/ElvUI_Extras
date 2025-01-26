@@ -519,10 +519,9 @@ function mod:TierText(db)
 			end
 		end
 
-		local function appendICD(tt)
+		local function appendTierText(tt)
 			local _, itemLink = tt:GetItem()
 			if not itemLink then return end
-
 			local tierText = tierSets[match(itemLink, "item:(%d+)")]
 			if tierText then
 				for i = 1, tt:NumLines() do
@@ -546,40 +545,25 @@ function mod:TierText(db)
 			end
 		end
 
-		if not self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
-			self:SecureHookScript(GameTooltip, 'OnTooltipSetItem', runAllScripts)
+		for _, tt in ipairs({GameTooltip, ItemRefTooltip,
+							ShoppingTooltip1, ShoppingTooltip2, ShoppingTooltip3,
+							ItemRefShoppingTooltip1, ItemRefShoppingTooltip2, ItemRefShoppingTooltip3}) do
+			if not self:IsHooked(tt, 'OnTooltipSetItem') then
+				self:SecureHookScript(tt, 'OnTooltipSetItem', runAllScripts)
+			end
 		end
-		if not self:IsHooked(ItemRefTooltip, 'OnTooltipSetItem') then
-			self:SecureHookScript(ItemRefTooltip, 'OnTooltipSetItem', runAllScripts)
-		end
-		if not self:IsHooked(ShoppingTooltip1, 'OnTooltipSetItem') then
-			self:SecureHookScript(ShoppingTooltip1, 'OnTooltipSetItem', runAllScripts)
-		end
-		if not self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
-			self:SecureHookScript(ShoppingTooltip2, 'OnTooltipSetItem', runAllScripts)
-		end
-		if not self:IsHooked(ShoppingTooltip3, 'OnTooltipSetItem') then
-			self:SecureHookScript(ShoppingTooltip3, 'OnTooltipSetItem', runAllScripts)
-		end
-		allTipScrits['sets'] = appendICD
+
+		allTipScrits['sets'] = appendTierText
 		self.initialized.TierText = true
 	elseif self.initialized.TierText then
 		allTipScrits['sets'] = nil
 		if not (E.db.Extras.general[modName].TooltipNotes.enabled or E.db.Extras.general[modName].InternalCooldowns.enabled) then
-			if self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
-				self:Unhook(GameTooltip, 'OnTooltipSetItem')
-			end
-			if self:IsHooked(ItemRefTooltip, 'OnTooltipSetItem') then
-				self:Unhook(ItemRefTooltip, 'OnTooltipSetItem')
-			end
-			if self:IsHooked(ShoppingTooltip1, 'OnTooltipSetItem') then
-				self:Unhook(ShoppingTooltip1, 'OnTooltipSetItem')
-			end
-			if self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
-				self:Unhook(ShoppingTooltip2, 'OnTooltipSetItem')
-			end
-			if self:IsHooked(ShoppingTooltip3, 'OnTooltipSetItem') then
-				self:Unhook(ShoppingTooltip3, 'OnTooltipSetItem')
+			for _, tt in ipairs({GameTooltip, ItemRefTooltip,
+								ShoppingTooltip1, ShoppingTooltip2, ShoppingTooltip3,
+								ItemRefShoppingTooltip1, ItemRefShoppingTooltip2, ItemRefShoppingTooltip3}) do
+				if self:IsHooked(tt, 'OnTooltipSetItem') then
+					self:Unhook(tt, 'OnTooltipSetItem')
+				end
 			end
 		end
 	end
@@ -612,40 +596,25 @@ function mod:InternalCooldowns(db)
 			end
 		end
 
-		if not self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
-			self:SecureHookScript(GameTooltip, 'OnTooltipSetItem', runAllScripts)
+		for _, tt in ipairs({GameTooltip, ItemRefTooltip,
+							ShoppingTooltip1, ShoppingTooltip2, ShoppingTooltip3,
+							ItemRefShoppingTooltip1, ItemRefShoppingTooltip2, ItemRefShoppingTooltip3}) do
+			if not self:IsHooked(tt, 'OnTooltipSetItem') then
+				self:SecureHookScript(tt, 'OnTooltipSetItem', runAllScripts)
+			end
 		end
-		if not self:IsHooked(ItemRefTooltip, 'OnTooltipSetItem') then
-			self:SecureHookScript(ItemRefTooltip, 'OnTooltipSetItem', runAllScripts)
-		end
-		if not self:IsHooked(ShoppingTooltip1, 'OnTooltipSetItem') then
-			self:SecureHookScript(ShoppingTooltip1, 'OnTooltipSetItem', runAllScripts)
-		end
-		if not self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
-			self:SecureHookScript(ShoppingTooltip2, 'OnTooltipSetItem', runAllScripts)
-		end
-		if not self:IsHooked(ShoppingTooltip3, 'OnTooltipSetItem') then
-			self:SecureHookScript(ShoppingTooltip3, 'OnTooltipSetItem', runAllScripts)
-		end
+
 		allTipScrits['icd'] = appendICD
 		self.initialized.InternalCooldowns = true
 	elseif self.initialized.InternalCooldowns then
 		allTipScrits['icd'] = nil
 		if not (E.db.Extras.general[modName].TooltipNotes.enabled or E.db.Extras.general[modName].TierText.enabled) then
-			if self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
-				self:Unhook(GameTooltip, 'OnTooltipSetItem')
-			end
-			if self:IsHooked(ItemRefTooltip, 'OnTooltipSetItem') then
-				self:Unhook(ItemRefTooltip, 'OnTooltipSetItem')
-			end
-			if self:IsHooked(ShoppingTooltip1, 'OnTooltipSetItem') then
-				self:Unhook(ShoppingTooltip1, 'OnTooltipSetItem')
-			end
-			if self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
-				self:Unhook(ShoppingTooltip2, 'OnTooltipSetItem')
-			end
-			if self:IsHooked(ShoppingTooltip3, 'OnTooltipSetItem') then
-				self:Unhook(ShoppingTooltip3, 'OnTooltipSetItem')
+			for _, tt in ipairs({GameTooltip, ItemRefTooltip,
+								ShoppingTooltip1, ShoppingTooltip2, ShoppingTooltip3,
+								ItemRefShoppingTooltip1, ItemRefShoppingTooltip2, ItemRefShoppingTooltip3}) do
+				if self:IsHooked(tt, 'OnTooltipSetItem') then
+					self:Unhook(tt, 'OnTooltipSetItem')
+				end
 			end
 		end
 	end
@@ -971,21 +940,14 @@ function mod:TooltipNotes(db)
 		for _, func in pairs({'OnTooltipSetUnit', 'OnTooltipSetSpell'}) do
 			if not self:IsHooked(GameTooltip, func) then self:SecureHookScript(GameTooltip, func, handler) end
 		end
-		if not self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
-			self:SecureHookScript(GameTooltip, 'OnTooltipSetItem', runAllScripts)
+		for _, tt in ipairs({GameTooltip, ItemRefTooltip,
+							ShoppingTooltip1, ShoppingTooltip2, ShoppingTooltip3,
+							ItemRefShoppingTooltip1, ItemRefShoppingTooltip2, ItemRefShoppingTooltip3}) do
+			if not self:IsHooked(tt, 'OnTooltipSetItem') then
+				self:SecureHookScript(tt, 'OnTooltipSetItem', runAllScripts)
+			end
 		end
-		if not self:IsHooked(ItemRefTooltip, 'OnTooltipSetItem') then
-			self:SecureHookScript(ItemRefTooltip, 'OnTooltipSetItem', runAllScripts)
-		end
-		if not self:IsHooked(ShoppingTooltip1, 'OnTooltipSetItem') then
-			self:SecureHookScript(ShoppingTooltip1, 'OnTooltipSetItem', runAllScripts)
-		end
-		if not self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
-			self:SecureHookScript(ShoppingTooltip2, 'OnTooltipSetItem', runAllScripts)
-		end
-		if not self:IsHooked(ShoppingTooltip3, 'OnTooltipSetItem') then
-			self:SecureHookScript(ShoppingTooltip3, 'OnTooltipSetItem', runAllScripts)
-		end
+
 		allTipScrits['notes'] = handler
 		self.initialized.TooltipNotes = true
 	elseif self.initialized.TooltipNotes then
@@ -997,20 +959,12 @@ function mod:TooltipNotes(db)
 			if self:IsHooked(GameTooltip, func) then self:Unhook(GameTooltip, func) end
 		end
 		if not (E.db.Extras.general[modName].InternalCooldowns.enabled or E.db.Extras.general[modName].TierText.enabled) then
-			if self:IsHooked(GameTooltip, 'OnTooltipSetItem') then
-				self:Unhook(GameTooltip, 'OnTooltipSetItem')
-			end
-			if self:IsHooked(ItemRefTooltip, 'OnTooltipSetItem') then
-				self:Unhook(ItemRefTooltip, 'OnTooltipSetItem')
-			end
-			if self:IsHooked(ShoppingTooltip1, 'OnTooltipSetItem') then
-				self:Unhook(ShoppingTooltip1, 'OnTooltipSetItem')
-			end
-			if self:IsHooked(ShoppingTooltip2, 'OnTooltipSetItem') then
-				self:Unhook(ShoppingTooltip2, 'OnTooltipSetItem')
-			end
-			if self:IsHooked(ShoppingTooltip3, 'OnTooltipSetItem') then
-				self:Unhook(ShoppingTooltip3, 'OnTooltipSetItem')
+			for _, tt in ipairs({GameTooltip, ItemRefTooltip,
+								ShoppingTooltip1, ShoppingTooltip2, ShoppingTooltip3,
+								ItemRefShoppingTooltip1, ItemRefShoppingTooltip2, ItemRefShoppingTooltip3}) do
+				if self:IsHooked(tt, 'OnTooltipSetItem') then
+					self:Unhook(GameTooltip, 'OnTooltipSetItem')
+				end
 			end
 		end
 	end

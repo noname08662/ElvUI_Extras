@@ -1140,4 +1140,6 @@ L["TierText"] = "Texto de nivel"
 L["Select Item"] = "Seleccionar artículo"
 L["Add Item (ID)"] = "Agregar artículo (ID)"
 L["Item Text"] = "Texto del artículo"
+L["Sort by Filter"] = "Ordenar por filtro"
+L["Makes aura sorting abide filter priorities."] = "Hace que la ordenación de auras respete las prioridades del filtro."
 

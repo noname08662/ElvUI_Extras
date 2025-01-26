@@ -1,4 +1,4 @@
-local E, L, _, P = unpack(ElvUI)
+local E, L, _, P, G = unpack(ElvUI)
 local core = E:GetModule("Extras")
 local mod = core:NewModule("AurasUF", "AceHook-3.0")
 local UF = E:GetModule("UnitFrames")
@@ -6,8 +6,9 @@ local LSM = E.Libs.LSM
 
 local modName = mod:GetName()
 
-local _G, unpack, pairs, ipairs, select, tonumber, type = _G, unpack, pairs, ipairs, select, tonumber, type
-local match, format, gsub, find = string.match, string.format, string.gsub, string.find
+local _G, unpack, pairs, ipairs, select = _G, unpack, pairs, ipairs, select
+local tonumber, tostring, type = tonumber, tostring, type
+local match, format, gsub, find, split = string.match, string.format, string.gsub, string.find, string.split
 local floor, ceil, min, max = math.floor, math.ceil, math.min, math.max
 local tinsert, tsort, twipe = table.insert, table.sort, table.wipe
 local UnitIsUnit, CancelUnitBuff, UnitCanAttack = UnitIsUnit, CancelUnitBuff, UnitCanAttack
@@ -18,7 +19,7 @@ local iconPositions = {}
 
 mod.filterList = filterList
 mod.checkFilters = checkFilters
-mod.initialized = false
+mod.initialized = {}
 
 local directionProperties = {
 	["CENTER"] = {
@@ -26,14 +27,12 @@ local directionProperties = {
 		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
 		framePoint = 'BOTTOM',
-		growthX = 1,
 	},
 	["TOP"] = {
 		isVertical = true,
 		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
 		framePoint = 'BOTTOM',
-		growthX = 1,
 	},
 	["BOTTOM"] = {
 		isVertical = true,
@@ -41,14 +40,12 @@ local directionProperties = {
 		firstInRowPoint = 'TOP',
 		subsequentPoint = 'TOPLEFT',
 		framePoint = 'TOP',
-		growthX = 1,
 	},
 	["LEFT"] = {
 		isVertical = false,
 		firstInRowPoint = 'RIGHT',
 		subsequentPoint = 'TOPRIGHT',
 		framePoint = 'RIGHT',
-		growthX = 1,
 	},
 	["RIGHT"] = {
 		isVertical = false,
@@ -56,21 +53,18 @@ local directionProperties = {
 		firstInRowPoint = 'LEFT',
 		subsequentPoint = 'TOPLEFT',
 		framePoint = 'LEFT',
-		growthX = 1,
 	},
 	["TOPLEFT"] = {
 		isVertical = true,
 		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
 		framePoint = 'BOTTOM',
-		growthX = 1,
 	},
 	["TOPRIGHT"] = {
 		isVertical = true,
 		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
 		framePoint = 'BOTTOM',
-		growthX = -1,
 	},
 	["BOTTOMLEFT"] = {
 		isVertical = true,
@@ -78,7 +72,6 @@ local directionProperties = {
 		firstInRowPoint = 'TOP',
 		subsequentPoint = 'TOPLEFT',
 		framePoint = 'TOP',
-		growthX = 1,
 	},
 	["BOTTOMRIGHT"] = {
 		isVertical = true,
@@ -86,8 +79,7 @@ local directionProperties = {
 		firstInRowPoint = 'TOP',
 		subsequentPoint = 'TOPLEFT',
 		framePoint = 'TOP',
-		growthX = -1,
-	}
+	},
 }
 
 function mod:CenterAuras(frame)
@@ -122,8 +114,8 @@ local function updateFilters(db)
 	end
 end
 
-local function cachePositions(disable)
-	if disable then
+local function cachePositions(db)
+	if core.reload or (not db.CenteredAuras.enabled and not db.SortMethods.enabled) then
 		if mod.ishooked then
 			if E.Options and E.Options.args.unitframe then
 				if E.Options.args.CustomTweaks then
@@ -139,6 +131,11 @@ local function cachePositions(disable)
 							if mod:IsHooked(E.Options.args.unitframe.args[frameType].args[auraType], "set") then
 								mod:Unhook(E.Options.args.unitframe.args[frameType].args[auraType], "set")
 							end
+							for _, t in pairs(E.Options.args.unitframe.args[frameType].args[auraType].args.filters.args) do
+								if type(t) == 'table' and t.set and not mod:IsHooked(t, "set") then
+									mod:Unhook(t, "set")
+								end
+							end
 						end
 					end
 				end
@@ -149,69 +146,69 @@ local function cachePositions(disable)
 		end
 		return
 	end
-	local customTweaksUnits = E.db.CustomTweaks and E.db.CustomTweaks.AuraIconSpacing.units
-	local customTweaksSpacing = E.db.CustomTweaks and E.db.CustomTweaks.AuraIconSpacing.spacing
-	for frameType in pairs(core:getAllFrameTypes()) do
-		if UF.db.units[frameType] then
-			iconPositions[frameType] = {}
-			for _, auraType in ipairs({"buffs", "debuffs"}) do
-				local data = UF.db.units[frameType][auraType]
+	if db.CenteredAuras.enabled then
+		local customTweaksUnits = E.db.CustomTweaks and E.db.CustomTweaks.AuraIconSpacing.units
+		local customTweaksSpacing = E.db.CustomTweaks and E.db.CustomTweaks.AuraIconSpacing.spacing
+		for frameType in pairs(core:getAllFrameTypes()) do
+			if UF.db.units[frameType] then
+				iconPositions[frameType] = {}
+				for _, auraType in ipairs({"buffs", "debuffs"}) do
+					local data = UF.db.units[frameType][auraType]
 
-				if data then
-					iconPositions[frameType][auraType] = { positions = {}, sizes = {} }
+					if data then
+						iconPositions[frameType][auraType] = { positions = {}, sizes = {} }
 
-					local cache = iconPositions[frameType][auraType]
-					local anchorPoint = data.anchorPoint
-					local points = directionProperties[anchorPoint]
-					local isVertical = points.isVertical
-					local isReverse = points.isReverse
-					local firstInRowPoint = points.firstInRowPoint
-					local subsequentPoint = points.subsequentPoint
-					local framePoint = points.framePoint
-					local growthX = points.growthX
-					local spacing = (customTweaksUnits and customTweaksUnits[frameType]) and customTweaksSpacing or E.Spacing
-					local offset, perRow = (data.sizeOverride or 0) + spacing, data.perrow
+						local cache = iconPositions[frameType][auraType]
+						local points = directionProperties[data.anchorPoint]
+						local isVertical = points.isVertical
+						local isReverse = points.isReverse
+						local firstInRowPoint = points.firstInRowPoint
+						local subsequentPoint = points.subsequentPoint
+						local framePoint = points.framePoint
+						local spacing = (customTweaksUnits and customTweaksUnits[frameType]) and customTweaksSpacing or E.Spacing
+						local offset, perRow = (data.sizeOverride or 0) + spacing, data.perrow
 
-					for numElements = 1, perRow * data.numrows do
-						cache.positions[numElements] = {}
-						local lastAnchor = nil
+						for numElements = 1, perRow * data.numrows do
+							cache.positions[numElements] = {}
+							local lastAnchor = nil
 
-						for i = 1, numElements do
-							if i == (perRow * floor((i-1) / perRow) + 1) then
-								local numOtherRow = min(perRow, (numElements - (perRow * floor((i-1) / perRow))))
-								local OtherRowSize = (numOtherRow * offset)
-								local xOffset = (isVertical and -(OtherRowSize - offset) / 2 or ((isReverse and 1 or -1) * offset * floor((i-1) / perRow))) * growthX
-								local yOffset = isVertical and ((isReverse and -1 or 1) * offset * floor((i-1) / perRow)) or -(OtherRowSize - offset) / 2
+							for i = 1, numElements do
+								if i == (perRow * floor((i-1) / perRow) + 1) then
+									local numOtherRow = min(perRow, (numElements - (perRow * floor((i-1) / perRow))))
+									local OtherRowSize = (numOtherRow * offset)
+									local xOffset = isVertical and -(OtherRowSize - offset) / 2 or ((isReverse and 1 or -1) * offset * floor((i-1) / perRow))
+									local yOffset = isVertical and ((isReverse and -1 or 1) * offset * floor((i-1) / perRow)) or -(OtherRowSize - offset) / 2
 
-								cache.positions[numElements][i] = {
-									point = firstInRowPoint,
-									firstInRow = true,
-									relativeTo = framePoint,
-									xOffset = xOffset,
-									yOffset = yOffset
-								}
-							else
-								local xOffset = (isVertical and offset or 0) * growthX
-								local yOffset = isVertical and 0 or offset
+									cache.positions[numElements][i] = {
+										point = firstInRowPoint,
+										firstInRow = true,
+										relativeTo = framePoint,
+										xOffset = xOffset,
+										yOffset = yOffset
+									}
+								else
+									local xOffset = isVertical and offset or 0
+									local yOffset = isVertical and 0 or offset
 
-								cache.positions[numElements][i] = {
-									point = subsequentPoint,
-									anchor = lastAnchor,
-									relativeTo = subsequentPoint,
-									xOffset = xOffset,
-									yOffset = yOffset
-								}
+									cache.positions[numElements][i] = {
+										point = subsequentPoint,
+										anchor = lastAnchor,
+										relativeTo = subsequentPoint,
+										xOffset = xOffset,
+										yOffset = yOffset
+									}
+								end
+								lastAnchor = i
 							end
-							lastAnchor = i
-						end
 
-						local numRows = ceil(numElements/perRow)
-						local width = max(offset, offset * min(perRow, numElements) - spacing)
-						local height = max(offset, offset * numRows - spacing)
-						cache.sizes[numElements] = {
-							isVertical and width or height,
-							isVertical and height or width
-						}
+							local numRows = ceil(numElements/perRow)
+							local width = max(offset, offset * min(perRow, numElements) - spacing)
+							local height = max(offset, offset * numRows - spacing)
+							cache.sizes[numElements] = {
+								isVertical and width or height,
+								isVertical and height or width
+							}
+						end
 					end
 				end
 			end
@@ -219,7 +216,7 @@ local function cachePositions(disable)
 	end
 	if not mod.ishooked then
 		if E.Options and E.Options.args.unitframe then
-			if E.Options.args.CustomTweaks and E.private.CustomTweaks.AuraIconSpacing then
+			if E.Options.args.CustomTweaks and E.private.CustomTweaks.AuraIconSpacing and db.CenteredAuras.enabled then
 				for _, setting in ipairs({"spacing", "units"}) do
 					if not mod:IsHooked(E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting], "set") then
 						mod:RawHook(E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting], "set",
@@ -229,7 +226,7 @@ local function cachePositions(disable)
 								else
 									E.db.CustomTweaks.AuraIconSpacing[setting] = key
 								end
-								cachePositions()
+								cachePositions(db)
 								mod.hooks[E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting]].set(info,key,value)
 								for _, frame in ipairs(core:AggregateUnitFrames()) do
 									mod:CenterAuras(frame)
@@ -242,12 +239,34 @@ local function cachePositions(disable)
 			for frameType in pairs(core:getAllFrameTypes()) do
 				if E.Options.args.unitframe.args[frameType] then
 					for _, auraType in ipairs({"buffs", "debuffs"}) do
-						if not mod:IsHooked(E.Options.args.unitframe.args[frameType].args[auraType], "set") then
-							mod:RawHook(E.Options.args.unitframe.args[frameType].args[auraType], "set", function(info, value)
-								E.db.unitframe.units[frameType][auraType][info[#info]] = value
-								cachePositions()
-								mod.hooks[E.Options.args.unitframe.args[frameType].args[auraType]].set(info, value)
-							end)
+						if db.CenteredAuras.enabled then
+							if not mod:IsHooked(E.Options.args.unitframe.args[frameType].args[auraType], "set") then
+								mod:RawHook(E.Options.args.unitframe.args[frameType].args[auraType], "set", function(info, value)
+									E.db.unitframe.units[frameType][auraType][info[#info]] = value
+									cachePositions(db)
+									mod.hooks[E.Options.args.unitframe.args[frameType].args[auraType]].set(info, value)
+								end)
+							end
+						end
+						if db.SortMethods.enabled then
+							for _, t in pairs(E.Options.args.unitframe.args[frameType].args[auraType].args.filters.args) do
+								if type(t) == 'table' and t.set and not mod:IsHooked(t, "set") then
+									mod:SecureHook(t, "set", function()
+										cachePositions(db)
+										for _, frame in ipairs(core:AggregateUnitFrames()) do
+											for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
+												local element = frame[auraType]
+												if element and element.db.enable
+														and element.PostUpdate and element.PreSetPosition
+														and element['visible'..auraType] then
+													element:PreSetPosition()
+													element:PostUpdate()
+												end
+											end
+										end
+									end)
+								end
+							end
 						end
 					end
 				end
@@ -255,7 +274,7 @@ local function cachePositions(disable)
 		elseif not mod:IsHooked(E, "ToggleOptionsUI") then
 			mod:SecureHook(E, "ToggleOptionsUI", function()
 				if E.Options.args.unitframe then
-					if E.Options.args.CustomTweaks and E.private.CustomTweaks.AuraIconSpacing then
+					if E.Options.args.CustomTweaks and E.private.CustomTweaks.AuraIconSpacing and db.CenteredAuras.enabled then
 						for _, setting in ipairs({"spacing", "units"}) do
 							if not mod:IsHooked(E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting], "set") then
 								mod:RawHook(E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting], "set",
@@ -265,7 +284,7 @@ local function cachePositions(disable)
 										else
 											E.db.CustomTweaks.AuraIconSpacing[setting] = key
 										end
-										cachePositions()
+										cachePositions(db)
 										mod.hooks[E.Options.args.CustomTweaks.args.Unitframe.args.options.args.AuraIconSpacing.args[setting]].set(info,key,value)
 										for _, frame in ipairs(core:AggregateUnitFrames()) do
 											mod:CenterAuras(frame)
@@ -278,12 +297,34 @@ local function cachePositions(disable)
 					for frameType in pairs(core:getAllFrameTypes()) do
 						if E.Options.args.unitframe.args[frameType] then
 							for _, auraType in ipairs({"buffs", "debuffs"}) do
-								if not mod:IsHooked(E.Options.args.unitframe.args[frameType].args[auraType], "set") then
-									mod:RawHook(E.Options.args.unitframe.args[frameType].args[auraType], "set", function(info, value)
-										E.db.unitframe.units[frameType][auraType][info[#info]] = value
-										cachePositions()
-										mod.hooks[E.Options.args.unitframe.args[frameType].args[auraType]].set(info, value)
-									end)
+								if db.CenteredAuras.enabled then
+									if not mod:IsHooked(E.Options.args.unitframe.args[frameType].args[auraType], "set") then
+										mod:RawHook(E.Options.args.unitframe.args[frameType].args[auraType], "set", function(info, value)
+											E.db.unitframe.units[frameType][auraType][info[#info]] = value
+											cachePositions(db)
+											mod.hooks[E.Options.args.unitframe.args[frameType].args[auraType]].set(info, value)
+										end)
+									end
+								end
+								if db.SortMethods.enabled then
+									for _, t in pairs(E.Options.args.unitframe.args[frameType].args[auraType].args.filters.args) do
+										if type(t) == 'table' and t.set and not mod:IsHooked(t, "set") then
+											mod:SecureHook(t, "set", function()
+												cachePositions(db)
+												for _, frame in ipairs(core:AggregateUnitFrames()) do
+													for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
+														local element = frame[auraType]
+														if element and element.db.enable
+																and element.PostUpdate and element.PreSetPosition
+																and element['visible'..auraType] then
+															element:PreSetPosition()
+															element:PostUpdate()
+														end
+													end
+												end
+											end)
+										end
+									end
 								end
 							end
 						end
@@ -298,6 +339,9 @@ end
 
 
 P["Extras"]["unitframes"][modName] = {
+	["SortMethods"] = {
+		["enabled"] = false,
+	},
 	["CenteredAuras"] = {
 		["enabled"] = false,
 	},
@@ -673,6 +717,18 @@ function mod:LoadConfig(db)
 					},
 				},
 			},
+			SortMethods = {
+				type = "group",
+				name = L["Sort by Filter"],
+				guiInline = true,
+				args = {
+					enabledSortMethods = {
+						type = "toggle",
+						name = core.pluginColor..L["Enable"],
+						desc = L["Makes aura sorting abide filter priorities."],
+					},
+				},
+			},
 			ClickCancel = {
 				type = "group",
 				name = L["Click Cancel"],
@@ -717,9 +773,211 @@ function mod:LoadConfig(db)
 end
 
 
-function mod:UpdateCenteredAuras(enable)
-	if enable then
-		cachePositions()
+function mod:UpdateSortMethods(db)
+	if self:IsHooked(UF, "SortAuras") then self:Unhook(UF, "SortAuras") end
+	local units = core:AggregateUnitFrames()
+
+	if not core.reload and db.SortMethods.enabled then
+		local function SortAurasByTime(a, b, sortDirection)
+			local aTime = a.expiration or -1
+			local bTime = b.expiration or -1
+			if sortDirection == "DESCENDING" then
+				return aTime < bTime
+			else
+				return aTime > bTime
+			end
+		end
+		local function SortAurasByName(a, b, sortDirection)
+			local aName = a.spell or ""
+			local bName = b.spell or ""
+			if sortDirection == "DESCENDING" then
+				return aName < bName
+			else
+				return aName > bName
+			end
+		end
+		local function SortAurasByDuration(a, b, sortDirection)
+			local aTime = a.duration or -1
+			local bTime = b.duration or -1
+			if sortDirection == "DESCENDING" then
+				return aTime < bTime
+			else
+				return aTime > bTime
+			end
+		end
+		local function SortAurasByCaster(a, b, sortDirection)
+			local aPlayer = a.isPlayer or false
+			local bPlayer = b.isPlayer or false
+			if sortDirection == "DESCENDING" then
+				return (aPlayer and not bPlayer)
+			else
+				return (not aPlayer and bPlayer)
+			end
+		end
+		self:RawHook(UF, "SortAuras", function(self)
+			if not self.db then return end
+
+			local btn = self[1]
+			if btn then
+				local aurasFrame = btn:GetParent()
+				local filterOrder = aurasFrame.filterPriority
+				local sortMethod = aurasFrame.db.sortMethod
+				local sortDirection = aurasFrame.db.sortDirection
+
+				if filterOrder then
+					local buttonFilters = {}
+					local frame = aurasFrame:GetParent()
+					local aurafilters = E.global.unitframe.aurafilters
+
+					for i = 1, (aurasFrame.type == 'debuffs' and aurasFrame.visibleDebuffs or aurasFrame.visibleBuffs) or 0 do
+						local button = self[i]
+						if button then
+							local filterIndex
+							local name = button.name
+							local spellID = button.spellID
+							local caster = button.owner
+							local isPlayer = button.isPlayer
+							local isUnit = button.owner and UnitIsUnit(frame.unit, button.owner)
+							local canDispell = (aurasFrame.type == "buffs" and button.isStealable)
+								or (aurasFrame.type == "debuffs" and button.dtype and E:IsDispellableByMe(button.dtype))
+
+							for filterName, index in pairs(filterOrder) do
+								local filter = aurafilters[filterName]
+								if filter then
+									local filterType = filter.type
+									local spellList = filter.spells
+									local spell = spellList and (spellList[spellID] or spellList[name])
+
+									if filterType and (filterType == "Whitelist") and (spell and spell.enable) then
+										filterIndex = index
+										break
+									end
+								elseif filterName == "Personal" and isPlayer then
+									filterIndex = index
+									break
+								elseif filterName == "nonPersonal" and (not isPlayer) then
+									filterIndex = index
+									break
+								elseif filterName == "CastByUnit" and (caster and isUnit) then
+									filterIndex = index
+									break
+								elseif filterName == "notCastByUnit" and (caster and not isUnit) then
+									filterIndex = index
+									break
+								elseif filterName == "Dispellable" and canDispell then
+									filterIndex = index
+									break
+								elseif filterName == "notDispellable" and (not canDispell) then
+									filterIndex = index
+									break
+								end
+							end
+							buttonFilters[button] = filterIndex or 99999
+						end
+					end
+					tsort(self, function(a, b)
+						if not a:IsShown() then
+							return false
+						elseif not b:IsShown() then
+							return true
+						end
+
+						local aFilter = buttonFilters[a] or 0
+						local bFilter = buttonFilters[b] or 0
+
+						if aFilter ~= bFilter then
+							return aFilter < bFilter
+						elseif sortMethod == "TIME_REMAINING" then
+							return SortAurasByTime(a, b, sortDirection)
+						elseif sortMethod == "NAME" then
+							return SortAurasByName(a, b, sortDirection)
+						elseif sortMethod == "DURATION" then
+							return SortAurasByDuration(a, b, sortDirection)
+						elseif sortMethod == "PLAYER" then
+							return SortAurasByCaster(a, b, sortDirection)
+						end
+					end)
+				elseif sortMethod == "TIME_REMAINING" then
+					tsort(self, function(a,b)
+						if not a:IsShown() then
+							return false
+						elseif not b:IsShown() then
+							return true
+						end
+						return SortAurasByTime(a, b, sortDirection)
+					end)
+				elseif sortMethod == "NAME" then
+					tsort(self, function(a,b)
+						if not a:IsShown() then
+							return false
+						elseif not b:IsShown() then
+							return true
+						end
+						return SortAurasByName(a, b, sortDirection)
+					end)
+				elseif sortMethod == "DURATION" then
+					tsort(self, function(a,b)
+						if not a:IsShown() then
+							return false
+						elseif not b:IsShown() then
+							return true
+						end
+						return SortAurasByDuration(a, b, sortDirection)
+					end)
+				elseif sortMethod == "PLAYER" then
+					tsort(self, function(a,b)
+						if not a:IsShown() then
+							return false
+						elseif not b:IsShown() then
+							return true
+						end
+						return SortAurasByCaster(a, b, sortDirection)
+					end)
+				end
+			end
+			return 1, #self
+		end)
+		core:Tag('sortMethods', nil, function(_, frame)
+			for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
+				local element = frame[auraType]
+				if element then
+					if element.db and element.db.enable then
+						if element.db.priority and element.db.priority ~= "" then
+							element.filterPriority = {}
+							for i, filter in ipairs({split(",", element.db.priority)}) do
+								element.filterPriority[filter] = i
+							end
+						else
+							element.filterPriority = nil
+						end
+					else
+						element.filterPriority = nil
+					end
+				end
+			end
+		end)
+		self.initialized['sortMethods'] = true
+	elseif self.initialized['sortMethods'] then
+		core:Untag('sortMethods')
+	end
+	if self.initialized['sortMethods'] then
+		for _, frame in ipairs(units) do
+			for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
+				local element = frame[auraType]
+				if element and element.db and element.db.enable then
+					element.PreSetPosition = (not frame:GetScript("OnUpdate")) and UF.SortAuras or nil
+					if element.PostUpdate and element['visible'..auraType] then
+						element:PostUpdate()
+					end
+				end
+			end
+		end
+    end
+end
+
+function mod:UpdateCenteredAuras(db)
+	if not core.reload and db.CenteredAuras.enabled then
+		cachePositions(db)
 
 		function mod:CenterAlignAuras(self, numElements, auraType, auraTypeRef)
 			if not numElements or numElements == 0 then return end
@@ -890,7 +1148,7 @@ function mod:UpdateCenteredAuras(enable)
 		end
 		core:Tag('centerAuras', nil, function(_, frame) E:ScheduleTimer(function() self:CenterAuras(frame) end, 0.1) end)
 	else
-		cachePositions(true)
+		cachePositions(db)
 
 		for _, func in ipairs({'Configure_Auras', 'Configure_AuraBars', 'UpdateBuffsHeaderPosition', 'UpdateDebuffsHeaderPosition', 'UpdateBuffsPositionAndDebuffHeight', 'UpdateDebuffsPositionAndBuffHeight', 'UpdateDebuffsHeight', 'UpdateBuffsHeight'}) do
 			if self:IsHooked(UF, func) then self:Unhook(UF, func) end
@@ -902,14 +1160,14 @@ function mod:UpdateCenteredAuras(enable)
 	end
 end
 
-function mod:UpdateClickCancel(enable)
+function mod:UpdateClickCancel(db)
 	local function RMBCancelBuff(self, button)
 		button:HookScript('OnClick', function(self, button)
 			if button == 'RightButton' then CancelUnitBuff("player", self:GetID()) end
 		end)
 	end
 
-	if enable then
+	if not core.reload and db.ClickCancel.enabled then
 		if not self:IsHooked(_G['ElvUF_PlayerBuffs'], "PostCreateIcon") then self:SecureHook(_G['ElvUF_PlayerBuffs'], "PostCreateIcon", RMBCancelBuff) end
 	else
 		if self:IsHooked(_G['ElvUF_PlayerBuffs'], "PostCreateIcon") then self:Unhook(_G['ElvUF_PlayerBuffs'], "PostCreateIcon") end
@@ -1047,11 +1305,11 @@ function mod:UpdatePostUpdateAura(database, enable)
 			end
 		end
 		if not self:IsHooked(UF, "PostUpdateAura") then self:SecureHook(UF, "PostUpdateAura", self.PostUpdateAura) end
-		self.initialized = true
-	elseif self.initialized then
+		self.initialized['highlights'] = true
+	elseif self.initialized['highlights'] then
 		if self:IsHooked(UF, "PostUpdateAura") then self:Unhook(UF, "PostUpdateAura") end
 	end
-	if not self.initialized then return end
+	if not self.initialized['highlights'] then return end
 
 	for _, frame in ipairs(core:AggregateUnitFrames()) do
 		for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
@@ -1074,12 +1332,13 @@ end
 
 function mod:Toggle(db)
 	if core.reload then
-		self:UpdateCenteredAuras(false)
-		self:UpdateClickCancel(false)
+		self:UpdateCenteredAuras(db)
+		self:UpdateClickCancel(db)
 		self:UpdatePostUpdateAura(db, false)
 	else
-		self:UpdateCenteredAuras(db.CenteredAuras.enabled)
-		self:UpdateClickCancel(db.ClickCancel.enabled)
+		self:UpdateSortMethods(db)
+		self:UpdateCenteredAuras(db)
+		self:UpdateClickCancel(db)
 		local enabled = false
 		if not core.reload then
 			for _, subMod in pairs({'TypeBorders', 'SaturatedDebuffs'}) do

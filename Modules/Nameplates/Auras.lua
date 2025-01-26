@@ -11,7 +11,7 @@ local iconPositions = {}
 local pairs, ipairs, unpack, type, tonumber, tostring = pairs, ipairs, unpack, type, tonumber, tostring
 local tinsert, tsort, twipe = table.insert, table.sort, table.wipe
 local floor, ceil, min, max, abs = math.floor, math.ceil, math.min, math.max, math.abs
-local find, gmatch, match, gsub, format = string.find, string.gmatch, string.match, string.gsub, string.format
+local find, gmatch, match, gsub, format, split = string.find, string.gmatch, string.match, string.gsub, string.format, string.split
 local GetTime, DebuffTypeColor, UnitCanAttack, GetSpellInfo, GetSpellLink, CreateFrame = GetTime, DebuffTypeColor, UnitCanAttack, GetSpellInfo, GetSpellLink, CreateFrame
 
 local dispellList, purgeList = core.DispellList[E.myclass], core.PurgeList[E.myclass]
@@ -24,14 +24,12 @@ local directionProperties = {
 		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
 		framePoint = 'BOTTOM',
-		growthX = 1,
 	},
 	["TOP"] = {
 		isVertical = true,
 		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
 		framePoint = 'BOTTOM',
-		growthX = 1,
 	},
 	["BOTTOM"] = {
 		isVertical = true,
@@ -39,14 +37,12 @@ local directionProperties = {
 		firstInRowPoint = 'TOP',
 		subsequentPoint = 'TOPLEFT',
 		framePoint = 'TOP',
-		growthX = 1,
 	},
 	["LEFT"] = {
 		isVertical = false,
 		firstInRowPoint = 'RIGHT',
 		subsequentPoint = 'TOPRIGHT',
 		framePoint = 'RIGHT',
-		growthX = 1,
 	},
 	["RIGHT"] = {
 		isVertical = false,
@@ -54,21 +50,18 @@ local directionProperties = {
 		firstInRowPoint = 'LEFT',
 		subsequentPoint = 'TOPLEFT',
 		framePoint = 'LEFT',
-		growthX = 1,
 	},
 	["TOPLEFT"] = {
 		isVertical = true,
 		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
 		framePoint = 'BOTTOM',
-		growthX = 1,
 	},
 	["TOPRIGHT"] = {
 		isVertical = true,
 		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
 		framePoint = 'BOTTOM',
-		growthX = -1,
 	},
 	["BOTTOMLEFT"] = {
 		isVertical = true,
@@ -76,7 +69,6 @@ local directionProperties = {
 		firstInRowPoint = 'TOP',
 		subsequentPoint = 'TOPLEFT',
 		framePoint = 'TOP',
-		growthX = 1,
 	},
 	["BOTTOMRIGHT"] = {
 		isVertical = true,
@@ -84,8 +76,13 @@ local directionProperties = {
 		firstInRowPoint = 'TOP',
 		subsequentPoint = 'TOPLEFT',
 		framePoint = 'TOP',
-		growthX = -1,
 	}
+}
+
+local funcMap = {
+	["UpdateTime"] = 'AnimateFadeOut',
+	["UpdateElement_Auras"] = 'CenteredAuras, SortMethods',
+	["SetAura"] = 'TypeBorders, Highlights, CooldownDisable',
 }
 
 
@@ -112,15 +109,119 @@ local function updateFilters(db)
 	end
 end
 
-local function cachePositions(disable)
-	if disable then
+local function cachePositions(db)
+    for _, unitType in ipairs({"FRIENDLY_PLAYER", "ENEMY_PLAYER", "FRIENDLY_NPC", "ENEMY_NPC"}) do
+        iconPositions[unitType] = {}
+        for _, auraType in ipairs({"buffs", "debuffs"}) do
+            iconPositions[unitType][auraType] = { positions = {}, sizes = {} }
+			local data = NP.db.units[unitType][auraType]
+			local cache = iconPositions[unitType][auraType]
+
+			if db.CenteredAuras.enabled then
+				local anchorPoint = data.anchorPoint
+				local points = directionProperties[anchorPoint]
+				local isVertical = points.isVertical
+				local isReverse = points.isReverse
+				local firstInRowPoint = points.firstInRowPoint
+				local subsequentPoint = points.subsequentPoint
+				local framePoint = points.framePoint
+				local growthX = (data.growthX == "LEFT" and -1) or 1
+				local growthY = (data.growthY == "DOWN" and -1) or 1
+				local offset, spacing, perRow = data.size + data.spacing, data.spacing, data.perrow
+
+				for numElements = 1, perRow * data.numrows do
+					cache.positions[numElements] = {}
+					local lastAnchor = nil
+
+					for i = 1, numElements do
+						if i == (perRow * floor((i-1) / perRow) + 1) then
+							local numOtherRow = min(perRow, (numElements - (perRow * floor((i-1) / perRow))))
+							local OtherRowSize = (numOtherRow * offset)
+							local xOffset = (isVertical and -(OtherRowSize - offset) / 2
+														or ((isReverse and 1 or -1) * offset * floor((i-1) / perRow))) * growthX
+							local yOffset = (isVertical and ((isReverse and -1 or 1) * offset * floor((i-1) / perRow))
+														or -(OtherRowSize - offset) / 2) * growthY
+
+							cache.positions[numElements][i] = {
+								point = firstInRowPoint,
+								firstInRow = true,
+								relativeTo = framePoint,
+								xOffset = xOffset,
+								yOffset = yOffset
+							}
+						else
+							local xOffset = (isVertical and offset or 0) * growthX
+							local yOffset = (isVertical and 0 or offset) * growthY
+
+							cache.positions[numElements][i] = {
+								point = subsequentPoint,
+								anchor = lastAnchor,
+								relativeTo = subsequentPoint,
+								xOffset = xOffset,
+								yOffset = yOffset
+							}
+						end
+						lastAnchor = i
+					end
+
+					local numRows = ceil(numElements/perRow)
+					local width = max(offset, offset * min(perRow, numElements) - spacing)
+					local height = max(offset, offset * numRows - spacing)
+
+					cache.sizes[numElements] = {
+						isVertical and width or height,
+						isVertical and height or width
+					}
+				end
+			else
+				local size = data.size + data.spacing
+				local anchor = E.InversePoints[data.anchorPoint]
+				local growthx = (data.growthX == "LEFT" and -1) or 1
+				local growthy = (data.growthY == "DOWN" and -1) or 1
+				local cols = data.perrow
+				local maxWidth = cols * size - data.spacing
+				local maxHeight = data.numrows * size - data.spacing
+
+				for numElements = 1, cols * data.numrows do
+					cache.positions[numElements] = {}
+
+					for i = 1, numElements do
+						cache.positions[numElements][i] = {
+							point = anchor,
+							relativeTo = anchor,
+							xOffset = ((i - 1) % cols) * size * growthx,
+							yOffset = (floor((i - 1) / cols)) * size * growthy
+						}
+					end
+					cache.sizes[numElements] = {maxWidth, maxHeight}
+				end
+			end
+			if db.SortMethods.enabled and data.filters then
+				cache.filterPriority = {}
+				for i, filter in ipairs({split(",", data.filters.priority)}) do
+					cache.filterPriority[filter] = i
+				end
+				cache.sortDirection = db.SortMethods.types[unitType][auraType].sortDirection
+				cache.sortMethod = db.SortMethods.types[unitType][auraType].sortMethod
+			end
+        end
+    end
+	if core.reload or (not db.CenteredAuras.enabled and not db.SortMethods.enabled) then
 		if mod.ishooked then
 			if E.Options and E.Options.args.nameplate then
 				for _, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
 												["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
-					for _, auraType in ipairs({"buffsGroup", "debuffsGroup"}) do
-						if mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraType], "set") then
-							mod:Unhook(E.Options.args.nameplate.args[unitGroup].args[auraType], "set")
+					for _, auraGroup in ipairs({"buffsGroup", "debuffsGroup"}) do
+						if mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set") then
+							mod:Unhook(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set")
+						end
+						if mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set") then
+							mod:Unhook(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set")
+						end
+						for _, t in pairs(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup.args) do
+							if type(t) == 'table' and t.set and mod:IsHooked(t, "set") then
+								mod:Unhook(t, "set")
+							end
 						end
 					end
 				end
@@ -129,69 +230,7 @@ local function cachePositions(disable)
 			end
 			mod.ishooked = false
 		end
-		return
-	end
-    for _, unitType in ipairs({"FRIENDLY_PLAYER", "ENEMY_PLAYER", "FRIENDLY_NPC", "ENEMY_NPC"}) do
-        iconPositions[unitType] = {}
-        for _, auraType in ipairs({"buffs", "debuffs"}) do
-            iconPositions[unitType][auraType] = { positions = {}, sizes = {} }
-
-            local cache = iconPositions[unitType][auraType]
-            local data = NP.db.units[unitType][auraType]
-            local anchorPoint = data.anchorPoint
-            local points = directionProperties[anchorPoint]
-            local isVertical = points.isVertical
-            local isReverse = points.isReverse
-            local firstInRowPoint = points.firstInRowPoint
-            local subsequentPoint = points.subsequentPoint
-            local framePoint = points.framePoint
-            local growthX = points.growthX
-            local offset, spacing, perRow = data.size + data.spacing, data.spacing, data.perrow
-
-            for numElements = 1, perRow * data.numrows do
-                cache.positions[numElements] = {}
-                local lastAnchor = nil
-
-                for i = 1, numElements do
-                    if i == (perRow * floor((i-1) / perRow) + 1) then
-                        local numOtherRow = min(perRow, (numElements - (perRow * floor((i-1) / perRow))))
-                        local OtherRowSize = (numOtherRow * offset)
-                        local xOffset = (isVertical and -(OtherRowSize - offset) / 2 or ((isReverse and 1 or -1) * offset * floor((i-1) / perRow))) * growthX
-                        local yOffset = isVertical and ((isReverse and -1 or 1) * offset * floor((i-1) / perRow)) or -(OtherRowSize - offset) / 2
-
-                        cache.positions[numElements][i] = {
-                            point = firstInRowPoint,
-                            firstInRow = true,
-                            relativeTo = framePoint,
-                            xOffset = xOffset,
-                            yOffset = yOffset
-                        }
-                    else
-                        local xOffset = (isVertical and offset or 0) * growthX
-                        local yOffset = isVertical and 0 or offset
-
-                        cache.positions[numElements][i] = {
-                            point = subsequentPoint,
-                            anchor = lastAnchor,
-                            relativeTo = subsequentPoint,
-                            xOffset = xOffset,
-                            yOffset = yOffset
-                        }
-                    end
-                    lastAnchor = i
-                end
-
-                local numRows = ceil(numElements/perRow)
-                local width = max(offset, offset * min(perRow, numElements) - spacing)
-                local height = max(offset, offset * numRows - spacing)
-                cache.sizes[numElements] = {
-                    isVertical and width or height,
-                    isVertical and height or width
-                }
-            end
-        end
-    end
-	if not mod.ishooked then
+	elseif not mod.ishooked then
 		if E.Options and E.Options.args.nameplate then
 			for unitType, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
 											["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
@@ -199,9 +238,25 @@ local function cachePositions(disable)
 					if not mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set") then
 						mod:RawHook(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set", function(info, value)
 							E.db.nameplates.units[unitType][auraType][info[#info]] = value
-							cachePositions()
+							cachePositions(db)
 							mod.hooks[E.Options.args.nameplate.args[unitGroup].args[auraGroup]].set(info, value)
 						end)
+					end
+					if db.SortMethods.enabled then
+						if not mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set") then
+							mod:SecureHook(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set", function()
+								cachePositions(db)
+								NP:ConfigureAll()
+							end)
+						end
+						for _, t in pairs(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup.args) do
+							if type(t) == 'table' and t.set and not mod:IsHooked(t, "set") then
+								mod:SecureHook(t, "set", function()
+									cachePositions(db)
+									NP:ConfigureAll()
+								end)
+							end
+						end
 					end
 				end
 			end
@@ -214,9 +269,25 @@ local function cachePositions(disable)
 							if not mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set") then
 								mod:RawHook(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set", function(info, value)
 									E.db.nameplates.units[unitType][auraType][info[#info]] = value
-									cachePositions()
+									cachePositions(db)
 									mod.hooks[E.Options.args.nameplate.args[unitGroup].args[auraGroup]].set(info, value)
 								end)
+							end
+							if db.SortMethods.enabled then
+								if not mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set") then
+									mod:SecureHook(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set", function()
+										cachePositions(db)
+										NP:ConfigureAll()
+									end)
+								end
+								for _, t in pairs(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup.args) do
+									if type(t) == 'table' and t.set and not mod:IsHooked(t, "set") then
+										mod:SecureHook(t, "set", function()
+											cachePositions(db)
+											NP:ConfigureAll()
+										end)
+									end
+								end
 							end
 						end
 					end
@@ -227,13 +298,6 @@ local function cachePositions(disable)
 		mod.ishooked = true
 	end
 end
-
-local funcMap = {
-	["UpdateTime"] = 'AnimateFadeOut',
-	["UpdateElement_Auras"] = 'CenteredAuras',
-	["Update_AurasPosition"] = 'CenteredAuras',
-	["SetAura"] = 'TypeBorders, Highlights, CooldownDisable',
-}
 
 local function updateVisiblePlates(mod_db)
 	for plate in pairs(NP.VisiblePlates) do
@@ -264,7 +328,92 @@ local function updateVisiblePlates(mod_db)
 end
 
 
+local function SortAurasByTime(a, b, sortDirection)
+	local aTime = a.expiration or -1
+	local bTime = b.expiration or -1
+	if sortDirection == "DESCENDING" then
+		return aTime < bTime
+	else
+		return aTime > bTime
+	end
+end
+local function SortAurasByName(a, b, sortDirection)
+	local aName = a.spell or ""
+	local bName = b.spell or ""
+	if sortDirection == "DESCENDING" then
+		return aName < bName
+	else
+		return aName > bName
+	end
+end
+local function SortAurasByDuration(a, b, sortDirection)
+	local aTime = a.duration or -1
+	local bTime = b.duration or -1
+	if sortDirection == "DESCENDING" then
+		return aTime < bTime
+	else
+		return aTime > bTime
+	end
+end
+local function SortAurasByCaster(a, b, sortDirection)
+	local aPlayer = a.isPlayer or false
+	local bPlayer = b.isPlayer or false
+	if sortDirection == "DESCENDING" then
+		return (aPlayer and not bPlayer)
+	else
+		return (not aPlayer and bPlayer)
+	end
+end
+
+
 P["Extras"]["nameplates"][modName] = {
+	["SortMethods"] = {
+		["enabled"] = false,
+		["selectedType"] = "ENEMY_NPC",
+		["selectedAuraType"] = "buffs",
+		["types"] = {
+			["ENEMY_NPC"] = {
+				["buffs"] = {
+					["sortDirection"] = "DESCENDING",
+					["sortMethod"] = "TIME_REMAINING",
+				},
+				["debuffs"] = {
+					["sortDirection"] = "DESCENDING",
+					["sortMethod"] = "TIME_REMAINING",
+				},
+			},
+			["ENEMY_PLAYER"] = {
+				["buffs"] = {
+					["sortDirection"] = "DESCENDING",
+					["sortMethod"] = "TIME_REMAINING",
+				},
+				["debuffs"] = {
+					["sortDirection"] = "DESCENDING",
+					["sortMethod"] = "TIME_REMAINING",
+				},
+			},
+			["FRIENDLY_NPC"] = {
+				["buffs"] = {
+					["sortDirection"] = "DESCENDING",
+					["sortMethod"] = "TIME_REMAINING",
+				},
+				["debuffs"] = {
+					["sortDirection"] = "DESCENDING",
+					["sortMethod"] = "TIME_REMAINING",
+				},
+			},
+			["FRIENDLY_PLAYER"] = {
+				["buffs"] = {
+					["sortDirection"] = "DESCENDING",
+					["sortMethod"] = "TIME_REMAINING",
+				},
+				["debuffs"] = {
+					["sortDirection"] = "DESCENDING",
+					["sortMethod"] = "TIME_REMAINING",
+				},
+			},
+		},
+	},
 	["CenteredAuras"] = {
 		["enabled"] = false,
 	},
@@ -305,6 +454,8 @@ P["Extras"]["nameplates"][modName] = {
 }
 
 function mod:LoadConfig(db)
+	local function selectedSortType() return db.SortMethods.selectedType end
+	local function selectedSortAuraType() return db.SortMethods.selectedAuraType end
 	local function selectedType() return db.Highlights.selectedType or "FRIENDLY" end
 	local function selectedSpellorFilter() return db.Highlights.types[selectedType()].selected or "GLOBAL" end
 	local function getHighlightSettings(selected, spellOrFilter)
@@ -634,6 +785,89 @@ function mod:LoadConfig(db)
 					},
 				},
 			},
+			SortMethods = {
+				type = "group",
+				name = L["Sort by Filter"],
+				guiInline = true,
+				args = {
+					enabledSortMethods = {
+						order = 1,
+						type = "toggle",
+						width = "full",
+						name = core.pluginColor..L["Enable"],
+						desc = L["Makes aura sorting abide filter priorities."],
+					},
+					selectedSortType = {
+						order = 2,
+						type = "select",
+						name = L["Select Type"],
+						desc = "",
+						get = function() return db.SortMethods.selectedType end,
+						set = function(_, value) db.SortMethods.selectedType = value end,
+						values = function()
+							return {
+								["ENEMY_NPC"] = L["ENEMY_NPC"],
+								["ENEMY_PLAYER"] = L["ENEMY_PLAYER"],
+								["FRIENDLY_NPC"] = L["FRIENDLY_NPC"],
+								["FRIENDLY_PLAYER"] = L["FRIENDLY_PLAYER"],
+							}
+						end,
+						disabled = function() return not db.SortMethods.enabled end,
+					},
+					selectedAuraType = {
+						order = 3,
+						type = "select",
+						name = L["Select Type"],
+						desc = "",
+						get = function() return db.SortMethods.selectedAuraType end,
+						set = function(_, value) db.SortMethods.selectedAuraType = value end,
+						values = {
+							["buffs"] = L["Buffs"],
+							["debuffs"] = L["Debuffs"],
+						},
+						disabled = function() return not db.SortMethods.enabled end,
+					},
+					sortMethod = {
+						order = 4,
+						type = "select",
+						name = function() return L["Sort By"] end,
+						desc = function() return L["Method to sort by."] end,
+						get = function() return db.SortMethods.types[selectedSortType()][selectedSortAuraType()].sortMethod end,
+						set = function(_, value)
+							db.SortMethods.types[selectedSortType()][selectedSortAuraType()].sortMethod = value
+							self:Toggle(db)
+						end,
+						values = function()
+							return {
+								["TIME_REMAINING"] = L["Time Remaining"],
+								["DURATION"] = L["Duration"],
+								["NAME"] = L["NAME"],
+								["INDEX"] = L["Index"],
+								["PLAYER"] = L["PLAYER"]
+							}
+						end,
+						disabled = function() return not db.SortMethods.enabled end,
+					},
+					sortDirection = {
+						order = 5,
+						type = "select",
+						name = function() return L["Sort Direction"] end,
+						desc = function() return L["Ascending or Descending order."] end,
+						get = function() return db.SortMethods.types[selectedSortType()][selectedSortAuraType()].sortDirection end,
+						set = function(_, value)
+							db.SortMethods.types[selectedSortType()][selectedSortAuraType()].sortDirection = value
+							self:Toggle(db)
+						end,
+						values = function()
+							return {
+								["ASCENDING"] = L["Ascending"],
+								["DESCENDING"] = L["Descending"]
+							}
+						end,
+						disabled = function() return not db.SortMethods.enabled end,
+					},
+				},
+			},
 			CooldownDisable = {
 				type = "group",
 				name = L["Cooldown Disable"],
@@ -683,8 +917,116 @@ function mod:Update_AurasPosition(frame)
 
 	if numElements and numElements > 0 then
 		local data = iconPositions[frame:GetParent().UnitType][frame.type]
-		local points = data.positions[numElements]
+		local sortDirection = data.sortDirection
 
+		if sortDirection then
+			local sortMethod = data.sortMethod
+			local filterOrder = data.filterPriority
+
+			if filterOrder then
+				local buttonFilters = {}
+				local filters = E.global.unitframe.aurafilters
+
+				for i = 1, numElements do
+					local button = frame[i]
+					if button then
+						local filterIndex
+						local name = button.name
+						local spellID = button.spellID
+						local isPlayer = button.isPlayer
+
+						for filterName, index in pairs(filterOrder) do
+							local filter = filters[filterName]
+							if filter then
+								local filterType = filter.type
+								local spellList = filter.spells
+								local spell = spellList and (spellList[spellID] or spellList[name])
+
+								if filterType and (filterType == "Whitelist") and (spell and spell.enable) then
+									filterIndex = index
+									break
+								end
+							elseif filterName == "Personal" and isPlayer then
+								filterIndex = index
+								break
+							elseif filterName == "nonPersonal" and (not isPlayer) then
+								filterIndex = index
+								break
+							end
+						end
+						buttonFilters[button] = filterIndex or 99999
+					end
+				end
+				tsort(frame, function(a,b)
+					if not a:IsShown() then
+						return false
+					elseif not b:IsShown() then
+						return true
+					end
+
+					local aFilter = buttonFilters[a] or 0
+					local bFilter = buttonFilters[b] or 0
+
+					if aFilter ~= bFilter then
+						return aFilter < bFilter
+					elseif sortMethod == "TIME_REMAINING" then
+						return SortAurasByTime(a, b, sortDirection)
+					elseif sortMethod == "NAME" then
+						return SortAurasByName(a, b, sortDirection)
+					elseif sortMethod == "DURATION" then
+						return SortAurasByDuration(a, b, sortDirection)
+					elseif sortMethod == "PLAYER" then
+						return SortAurasByCaster(a, b, sortDirection)
+					end
+				end)
+			elseif sortMethod == "TIME_REMAINING" then
+				tsort(frame, function(a,b)
+					if not a:IsShown() then
+						return false
+					elseif not b:IsShown() then
+						return true
+					end
+					return SortAurasByTime(a, b, sortDirection)
+				end)
+			elseif sortMethod == "NAME" then
+				tsort(frame, function(a,b)
+					if not a:IsShown() then
+						return false
+					elseif not b:IsShown() then
+						return true
+					end
+					return SortAurasByName(a, b, sortDirection)
+				end)
+			elseif sortMethod == "DURATION" then
+				tsort(frame, function(a,b)
+					if not a:IsShown() then
+						return false
+					elseif not b:IsShown() then
+						return true
+					end
+					return SortAurasByDuration(a, b, sortDirection)
+				end)
+			elseif sortMethod == "PLAYER" then
+				tsort(frame, function(a,b)
+					if not a:IsShown() then
+						return false
+					elseif not b:IsShown() then
+						return true
+					end
+					return SortAurasByCaster(a, b, sortDirection)
+				end)
+			end
+		end
+		local el = 0
+		for i = 1, numElements do
+			local child = frame[i]
+			if child then
+				if child:IsShown() then
+					el = el + 1
+				end
+			end
+		end
+		local points = data.positions[numElements]
 		for i = 1, numElements do
 			local child = frame[i]
 			if child then
@@ -701,17 +1043,12 @@ end
 function mod:UpdateElement_Auras(frame)
 	if not frame.Health:IsShown() then return end
 
-	local db = NP.db.units[frame.UnitType].buffs
-	if db.enable and not (frame.UnitTrivial and NP.db.trivial) then
-		if frame.Buffs.visibleBuffs and frame.Buffs.visibleBuffs > 0 then
-			mod:Update_AurasPosition(frame.Buffs)
-		end
+	local db = NP.db.units[frame.UnitType]
+	if db.buffs.enable then
+		mod:Update_AurasPosition(frame.Buffs)
 	end
-	db = NP.db.units[frame.UnitType].debuffs
-	if db.enable and not (frame.UnitTrivial and NP.db.trivial) then
-		if frame.Debuffs.visibleDebuffs and frame.Debuffs.visibleDebuffs > 0 then
-			mod:Update_AurasPosition(frame.Debuffs)
-		end
+	if db.debuffs.enable then
+		mod:Update_AurasPosition(frame.Debuffs)
 	end
 end
 
@@ -863,10 +1200,10 @@ function mod:Toggle(db)
 			elseif config.enabled then
 				toggles[func] = not core.reload
 			end
-			if setting == 'CenteredAuras' then
-				cachePositions(not config.enabled)
-			end
 		end
+	end
+	if next(toggles) then
+		cachePositions(db)
 	end
 	for func, enable in pairs(toggles) do
 		if enable then

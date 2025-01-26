@@ -924,3 +924,5 @@ L["TierText"] = true
 L["Select Item"] = true
 L["Add Item (ID)"] = true
 L["Item Text"] = true
+L["Sort by Filter"] = true
+L["Makes aura sorting abide filter priorities."] = true
