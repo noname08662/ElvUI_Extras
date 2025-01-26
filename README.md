@@ -45,6 +45,7 @@ What's inside:
 		  no fill textures;
 		  no coloring the aura borders;
 		  centered auras (that is, growing side-wise);
+		  aura sorting options;
 	(Classification) - configurable class and classification textures;
 	(Cooldowns) - icicle and alike;
 	(GuildsTitles) - self-explanatory;
@@ -61,6 +62,7 @@ What's inside:
 		  saturated debuffs at arenas;
 		  no borders;
 		  centered auras;
+		  filters order based aura sorting;
 	(Classification) - same as above;
 	(ColorFilter) - flexible coloring style filter;
 	(Cooldowns) - same as above;
