@@ -1151,7 +1151,7 @@ function mod:SetAura(frame, guid, index, filter, isDebuff, visible)
 		if not db.enabled then return end
 
 		local dtype = button.dtype
-		local dbSpell = db.spellList[spellID] or db.spellList[name]
+		local dbSpell = db.spellList[spellID]
 		local unstableAffliction = GetSpellInfo(30108)
 		local vampiricTouch = GetSpellInfo(34914)
 		if dbSpell then
