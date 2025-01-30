@@ -60,7 +60,7 @@ scanTool:SetOwner(WorldFrame, "ANCHOR_NONE")
 local band = bit.band
 local _G, pairs, ipairs, select, unpack, next = _G, pairs, ipairs, select, unpack, next
 local tonumber, tostring, loadstring, setfenv = tonumber, tostring, loadstring, setfenv
-local gsub, upper, match, find, format = string.gsub, string.upper, string.match, string.find, string.format
+local gsub, upper, match, find, format, trim = string.gsub, string.upper, string.match, string.find, string.format, string.trim
 local random, floor, min, ceil, abs = math.random, math.floor, math.min, math.ceil, math.abs
 local tinsert, tremove, tsort, twipe, tcontains = table.insert, table.remove, table.sort, table.wipe, tContains
 local GetTime, CooldownFrame_SetTimer = GetTime, CooldownFrame_SetTimer
@@ -619,7 +619,7 @@ P["Extras"]["unitframes"][modName] = {
 function mod:LoadConfig(db)
 	local function selectedUnit() return db.selectedUnit end
 	local function selectedType() return db.selectedType end
-	local function selectedSpell() return selectedType() and tonumber(db[selectedType()].selectedSpell) or "" end
+	local function selectedSpell() return selectedType() and tonumber(db[selectedType()].selectedSpell) or db[selectedType()].selectedSpell or "" end
 	local function selectedTypeData()
 		return core:getSelected("unitframes", modName, format("[%s]", selectedType() or ""), "FRIENDLY_PLAYER")
 	end
@@ -1053,20 +1053,24 @@ function mod:LoadConfig(db)
 					addSpell = {
 						order = 1,
 						type = "input",
-						name = L["Add Spell (by ID)"],
-						desc = L["Format: 'spellID cooldown time', e.g. 42292 120"],
+						name = L["Add Spell"],
+						desc = L["Format: 'spellID cooldown time',\ne.g. 42292 120\nor\nSpellName 20"],
 						get = function() return "" end,
 						set = function(_, value)
-							local spellID, cooldownTime = match(value, '%D*(%d+)%D*(%d*)')
-							if spellID and GetSpellInfo(spellID) then
+							local spellID, cooldownTime = trim(match(value, '(.*)%s+(%d*)'))
+							if spellID then
 								cooldownTime = tonumber(cooldownTime) or LAI.spellDuration[spellID]
 								if not cooldownTime then return end
-								selectedUnitData().spellList[tonumber(spellID)] = cooldownTime
-								allSpells[tonumber(spellID)] = cooldownTime
+								selectedUnitData().spellList[tonumber(spellID) or spellID] = cooldownTime
+								allSpells[tonumber(spellID) or spellID] = cooldownTime
+								local string
 								local _, _, icon = GetSpellInfo(spellID)
-								local link = GetSpellLink(spellID)
-								icon = gsub(icon, '\124', '\124\124')
-								local string = '\124T' .. icon .. ':16:16\124t' .. link
+								if icon then
+									icon = gsub(icon or "", '\124', '\124\124')
+									string = '\124T' .. icon .. ':16:16\124t' .. GetSpellLink(spellID)
+								else
+									string = format("[%s]", spellID)
+								end
 								core:print('ADDED', string)
 							end
 						end,
@@ -1079,11 +1083,16 @@ function mod:LoadConfig(db)
 						func = function()
 							local spellID = selectedSpell()
 							selectedUnitData().spellList[spellID] = nil
+							db[selectedType()].selectedSpell = ""
 							allSpells[spellID] = nil
+							local string
 							local _, _, icon = GetSpellInfo(spellID)
-							local link = GetSpellLink(spellID)
-							icon = gsub(icon, '\124', '\124\124')
-							local string = '\124T' .. icon .. ':16:16\124t' .. link
+							if icon then
+								icon = gsub(icon or "", '\124', '\124\124')
+								string = '\124T' .. icon .. ':16:16\124t' .. GetSpellLink(spellID)
+							else
+								string = format("[%s]", spellID)
+							end
 							core:print('REMOVED', string)
 						end,
 						disabled = function() return not selectedUnitData().spellList[selectedSpell()] end,
@@ -1097,7 +1106,11 @@ function mod:LoadConfig(db)
 						get = function() return "" end,
 						set = function(_, value)
 							if core.SpellLists[value] then
-								selectedUnitData().spellList = CopyTable(core.SpellLists[value])
+								local list = selectedUnitData().spellList
+								twipe(list)
+								for id, cdTime in pairs(core.SpellLists[value]) do
+									list[id == 47860 and id or GetSpellInfo(id)] = cdTime
+								end
 							else
 								local unit, unitType = match(value, "(%l+)(.+)")
 								selectedUnitData().spellList = CopyTable(db[unitType].units[unit].spellList)
@@ -1159,7 +1172,7 @@ function mod:LoadConfig(db)
 						width = "double",
 						name = L["Select Spell"],
 						desc = "",
-						get = function(info) return selectedUnitData()[info[#info]] end,
+						get = function() return selectedSpell() end,
 						set = function(info, value)
 							selectedTypeData()[info[#info]] = value
 							if not selectedTypeData().highlightedSpells[selectedSpell()] then
@@ -1169,10 +1182,16 @@ function mod:LoadConfig(db)
 						values = function()
 							local values = {}
 							for id in pairs(selectedUnitData().spellList) do
-								local name = GetSpellInfo(id) or ""
-								local icon = select(3, GetSpellInfo(id))
-								icon = icon and "|T"..icon..":0|t" or ""
-								values[id] = format("%s %s (%s)", icon, name, id)
+								if type(id) == 'number' then
+									local name = GetSpellInfo(id) or ""
+									local icon = select(3, GetSpellInfo(id))
+									icon = icon and "|T"..icon..":0|t" or ""
+									values[id] = format("%s %s (%s)", icon, name, id)
+								else
+									local icon = select(3, GetSpellInfo(id))
+									icon = icon and "|T"..icon..":0|t" or ""
+									values[id] = format("%s %s", icon, id)
+								end
 							end
 							return values
 						end,
@@ -1182,7 +1201,17 @@ function mod:LoadConfig(db)
 								tinsert(sortedKeys, id)
 							end
 							tsort(sortedKeys, function(a, b)
-								return (GetSpellInfo(a) or "") < (GetSpellInfo(b) or "")
+								local nameA = GetSpellInfo(a)
+								local nameB = GetSpellInfo(b)
+								if not nameA and not nameB then
+									return a < b
+								elseif not nameB then
+									return true
+								elseif not nameA then
+									return false
+								else
+									return nameA < nameB
+								end
 							end)
 							return sortedKeys
 						end,
@@ -1226,7 +1255,9 @@ function mod:LoadConfig(db)
 		},
 	}
 	if not next(db['FRIENDLY_PLAYER'].units.target.spellList) then
-		db['FRIENDLY_PLAYER'].units.target.spellList = CopyTable(core.SpellLists["DEFAULTS"])
+		for id, cdTime in pairs(core.SpellLists["DEFAULTS"]) do
+			db['FRIENDLY_PLAYER'].units.target.spellList[id == 47860 and id or GetSpellInfo(id)] = cdTime
+		end
 	end
 	if not db['FRIENDLY_PLAYER'].units.player then
 		for _, unitframeType in ipairs({'player', 'focus', 'raid', 'raid40', 'party'}) do
@@ -1247,7 +1278,7 @@ local function combatLogEvent(_, ...)
     local _, eventType, _, sourceName, sourceFlags, _, _, _, spellID = ...
 
     if eventType == "SPELL_CAST_SUCCESS" and sourceName then
-		local cdTime = allSpells[spellID]
+		local cdTime = allSpells[spellID] or allSpells[GetSpellInfo(spellID)]
 		local isPlayer = band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
 		if cdTime and (isPlayer or band(sourceFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER) then
 			local startTime = GetTime()
@@ -1274,12 +1305,14 @@ function mod:UpdateCooldowns(playerName, spellID, startTime, endTime, isPlayer)
 			end
 		end
 	end
+	local name, _, icon = GetSpellInfo(spellID)
 
     tinsert(activeCds, {
 						spellID = spellID,
+						spellName = name,
 						startTime = startTime,
 						endTime = endTime,
-						icon = select(3, GetSpellInfo(spellID)),
+						icon = icon,
 						isTrinket = trinkets[spellID]
 					})
     self:UpdateFrames(playerName, isPlayer, hash)
@@ -1373,7 +1406,7 @@ function mod:AttachCooldowns(frame, cooldowns)
 	local maxShown = db_icons.perRow * db_icons.maxRows
 
     for _, cd in ipairs(cooldowns) do
-		if db_spellList[cd.spellID] then
+		if db_spellList[cd.spellID] or db_spellList[cd.spellName] then
 			if shown >= maxShown then break end
 
 			local cdFrame = tracker.cooldowns[shown+1]
@@ -1442,9 +1475,11 @@ function mod:AttachCooldowns(frame, cooldowns)
 					end
 				end
 			end
+			local highlights = highlightedSpells[unitType]
 			cdFrame.endTime = endTime
 			cdFrame.startTime = startTime
 			cdFrame.cooldowns = cooldowns
+			cdFrame.highlight = highlights[cd.spellID] and highlights[cd.spellID] or highlights[cd.spellName]
 
 			cdFrame.texture:SetTexture(cd.icon)
 			cdFrame:SetScript("OnUpdate", onUpdates[unitType][frameType])
@@ -1464,7 +1499,6 @@ function mod:AttachCooldowns(frame, cooldowns)
 end
 
 function mod:RepositionIcons(tracker, shown, unitType, frameType)
-	local highlights = highlightedSpells[unitType]
 	local info = iconPositions[unitType][frameType][shown]
 	local iconPos = info.positions
 	local cooldowns = tracker.cooldowns
@@ -1476,8 +1510,8 @@ function mod:RepositionIcons(tracker, shown, unitType, frameType)
 		local position = iconPos[i]
 		cdFrame:Point(position.point, tracker, position.point, position.xOffset, position.yOffset)
 
-        local highlight = highlights[cdFrame.spellID]
-        if highlight and highlight.enabled then
+		local highlight = cdFrame.highlight
+        if highlight then
             cdFrame.shadow:SetOutside(cdFrame, highlight.size, highlight.size)
             cdFrame.shadow:SetBackdrop({edgeFile = edgeFile, edgeSize = E:Scale(highlight.size)})
             cdFrame.shadow:SetBackdropBorderColor(unpack(highlight.color))
@@ -1563,7 +1597,9 @@ function mod:SetupCooldowns(db, visibilityUpdate)
 
 		for _, unitType in ipairs({"FRIENDLY_PLAYER", "ENEMY_PLAYER"}) do
 			for spellID, info in pairs(db[unitType].highlightedSpells or {}) do
-				highlightedSpells[unitType][spellID] = info
+				if info.enabled then
+					highlightedSpells[unitType][spellID] = info
+				end
 			end
 		end
 		twipe(framelist)

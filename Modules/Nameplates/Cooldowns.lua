@@ -15,7 +15,7 @@ local band = bit.band
 local _G, pairs, ipairs, select, unpack, next = _G, pairs, ipairs, select, unpack, next
 local tonumber, tostring, loadstring, setfenv = tonumber, tostring, loadstring, setfenv
 local gsub, upper, match, find, format = string.gsub, string.upper, string.match, string.find, string.format
-local random, floor, min, ceil = math.random, math.floor, math.min, math.ceil
+local random, floor, min, ceil, abs = math.random, math.floor, math.min, math.ceil, math.abs
 local tinsert, tremove, tsort, twipe = table.insert, table.remove, table.sort, table.wipe
 local GetSpellInfo, GetSpellLink, GetTime = GetSpellInfo, GetSpellLink, GetTime
 local UnitIsPlayer, UnitExists, UnitName = UnitIsPlayer, UnitExists, UnitName
@@ -390,7 +390,9 @@ local function cache(db, visibilityUpdate)
 			if not visibilityUpdate then
 				twipe(highlightedSpells[unitType])
 				for spellID, info in pairs(type_db.highlightedSpells) do
-					highlightedSpells[unitType][spellID] = info
+					if info.enabled then
+						highlightedSpells[unitType][spellID] = info
+					end
 				end
 
 				local icons = type_db.icons
@@ -539,9 +541,12 @@ P["Extras"]["nameplates"][modName] = {
 
 function mod:LoadConfig(db)
 	local function selectedType() return db.selectedType end
-	local function selectedSpell() return selectedType() and tonumber(db[selectedType()].selectedSpell) or "" end
+	local function selectedSpell() return selectedType() and tonumber(db[selectedType()].selectedSpell) or db[selectedType()].selectedSpell or "" end
 	local function selectedTypeData()
 		return core:getSelected("nameplates", modName, format("[%s]", selectedType() or ""), "FRIENDLY_PLAYER")
+	end
+	local function highlightedSpellsData()
+		return core:getSelected("nameplates", modName, format("%s.highlightedSpells[%s]", selectedType(), selectedSpell()), "")
 	end
 	core.nameplates.args[modName] = {
 		type = "group",
@@ -945,18 +950,24 @@ function mod:LoadConfig(db)
 					addSpell = {
 						order = 1,
 						type = "input",
-						name = L["Add Spell (by ID)"],
-						desc = L["Format: 'spellID cooldown time', e.g. 42292 120"],
+						name = L["Add Spell"],
+						desc = L["Format: 'spellID cooldown time',\ne.g. 42292 120\nor\nSpellName 20"],
 						get = function() return "" end,
 						set = function(_, value)
-							local spellID, cooldownTime = match(value, '%D*(%d+)%D*(%d*)')
-							if spellID and GetSpellInfo(spellID) then
+							local spellID, cooldownTime = match(value, '(.*)%s+(%d*)')
+							if spellID then
 								cooldownTime = tonumber(cooldownTime) or LAI.spellDuration[spellID]
 								if not cooldownTime then return end
-								selectedTypeData().spellList[tonumber(spellID)] = cooldownTime
-								allSpells[tonumber(spellID)] = cooldownTime
+								selectedTypeData().spellList[tonumber(spellID) or spellID] = cooldownTime
+								allSpells[tonumber(spellID) or spellID] = cooldownTime
+								local string
 								local _, _, icon = GetSpellInfo(spellID)
-								local string = '\124T' .. gsub(icon, '\124', '\124\124') .. ':16:16\124t' .. GetSpellLink(spellID)
+								if icon then
+									icon = gsub(icon or "", '\124', '\124\124')
+									string = '\124T' .. icon .. ':16:16\124t' .. GetSpellLink(spellID)
+								else
+									string = format("[%s]", spellID)
+								end
 								core:print('ADDED', string)
 								NP:ForEachVisiblePlate("UpdateAllFrame", nil, true)
 							end
@@ -970,9 +981,16 @@ function mod:LoadConfig(db)
 						func = function()
 							local spellID = selectedSpell()
 							selectedTypeData().spellList[spellID] = nil
+							db[selectedType()].selectedSpell = ""
 							allSpells[spellID] = nil
+							local string
 							local _, _, icon = GetSpellInfo(spellID)
-							local string = '\124T' .. gsub(icon, '\124', '\124\124') .. ':16:16\124t' .. GetSpellLink(spellID)
+							if icon then
+								icon = gsub(icon or "", '\124', '\124\124')
+								string = '\124T' .. icon .. ':16:16\124t' .. GetSpellLink(spellID)
+							else
+								string = format("[%s]", spellID)
+							end
 							core:print('REMOVED', string)
 							NP:ForEachVisiblePlate("UpdateAllFrame", nil, true)
 						end,
@@ -986,7 +1004,11 @@ function mod:LoadConfig(db)
 						desc = "",
 						get = function() return "" end,
 						set = function(_, value)
-							selectedTypeData().spellList = CopyTable(core.SpellLists[value] or db[value].spellList)
+							local list = selectedTypeData().spellList
+							twipe(list)
+							for id, cdTime in pairs(core.SpellLists[value] or db[value].spellList) do
+								list[id == 47860 and id or GetSpellInfo(id)] = cdTime
+							end
 							cache(db)
 						end,
 						values = function()
@@ -1032,7 +1054,7 @@ function mod:LoadConfig(db)
 						width = "double",
 						name = L["Select Spell"],
 						desc = "",
-						get = function(info) return selectedTypeData()[info[#info]] end,
+						get = function() return selectedSpell() end,
 						set = function(info, value)
 							selectedTypeData()[info[#info]] = value
 							if not selectedTypeData().highlightedSpells[selectedSpell()] then
@@ -1044,9 +1066,16 @@ function mod:LoadConfig(db)
 						values = function()
 							local values = {}
 							for id in pairs(selectedTypeData().spellList) do
-								local name = GetSpellInfo(id) or ""
-								local icon = select(3, GetSpellInfo(id))
-								values[id] = format("%s %s (%s)", icon and "|T"..icon..":0|t" or "", name, id)
+								if type(id) == 'number' then
+									local name = GetSpellInfo(id) or ""
+									local icon = select(3, GetSpellInfo(id))
+									icon = icon and "|T"..icon..":0|t" or ""
+									values[id] = format("%s %s (%s)", icon, name, id)
+								else
+									local icon = select(3, GetSpellInfo(id))
+									icon = icon and "|T"..icon..":0|t" or ""
+									values[id] = format("%s %s", icon, id)
+								end
 							end
 							return values
 						end,
@@ -1056,7 +1085,17 @@ function mod:LoadConfig(db)
 								tinsert(sortedKeys, id)
 							end
 							tsort(sortedKeys, function(a, b)
-								return (GetSpellInfo(a) or "") < (GetSpellInfo(b) or "")
+								local nameA = GetSpellInfo(a)
+								local nameB = GetSpellInfo(b)
+								if not nameA and not nameB then
+									return a < b
+								elseif not nameB then
+									return true
+								elseif not nameA then
+									return false
+								else
+									return nameA < nameB
+								end
 							end)
 							return sortedKeys
 						end,
@@ -1067,15 +1106,12 @@ function mod:LoadConfig(db)
 						width = "full",
 						name = L["Shadow"],
 						desc = L["For the important stuff."],
-						get = function()
-							return selectedTypeData().highlightedSpells[selectedSpell()]
-								and selectedTypeData().highlightedSpells[selectedSpell()].enabled
-						end,
+						get = function() return selectedSpell() ~= "" and highlightedSpellsData().enabled end,
 						set = function(_, value)
-							selectedTypeData().highlightedSpells[selectedSpell()].enabled = value
+							highlightedSpellsData().enabled = value
 							NP:ForEachVisiblePlate("UpdateAllFrame", nil, true)
 						end,
-						disabled = function() return not (selectedTypeData().enabled and selectedSpell()) end,
+						disabled = function() return not selectedTypeData().enabled or selectedSpell() == "" end,
 					},
 					shadowSize = {
 						order = 6,
@@ -1083,18 +1119,14 @@ function mod:LoadConfig(db)
 						name = L["Shadow Size"],
 						desc = "",
 						min = 1, max = 12, step = 1,
-						get = function()
-							return selectedTypeData().highlightedSpells[selectedSpell()]
-								and selectedTypeData().highlightedSpells[selectedSpell()].size or 0
-						end,
+						get = function() return selectedSpell() ~= "" and highlightedSpellsData().size or 0 end,
 						set = function(_, value)
-							selectedTypeData().highlightedSpells[selectedSpell()].size = value
+							highlightedSpellsData().size = value
 							NP:ForEachVisiblePlate("UpdateAllFrame", nil, true)
 						end,
 						hidden = function()
-							return not selectedTypeData().enabled
-								or not selectedTypeData().highlightedSpells[selectedSpell()]
-								or not selectedTypeData().highlightedSpells[selectedSpell()].enabled end,
+							return not selectedTypeData().enabled or selectedSpell() == "" or not highlightedSpellsData().enabled
+						end,
 					},
 					shadowColor = {
 						order = 7,
@@ -1102,25 +1134,23 @@ function mod:LoadConfig(db)
 						hasAlpha = true,
 						name = L["Shadow Color"],
 						desc = "",
-						get = function()
-							return unpack(selectedTypeData().highlightedSpells[selectedSpell()]
-								and selectedTypeData().highlightedSpells[selectedSpell()].color or {})
-						end,
+						get = function() return unpack(selectedSpell() ~= "" and highlightedSpellsData().color or {}) end,
 						set = function(_, r, g, b, a)
-							selectedTypeData().highlightedSpells[selectedSpell()].color = { r, g, b, a }
+							highlightedSpellsData().color = {r, g, b, a}
 							NP:ForEachVisiblePlate("UpdateAllFrame", nil, true)
 						end,
 						hidden = function()
-							return not selectedTypeData().enabled
-								or not selectedTypeData().highlightedSpells[selectedSpell()]
-								or not selectedTypeData().highlightedSpells[selectedSpell()].enabled end,
+							return not selectedTypeData().enabled or selectedSpell() == "" or not highlightedSpellsData().enabled
+						end,
 					},
 				},
 			},
 		},
 	}
 	if not next(db['FRIENDLY_PLAYER'].spellList) then
-		db['FRIENDLY_PLAYER'].spellList = CopyTable(core.SpellLists["DEFAULTS"])
+		for id, cdTime in pairs(core.SpellLists["DEFAULTS"]) do
+			db['FRIENDLY_PLAYER'].spellList[id == 47860 and id or GetSpellInfo(id)] = cdTime
+		end
 	end
 	if not db['ENEMY_PLAYER'] then
 		db['ENEMY_PLAYER'] = CopyTable(db['FRIENDLY_PLAYER'])
@@ -1132,7 +1162,7 @@ local function combatLogEvent(_, ...)
     local _, eventType, _, sourceName, sourceFlags, _, _, _, spellID = ...
 
     if eventType == "SPELL_CAST_SUCCESS" and sourceName then
-		local cdTime = allSpells[spellID]
+		local cdTime = allSpells[spellID] or allSpells[GetSpellInfo(spellID)]
 		local isPlayer = band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
 		if cdTime and (isPlayer or band(sourceFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER) then
 			local startTime = GetTime()
@@ -1160,12 +1190,14 @@ function mod:UpdateCooldowns(playerName, spellID, startTime, endTime, isPlayer)
 			end
 		end
 	end
+	local name, _, icon = GetSpellInfo(spellID)
 
     tinsert(activeCds, {
 						spellID = spellID,
+						spellName = name,
 						startTime = startTime,
 						endTime = endTime,
-						icon = select(3, GetSpellInfo(spellID)),
+						icon = icon,
 						isTrinket = trinkets[spellID]
 					})
     self:UpdatePlates(playerName, isPlayer, hash)
@@ -1235,7 +1267,7 @@ function mod:AttachCooldowns(plate, cooldowns, unitType)
 	local maxShown = db_icons.perRow * db_icons.maxRows
 
     for _, cd in ipairs(cooldowns) do
-		if db_spellList[cd.spellID] then
+		if db_spellList[cd.spellID] or db_spellList[cd.spellName] then
 			if shown >= maxShown then break end
 
 			local cdFrame = tracker.cooldowns[shown+1]
@@ -1289,9 +1321,11 @@ function mod:AttachCooldowns(plate, cooldowns, unitType)
 					end
 				end
 			end
+			local highlights = highlightedSpells[unitType]
 			cdFrame.endTime = endTime
 			cdFrame.startTime = startTime
 			cdFrame.cooldowns = cooldowns
+			cdFrame.highlight = highlights[cd.spellID] and highlights[cd.spellID] or highlights[cd.spellName]
 
 			cdFrame.texture:SetTexture(cd.icon)
 			cdFrame:SetScript("OnUpdate", onUpdates[unitType])
@@ -1311,7 +1345,6 @@ function mod:AttachCooldowns(plate, cooldowns, unitType)
 end
 
 function mod:RepositionIcons(tracker, shown, unitType)
-	local highlights = highlightedSpells[unitType]
 	local info = iconPositions[unitType][shown]
 	local iconPos = info.positions
 	local cooldowns = tracker.cooldowns
@@ -1323,8 +1356,8 @@ function mod:RepositionIcons(tracker, shown, unitType)
 		local position = iconPos[i]
 		cdFrame:Point(position.point, tracker, position.point, position.xOffset, position.yOffset)
 
-        local highlight = highlights[cdFrame.spellID]
-        if highlight and highlight.enabled then
+		local highlight = cdFrame.highlight
+        if highlight then
             cdFrame.shadow:SetOutside(cdFrame, highlight.size, highlight.size)
             cdFrame.shadow:SetBackdrop({edgeFile = edgeFile, edgeSize = E:Scale(highlight.size)})
             cdFrame.shadow:SetBackdropBorderColor(unpack(highlight.color))

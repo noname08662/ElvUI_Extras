@@ -11,7 +11,7 @@ local iconPositions = {}
 local pairs, ipairs, unpack, type, tonumber, tostring = pairs, ipairs, unpack, type, tonumber, tostring
 local tinsert, tsort, twipe = table.insert, table.sort, table.wipe
 local floor, ceil, min, max, abs = math.floor, math.ceil, math.min, math.max, math.abs
-local find, gmatch, match, gsub, format, split = string.find, string.gmatch, string.match, string.gsub, string.format, string.split
+local find, gmatch, match, gsub, format, split, trim = string.find, string.gmatch, string.match, string.gsub, string.format, string.split, string.trim
 local GetTime, DebuffTypeColor, UnitCanAttack, GetSpellInfo, GetSpellLink, CreateFrame = GetTime, DebuffTypeColor, UnitCanAttack, GetSpellInfo, GetSpellLink, CreateFrame
 
 local dispellList, purgeList = core.DispellList[E.myclass], core.PurgeList[E.myclass]
@@ -527,7 +527,7 @@ function mod:LoadConfig(db)
 						desc = L["E.g. 42292"],
 						get = function() return "" end,
 						set = function(_, value)
-							local spellID = match(value, '%D*(%d+)%D*')
+							local spellID = trim(match(value, '%D*(%d+)%D*'))
 							if spellID and GetSpellInfo(spellID) then
 								db.Highlights.types[selectedType()].spellList[tonumber(spellID)] = {
 									["border"] = false,
@@ -1151,7 +1151,7 @@ function mod:SetAura(frame, guid, index, filter, isDebuff, visible)
 		if not db.enabled then return end
 
 		local dtype = button.dtype
-		local dbSpell = db.spellList[spellID]
+		local dbSpell = db.spellList[spellID] or db.spellList[name]
 		local unstableAffliction = GetSpellInfo(30108)
 		local vampiricTouch = GetSpellInfo(34914)
 		if dbSpell then
