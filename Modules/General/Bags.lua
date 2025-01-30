@@ -1589,6 +1589,8 @@ function mod:HandleSortButton(f, enable, isBank)
 end
 
 function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpacing)
+	if isBank and not self.BankOpened then return end
+
     local sections = db.sections
     local buttons = {}
 	local specialBags, specialButtons = {}, {}
@@ -1649,33 +1651,31 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
     self:HandleSortButton(f, true, isBank, numColumns, buttonSize, buttonSpacing)
 
     if next(layoutSections) then
-		if not isBank or f:IsShown() then
-			for i = #sections, 1, -1 do
-				local section = sections[i]
-				if section and section.isSpecialBag then
-					local bagID = section.bagID
-					if buttonMap[bagID] then
-						local bagName = GetBagName(bagID)
-						if not GetInventoryItemID("player", bagIDToInventoryID[bagID])
-								or (bagName and db.specialBags[bagID] and db.specialBags[bagID] ~= bagName) then
-							buttonMap[bagID] = {}
-							db.specialBags[bagID] = false
-							tremove(sections, i)
-							local targetSection = layoutSections[i]
-							for _, button in ipairs(targetSection.buttons) do
-								if button.highlight then
-									button.highlight:Hide()
-									button.highlight = nil
-								end
+		for i = #sections, 1, -1 do
+			local section = sections[i]
+			if section and section.isSpecialBag then
+				local bagID = section.bagID
+				if buttonMap[bagID] then
+					local bagName = GetBagName(bagID)
+					if not GetInventoryItemID("player", bagIDToInventoryID[bagID])
+							or (bagName and db.specialBags[bagID] and db.specialBags[bagID] ~= bagName) then
+						buttonMap[bagID] = {}
+						db.specialBags[bagID] = false
+						tremove(sections, i)
+						local targetSection = layoutSections[i]
+						for _, button in ipairs(targetSection.buttons) do
+							if button.highlight then
+								button.highlight:Hide()
+								button.highlight = nil
 							end
-							local frame = targetSection.frame
-							if frame then
-								frame:Hide()
-								targetSection.frame = nil
-							end
-							tremove(layoutSections, i)
-							if E.RefreshGUI then E:RefreshGUI() end
 						end
+						local frame = targetSection.frame
+						if frame then
+							frame:Hide()
+							targetSection.frame = nil
+						end
+						tremove(layoutSections, i)
+						if E.RefreshGUI then E:RefreshGUI() end
 					end
 				end
 			end
@@ -2336,7 +2336,17 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 					showEmptyButtonTT(f)
 				elseif not draggingItem then
 					for _, section in ipairs(layout.sections) do
-						section.db.storedPositions = {}
+						local ignoreList = section.db.ignoreList
+						local storedPositions = section.db.storedPositions
+						for hash in pairs(storedPositions) do
+							local bagID, slotID = match(hash, "(.+)-(.+)")
+							bagID, slotID = tonumber(bagID), tonumber(slotID)
+							local itemID = B_GetItemID(nil, bagID, slotID)
+							local targetSection = mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
+							if not ignoreList[B_GetItemID(nil, bagID, slotID)] and targetSection ~= buttonMap[bagID][slotID] then
+								storedPositions[hash] = nil
+							end
+						end
 					end
 					mod:Layout(B, f.isBank)
 					mod:SortAllSections(f)
@@ -2479,21 +2489,33 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 		f.qualityFilterButton:SetScript("OnEnter", B.Tooltip_Show)
 		f.qualityFilterButton:SetScript("OnLeave", GameTooltip_Hide)
 		f.qualityFilterButton:SetScript("OnClick", function(self)
-			if db.qualityFilterShown then
+			if not isBank then
+				if db.qualityFilterShown then
+					for _, bar in ipairs(f.qualityFilterBar) do
+						bar:Hide()
+					end
+					f.currencyButton:ClearAllPoints()
+					f.currencyButton:Point("TOPLEFT", f.qualityFilterBar, "BOTTOMLEFT", 0, 18)
+					f.currencyButton:Point("TOPRIGHT", f.qualityFilterBar, "BOTTOMRIGHT", 0, 18)
+					f.newbottomOffset = db.bottomOffset or 0
+				else
+					for _, bar in ipairs(f.qualityFilterBar) do
+						bar:Show()
+					end
+					f.currencyButton:ClearAllPoints()
+					f.currencyButton:Point("TOPLEFT", f.qualityFilterBar, "BOTTOMLEFT", 0, 28)
+					f.currencyButton:Point("TOPRIGHT", f.qualityFilterBar, "BOTTOMRIGHT", 0, 28)
+					f.newbottomOffset = (db.bottomOffset or 0) + 10
+				end
+			elseif db.qualityFilterShown then
 				for _, bar in ipairs(f.qualityFilterBar) do
 					bar:Hide()
 				end
-				f.currencyButton:ClearAllPoints()
-				f.currencyButton:Point("TOPLEFT", f.qualityFilterBar, "BOTTOMLEFT", 0, 18)
-				f.currencyButton:Point("TOPRIGHT", f.qualityFilterBar, "BOTTOMRIGHT", 0, 18)
 				f.newbottomOffset = db.bottomOffset or 0
 			else
 				for _, bar in ipairs(f.qualityFilterBar) do
 					bar:Show()
 				end
-				f.currencyButton:ClearAllPoints()
-				f.currencyButton:Point("TOPLEFT", f.qualityFilterBar, "BOTTOMLEFT", 0, 28)
-				f.currencyButton:Point("TOPRIGHT", f.qualityFilterBar, "BOTTOMRIGHT", 0, 28)
 				f.newbottomOffset = (db.bottomOffset or 0) + 10
 			end
 			local layout = f.currentLayout
@@ -2627,10 +2649,10 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 	local bag = f.Bags[bagID]
 	local bagMap = buttonMap[bagID]
 	local layout = f.currentLayout
+    local button = bag and bag[slotID]
 
-	if not (layout and bag and bag[slotID] and bagMap) or (bag.numSlots ~= GetContainerNumSlots(bagID)) then return end
+	if not (layout and button and bagMap) or (bag.numSlots ~= GetContainerNumSlots(bagID)) or (f.isBank and not mod.BankOpened) then return end
 
-    local button = bag[slotID]
 	local bagType = bag.type
 
 	if not button.hasItem then
@@ -2674,7 +2696,7 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 		elseif not oldID then
 			local targetSection
 			buttonMap[f][button] = nil
-			if not f:IsShown() then
+			if not f.isBank and not f:IsShown() then
 				button.highlight:Show()
 			end
 
@@ -2845,6 +2867,16 @@ function mod:ResetSlotAlphaForBags(self, f)
 	end
 end
 
+function mod:OpenBank(...)
+	mod.BankOpened = true
+	mod.hooks[B].OpenBank(...)
+end
+
+function mod:CloseBank(...)
+	mod.BankOpened = nil
+	mod.hooks[B].CloseBank(...)
+end
+
 
 function mod:BagsExtendedV2(db)
 	if db.BagsExtendedV2.enabled then
@@ -2855,6 +2887,8 @@ function mod:BagsExtendedV2(db)
 			for _, func in ipairs({'Layout', 'UpdateSlot', 'SetSlotAlphaForBag', 'ResetSlotAlphaForBags'}) do
 				if not mod:IsHooked(B, func) then mod:SecureHook(B, func) end
 			end
+			if not mod:IsHooked(B, 'OpenBank') then mod:RawHook(B, 'OpenBank') end
+			if not mod:IsHooked(B, 'CloseBank') then mod:RawHook(B, 'CloseBank') end
 		end)
 		if not self:IsHooked(E, 'ToggleOptionsUI') then
 			self:SecureHook(E, 'ToggleOptionsUI', function()
@@ -2894,7 +2928,7 @@ function mod:BagsExtendedV2(db)
 		self:RegisterEvent("EQUIPMENT_SWAP_FINISHED", updateSetsInfo)
 		self.initialized.BagsExtendedV2 = true
 	elseif self.initialized.BagsExtendedV2 then
-		for _, func in pairs({'UpdateSlot', 'SetSlotAlphaForBag', 'ResetSlotAlphaForBags'}) do
+		for _, func in pairs({'UpdateSlot', 'OpenBank', 'CloseBank', 'SetSlotAlphaForBag', 'ResetSlotAlphaForBags'}) do
 			if self:IsHooked(B, func) then self:Unhook(B, func) end
 		end
 		if self:IsHooked(B, 'Layout') and not (db.EasierProcessing.enabled or db.SplitStack.enabled) then

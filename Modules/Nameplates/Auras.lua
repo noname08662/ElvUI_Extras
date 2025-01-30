@@ -110,6 +110,32 @@ local function updateFilters(db)
 end
 
 local function cachePositions(db)
+	if core.reload or (not db.CenteredAuras.enabled and not db.SortMethods.enabled) then
+		if mod.ishooked then
+			if E.Options and E.Options.args.nameplate then
+				for _, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
+												["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
+					for _, auraGroup in ipairs({"buffsGroup", "debuffsGroup"}) do
+						if mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set") then
+							mod:Unhook(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set")
+						end
+						if mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set") then
+							mod:Unhook(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set")
+						end
+						for _, t in pairs(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup.args) do
+							if type(t) == 'table' and t.set and mod:IsHooked(t, "set") then
+								mod:Unhook(t, "set")
+							end
+						end
+					end
+				end
+			elseif mod:IsHooked(E, "ToggleOptionsUI") then
+				mod:Unhook(E, "ToggleOptionsUI")
+			end
+			mod.ishooked = false
+		end
+		return
+	end
     for _, unitType in ipairs({"FRIENDLY_PLAYER", "ENEMY_PLAYER", "FRIENDLY_NPC", "ENEMY_NPC"}) do
         iconPositions[unitType] = {}
         for _, auraType in ipairs({"buffs", "debuffs"}) do
@@ -206,31 +232,7 @@ local function cachePositions(db)
 			end
         end
     end
-	if core.reload or (not db.CenteredAuras.enabled and not db.SortMethods.enabled) then
-		if mod.ishooked then
-			if E.Options and E.Options.args.nameplate then
-				for _, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
-												["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
-					for _, auraGroup in ipairs({"buffsGroup", "debuffsGroup"}) do
-						if mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set") then
-							mod:Unhook(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set")
-						end
-						if mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set") then
-							mod:Unhook(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set")
-						end
-						for _, t in pairs(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup.args) do
-							if type(t) == 'table' and t.set and mod:IsHooked(t, "set") then
-								mod:Unhook(t, "set")
-							end
-						end
-					end
-				end
-			elseif mod:IsHooked(E, "ToggleOptionsUI") then
-				mod:Unhook(E, "ToggleOptionsUI")
-			end
-			mod.ishooked = false
-		end
-	elseif not mod.ishooked then
+	if not mod.ishooked then
 		if E.Options and E.Options.args.nameplate then
 			for unitType, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
 											["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
