@@ -22,8 +22,6 @@ ignore = {
 	"143", 				-- Accessing an undefined field of a global variable
 	"212/self", 		-- Unused argument
 	"412/self",			-- Variable was previously defined as an argument
-	"113/oUF", 			-- Accessing undefined variable
-	"113/C_NamePlate", 	-- Accessing undefined variable
 
 	"1/SLASH_.*",			-- Setting/Mutating/Accessing an undefined global variable (Slash commands)
 	"111/[A-Z][A-Z0-9_]+",	-- Setting an undefined global variable
@@ -45,6 +43,9 @@ ignore = {
 }
 
 globals = {
+	"C_NamePlate",
+	"QuestieCompat",
+
 	-- ElvUI
 	"AlertFrameHolder",
 	"AlertFrameMover",
