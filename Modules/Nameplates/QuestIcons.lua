@@ -730,6 +730,13 @@ function mod:Toggle(db)
 	twipe(markedUnits)
 
     if not core.reload and db.enabled then
+		local QuestieCompat = QuestieCompat
+		if QuestieCompat and QuestieCompat.PLAYER_LOGIN then
+			self:SecureHook(QuestieCompat, "PLAYER_LOGIN", function()
+				SetCVar("showQuestTrackingTooltips", 1)
+			end)
+		end
+		SetCVar("showQuestTrackingTooltips", 1)
 		core:RegisterNPElement('questIcon', function(_, frame, element)
 			if frame.questIcon then
 				frame.questIcon:ClearAllPoints()
