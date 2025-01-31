@@ -1731,7 +1731,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 		}
 		db.specialBags[bagID] = GetBagName(bagID)
 		tinsert(sections, 1, specialSection)
-		if f.emptyButton and (not f.forceShow or not f:IsShown()) then
+		if f.emptyButton and not f.forceShow then
 			f.emptyButton.highlight.tex:SetTexture("Interface\\Buttons\\UI-Common-MouseHilight")
 			f.emptyButton.highlight.tex:SetVertexColor(0, 1, 1)
 			E:UIFrameFadeIn(f.emptyButton.highlight, 1, f.emptyButton.highlight:GetAlpha(), 1)
