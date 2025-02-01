@@ -44,7 +44,6 @@ ignore = {
 
 globals = {
 	"C_NamePlate",
-	"QuestieCompat",
 
 	-- ElvUI
 	"AlertFrameHolder",
