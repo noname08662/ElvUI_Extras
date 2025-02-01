@@ -35,36 +35,46 @@ local function updateAllIcons(db, enabled)
 					icons = frame.styleIcons
 				end
 				local icon = icons[filterName]
-				if not icon then
-					icons[filterName] = CreateFrame("Frame", nil, frame)
-					icon = icons[filterName]
-					if iconData.backdrop then
+				if not iconData then
+					if icon then
+						icon:Hide()
+						icons[filterName] = nil
+					end
+					db.StyleFilterIcons.iconsData[filterName] = nil
+				else
+					if not icon then
+						icons[filterName] = CreateFrame("Frame", nil, frame)
+						icon = icons[filterName]
+						if iconData.backdrop then
+							icon:CreateBackdrop('Transparent')
+						end
+						icon.tex = icon:CreateTexture(nil, "OVERLAY")
+						icon.tex:SetAllPoints()
+						icon.tex:SetTexCoord(unpack(E.TexCoords))
+						mod:SecureHook(icon, "SetAlpha", function(f, alpha) if alpha == 0 then f:Hide() end end)
+					end
+					local level = frame.Health:GetFrameLevel() + iconData.level
+					icon:ClearAllPoints()
+					icon:Size(iconData.size)
+					icon:Point(iconData.point, frame.Health:IsShown() and frame.Health or frame.Name, iconData.relativeTo,
+								iconData.xOffset, iconData.yOffset)
+					icon:SetFrameLevel(level)
+					icon.tex:SetTexture(iconData.tex)
+					icon.point = iconData.point
+					icon.relativeTo = iconData.relativeTo
+					icon.xOffset = iconData.xOffset
+					icon.yOffset = iconData.yOffset
+					if icon.backdrop then
+						if not iconData.backdrop then
+							icon.backdrop:Hide()
+						else
+							icon.backdrop:Show()
+							icon.backdrop:SetFrameLevel(level)
+						end
+					elseif iconData.backdrop then
 						icon:CreateBackdrop('Transparent')
+						icon.backdrop:SetFrameLevel(level)
 					end
-					icon.tex = icon:CreateTexture(nil, "ARTWORK")
-					icon.tex:SetAllPoints()
-					icon.tex:SetTexCoord(unpack(E.TexCoords))
-					mod:SecureHook(icon, "SetAlpha", function(f, alpha) if alpha == 0 then f:Hide() end end)
-				end
-				icon:ClearAllPoints()
-				icon:Size(iconData.size)
-				icon:Point(iconData.point, frame.Health:IsShown() and frame.Health or frame.Name, iconData.relativeTo,
-							iconData.xOffset, iconData.yOffset)
-				icon:SetFrameLevel(frame:GetFrameLevel() + iconData.level)
-				icon.tex:SetTexture(iconData.tex)
-				icon.level = iconData.level
-				icon.point = iconData.point
-				icon.relativeTo = iconData.relativeTo
-				icon.xOffset = iconData.xOffset
-				icon.yOffset = iconData.yOffset
-				if icon.backdrop then
-					if not iconData.backdrop then
-						icon.backdrop:Hide()
-					else
-						icon.backdrop:Show()
-					end
-				elseif iconData.backdrop then
-					icon:CreateBackdrop('Transparent')
 				end
 			end
 		end
@@ -303,7 +313,7 @@ function mod:LoadConfig(db)
 						func = function()
 							db.StyleFilterIcons.iconsData[selectedForIcon()] = {
 								tex = "Interface\\Icons\\INV_Misc_QuestionMark",
-								size = 30, level = 15,
+								size = 30, level = 0,
 								point = "BOTTOM", relativeTo = "TOP",
 								xOffset = 0, yOffset = 45,
 							}
@@ -877,36 +887,30 @@ function mod:Toggle(db)
 			end
 		end
 		if iconsEnabled then
-			if not self:IsHooked(NP, 'Construct_HealthBar') then
-				self:SecureHook(NP, 'Construct_HealthBar', function(_, frame)
+			if not self:IsHooked(NP, 'Construct_Highlight') then
+				self:SecureHook(NP, 'Construct_Highlight', function(_, frame)
 					frame.styleIcons = {}
 					local icons = frame.styleIcons
 					for filterName, iconData in pairs(db.StyleFilterIcons.iconsData) do
 						icons[filterName] = CreateFrame("Frame", nil, frame)
 						local icon = icons[filterName]
+						local level = frame.Health:GetFrameLevel() + iconData.level
 						if iconData.backdrop then
 							icon:CreateBackdrop('Transparent')
+							icon.backdrop:SetFrameLevel(level)
 						end
 						icon:Hide()
 						icon:Size(iconData.size)
-						icon.tex = icon:CreateTexture(nil, "ARTWORK")
+						icon:SetFrameLevel(level)
+						icon.tex = icon:CreateTexture(nil, "OVERLAY")
 						icon.tex:SetTexture(iconData.tex)
 						icon.tex:SetAllPoints()
 						icon.tex:SetTexCoord(unpack(E.TexCoords))
-						icon.level = iconData.level
 						icon.point = iconData.point
 						icon.relativeTo = iconData.relativeTo
 						icon.xOffset = iconData.xOffset
 						icon.yOffset = iconData.yOffset
 						mod:SecureHook(icon, "SetAlpha", function(f, alpha) if alpha == 0 then f:Hide() end end)
-					end
-				end)
-			end
-			if not self:IsHooked(NP, 'ResetNameplateFrameLevel') then self:SecureHook(NP, 'ResetNameplateFrameLevel', function(self, frame)
-					if frame.styleIcons then
-						for _, icon in pairs(frame.styleIcons) do
-							icon:SetFrameLevel(frame:GetFrameLevel() + icon.level)
-						end
 					end
 				end)
 			end
@@ -931,7 +935,7 @@ function mod:Toggle(db)
 		self.initialized = true
 	elseif self.initialized then
 		for _, func in pairs({'StyleFilterPass', 'StyleFilterClear', 'StyleFilterConfigure', 'StyleFilterConditionCheck',
-								'OnShow', 'StyleFilterUpdate', 'Construct_HealthBar', 'ResetNameplateFrameLevel'}) do
+								'OnShow', 'StyleFilterUpdate', 'Construct_Highlight'}) do
 			if self:IsHooked(NP, func) then self:Unhook(NP, func) end
 		end
 		updateAllIcons(db, false)

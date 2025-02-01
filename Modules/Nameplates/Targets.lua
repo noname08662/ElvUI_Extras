@@ -895,7 +895,7 @@ function mod:AwesomeUpdateName(frame, unitType, isUpdate)
 		if isUpdate then
 			local data = values[unitType]
 			local holder = frame.targetNamesHolder
-			holder:SetFrameLevel(frame:GetFrameLevel() + data.level)
+			holder:SetFrameLevel(frame.Health:GetFrameLevel() + data.level)
 			holder:ClearAllPoints()
 			holder:Point(data.point, frame.Health:IsShown() and frame.Health or frame.Name,
 													data.relativeTo, data.xOffset, data.yOffset)
@@ -910,7 +910,7 @@ function mod:UpdateName(frame, unitType, isUpdate, unit)
 		if isUpdate then
 			local data = values[unitType]
 			local holder = frame.targetNamesHolder
-			holder:SetFrameLevel(frame:GetFrameLevel() + data.level)
+			holder:SetFrameLevel(frame.Health:GetFrameLevel() + data.level)
 			holder:ClearAllPoints()
 			holder:Point(data.point, frame.Health:IsShown() and frame.Health or frame.Name,
 													data.relativeTo, data.xOffset, data.yOffset)

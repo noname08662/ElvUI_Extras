@@ -462,7 +462,7 @@ local function cache(db, visibilityUpdate)
 						cooldowns[i]:Hide()
 					end
 					twipe(cooldowns)
-					f:SetFrameLevel(plate:GetFrameLevel() + db[unitType].header.level)
+					f:SetFrameLevel(plate.Health:GetFrameLevel() + db[unitType].header.level)
 				end
 			end
 		end
@@ -1283,7 +1283,7 @@ function mod:AttachCooldowns(plate, cooldowns, unitType)
 				cdFrame.texture = cdFrame:CreateTexture(nil, "ARTWORK")
 				cdFrame.texture:SetInside(cdFrame, E.mult, E.mult)
 				cdFrame.shadow = CreateFrame("Frame", nil, cdFrame)
-				cdFrame.shadow:SetFrameLevel(plate:GetFrameLevel() + db.header.level)
+				cdFrame.shadow:SetFrameLevel(plate.Health:GetFrameLevel() + db.header.level)
 				if db.cooldownFill.enabled then
 					cdFrame.fill = cdFrame:CreateTexture(nil, "OVERLAY")
 					cdFrame.fill:SetTexture(0, 0, 0, db.cooldownFill.alpha or 0.8)
@@ -1380,7 +1380,7 @@ function mod:ConstructCDTracker(db, plate)
 				local typeFrame = (plate.CDTracker or {})[unitType]
 				if not typeFrame then
 					typeFrame = CreateFrame("Frame", nil, plate)
-					typeFrame:SetFrameLevel(plate:GetFrameLevel() + data.header.level)
+					typeFrame:SetFrameLevel(plate.Health:GetFrameLevel() + data.header.level)
 					typeFrame:Hide()
 
 					typeFrame.cooldowns = {}
@@ -1398,7 +1398,7 @@ function mod:ConstructCDTracker(db, plate)
 			local data = db[unitType]
 			if data.enabled then
 				local typeFrame = CreateFrame("Frame", nil, plate)
-				typeFrame:SetFrameLevel(plate:GetFrameLevel() + data.header.level)
+				typeFrame:SetFrameLevel(plate.Health:GetFrameLevel() + data.header.level)
 				typeFrame:Hide()
 
 				typeFrame.cooldowns = {}
@@ -1439,8 +1439,8 @@ function mod:Toggle(db, visibilityUpdate)
 		end)
 		if updateVisibilityState(db, core:GetCurrentAreaType()) then
 			cache(db, visibilityUpdate)
-			if not self:IsHooked(NP, "Construct_HealthBar") then
-				self:SecureHook(NP, "Construct_HealthBar", function(_, plate)
+			if not self:IsHooked(NP, "Construct_Highlight") then
+				self:SecureHook(NP, "Construct_Highlight", function(_, plate)
 					plate.CDTracker = mod:ConstructCDTracker(db, plate)
 				end)
 			end
@@ -1545,7 +1545,7 @@ function mod:Toggle(db, visibilityUpdate)
 		self:UnregisterAllEvents()
 		if ElvUIGUIFrame and self:IsHooked(ElvUIGUIFrame, "OnHide") then self:Unhook(ElvUIGUIFrame, "OnHide") end
 		if self:IsHooked(E, "ToggleOptionsUI") then self:Unhook(E, "ToggleOptionsUI") end
-		if self:IsHooked(NP, "Construct_HealthBar") then self:Unhook(NP, "Construct_HealthBar") end
+		if self:IsHooked(NP, "Construct_Highlight") then self:Unhook(NP, "Construct_Highlight") end
 		if self:IsHooked(NP, "OnShow") then
 			if isAwesome or not core.reload then
 				self:Unhook(NP, "OnShow")

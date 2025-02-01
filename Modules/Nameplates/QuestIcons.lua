@@ -12,13 +12,15 @@ local quests = {}
 mod.initialized = false
 
 local _G, pairs, ipairs, unpack, tonumber = _G, pairs, ipairs, unpack, tonumber
-local find, match, format, lower = string.find, string.match, string.format, string.lower
+local find, match, format, lower, sub = string.find, string.match, string.format, string.lower, string.sub
 local tinsert, twipe = table.insert, table.wipe
-local UnitName, UnitIsPlayer = UnitName, UnitIsPlayer
+local UnitName, UnitGUID, UnitIsPlayer = UnitName, UnitGUID, UnitIsPlayer
 local GetQuestLogLeaderBoard, GetQuestLogTitle = GetQuestLogLeaderBoard, GetQuestLogTitle
 local GetNumQuestLogEntries, GetNumQuestLeaderBoards = GetNumQuestLogEntries, GetNumQuestLeaderBoards
 local THREAT_TOOLTIP = gsub(THREAT_TOOLTIP, '%%d', '%%d-')
 
+local r1, g1, b1
+local r2, g2, b2
 
 local typesLocalized = {
 	enUS = {
@@ -81,10 +83,10 @@ local questTypes = typesLocalized[GetLocale()] or typesLocalized.enUS
 
 local iconTypes = {}
 local iconTypesDefaults = {
-    DEFAULT = 'Interface\\Icons\\INV_Misc_QuestionMark',
-    KILL = 'Interface\\Icons\\ABILITY_DualWield',
-    CHAT = 'Interface\\Icons\\INV_Misc_Note_01',
-	ITEM = 'Interface\\Icons\\INV_Misc_Bag_08'
+    ["DEFAULT"] = 'Interface\\Icons\\INV_Misc_QuestionMark',
+    ["KILL"] = 'Interface\\Icons\\ABILITY_DualWield',
+    ["CHAT"] = 'Interface\\Icons\\INV_Misc_Note_01',
+	["ITEM"] = 'Interface\\Icons\\INV_Misc_Bag_08'
 }
 
 
@@ -100,7 +102,7 @@ P["Extras"]["nameplates"][modName] = {
 	["iconKILL"] = 'Interface\\Icons\\ABILITY_DualWield',
 	["iconCHAT"] = 'Interface\\Icons\\INV_Misc_Note_01',
 	["iconITEM"] = 'Interface\\Icons\\INV_Misc_Bag_08',
-	["strata"] = 'BACKGROUND',
+	["level"] = 0,
 	["textFont"] = 'Expressway',
 	["textFontSize"] = 11,
 	["textFontOutline"] = 'OUTLINE',
@@ -241,12 +243,12 @@ function mod:LoadConfig(db)
 						desc = "",
 						values = E.db.Extras.pointOptions,
 					},
-					strata = {
+					level = {
 						order = 11,
-						type = "select",
-						name = L["Strata"],
+						type = "range",
+						name = L["Level"],
 						desc = "",
-						values = E.db.Extras.frameStrata,
+						min = -5, max = 50, step = 1,
 					},
 					mark = {
 						order = 12,
@@ -460,7 +462,7 @@ local function updateCount(questIcon, count, total, isPercent)
             displayText = format("%d/%d", count, total)
         end
         questIcon.countText:SetText(displayText)
-        questIcon.countText:SetTextColor(1 - progress, progress, 0)
+        questIcon.countText:SetTextColor(r1 + (r2 - r1) * progress, g1 + (g2 - g1) * progress, b1 + (b2 - b1) * progress)
         questIcon.countText:Show()
     else
         questIcon.countText:Hide()
@@ -503,21 +505,23 @@ function mod:UpdateQuestStatus(frame, unit, unitName, unitType)
 end
 
 function mod:UpdateQuestIcon(frame, questIcon, db)
+	local _, unitType = NP:GetUnitInfo(frame)
+	local level = frame.Health:GetFrameLevel() + db.level
+	questIcon:ClearAllPoints()
+	questIcon:SetFrameLevel(level)
+	questIcon:Size(db.iconSize)
+	questIcon:Point(db.point, NP.db.units[unitType].health.enable and frame.Health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
+	questIcon.texture:SetTexture(db.iconDEFAULT)
+
 	if db.useBackdrop then
 		if not questIcon.backdrop then
 			questIcon:CreateBackdrop('Transparent')
 		end
+		questIcon.backdrop:SetFrameLevel(level)
 		questIcon.backdrop:Show()
 	elseif questIcon.backdrop then
 		questIcon.backdrop:Hide()
 	end
-
-	local _, unitType = NP:GetUnitInfo(frame)
-	questIcon:ClearAllPoints()
-	questIcon:SetFrameStrata(db.strata)
-	questIcon:Size(db.iconSize)
-	questIcon:Point(db.point, NP.db.units[unitType].health.enable and frame.Health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
-	questIcon.texture:SetTexture(db.iconDEFAULT)
 
 	if db.showText then
 		questIcon.countText:SetFont(LSM:Fetch("font", db.textFont), db.textFontSize, db.textFontOutline)
@@ -574,11 +578,11 @@ function mod:UpdateAllPlates(db)
 end
 
 function mod:UpdateIconSettings(db)
-	for type, iconTex in pairs(iconTypesDefaults) do
-		iconTypes[type] = db['icon'..type] or iconTex
+	for iconType, iconTex in pairs(iconTypesDefaults) do
+		iconTypes[iconType] = db['icon'..iconType] or iconTex
 	end
 
-	 for plate in pairs(NP.CreatedPlates) do
+	for plate in pairs(NP.CreatedPlates) do
 		local frame = plate.UnitFrame
 
 		if frame then
@@ -730,13 +734,116 @@ function mod:Toggle(db)
 	twipe(markedUnits)
 
     if not core.reload and db.enabled then
-		local QuestieCompat = QuestieCompat
-		if QuestieCompat and QuestieCompat.PLAYER_LOGIN then
-			self:SecureHook(QuestieCompat, "PLAYER_LOGIN", function()
-				SetCVar("showQuestTrackingTooltips", 1)
+		local reactions = NP.db.colors.reactions
+		local bad = reactions.bad
+		local good = reactions.good
+		r1, g1, b1 = bad.r, bad.g, bad.b
+		r2, g2, b2 = good.r, good.g, good.b
+
+		if not self.ishooked then
+			if E.Options and E.Options.args.nameplate then
+				if not self:IsHooked(E.Options.args.nameplate.args.generalGroup.args.colorsGroup.args.reactions, "set") then
+					self:SecureHook(E.Options.args.nameplate.args.generalGroup.args.colorsGroup.args.reactions, "set", function()
+						r1, g1, b1 = bad.r, bad.g, bad.b
+						r2, g2, b2 = good.r, good.g, good.b
+						self:UpdateAllPlates(db)
+					end)
+				end
+			elseif not self:IsHooked(E, "ToggleOptionsUI") then
+				self:SecureHook(E, "ToggleOptionsUI", function()
+					if E.Options.args.nameplate then
+						self:SecureHook(E.Options.args.nameplate.args.generalGroup.args.colorsGroup.args.reactions, "set", function()
+							r1, g1, b1 = bad.r, bad.g, bad.b
+							r2, g2, b2 = good.r, good.g, good.b
+							self:UpdateAllPlates(db)
+						end)
+						self:Unhook(E, "ToggleOptionsUI")
+					end
+				end)
+			end
+			self.ishooked = true
+		end
+
+		local Questie = _G.Questie
+		if Questie then
+			local qIcons = Questie.icons
+			local GetValidIcon = _G.QuestieLoader:ImportModule("QuestieNameplate").private.GetValidIcon
+			local QuestieTooltips = _G.QuestieLoader:ImportModule("QuestieTooltips")
+			local _QuestEventHandler = _G.QuestieLoader:ImportModule("QuestEventHandler").private
+			local GetTooltip = QuestieTooltips.GetTooltip
+
+			if not self:IsHooked(QuestieTooltips, "RemoveQuest") then
+				self:SecureHook(QuestieTooltips, "RemoveQuest", function()
+					self:UpdateAllPlates(db)
+				end)
+			end
+			if not self:IsHooked(_QuestEventHandler, "QuestLogUpdate") then
+				self:SecureHook(_QuestEventHandler, "QuestLogUpdate", function()
+					for frame in pairs(NP.VisiblePlates) do
+						local unit = frame:GetParent().unit
+						if unit then
+							self:UpdateQuestStatus(frame, unit, frame.UnitName or UnitName(unit), frame.UnitType or NP:GetUnitTypeFromUnit(unit))
+						end
+					end
+				end)
+			end
+
+			getQuests = function(unit, unitName, unitType)
+				if not unit or UnitIsPlayer(unit) then return end
+
+				quests[unitName..unitType] = {}
+
+				local key = "m_" .. (tonumber(sub(UnitGUID(unit), -10, -7), 16) or "")
+				local icon = GetValidIcon(QuestieTooltips.lookupByKey[key])
+
+				if icon then
+					local tooltipData = GetTooltip(_, key)
+					if tooltipData then
+						for _, qline in ipairs(tooltipData) do
+							local count, total, isPercent = scanTooltipText(qline)
+							if count and total then
+								tinsert(quests[unitName..unitType], {
+									count = count,
+									total = total,
+									isPercent = isPercent,
+									questType = icon == qIcons["loot"] and "ITEM"
+												or icon == qIcons["slay"] and "KILL"
+												or qIcons["talk"] and "CHAT"
+												or "DEFAULT"
+								})
+							elseif find(qline, "^%s+") then
+								tinsert(quests[unitName..unitType], {
+									isPercent = true,
+									questType = icon == qIcons["loot"] and "ITEM"
+												or icon == qIcons["slay"] and "KILL"
+												or qIcons["talk"] and "CHAT"
+												or "DEFAULT"
+								})
+							end
+						end
+					end
+				end
+				return quests[unitName..unitType]
+			end
+		else
+			self:RegisterEvent("QUEST_ACCEPTED")
+			self:RegisterEvent("QUEST_REMOVED")
+			self:RegisterEvent("QUEST_LOG_UPDATE", function()
+				self:QUEST_REMOVED()
+				self:UnregisterEvent("QUEST_LOG_UPDATE")
+
+				if isAwesome then
+					self:RegisterEvent("QUEST_LOG_UPDATE", function()
+						for frame in pairs(NP.VisiblePlates) do
+							local unit = frame:GetParent().unit
+							if unit then
+								self:UpdateQuestStatus(frame, unit, frame.UnitName or UnitName(unit), frame.UnitType or NP:GetUnitTypeFromUnit(unit))
+							end
+						end
+					end)
+				end
 			end)
 		end
-		SetCVar("showQuestTrackingTooltips", 1)
 		core:RegisterNPElement('questIcon', function(_, frame, element)
 			if frame.questIcon then
 				frame.questIcon:ClearAllPoints()
@@ -770,24 +877,6 @@ function mod:Toggle(db)
 			end
 		end
 
-		self:RegisterEvent("QUEST_ACCEPTED")
-		self:RegisterEvent("QUEST_REMOVED")
-		self:RegisterEvent("QUEST_LOG_UPDATE", function()
-			self:QUEST_REMOVED()
-			self:UnregisterEvent("QUEST_LOG_UPDATE")
-
-			if isAwesome then
-				self:RegisterEvent("QUEST_LOG_UPDATE", function()
-					for frame in pairs(NP.VisiblePlates) do
-						local unit = frame:GetParent().unit
-						if unit then
-							self:UpdateQuestStatus(frame, unit, frame.UnitName or UnitName(unit), frame.UnitType or NP:GetUnitTypeFromUnit(unit))
-						end
-					end
-				end)
-			end
-		end)
-
 		if db.automatic and not isAwesome then
 			self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() parseTip('mouseover') end)
 			self:RegisterEvent("PLAYER_TARGET_CHANGED", function() parseTip('target') end)
@@ -808,6 +897,7 @@ function mod:Toggle(db)
 		SlashCmdList["QMARK"] = nil
 		hash_SlashCmdList["/QMARK"] = nil
 		if self:IsHooked(NP, "OnCreated") then self:Unhook(NP, "OnCreated") end
+		if self:IsHooked(E, "ToggleOptionsUI") then self:Unhook(E, "ToggleOptionsUI") self.ishooked = nil end
 
 		for plate in pairs(NP.CreatedPlates) do
 			local frame = plate.UnitFrame
@@ -816,6 +906,7 @@ function mod:Toggle(db)
 				frame.questIcon = nil
 			end
 		end
+		if _G.Questie then E:StaticPopup_Show("PRIVATE_RL") end
 		self.initialized = false
     end
 end

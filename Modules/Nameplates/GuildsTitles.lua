@@ -33,7 +33,7 @@ mod.initialized = false
 local scanner = CreateFrame("GameTooltip", "ExtrasGT_ScanningTooltip", nil, "GameTooltipTemplate")
 scanner:SetOwner(WorldFrame, "ANCHOR_NONE")
 
-local _G, pairs, ipairs, tonumber, select = _G, pairs, ipairs, tonumber, select
+local _G, pairs, ipairs, tonumber = _G, pairs, ipairs, tonumber
 local twipe, tinsert, tsort = table.wipe, table.insert, table.sort
 local format, find, gsub, sub = string.format, string.find, string.gsub, string.sub
 local GetGuildInfo = GetGuildInfo
@@ -102,7 +102,7 @@ P["Extras"]["nameplates"][modName] = {
 		["relativeTo"] = "BOTTOM",
 		["xOffset"] = 0,
 		["yOffset"] = -16,
-		["level"] = 40,
+		["level"] = 0,
 		["anchor"] = "FRAME",
 		["modifier"] = 'Alt',
 		["backdrop"] = false,
@@ -137,7 +137,7 @@ P["Extras"]["nameplates"][modName] = {
 			["relativeTo"] = "CENTER",
 			["xOffset"] = 0,
 			["yOffset"] = -4,
-			["level"] = 15,
+			["level"] = 0,
 			["color"] = { r = 0.9, g = 0.9, b = 0.3 },
 			["reactionColor"] = false,
 		},
@@ -150,7 +150,7 @@ P["Extras"]["nameplates"][modName] = {
 			["relativeTo"] = "CENTER",
 			["xOffset"] = 0,
 			["yOffset"] = -4,
-			["level"] = 15,
+			["level"] = 0,
 			["color"] = { r = 0.9, g = 0.9, b = 0.3 },
 			["reactionColor"] = false,
 		},
@@ -174,7 +174,7 @@ P["Extras"]["nameplates"][modName] = {
 			["relativeTo"] = "CENTER",
 			["xOffset"] = 0,
 			["yOffset"] = -4,
-			["level"] = 15,
+			["level"] = 0,
 			["colors"] = {
 				["raid"] = { r = 0.3, g = 0.6, b = 0.9 },
 				["party"] = { r = 0.6, g = 0.9, b = 0.3 },
@@ -197,7 +197,7 @@ P["Extras"]["nameplates"][modName] = {
 			["relativeTo"] = "CENTER",
 			["xOffset"] = 0,
 			["yOffset"] = -4,
-			["level"] = 15,
+			["level"] = 0,
 			["colors"] = {
 				["raid"] = { r = 0.3, g = 0.6, b = 0.9 },
 				["party"] = { r = 0.6, g = 0.9, b = 0.3 },
@@ -989,22 +989,24 @@ local function manageTitleFrame(frame, title, db, db_icon)
 		title:Height(db.fontSize)
 		title:ClearAllPoints()
 		title:Point(db.point, health:IsShown() and health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
-		title:SetFrameLevel(frame:GetFrameLevel() + db.level)
+		title:SetFrameLevel(frame.Health:GetFrameLevel() + db.level)
 	end
 	if db_icon then
 		local occupationIcon = frame.OccupationIcon
+		local level = frame.Health:GetFrameLevel() + db_icon.level
 
 		occupationIcon:ClearAllPoints()
 		occupationIcon:Size(db_icon.size)
 		occupationIcon:Point(db_icon.point,
 							db_icon.anchor ~= "FRAME" and title or (health:IsShown() and health) or frame.Name,
 							db_icon.relativeTo, db_icon.xOffset, db_icon.yOffset)
-		occupationIcon:SetFrameLevel(frame:GetFrameLevel() + db_icon.level)
+		occupationIcon:SetFrameLevel(level)
 
 		if db_icon.backdrop then
 			if not occupationIcon.backdrop then
 				occupationIcon:CreateBackdrop("Transparent")
 			end
+			occupationIcon.backdrop:SetFrameLevel(level)
 			occupationIcon.backdrop:Show()
 		elseif occupationIcon.backdrop then
 			occupationIcon.backdrop:Hide()
@@ -1407,7 +1409,6 @@ function mod:Toggle(db)
 			if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
 			if self:IsHooked(NP, "Update_Name") then self:Unhook(NP, "Update_Name") end
 			if self:IsHooked(NP, "OnCreated") then self:Unhook(NP, "OnCreated") end
-			if self:IsHooked(NP, "ResetNameplateFrameLevel") then self:Unhook(NP, "ResetNameplateFrameLevel") end
 			SLASH_ADDOCCUPATION1 = nil
 			SlashCmdList["ADDOCCUPATION"] = nil
 			hash_SlashCmdList["/ADDOCCUPATION"] = nil
@@ -1473,18 +1474,6 @@ function mod:Toggle(db)
 			self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() self:OnEvent(db, 'mouseover') end)
 			self:RegisterEvent("PLAYER_TARGET_CHANGED", function() self:OnEvent(db, 'target') end)
 			self:RegisterEvent("PLAYER_FOCUS_CHANGED", function() self:OnEvent(db, 'focus') end)
-			if not self:IsHooked(NP, "ResetNameplateFrameLevel") then
-				self:SecureHook(NP, "ResetNameplateFrameLevel", function(self, frame)
-					if frame.Title then
-						local unitType = frame.UnitType or select(2,NP:GetUnitInfo(frame))
-						if unitType and (unitType == "FRIENDLY_NPC" or unitType == "ENEMY_NPC") then
-							local level = frame:GetFrameLevel()
-							frame.Title:SetFrameLevel(level + db.Titles[unitType].level)
-							frame.OccupationIcon:SetFrameLevel(level + db.OccupationIcon.level)
-						end
-					end
-				end)
-			end
 			if not self:IsHooked(NP, "OnCreated") then
 				self:SecureHook(NP, "OnCreated", function(self, plate)
 					local frame = plate.UnitFrame

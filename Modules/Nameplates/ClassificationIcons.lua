@@ -64,7 +64,7 @@ P["Extras"]["nameplates"][modName] = {
 				["backdrop"] = false,
 				["width"] = 24,
 				["height"] = 24,
-				["frameLevel"] = 100,
+				["frameLevel"] = 0,
 				["points"] = {
 					["point"] = 'LEFT',
 					["parent"] = 'ElvUF_Target',
@@ -530,9 +530,9 @@ end
 
 function mod:Construct_ClassIcon(frame)
 	local ClassIcon = CreateFrame("Frame", nil, frame)
-	local Texture = ClassIcon:CreateTexture(nil, "ARTWORK")
+	local Texture = ClassIcon:CreateTexture(nil, "OVERLAY")
 	Texture:SetAllPoints(ClassIcon)
-	ClassIcon:CreateBackdrop()
+	ClassIcon:CreateBackdrop("Transparent")
 	ClassIcon.texture = Texture
 	ClassIcon:Hide()
 
@@ -541,6 +541,7 @@ end
 
 function mod:ShowIcon(frame, texture, db)
 	local classIcon = frame.ClassIcon
+	local level = frame.Health:GetFrameLevel() + db.frameLevel
 
 	if texture then
 		classIcon.texture:SetTexture(texture)
@@ -548,11 +549,12 @@ function mod:ShowIcon(frame, texture, db)
 
 	if db.backdrop then
 		classIcon.backdrop:Show()
+		classIcon.backdrop:SetFrameLevel(level)
 	else
 		classIcon.backdrop:Hide()
 	end
 
-	classIcon:SetFrameLevel(frame:GetFrameLevel() + db.frameLevel)
+	classIcon:SetFrameLevel(level)
 	classIcon:Size(db.width, db.height)
 
 	db = db.points
@@ -615,7 +617,7 @@ end
 function mod:Toggle(db, visibilityUpdate)
 	local affiliations = db.Players.affiliations
 	if not visibilityUpdate then
-		if db.NPCs.enabled or db.Players.enabled then
+		if db.Players.enabled then
 			core:RegisterNPElement("ClassIcon", function(unitType, frame, element)
 				if frame.ClassIcon then
 					if unitType == "FRIENDLY_PLAYER" or unitType == "ENEMY_PLAYER" then
