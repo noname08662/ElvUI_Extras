@@ -412,10 +412,14 @@ function mod:UpdateQuestStatus(db, frame, unit, unitName, unitType)
 			markedUnits[unitType..unitName] = unitQuest
 
 			local text, progress, questType = data.text, data.progress, data.questType
-			if questIcon.showText and text then
-				questIcon.countText:SetText(text)
-				questIcon.countText:SetTextColor(r1 + (r2 - r1) * progress, g1 + (g2 - g1) * progress, b1 + (b2 - b1) * progress)
-				questIcon.countText:Show()
+			if questIcon.showText then
+				if text then
+					questIcon.countText:SetText(text)
+					questIcon.countText:SetTextColor(r1 + (r2 - r1) * progress, g1 + (g2 - g1) * progress, b1 + (b2 - b1) * progress)
+					questIcon.countText:Show()
+				else
+					questIcon.countText:Hide()
+				end
 			end
 			questIcon:ClearAllPoints()
 			questIcon:Point(db.point, NP.db.units[unitType].health.enable and frame.Health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
@@ -428,10 +432,14 @@ function mod:UpdateQuestStatus(db, frame, unit, unitName, unitType)
 		if unitQuest then
 			local data = unitQuest
 			local text, progress, questType = data.text, data.progress, data.questType
-			if questIcon.showText and text then
-				questIcon.countText:SetText(text)
-				questIcon.countText:SetTextColor(r1 + (r2 - r1) * progress, g1 + (g2 - g1) * progress, b1 + (b2 - b1) * progress)
-				questIcon.countText:Show()
+			if questIcon.showText then
+				if text then
+					questIcon.countText:SetText(text)
+					questIcon.countText:SetTextColor(r1 + (r2 - r1) * progress, g1 + (g2 - g1) * progress, b1 + (b2 - b1) * progress)
+					questIcon.countText:Show()
+				else
+					questIcon.countText:Hide()
+				end
 			end
 			questIcon:ClearAllPoints()
 			questIcon:Point(db.point, NP.db.units[unitType].health.enable and frame.Health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
@@ -622,7 +630,8 @@ function mod:Toggle(db)
 				if icon then
 					local tooltipData = GetTooltip(_, key)
 					if tooltipData then
-						for _, qline in ipairs(tooltipData) do
+						for i = #tooltipData, 1, -1 do
+							local qline = tooltipData[i]
 							local text, progress = scanTooltipText(qline)
 							if (text and progress < 1) or find(qline, "^%s+") then
 								return {
