@@ -13,7 +13,6 @@
 
 	<Include file="Nameplates\Auras.lua"/>>
 	<Include file="Nameplates\NameLevel.lua"/>>
-	<Include file="Nameplates\QuestIcons_data.lua"/>>
 	<Include file="Nameplates\QuestIcons.lua"/>>
 	<Include file="Nameplates\GuildsTitles_data.lua"/>>
 	<Include file="Nameplates\GuildsTitles.lua"/>>
