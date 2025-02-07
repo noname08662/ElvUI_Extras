@@ -633,15 +633,18 @@ function mod:Toggle(db)
 						for i = #tooltipData, 1, -1 do
 							local qline = tooltipData[i]
 							local text, progress = scanTooltipText(qline)
-							if (text and progress < 1) or find(qline, "^%s+") then
-								return {
-									text = text,
-									progress = progress,
-									questType = icon == qIcons["loot"] and "ITEM"
-												or icon == qIcons["slay"] and "KILL"
-												or icon == qIcons["talk"] and "CHAT"
-												or "DEFAULT"
-								}
+							if text or find(qline, "^%s+") then
+								if progress < 1 then
+									return {
+										text = text,
+										progress = progress,
+										questType = icon == qIcons["loot"] and "ITEM"
+													or icon == qIcons["slay"] and "KILL"
+													or icon == qIcons["talk"] and "CHAT"
+													or "DEFAULT"
+									}
+								end
+								return
 							end
 						end
 					end
