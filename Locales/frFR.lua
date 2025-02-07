@@ -496,19 +496,11 @@ L["An icon similar to the minimap search."] = "Une icône similaire à la recher
 L["Displays player guild text."] = "Affiche le texte de guilde du joueur."
 L["Displays NPC occupation text."] = "Affiche le texte d'occupation du PNJ."
 L["Strata"] = "Strate"
-L["Mark"] = "Marquer"
-L["Mark the target/mouseover plate."] = "Marque la barre d'informations de la cible/survol."
-L["Unmark"] = "Démarquer"
-L["Unmark the target/mouseover plate."] = "Démarque la barre d'informations de la cible/survol."
 L["Selected Type"] = "Type sélectionné"
 L["Reaction based coloring for non-cached characters."] = "Coloration basée sur la réaction pour les personnages non mis en cache."
 L["Apply Custom Color"] = "Appliquer une couleur personnalisée"
 L["Class Color"] = "Couleur de classe"
 L["Use class colors."] = "Utiliser les couleurs de classe."
-L["Unmark All"] = "Tout démarquer"
-L["Unmark all plates."] = "Démarque toutes les barres d'informations."
-L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"] =
-	"Utilisation : macro '/qmark' liée à une touche de votre choix.\n\nN'oubliez pas de délier également vos raccourcis de modificateur !"
 L["Use Backdrop"] = "Utiliser l'arrière-plan"
 L["Linked Style Filter Triggers"] = "Déclencheurs de filtre de style lié"
 L["Select Link"] = "Sélectionner le lien"
@@ -1145,3 +1137,16 @@ L["Makes aura sorting abide filter priorities."] = "Fait en sorte que le tri des
 L["Add Spell"] = "Ajouter un sort"
 L["Format: 'spellID cooldown time',\ne.g. 42292 120\nor\nSpellName 20"] =
 	"Format : 'IDSort TempsRecharge',\nex. 42292 120\nou\nNomSort 20"
+L["Fixes and Tweaks (requires reload)"] = "Corrections et ajustements (nécessite un rechargement)"
+L["Restore Raid Controls"] = "Restaurer les contrôles de raid"
+L["Brings back 'Promote to Leader/Assist' controls in raid members' dropdown menus."] =
+	"Restaure les contrôles 'Promouvoir en chef/assistant' dans les menus déroulants des membres du raid."
+L["World Map Quests"] = "Quêtes de la carte du monde"
+L["Allows Ctrl+Click on the world map quest list to open the quest log."] =
+	"Permet d’ouvrir le journal des quêtes avec Ctrl+Clic sur la liste des quêtes de la carte du monde."
+L["Unit Hostility Status"] = "Statut d'hostilité des unités"
+L["Forces a nameplate update when a unit changes factions or hostility status (e.g. mind control)."] =
+	"Force une mise à jour de la barre de nom lorsque l’unité change de faction ou de statut d’hostilité (ex. : contrôle mental)."
+L["Style Filter Name-Only"] = "Filtre de style nom uniquement"
+L["Fixes an issue where the style filter fails to update the nameplate on aura events after hiding its health."] =
+	"Corrige un problème où le filtre de style ne met pas à jour la barre de nom après un événement d’aura si la santé est cachée."

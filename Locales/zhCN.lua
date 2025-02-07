@@ -1139,3 +1139,17 @@ L["Makes aura sorting abide filter priorities."] = "使光环排序遵循过滤�
 L["Add Spell"] = "添加法术"
 L["Format: 'spellID cooldown time',\ne.g. 42292 120\nor\nSpellName 20"] =
 	"格式: '法术ID 冷却时间',\n例如 42292 120\n或\n法术名称 20"
+L["Fixes and Tweaks (requires reload)"] = "修复与调整（需要重新加载）"
+L["Restore Raid Controls"] = "恢复团队控制"
+L["Brings back 'Promote to Leader/Assist' controls in raid members' dropdown menus."] =
+	"恢复团队成员下拉菜单中的“提升为队长/助理”选项。"
+L["World Map Quests"] = "世界地图任务"
+L["Allows Ctrl+Click on the world map quest list to open the quest log."] =
+	"允许在世界地图任务列表中按 Ctrl+点击以打开任务日志。"
+L["Unit Hostility Status"] = "单位敌对状态"
+L["Forces a nameplate update when a unit changes factions or hostility status (e.g. mind control)."] =
+	"当单位更换阵营或敌对状态（例如：精神控制）时，强制更新姓名板。"
+L["Style Filter Name-Only"] = "样式过滤器（仅名称）"
+L["Fixes an issue where the style filter fails to update the nameplate on aura events after hiding its health."] =
+	"修复了在隐藏血条后，样式过滤器在光环事件中未能更新姓名板的问题。"
+

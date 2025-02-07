@@ -496,19 +496,11 @@ L["An icon similar to the minimap search."] = "미니맵 검색과 유사한 아
 L["Displays player guild text."] = "플레이어의 길드 텍스트를 표시합니다."
 L["Displays NPC occupation text."] = "NPC의 직업 텍스트를 표시합니다."
 L["Strata"] = "계층"
-L["Mark"] = "표시"
-L["Mark the target/mouseover plate."] = "대상/마우스오버 이름표를 표시합니다."
-L["Unmark"] = "표시 해제"
-L["Unmark the target/mouseover plate."] = "대상/마우스오버 이름표의 표시를 해제합니다."
 L["Selected Type"] = "선택된 유형"
 L["Reaction based coloring for non-cached characters."] = "캐시되지 않은 캐릭터에 대한 반응 기반 색상 지정."
 L["Apply Custom Color"] = "사용자 지정 색상 적용"
 L["Class Color"] = "직업 색상"
 L["Use class colors."] = "직업 색상을 사용합니다."
-L["Unmark All"] = "모두 표시 해제"
-L["Unmark all plates."] = "모든 이름표의 표시를 해제합니다."
-L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"] =
-	"사용법: '/qmark' 매크로를 원하는 키에 바인딩하세요.\n\n수정자 키 바인딩도 해제하는 것을 잊지 마세요!"
 L["Use Backdrop"] = "배경 사용"
 L["Linked Style Filter Triggers"] = "연결된 스타일 필터 트리거"
 L["Select Link"] = "링크 선택"
@@ -1143,3 +1135,16 @@ L["Makes aura sorting abide filter priorities."] = "오라 정렬이 필터 우�
 L["Add Spell"] = "주문 추가"
 L["Format: 'spellID cooldown time',\ne.g. 42292 120\nor\nSpellName 20"] =
 	"형식: '주문ID 재사용 대기시간',\n예: 42292 120\n또는\n주문이름 20"
+L["Fixes and Tweaks (requires reload)"] = "수정 및 조정 (재시작 필요)"
+L["Restore Raid Controls"] = "공격대 컨트롤 복원"
+L["Brings back 'Promote to Leader/Assist' controls in raid members' dropdown menus."] =
+	"공격대원의 드롭다운 메뉴에서 '공격대장/부공격대장으로 승격' 기능을 복원합니다."
+L["World Map Quests"] = "세계 지도 퀘스트"
+L["Allows Ctrl+Click on the world map quest list to open the quest log."] =
+	"세계 지도 퀘스트 목록에서 Ctrl+클릭으로 퀘스트 로그를 엽니다."
+L["Unit Hostility Status"] = "유닛 적대 상태"
+L["Forces a nameplate update when a unit changes factions or hostility status (e.g. mind control)."] =
+	"유닛이 진영이나 적대 상태를 변경할 때 (예: 정신 지배) 이름표를 강제 업데이트합니다."
+L["Style Filter Name-Only"] = "이름 전용 스타일 필터"
+L["Fixes an issue where the style filter fails to update the nameplate on aura events after hiding its health."] =
+	"체력을 숨긴 후 오라 이벤트에서 이름표가 업데이트되지 않는 문제를 수정합니다."

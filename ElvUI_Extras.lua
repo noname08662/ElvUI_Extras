@@ -329,6 +329,7 @@ local InCombatLockdown, IsControlKeyDown = InCombatLockdown, IsControlKeyDown
 local IsInInstance, IsResting = IsInInstance, IsResting
 local LUA_ERROR, FORMATTING, ERROR_CAPS = LUA_ERROR, FORMATTING, ERROR_CAPS
 
+
 local function colorConvert(r, g, b)
 	if tonumber(r) then
         return format("|cff%02x%02x%02x", r * 255, g * 255, b * 255)
@@ -355,121 +356,126 @@ local function getEntry(tbl, path)
 end
 
 
--- make worlmap quests open quest log on ctrl-click
-core:SecureHook("WorldMapQuestFrame_OnMouseUp", function(self)
-	if InCombatLockdown() then
-		return
-	elseif IsControlKeyDown() then
-		if not QuestLogFrame:IsShown() then
-			ShowUIPanel(QuestLogFrame)
+local function fixes(db)
+	if db.mapToQuestLog then
+		-- make worlmap quests open quest log on ctrl-click
+		core:SecureHook("WorldMapQuestFrame_OnMouseUp", function(self)
+			if InCombatLockdown() then
+				return
+			elseif IsControlKeyDown() then
+				if not QuestLogFrame:IsShown() then
+					ShowUIPanel(QuestLogFrame)
+				end
+
+				QuestLog_SetSelection(self.questLogIndex)
+				QuestLog_Update()
+			end
+		end)
+	end
+
+
+	if db.restoreRaidControls then
+		-- restored raid controls
+		local stateHandler = CreateFrame("Frame", nil, UIParent, "SecureHandlerStateTemplate")
+		stateHandler:SetAttribute("_onstate-combatstate", [[
+			local t, a = self:GetFrameRef("maintank"), self:GetFrameRef("mainassist")
+			if t and a then
+				t:ClearAllPoints()
+				t:Hide()
+				a:ClearAllPoints()
+				a:Hide()
+			end
+		]])
+		RegisterStateDriver(stateHandler, "combatstate", "[combat] hide; show")
+
+		local function createSecurePromoteButton(name, role)
+			local button = CreateFrame("Button", name, UIParent, "SecureActionButtonTemplate", "SecureHandlerStateTemplate")
+			button:SetFrameStrata("TOOLTIP")
+			button:Hide()
+
+			button:SetAttribute("type", role)
+			button:SetAttribute("unit", "target")
+			button:SetAttribute("action", "toggle")
+
+			button:RegisterEvent("PLAYER_REGEN_DISABLED")
+
+			stateHandler:SetFrameRef(role, button)
+
+			return button
 		end
 
-		QuestLog_SetSelection(self.questLogIndex)
-		QuestLog_Update()
+		local function setButton(unit, button, newButton)
+			newButton:SetAllPoints(button)
+			newButton:SetAttribute("unit", unit or "target")
+			newButton:SetScript("OnEnter", function()
+				button:GetScript("OnEnter")(button)
+			end)
+			newButton:SetScript("OnLeave", function()
+				button:GetScript("OnLeave")(button)
+			end)
+			newButton:SetScript("OnMouseDown", function()
+				button:SetButtonState("PUSHED")
+			end)
+			newButton:SetScript("OnMouseUp", function()
+				button:SetButtonState("NORMAL")
+			end)
+			newButton:SetScript("PostClick", function()
+				CloseDropDownMenus()
+			end)
+			newButton:SetScript("OnEvent", function(self)
+				if self:IsShown() then CloseDropDownMenus() end
+			end)
+			newButton:Show()
+		end
+
+		local secureTankButton = createSecurePromoteButton("ElvUI_SecureTankButton", "maintank")
+		local secureAssistButton = createSecurePromoteButton("ElvUI_SecureAssistButton", "mainassist")
+
+		core:SecureHook("UnitPopup_ShowMenu", function(_, _, unit)
+			if UIDROPDOWNMENU_MENU_LEVEL ~= 1 or InCombatLockdown() then return end
+
+			for i = 1, UIDROPDOWNMENU_MAXBUTTONS do
+				local button = _G["DropDownList1Button"..i]
+				if button and button:IsShown() then
+					if button.value == "RAID_MAINTANK" then
+						setButton(unit, button, secureTankButton)
+					elseif button.value == "RAID_MAINASSIST" then
+						setButton(unit, button, secureAssistButton)
+					end
+				end
+			end
+		end)
+
+		core:SecureHook("UnitPopup_HideButtons", function()
+			local dropdownMenu = UIDROPDOWNMENU_INIT_MENU
+			local isAuthority = IsPartyLeader() or IsRaidOfficer()
+
+			if dropdownMenu.which ~= "RAID" or not isAuthority or InCombatLockdown() then return end
+
+			for index, value in ipairs(UnitPopupMenus[dropdownMenu.which]) do
+				if value == "RAID_MAINTANK" then
+					local role = select(10,GetRaidRosterInfo(dropdownMenu.userData))
+					if role ~= "MAINTANK" or not dropdownMenu.name then
+						UnitPopupShown[UIDROPDOWNMENU_MENU_LEVEL][index] = 1
+					end
+				elseif value == "RAID_MAINASSIST" then
+					local role = select(10,GetRaidRosterInfo(dropdownMenu.userData))
+					if role ~= "MAINASSIST" or not dropdownMenu.name then
+						UnitPopupShown[UIDROPDOWNMENU_MENU_LEVEL][index] = 1
+					end
+				end
+			end
+		end)
+
+		core:SecureHookScript(DropDownList1, "OnHide", function()
+			if InCombatLockdown() then return end
+			secureTankButton:ClearAllPoints()
+			secureAssistButton:ClearAllPoints()
+			secureTankButton:Hide()
+			secureAssistButton:Hide()
+		end)
 	end
-end)
-
-
--- restored raid controls
-local stateHandler = CreateFrame("Frame", nil, UIParent, "SecureHandlerStateTemplate")
-stateHandler:SetAttribute("_onstate-combatstate", [[
-	local t, a = self:GetFrameRef("maintank"), self:GetFrameRef("mainassist")
-	if t and a then
-		t:ClearAllPoints()
-		t:Hide()
-		a:ClearAllPoints()
-		a:Hide()
-	end
-]])
-RegisterStateDriver(stateHandler, "combatstate", "[combat] hide; show")
-
-local function createSecurePromoteButton(name, role)
-    local button = CreateFrame("Button", name, UIParent, "SecureActionButtonTemplate", "SecureHandlerStateTemplate")
-    button:SetFrameStrata("TOOLTIP")
-    button:Hide()
-
-    button:SetAttribute("type", role)
-    button:SetAttribute("unit", "target")
-    button:SetAttribute("action", "toggle")
-
-	button:RegisterEvent("PLAYER_REGEN_DISABLED")
-
-	stateHandler:SetFrameRef(role, button)
-
-    return button
 end
-
-local function setButton(unit, button, newButton)
-	newButton:SetAllPoints(button)
-	newButton:SetAttribute("unit", unit or "target")
-	newButton:SetScript("OnEnter", function()
-		button:GetScript("OnEnter")(button)
-	end)
-	newButton:SetScript("OnLeave", function()
-		button:GetScript("OnLeave")(button)
-	end)
-	newButton:SetScript("OnMouseDown", function()
-		button:SetButtonState("PUSHED")
-	end)
-	newButton:SetScript("OnMouseUp", function()
-		button:SetButtonState("NORMAL")
-	end)
-	newButton:SetScript("PostClick", function()
-		CloseDropDownMenus()
-	end)
-	newButton:SetScript("OnEvent", function(self)
-		if self:IsShown() then CloseDropDownMenus() end
-	end)
-	newButton:Show()
-end
-
-local secureTankButton = createSecurePromoteButton("ElvUI_SecureTankButton", "maintank")
-local secureAssistButton = createSecurePromoteButton("ElvUI_SecureAssistButton", "mainassist")
-
-core:SecureHook("UnitPopup_ShowMenu", function(_, _, unit)
-	if UIDROPDOWNMENU_MENU_LEVEL ~= 1 or InCombatLockdown() then return end
-
-	for i = 1, UIDROPDOWNMENU_MAXBUTTONS do
-		local button = _G["DropDownList1Button"..i]
-		if button and button:IsShown() then
-			if button.value == "RAID_MAINTANK" then
-				setButton(unit, button, secureTankButton)
-			elseif button.value == "RAID_MAINASSIST" then
-				setButton(unit, button, secureAssistButton)
-			end
-		end
-	end
-end)
-
-core:SecureHook("UnitPopup_HideButtons", function()
-	local dropdownMenu = UIDROPDOWNMENU_INIT_MENU
-	local isAuthority = IsPartyLeader() or IsRaidOfficer()
-
-	if dropdownMenu.which ~= "RAID" or not isAuthority or InCombatLockdown() then return end
-
-	for index, value in ipairs(UnitPopupMenus[dropdownMenu.which]) do
-		if value == "RAID_MAINTANK" then
-			local role = select(10,GetRaidRosterInfo(dropdownMenu.userData))
-			if role ~= "MAINTANK" or not dropdownMenu.name then
-				UnitPopupShown[UIDROPDOWNMENU_MENU_LEVEL][index] = 1
-			end
-		elseif value == "RAID_MAINASSIST" then
-			local role = select(10,GetRaidRosterInfo(dropdownMenu.userData))
-			if role ~= "MAINASSIST" or not dropdownMenu.name then
-				UnitPopupShown[UIDROPDOWNMENU_MENU_LEVEL][index] = 1
-			end
-		end
-	end
-end)
-
-core:SecureHookScript(DropDownList1, "OnHide", function()
-	if InCombatLockdown() then return end
-	secureTankButton:ClearAllPoints()
-	secureAssistButton:ClearAllPoints()
-	secureTankButton:Hide()
-	secureAssistButton:Hide()
-end)
-
 
 function core:getAllFrameTypes()
 	return {
@@ -814,7 +820,7 @@ if isAwesome then
 	end
 
 	core:SecureHook(NP, "StyleFilterConfigure", function()
-		if NP.StyleFilterTriggerEvents.UNIT_AURA or NP.StyleFilterTriggerEvents.UNIT_AURA then
+		if E.db.Extras.nameOnly and (NP.StyleFilterTriggerEvents.UNIT_AURA or NP.StyleFilterTriggerEvents.UNIT_AURA) then
 			for filterName, filter in pairs(E.global.nameplates.filters) do
 				local t = filter.triggers
 				if t and E.db.nameplates and E.db.nameplates.filters then
@@ -1172,6 +1178,10 @@ end
 
 
 P["Extras"] = {
+	["restoreRaidControls"] = true,
+	["mapToQuestLog"] = true,
+	["unitFaction"] = true,
+	["nameOnly"] = true,
 	["pluginColor"] = '|cffaf73cd',
 	["customColorBad"] = '|cffce1a1a',
 	["customColorAlpha"] = '|cff9999ff',
@@ -1834,6 +1844,7 @@ function core:GetOptions()
 				name = L["Plugin"],
 				args = {
 					colors = {
+						order = 1,
 						type = "group",
 						name = L["Version: "].."1.09",
 						guiInline = true,
@@ -1909,6 +1920,38 @@ function core:GetOptions()
 							},
 						},
 					},
+					fixes = {
+						order = 2,
+						type = "group",
+						name = L["Fixes and Tweaks (requires reload)"],
+						guiInline = true,
+						get = function(info) return E.db.Extras[info[#info]] end,
+						set = function(info, value) E.db.Extras[info[#info]] = value end,
+						args = {
+							restoreRaidControls = {
+								type = "toggle",
+								name = L["Restore Raid Controls"],
+								desc = L["Brings back 'Promote to Leader/Assist' controls in raid members' dropdown menus."],
+							},
+							mapToQuestLog = {
+								type = "toggle",
+								name = L["World Map Quests"],
+								desc = L["Allows Ctrl+Click on the world map quest list to open the quest log."],
+							},
+							unitFaction = {
+								type = "toggle",
+								name = L["Unit Hostility Status"],
+								desc = L["Forces a nameplate update when a unit changes factions or hostility status (e.g. mind control)."],
+								hidden = not isAwesome,
+							},
+							nameOnly = {
+								type = "toggle",
+								name = L["Style Filter Name-Only"],
+								desc = L["Fixes an issue where the style filter fails to update the nameplate on aura events after hiding its health."],
+								hidden = not isAwesome,
+							},
+						},
+					},
 				},
 			},
 		}
@@ -1969,10 +2012,22 @@ function core:Initialize()
 			end
 			self:RawHook(LAI, "GUIDAura")
 			LAI.UnregisterAllCallbacks(NP)
+			if E.db.Extras.unitFaction then
+				local GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
+				self:RegisterEvent("UNIT_FACTION", function(_, unit)
+					if find(unit, 'nameplate', 1, true) then
+						local plate = GetNamePlateForUnit(unit)
+						if plate then
+							NP:UpdateAllFrame(plate.UnitFrame, nil, true)
+						end
+					end
+				end)
+			end
 		else
 			self:UnregisterAllEvents()
 		end
 	end
+	fixes(E.db.Extras)
 
 	EP:RegisterPlugin(AddOnName, self.GetOptions)
 

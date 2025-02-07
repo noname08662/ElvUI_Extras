@@ -492,19 +492,11 @@ L["An icon similar to the minimap search."] = "Ein Symbol ähnlich der Minikarte
 L["Displays player guild text."] = "Zeigt den Gildentext des Spielers an."
 L["Displays NPC occupation text."] = "Zeigt den Berufstext des NPC an."
 L["Strata"] = "Schicht"
-L["Mark"] = "Markieren"
-L["Mark the target/mouseover plate."] = "Markiert die Ziel-/Mouseover-Plakette."
-L["Unmark"] = "Entmarkieren"
-L["Unmark the target/mouseover plate."] = "Entmarkiert die Ziel-/Mouseover-Plakette."
 L["Selected Type"] = "Ausgewählter Typ"
 L["Reaction based coloring for non-cached characters."] = "Reaktionsbasierte Färbung für nicht zwischengespeicherte Charaktere."
 L["Apply Custom Color"] = "Benutzerdefinierte Farbe anwenden"
 L["Class Color"] = "Klassenfarbe"
 L["Use class colors."] = "Klassenfarben verwenden."
-L["Unmark All"] = "Alle entmarkieren"
-L["Unmark all plates."] = "Entmarkiert alle Plaketten."
-L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"] =
-	"Verwendung: '/qmark' Makro auf eine Taste Ihrer Wahl gebunden.\n\nVergessen Sie nicht, auch Ihre Modifikatortasten zu entbinden!"
 L["Use Backdrop"] = "Hintergrund verwenden"
 L["Linked Style Filter Triggers"] = "Verknüpfte Stilfilterauslöser"
 L["Select Link"] = "Verknüpfung auswählen"
@@ -1139,3 +1131,16 @@ L["Makes aura sorting abide filter priorities."] = "Sortiert Auren gemäß der F
 L["Add Spell"] = "Zauber hinzufügen"
 L["Format: 'spellID cooldown time',\ne.g. 42292 120\nor\nSpellName 20"] =
 	"Format: 'ZauberID Abklingzeit',\nz. B. 42292 120\noder\nZauberName 20"
+L["Fixes and Tweaks (requires reload)"] = "Fehlerbehebungen und Anpassungen (erfordert Neustart)"
+L["Restore Raid Controls"] = "Schlachtzugskontrollen wiederherstellen"
+L["Brings back 'Promote to Leader/Assist' controls in raid members' dropdown menus."] =
+	"Stellt die Option 'Zum Anführer/Assistenten befördern' im Dropdown-Menü der Schlachtzugsmitglieder wieder her."
+L["World Map Quests"] = "Weltkarten-Quests"
+L["Allows Ctrl+Click on the world map quest list to open the quest log."] =
+	"Ermöglicht das Öffnen des Questlogs durch Strg+Klick auf die Weltkarten-Questliste."
+L["Unit Hostility Status"] = "Einheiten-Feindlichkeitsstatus"
+L["Forces a nameplate update when a unit changes factions or hostility status (e.g. mind control)."] =
+	"Erzwingt eine Namensplaketten-Aktualisierung, wenn eine Einheit ihre Fraktion oder ihren Feindlichkeitsstatus ändert (z. B. Gedankenkontrolle)."
+L["Style Filter Name-Only"] = "Namensanzeige-Stilfilter"
+L["Fixes an issue where the style filter fails to update the nameplate on aura events after hiding its health."] =
+	"Behebt ein Problem, bei dem der Stilfilter die Namensplakette nach dem Verbergen der Lebensanzeige bei Aura-Ereignissen nicht aktualisiert."

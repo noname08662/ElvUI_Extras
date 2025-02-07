@@ -495,19 +495,11 @@ L["An icon similar to the minimap search."] = "Un icono similar a la búsqueda d
 L["Displays player guild text."] = "Muestra el texto de la hermandad del jugador."
 L["Displays NPC occupation text."] = "Muestra el texto de ocupación del PNJ."
 L["Strata"] = "Estrato"
-L["Mark"] = "Marcar"
-L["Mark the target/mouseover plate."] = "Marca la placa del objetivo/mouseover."
-L["Unmark"] = "Desmarcar"
-L["Unmark the target/mouseover plate."] = "Desmarca la placa del objetivo/mouseover."
 L["Selected Type"] = "Tipo seleccionado"
 L["Reaction based coloring for non-cached characters."] = "Coloración basada en reacción para personajes no almacenados en caché."
 L["Apply Custom Color"] = "Aplicar color personalizado"
 L["Class Color"] = "Color de clase"
 L["Use class colors."] = "Usa colores de clase."
-L["Unmark All"] = "Desmarcar todo"
-L["Unmark all plates."] = "Desmarca todas las placas."
-L["Usage: '/qmark' macro bound to a key of your choice.\n\nDon't forget to also unbind your modifier keybinds!"] =
-	"Uso: macro '/qmark' vinculada a una tecla de tu elección.\n\n¡No olvides desvincular también tus atajos de modificador!"
 L["Use Backdrop"] = "Usar fondo"
 L["Linked Style Filter Triggers"] = "Disparadores de Filtro de Estilo Vinculado"
 L["Select Link"] = "Seleccionar Enlace"
@@ -1144,3 +1136,16 @@ L["Makes aura sorting abide filter priorities."] = "Hace que la ordenación de a
 L["Add Spell"] = "Añadir hechizo"
 L["Format: 'spellID cooldown time',\ne.g. 42292 120\nor\nSpellName 20"] =
 	"Formato: 'ID de hechizo tiempo de reutilización',\np. ej. 42292 120\no\nNombreHechizo 20"
+L["Fixes and Tweaks (requires reload)"] = "Correcciones y ajustes (requiere recarga)"
+L["Restore Raid Controls"] = "Restaurar controles de banda"
+L["Brings back 'Promote to Leader/Assist' controls in raid members' dropdown menus."] =
+	"Restaura los controles de 'Ascender a líder/asistente' en los menús desplegables de los miembros de la banda."
+L["World Map Quests"] = "Misiones del mapa mundial"
+L["Allows Ctrl+Click on the world map quest list to open the quest log."] =
+	"Permite usar Ctrl+Clic en la lista de misiones del mapa mundial para abrir el registro de misiones."
+L["Unit Hostility Status"] = "Estado de hostilidad de unidad"
+L["Forces a nameplate update when a unit changes factions or hostility status (e.g. mind control)."] =
+	"Fuerza una actualización de la placa de nombre cuando una unidad cambia de facción o estado de hostilidad (ej., control mental)."
+L["Style Filter Name-Only"] = "Filtro de estilo solo nombre"
+L["Fixes an issue where the style filter fails to update the nameplate on aura events after hiding its health."] =
+	"Corrige un problema donde el filtro de estilo no actualiza la placa de nombre en eventos de aura después de ocultar su salud."

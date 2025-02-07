@@ -1143,3 +1143,17 @@ L["Makes aura sorting abide filter priorities."] = "Сортировка аур 
 L["Add Spell"] = "Добавить заклинание"
 L["Format: 'spellID cooldown time',\ne.g. 42292 120\nor\nSpellName 20"] =
 	"Формат: 'ID заклинания время восстановления',\nнапример, 42292 120\nили\nНазваниеЗаклинания 20"
+L["Fixes and Tweaks (requires reload)"] = "Исправления и настройки (требуется перезагрузка)"
+L["Restore Raid Controls"] = "Восстановить управление рейдом"
+L["Brings back 'Promote to Leader/Assist' controls in raid members' dropdown menus."] =
+	"Возвращает в контекстное меню рейдовых игроков опции 'Назначить лидером/помощником'."
+L["World Map Quests"] = "Квесты на карте мира"
+L["Allows Ctrl+Click on the world map quest list to open the quest log."] =
+	"Позволяет открывать журнал заданий с помощью Ctrl+Клика по списку квестов на карте мира."
+L["Unit Hostility Status"] = "Статус враждебности юнита"
+L["Forces a nameplate update when a unit changes factions or hostility status (e.g. mind control)."] =
+	"Принудительно обновляет индикатор имени при смене фракции или враждебности юнита (например, при контроле разума)."
+L["Style Filter Name-Only"] = "Фильтр стиля (только имя)"
+L["Fixes an issue where the style filter fails to update the nameplate on aura events after hiding its health."] =
+	"Исправляет проблему, когда фильтр стиля не обновляет индикатор имени после скрытия здоровья при событиях аур."
+

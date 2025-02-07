@@ -1305,7 +1305,7 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 											power and appliedBorders.Power.override,
 											adapt, threatBorders, true)
 
-        if showBorders then
+        if showBorders and appliedBorders[statusbar].highlight.borders.infoPanelBorderEnabled then
 			if adapt ~= 'NONE' then
 				local appliedBordersAdapt = appliedBorders[adapt]
 
@@ -1316,7 +1316,7 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 					local otherBorders = appliedBorders[otherbar]
 					if otherBorders and otherBorders.applied and weights[otherbar] ~= 0 then
 						finalColor = otherBorders.highlight.borders.infoPanelBorderColors
-					else
+					elseif weights[statusbar] == 0 then
 						finalColor = colorFilter.threatBordersColor
 					end
 				elseif weights[statusbar] == 0 then
@@ -1364,7 +1364,7 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 											power and appliedBorders.Power.override,
 											adapt, threatBorders)
 
-        if showBorders then
+        if showBorders and appliedBorders[statusbar].highlight.borders.classBarBorderEnabled then
             if adapt ~= 'NONE' then
                 local appliedBordersAdapt = appliedBorders[adapt]
                 if appliedBordersAdapt.applied and weights[adapt] ~= 0 then
@@ -1374,7 +1374,7 @@ function mod:UpdateBorders(frame, colors, statusbar, unit, showBorders, highligh
 					local otherBorders = appliedBorders[otherbar]
 					if otherBorders and otherBorders.applied and weights[otherbar] ~= 0 then
 						finalColor = otherBorders.highlight.borders.classBarBorderColors
-					else
+					elseif weights[statusbar] == 0 then
 						finalColor = colorFilter.threatBordersColor
 					end
 				elseif weights[statusbar] == 0 then
