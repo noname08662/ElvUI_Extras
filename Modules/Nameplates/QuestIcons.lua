@@ -604,7 +604,6 @@ function mod:Toggle(db)
 		if Questie then
 			local QuestieTooltips = _G.QuestieLoader:ImportModule("QuestieTooltips")
 			local QuestieTracker = _G.QuestieLoader:ImportModule("QuestieTracker")
-			local QuestieDB = _G.QuestieLoader:ImportModule("QuestieDB")
 			local _QuestEventHandler = _G.QuestieLoader:ImportModule("QuestEventHandler").private
 
 			local iconMap = {
@@ -635,25 +634,22 @@ function mod:Toggle(db)
 				if tooltipData then
 					for _, tooltip in pairs(tooltipData) do
 						local obj = tooltip.objective
-						if obj then
-							local isComplete = QuestieDB.IsComplete(tooltip.questId)
-							if isComplete ~= 1 and not (isComplete == 0 and QuestieDB.GetQuest(tooltip.questId):IsComplete() == true) then
-								local needed = obj.Needed
-								if needed then
-									local collected = obj.Collected
-									local progress = collected / needed
-									if progress < 1 then
-										return {
-											text = tostring(collected) .. "/" .. tostring(needed),
-											progress = progress,
-											questType = iconMap[obj.Icon or ""] or "DEFAULT",
-										}
-									end
-								else
+						if obj and not obj.Completed then
+							local needed = obj.Needed
+							if needed then
+								local collected = obj.Collected
+								local progress = collected / needed
+								if progress < 1 then
 									return {
+										text = tostring(collected) .. "/" .. tostring(needed),
+										progress = progress,
 										questType = iconMap[obj.Icon or ""] or "DEFAULT",
 									}
 								end
+							else
+								return {
+									questType = iconMap[obj.Icon or ""] or "DEFAULT",
+								}
 							end
 						end
 					end
