@@ -512,7 +512,9 @@ function mod:UpdateIconSettings(db)
 				frame.questIcon = createIcon(frame, db)
 			end
 			self:UpdateQuestIcon(frame, frame.questIcon, db)
-			self:OnShow(frame, db)
+			if frame:IsShown() then
+				self:OnShow(frame, db)
+			end
 		end
 	end
 end
@@ -600,12 +602,17 @@ function mod:Toggle(db)
 
 		local Questie = _G.Questie
 		if Questie then
-			local qIcons = Questie.icons
-			local GetValidIcon = _G.QuestieLoader:ImportModule("QuestieNameplate").private.GetValidIcon
 			local QuestieTooltips = _G.QuestieLoader:ImportModule("QuestieTooltips")
 			local QuestieTracker = _G.QuestieLoader:ImportModule("QuestieTracker")
+			local QuestieDB = _G.QuestieLoader:ImportModule("QuestieDB")
 			local _QuestEventHandler = _G.QuestieLoader:ImportModule("QuestEventHandler").private
-			local GetTooltip = QuestieTooltips.GetTooltip
+
+			local iconMap = {
+				[""] = "DEFAULT",
+				[1] = "KILL",
+				[2] = "ITEM",
+				[5] = "CHAT",
+			}
 
 			if not self:IsHooked(QuestieTooltips, "RemoveQuest") then
 				self:SecureHook(QuestieTooltips, "RemoveQuest", function()
@@ -624,27 +631,29 @@ function mod:Toggle(db)
 			end
 
 			getQuests = function(unit)
-				local key = "m_" .. (tonumber(sub(UnitGUID(unit), -10, -7), 16) or "")
-				local icon = GetValidIcon(QuestieTooltips.lookupByKey[key])
-
-				if icon then
-					local tooltipData = GetTooltip(_, key)
-					if tooltipData then
-						for i = #tooltipData, 1, -1 do
-							local qline = tooltipData[i]
-							local text, progress = scanTooltipText(qline)
-							if text or find(qline, "^%s+") then
-								if progress < 1 then
+				local tooltipData = QuestieTooltips.lookupByKey["m_" .. (tonumber(sub(UnitGUID(unit or ""), -10, -7), 16) or "")]
+				if tooltipData then
+					for _, tooltip in pairs(tooltipData) do
+						local obj = tooltip.objective
+						if obj then
+							local isComplete = QuestieDB.IsComplete(tooltip.questId)
+							if isComplete ~= 1 and not (isComplete == 0 and QuestieDB.GetQuest(tooltip.questId):IsComplete() == true) then
+								local needed = obj.Needed
+								if needed then
+									local collected = obj.Collected
+									local progress = collected / needed
+									if progress < 1 then
+										return {
+											text = tostring(collected) .. "/" .. tostring(needed),
+											progress = progress,
+											questType = iconMap[obj.Icon or ""] or "DEFAULT",
+										}
+									end
+								else
 									return {
-										text = text,
-										progress = progress,
-										questType = icon == qIcons["loot"] and "ITEM"
-													or icon == qIcons["slay"] and "KILL"
-													or icon == qIcons["talk"] and "CHAT"
-													or "DEFAULT"
+										questType = iconMap[obj.Icon or ""] or "DEFAULT",
 									}
 								end
-								return
 							end
 						end
 					end
@@ -659,6 +668,9 @@ function mod:Toggle(db)
 				self:QueueUpdate(db)
 			end)
 			self:QueueUpdate(db)
+			core:RegisterAreaUpdate(modName, function()
+				scanTool:SetOwner(WorldFrame, "ANCHOR_NONE")
+			end)
 		end
 
 		core:RegisterNPElement('questIcon', function(_, frame, element)
@@ -685,9 +697,7 @@ function mod:Toggle(db)
 			self:RegisterEvent("PLAYER_FOCUS_CHANGED", function() parseTip('focus', db) end)
 		end
 
-		core:RegisterAreaUpdate(modName, function()
-			scanTool:SetOwner(WorldFrame, "ANCHOR_NONE")
-		end)
+
 
 		self:UpdateIconSettings(db)
 		self.initialized = true
