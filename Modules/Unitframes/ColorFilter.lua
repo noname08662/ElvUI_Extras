@@ -957,8 +957,8 @@ end
 function mod:ConstructHighlight(frame)
 	if not frame.colorFilter then
 		local colorFilter = CreateFrame("Frame", nil, frame)
-		colorFilter.appliedGlowColors = {}
-		colorFilter.appliedBordersColors = {}
+		colorFilter.appliedGlowColors = { Power = {applied = false}, Castbar = {applied = false} }
+		colorFilter.appliedBordersColors = { Power = {applied = false, override = false}, Castbar = {applied = false} }
 
 		colorFilter.Health = CreateFrame("Frame", nil, frame.Health)
 		colorFilter.Health:CreateShadow(nil, true)
@@ -985,9 +985,6 @@ function mod:ConstructHighlight(frame)
 
 		colorFilter.Power.shadow:SetFrameLevel(colorFilter.Power:GetFrameLevel()+15)
 
-		colorFilter.appliedGlowColors.Power = { applied = false }
-		colorFilter.appliedBordersColors.Power = { applied = false, override = false }
-
 		constructAnimation(power, colorFilter.Power)
 
 		colorFilter.Power.shadow:Hide()
@@ -1001,9 +998,6 @@ function mod:ConstructHighlight(frame)
 		colorFilter.Castbar:SetAllPoints(castbar)
 
 		colorFilter.Castbar.shadow:SetFrameLevel(colorFilter.Castbar:GetFrameLevel()+15)
-
-		colorFilter.appliedGlowColors.Castbar = { applied = false }
-		colorFilter.appliedBordersColors.Castbar = { applied = false }
 
 		constructAnimation(castbar, colorFilter.Castbar)
 
