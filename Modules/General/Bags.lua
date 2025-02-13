@@ -2343,7 +2343,8 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 							bagID, slotID = tonumber(bagID), tonumber(slotID)
 							local itemID = B_GetItemID(nil, bagID, slotID)
 							local targetSection = mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
-							if not ignoreList[B_GetItemID(nil, bagID, slotID)] and targetSection ~= buttonMap[bagID][slotID] then
+							if not ignoreList[B_GetItemID(nil, bagID, slotID)]
+									and targetSection ~= (buttonMap[bagID] and buttonMap[bagID][slotID]) then
 								storedPositions[hash] = nil
 							end
 						end
