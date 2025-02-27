@@ -2,7 +2,6 @@ local E, L, _, P = unpack(ElvUI)
 local core = E:GetModule("Extras")
 local mod = core:NewModule("AurasNP", "AceHook-3.0")
 local NP = E:GetModule("NamePlates")
-local LAI = E.Libs.LAI
 local LSM = E.Libs.LSM
 
 local modName = mod:GetName()
@@ -82,7 +81,7 @@ local directionProperties = {
 local funcMap = {
 	["UpdateTime"] = 'AnimateFadeOut',
 	["UpdateElement_Auras"] = 'CenteredAuras, SortMethods',
-	["SetAura"] = 'TypeBorders, Highlights, CooldownDisable',
+	["SetAura"] = 'AnimateFadeOut, TypeBorders, Highlights, CooldownDisable',
 }
 
 
@@ -1042,7 +1041,7 @@ function mod:Update_AurasPosition(frame)
 	end
 end
 
-function mod:UpdateElement_Auras(frame)
+function mod:UpdateElement_Auras(_, _, frame)
 	if not frame.Health:IsShown() then return end
 
 	local db = NP.db.units[frame.UnitType]
@@ -1054,15 +1053,13 @@ function mod:UpdateElement_Auras(frame)
 	end
 end
 
-function mod:UpdateTime()
+function mod:UpdateTime(_, self)
 	local remaining = self.timeLeft
 	local progress = remaining / (self.duration)
 
 	if progress < 0.25 and remaining < 6 then
 		local f = abs(0.5 - GetTime() % 1) * 3
 		self:SetAlpha(f)
-	else
-		self:SetAlpha(1)
 	end
 end
 
@@ -1086,14 +1083,14 @@ function mod:ApplyHighlight(db, button)
 	button.highlightApplied = true
 end
 
-function mod:ClearHighlights(mod_db, button, isDebuff, debuffType, unstableAffliction, vampiricTouch)
+function mod:ClearHighlights(mod_db, button, isDebuff, dtype, unstableAffliction, vampiricTouch)
 	if isDebuff then
 		if mod_db.TypeBorders.enabled then
 			NP:StyleFrameColor(button, unpack(E.media.bordercolor))
 		elseif (button.name and (button.name == unstableAffliction or button.name == vampiricTouch) and E.myclass ~= "WARLOCK") then
 			NP:StyleFrameColor(button, 0.05, 0.85, 0.94)
 		else
-			local color = (debuffType and DebuffTypeColor[debuffType]) or DebuffTypeColor.none
+			local color = (dtype and DebuffTypeColor[dtype]) or DebuffTypeColor.none
 			NP:StyleFrameColor(button, color.r * 0.6, color.g * 0.6, color.b * 0.6)
 		end
 	else
@@ -1105,7 +1102,7 @@ function mod:ClearHighlights(mod_db, button, isDebuff, debuffType, unstableAffli
 	button.highlightApplied = false
 end
 
-function mod:HandleCurableStealable(mod_db, db, button, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name)
+function mod:HandleCurableStealable(mod_db, db, button, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name)
 	if (db.shadow or db.border)
 		and (attackable
 			or (E.myclass == "WARLOCK"
@@ -1114,22 +1111,21 @@ function mod:HandleCurableStealable(mod_db, db, button, debuffType, unstableAffl
 									or (isDebuff and not (dispellList and dispellList[dtype]))
 									or (not isDebuff and not purgeList) then
 			if button.highlightApplied then
-				self:ClearHighlights(mod_db, button, isDebuff, debuffType, unstableAffliction, vampiricTouch)
+				self:ClearHighlights(mod_db, button, isDebuff, dtype, unstableAffliction, vampiricTouch)
 			end
 			return
 		end
 		self:ApplyHighlight(db, button)
 	elseif button.highlightApplied then
-		self:ClearHighlights(mod_db, button, isDebuff, debuffType, unstableAffliction, vampiricTouch)
+		self:ClearHighlights(mod_db, button, isDebuff, dtype, unstableAffliction, vampiricTouch)
 	end
 end
 
-function mod:SetAura(frame, guid, index, filter, isDebuff, visible)
-	local isAura, name, _, _, debuffType, _, _, _, spellID = LAI:GUIDAura(guid, index, filter)
-	if isAura then
-		local position = visible + 1
-		local button = frame[position] or NP:Construct_AuraIcon(frame, position)
-		local mod_db = E.db.Extras.nameplates[modName]
+function mod:SetAura(mod_db, _, frame, _, index, _, isDebuff)
+	local button = frame[index]
+
+	if button and button:IsShown() then
+		button:SetAlpha(1)
 
 		if mod_db.CooldownDisable.enabled then
 			button:SetStatusBarColor(1,1,1,0)
@@ -1150,14 +1146,14 @@ function mod:SetAura(frame, guid, index, filter, isDebuff, visible)
 
 		if not db.enabled then return end
 
-		local dtype = button.dtype
+		local name, dtype, spellID = button.name, button.dtype, button.spellID
 		local dbSpell = db.spellList[spellID]
 		local unstableAffliction = GetSpellInfo(30108)
 		local vampiricTouch = GetSpellInfo(34914)
 		if dbSpell then
 			local settings = (dbSpell.shadow or dbSpell.border or dbSpell.useGlobal) and (dbSpell.useGlobal and db.global or dbSpell)
 			if not settings then
-				mod:HandleCurableStealable(mod_db, db.special, button, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name)
+				mod:HandleCurableStealable(mod_db, db.special, button, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name)
 			else
 				mod:ApplyHighlight(settings, button)
 			end
@@ -1176,15 +1172,15 @@ function mod:SetAura(frame, guid, index, filter, isDebuff, visible)
 						if data.border or data.shadow then
 							mod:ApplyHighlight(data.info, button)
 						elseif button.highlightApplied then
-							mod:ClearHighlights(button, isDebuff, debuffType, unstableAffliction, vampiricTouch)
+							mod:ClearHighlights(button, isDebuff, dtype, unstableAffliction, vampiricTouch)
 						end
 						return
 					end
 				end
-				mod:HandleCurableStealable(mod_db, db.special, button, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name)
+				mod:HandleCurableStealable(mod_db, db.special, button, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name)
 			end
 		else
-			mod:HandleCurableStealable(mod_db, db.special, button, debuffType, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name)
+			mod:HandleCurableStealable(mod_db, db.special, button, unstableAffliction, vampiricTouch, attackable, dtype, isDebuff, name)
 		end
 	end
 end
@@ -1209,7 +1205,9 @@ function mod:Toggle(db)
 	end
 	for func, enable in pairs(toggles) do
 		if enable then
-			if not self:IsHooked(NP, func) then self:SecureHook(NP, func, self[func]) end
+			if not self:IsHooked(NP, func) then self:SecureHook(NP, func, function(...)
+				self[func](nil, db, ...)
+			end) end
 		elseif self:IsHooked(NP, func) then
 			self:Unhook(NP, func)
 		end
