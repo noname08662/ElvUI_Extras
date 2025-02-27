@@ -1,4 +1,4 @@
-﻿local E, L, _, P = unpack(ElvUI)
+local E, L, _, P = unpack(ElvUI)
 local core = E:NewModule("Extras", "AceHook-3.0", "AceEvent-3.0")
 local UF = E:GetModule("UnitFrames")
 local NP = E:GetModule("NamePlates")
@@ -828,13 +828,29 @@ if isAwesome then
 							and E.db.nameplates.filters[filterName].triggers.enable and filter.actions.nameOnly then
 						core:RegisterEvent("UNIT_AURA", function(_, unit)
 							if find(unit, 'nameplate', 1, true) then
-								local plate = GetNamePlateForUnit(unit)
-								local frame = plate and plate.UnitFrame
-								if frame then
-									if frame.NameOnlyChanged then
-										frame.Health:Show() -- UpdateElement_Auras' first line blocks any update
-									end
-									NP:UpdateElement_Auras(frame)
+								if not core.updatePending then
+									core.updatePending = E:ScheduleTimer(function()
+										local plate = GetNamePlateForUnit(unit)
+										local frame = plate and plate.UnitFrame
+										if frame then
+											if frame.NameOnlyChanged then
+												frame.Health:Show() -- UpdateElement_Auras' first line blocks any update
+											end
+											NP:UpdateElement_Auras(frame)
+										end
+									end, 0.05)
+								else
+									E:CancelTimer(core.updatePending)
+									core.updatePending = E:ScheduleTimer(function()
+										local plate = GetNamePlateForUnit(unit)
+										local frame = plate and plate.UnitFrame
+										if frame then
+											if frame.NameOnlyChanged then
+												frame.Health:Show() -- UpdateElement_Auras' first line blocks any update
+											end
+											NP:UpdateElement_Auras(frame)
+										end
+									end, 0.05)
 								end
 							end
 						end)
@@ -845,10 +861,23 @@ if isAwesome then
 		end
 		core:RegisterEvent("UNIT_AURA", function(_, unit)
 			if find(unit, 'nameplate', 1, true) then
-				local plate = GetNamePlateForUnit(unit)
-				local frame = plate and plate.UnitFrame
-				if frame then
-					NP:UpdateElement_Auras(frame)
+				if not core.updatePending then
+					core.updatePending = E:ScheduleTimer(function()
+						local plate = GetNamePlateForUnit(unit)
+						local frame = plate and plate.UnitFrame
+						if frame then
+							NP:UpdateElement_Auras(frame)
+						end
+					end, 0.05)
+				else
+					E:CancelTimer(core.updatePending)
+					core.updatePending = E:ScheduleTimer(function()
+						local plate = GetNamePlateForUnit(unit)
+						local frame = plate and plate.UnitFrame
+						if frame then
+							NP:UpdateElement_Auras(frame)
+						end
+					end, 0.05)
 				end
 			end
 		end)
