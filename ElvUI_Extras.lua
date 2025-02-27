@@ -808,15 +808,16 @@ if isAwesome then
 		end
 	end
 
-	function core:GUIDAura(self, guid, index, filter, ...)
+	function core:GUIDAura(self, guid, index, filter)
 		local plate = core.plateList[guid]
 		if plate then
 			local name, _, texture, count, debuffType, duration, expiration, caster, _, _, spellId = UnitAura(plate.unit, index, filter)
 			if name then
 				return true, name, texture, count, debuffType, duration, expiration, caster and UnitGUID(caster), spellId
+			else
+				return false
 			end
 		end
-		return core.hooks[LAI].GUIDAura(self, guid, index, filter, ...)
 	end
 
 	core:SecureHook(NP, "StyleFilterConfigure", function()
@@ -828,29 +829,13 @@ if isAwesome then
 							and E.db.nameplates.filters[filterName].triggers.enable and filter.actions.nameOnly then
 						core:RegisterEvent("UNIT_AURA", function(_, unit)
 							if find(unit, 'nameplate', 1, true) then
-								if not core.updatePending then
-									core.updatePending = E:ScheduleTimer(function()
-										local plate = GetNamePlateForUnit(unit)
-										local frame = plate and plate.UnitFrame
-										if frame then
-											if frame.NameOnlyChanged then
-												frame.Health:Show() -- UpdateElement_Auras' first line blocks any update
-											end
-											NP:UpdateElement_Auras(frame)
-										end
-									end, 0.05)
-								else
-									E:CancelTimer(core.updatePending)
-									core.updatePending = E:ScheduleTimer(function()
-										local plate = GetNamePlateForUnit(unit)
-										local frame = plate and plate.UnitFrame
-										if frame then
-											if frame.NameOnlyChanged then
-												frame.Health:Show() -- UpdateElement_Auras' first line blocks any update
-											end
-											NP:UpdateElement_Auras(frame)
-										end
-									end, 0.05)
+								local plate = GetNamePlateForUnit(unit)
+								local frame = plate and plate.UnitFrame
+								if frame then
+									if frame.NameOnlyChanged then
+										frame.Health:Show() -- UpdateElement_Auras' first line blocks any update
+									end
+									NP:UpdateElement_Auras(frame)
 								end
 							end
 						end)
@@ -861,23 +846,10 @@ if isAwesome then
 		end
 		core:RegisterEvent("UNIT_AURA", function(_, unit)
 			if find(unit, 'nameplate', 1, true) then
-				if not core.updatePending then
-					core.updatePending = E:ScheduleTimer(function()
-						local plate = GetNamePlateForUnit(unit)
-						local frame = plate and plate.UnitFrame
-						if frame then
-							NP:UpdateElement_Auras(frame)
-						end
-					end, 0.05)
-				else
-					E:CancelTimer(core.updatePending)
-					core.updatePending = E:ScheduleTimer(function()
-						local plate = GetNamePlateForUnit(unit)
-						local frame = plate and plate.UnitFrame
-						if frame then
-							NP:UpdateElement_Auras(frame)
-						end
-					end, 0.05)
+				local plate = GetNamePlateForUnit(unit)
+				local frame = plate and plate.UnitFrame
+				if frame then
+					NP:UpdateElement_Auras(frame)
 				end
 			end
 		end)
