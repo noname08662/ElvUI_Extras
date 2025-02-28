@@ -1152,4 +1152,7 @@ L["Forces a nameplate update when a unit changes factions or hostility status (e
 L["Style Filter Name-Only"] = "樣式篩選器 (僅顯示名稱)"
 L["Fixes an issue where the style filter fails to update the nameplate on aura events after hiding its health."] =
 	"修正了在隱藏血條後，樣式篩選器在光環事件中未能更新名條的問題。"
-
+L["Use Default Handling"] = "使用預設處理"
+L["Show Group Members"] = "顯示隊伍成員"
+L["Hide Group Members"] = "隱藏隊伍成員"
+L["Select 'Enemy Player' to configure."] = "選擇「敵對玩家」進行設置。"

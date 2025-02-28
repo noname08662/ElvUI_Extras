@@ -1460,10 +1460,8 @@ function mod:PreClick(button)
 
 	local screenWidth, screenHeight = GetScreenWidth(), GetScreenHeight()
 	local scale = UIParent:GetEffectiveScale()
-	local scaledWidth = (screenWidth * (1 - scale))
-	local scaledHeight = (screenHeight * (1 - scale))
 
-	button.frame = self:GetFrame(button, scaledWidth, scaledHeight, screenWidth, screenHeight)
+	button.frame = self:GetFrame(button, (screenWidth * (1 - scale)), (screenHeight * (1 - scale)), screenWidth, screenHeight)
 end
 
 function mod:PostClick(button)
@@ -1532,7 +1530,7 @@ function mod:Toggle(enable)
 			for i = 1, 8 do
 				if i < 5 then
 					self.units["party"..i] = createButton("party"..i)
-					self.units["party"..i.."pet"] = createButton("party"..i.."pet")
+					self.units["partypet"..i] = createButton("party"..i.."pet")
 				end
 
 				if i < 6 then
@@ -1545,7 +1543,7 @@ function mod:Toggle(enable)
 
 			for i = 1, 40 do
 				self.units["raid"..i] = createButton("raid"..i)
-				self.units["raid"..i.."pet"] = createButton("raid"..i.."pet")
+				self.units["raidpet"..i] = createButton("raid"..i.."pet")
 			end
 
 			for _, frame in pairs(self.units) do
@@ -1567,10 +1565,10 @@ function mod:Toggle(enable)
 					return 300 + tonumber(match(unit, "^party(%d+)$"))
 				elseif find(unit, "^raid%d+$") then
 					return 400 + tonumber(match(unit, "^raid(%d+)$"))
-				elseif find(unit, "^party%d+pet$") then
-					return 500 + tonumber(match(unit, "^party(%d+)pet$"))
-				elseif find(unit, "^raid%d+pet$") then
-					return 600 + tonumber(match(unit, "^raid(%d+)pet$"))
+				elseif find(unit, "^partypet%d+$") then
+					return 500 + tonumber(match(unit, "^partypet(%d+)$"))
+				elseif find(unit, "^raidpet%d+$") then
+					return 600 + tonumber(match(unit, "^raidpet(%d+)$"))
 				elseif find(unit, "^boss%d+$") then
 					return 700 + tonumber(match(unit, "^boss(%d+)$"))
 				else
@@ -1683,8 +1681,10 @@ function mod:Toggle(enable)
 											end
 
 											self:SetAttribute(attr, string.gsub(value, "@unit", "@"..name))
-										else
+										elseif attr == 'macrotext' then
 											self:SetAttribute(attr, string.gsub(value, "@unit", "@"..unit:GetAttribute("unit")))
+										else
+											self:SetAttribute(attr, string.gsub(value, "@unit", unit:GetAttribute("unit")))
 										end
 
 										unitFound = true
@@ -1802,12 +1802,14 @@ function mod:Toggle(enable)
 
 			self:SetButtonIcon(self[info.name], info, self[info.name].tabsIconInfo)
 		end
+		core:Tag('secureExecution', nil, function() existingFrames = core:AggregateUnitFrames() end)
 
 		-- fucking blizzard caching my shit
 		buttonIndex = buttonIndex + 1
 
 		initialized = true
 	elseif initialized then
+		core:Untag('secureExecution')
 		for _, info in ipairs(E.db.Extras.general[modName].buttons) do
 			if self:IsHooked(self[info.name], "PreClick") then self:Unhook(self[info.name], "PreClick") end
 			if self:IsHooked(self[info.name], "PostClick") then self:Unhook(self[info.name], "PostClick") end
@@ -1822,10 +1824,6 @@ end
 function mod:InitializeCallback()
 	mod:LoadConfig()
 	mod:Toggle(E.db.Extras.general[modName].enabled)
-
-	tinsert(core.frameUpdates, function()
-		existingFrames = core:AggregateUnitFrames()
-	end)
 end
 
 core.modules[modName] = mod.InitializeCallback

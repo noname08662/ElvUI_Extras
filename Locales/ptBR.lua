@@ -1147,3 +1147,7 @@ L["Forces a nameplate update when a unit changes factions or hostility status (e
 L["Style Filter Name-Only"] = "Filtro de Estilo Somente Nome"
 L["Fixes an issue where the style filter fails to update the nameplate on aura events after hiding its health."] =
 	"Corrige um problema onde o filtro de estilo não atualiza a placa de identificação em eventos de aura após ocultar a vida."
+L["Use Default Handling"] = "Usar manipulação padrão"
+L["Show Group Members"] = "Mostrar membros do grupo"
+L["Hide Group Members"] = "Ocultar membros do grupo"
+L["Select 'Enemy Player' to configure."] = "Selecione 'Jogador inimigo' para configurar."

@@ -929,3 +929,7 @@ L["Unit Hostility Status"] = true
 L["Forces a nameplate update when a unit changes factions or hostility status (e.g. mind control)."] = true
 L["Style Filter Name-Only"] = true
 L["Fixes an issue where the style filter fails to update the nameplate on aura events after hiding its health."] = true
+L["Use Default Handling"] = true
+L["Show Group Members"] = true
+L["Hide Group Members"] = true
+L["Select 'Enemy Player' to configure."] = true
