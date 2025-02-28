@@ -55,6 +55,8 @@ What's inside:
 	(StyleFilter) - filter linking, arbitrary icons, additional triggers (Lua);
 	(Targets) - target names with optional highlights;
 	(DepthOfField) - pseudo DoF alpha fading effect;
+	(Misc) - healer icon;
+		 zone-based health bar visibility;
 [Unitframes]:
 	(AuraBars) - texts, icon;
 	(Auras) - flexible aura highlighting;
