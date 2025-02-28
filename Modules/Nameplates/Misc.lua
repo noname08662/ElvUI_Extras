@@ -290,6 +290,12 @@ end
 function mod:OnShow()
 end
 
+function mod:CommonHook(frame, db)
+	local unitType = frame.UnitType or select(2,NP:GetUnitInfo(frame))
+	if unitType == "FRIENDLY_PLAYER" and db.shouldCheckFriendlies then
+		NP.db.units["FRIENDLY_PLAYER"].health.enable = db.shouldCheckFriendlies(frame.unit or NP:GetUnitByName(frame, unitType))
+	end
+end
 
 function mod:Toggle(db)
 	local enabled
@@ -394,6 +400,15 @@ function mod:Toggle(db)
 		if not self:IsHooked(NP, "OnShow") then
 			self:RawHook(NP, "OnShow")
 		end
+		for _, func in ipairs({'Configure_CPoints', 'Update_HealthBar', 'Update_Highlight', 'Update_Name', 'UpdateElement_All',
+								'RegisterEvents', 'SetTargetFrame', 'StyleFilterClearChanges', 'StyleFilterPass'}) do
+			if not self:IsHooked(NP, func) then
+				self:RawHook(NP, func, function(s, frame, ...)
+					self:CommonHook(frame, db)
+					self.hooks[NP][func](s, frame, ...)
+				end)
+			end
+		end
 		for frame in pairs(NP.VisiblePlates) do
 			NP:UpdateAllFrame(frame, nil, true)
 		end
@@ -404,6 +419,12 @@ function mod:Toggle(db)
 			if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
 		else
 			self.OnShow = function() end
+		end
+		for _, func in ipairs({'Configure_CPoints', 'Update_HealthBar', 'Update_Highlight', 'Update_Name', 'UpdateElement_All',
+								'RegisterEvents', 'SetTargetFrame', 'StyleFilterClearChanges', 'StyleFilterPass'}) do
+			if not self:IsHooked(NP, func) then
+				self:Unhook(NP, func)
+			end
 		end
 		for frame in pairs(NP.VisiblePlates) do
 			NP:UpdateAllFrame(frame, nil, true)
