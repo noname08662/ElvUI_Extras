@@ -7,26 +7,76 @@ local isAwesome = C_NamePlate
 local modName = mod:GetName()
 mod.initialized = {}
 
-local pairs, ipairs, tonumber, next = pairs, ipairs, tonumber, next
+local pairs, ipairs, tonumber, next, select = pairs, ipairs, tonumber, next, select
 local format, upper = string.format, string.upper
 local UnitInParty, UnitInRaid = UnitInParty, UnitInRaid
 
 
-local function updateVisibilityState(db, areaType)
+function mod:updateVisibilityState(db, areaType)
 	for _, unitType in ipairs({'ENEMY_PLAYER', 'FRIENDLY_PLAYER', 'ENEMY_NPC', 'FRIENDLY_NPC'}) do
 		local data = db[unitType]
 		if unitType == "FRIENDLY_PLAYER" then
 			local checkType = tonumber(data[areaType])
 			if not checkType then
+				if isAwesome then
+					if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
+				elseif self:IsHooked(NP, "OnShow") then
+					self.OnShow = function(_, plate, ...)
+						self.hooks[NP].OnShow(plate, ...)
+					end
+				end
+				for _, func in ipairs({'Configure_CPoints', 'Update_HealthBar', 'Update_Highlight', 'Update_Name', 'UpdateElement_All',
+										'RegisterEvents', 'SetTargetFrame', 'StyleFilterClearChanges', 'StyleFilterPass'}) do
+					if self:IsHooked(NP, func) then
+						self:Unhook(NP, func)
+					end
+				end
 				NP.db.units[unitType].health.enable = data[areaType]
-				db.shouldCheckFriendlies = false
 			elseif checkType == 1 then
-				db.shouldCheckFriendlies = function(unit)
-					return unit and (UnitInParty(unit) or UnitInRaid(unit))
+				self.OnShow = function(_, plate, ...)
+					local frame = plate.UnitFrame
+					local _, unitType = NP:GetUnitInfo(frame)
+					if unitType == "FRIENDLY_PLAYER" then
+						local unit = NP:GetUnitByName(frame, unitType)
+						NP.db.units["FRIENDLY_PLAYER"].health.enable = unit and (UnitInParty(unit) or UnitInRaid(unit))
+					end
+					self.hooks[NP].OnShow(plate, ...)
+				end
+				if not self:IsHooked(NP, "OnShow") then self:RawHook(NP, "OnShow") end
+				for _, func in ipairs({'Configure_CPoints', 'Update_HealthBar', 'Update_Highlight', 'Update_Name', 'UpdateElement_All',
+										'RegisterEvents', 'SetTargetFrame', 'StyleFilterClearChanges', 'StyleFilterPass'}) do
+					self:Unhook(NP, func)
+					self:RawHook(NP, func, function(s, frame, ...)
+						local unitType = frame.UnitType or select(2,NP:GetUnitInfo(frame))
+						if unitType == "FRIENDLY_PLAYER" then
+							local unit = frame.unit or NP:GetUnitByName(frame, unitType)
+							NP.db.units["FRIENDLY_PLAYER"].health.enable = unit and (UnitInParty(unit) or UnitInRaid(unit))
+						end
+						self.hooks[NP][func](s, frame, ...)
+					end)
 				end
 			else
-				db.shouldCheckFriendlies = function(unit)
-					return unit and not (UnitInParty(unit) or UnitInRaid(unit))
+				self.OnShow = function(_, plate, ...)
+					local frame = plate.UnitFrame
+					local _, unitType = NP:GetUnitInfo(frame)
+					if unitType == "FRIENDLY_PLAYER" then
+						local unit = NP:GetUnitByName(frame, unitType)
+						NP.db.units["FRIENDLY_PLAYER"].health.enable = unit and not (UnitInParty(unit) or UnitInRaid(unit))
+					end
+					self.hooks[NP].OnShow(plate, ...)
+				end
+				if not self:IsHooked(NP, "OnShow") then self:RawHook(NP, "OnShow") end
+				for _, func in ipairs({'Configure_CPoints', 'Update_HealthBar', 'Update_Highlight', 'Update_Name', 'UpdateElement_All',
+										'RegisterEvents', 'SetTargetFrame', 'StyleFilterClearChanges', 'StyleFilterPass'}) do
+					self:Unhook(NP, func)
+					self:RawHook(NP, func, function(s, frame, ...)
+						local unitType = frame.UnitType or select(2,NP:GetUnitInfo(frame))
+						if unitType == "FRIENDLY_PLAYER" then
+							local unit = frame.unit or NP:GetUnitByName(frame, unitType)
+							NP.db.units["FRIENDLY_PLAYER"].health.enable = unit and not (UnitInParty(unit) or UnitInRaid(unit))
+						end
+						self.hooks[NP][func](s, frame, ...)
+					end)
 				end
 			end
 		else
@@ -290,12 +340,6 @@ end
 function mod:OnShow()
 end
 
-function mod:CommonHook(frame, db)
-	local unitType = frame.UnitType or select(2,NP:GetUnitInfo(frame))
-	if unitType == "FRIENDLY_PLAYER" and db.shouldCheckFriendlies then
-		NP.db.units["FRIENDLY_PLAYER"].health.enable = db.shouldCheckFriendlies(frame.unit or NP:GetUnitByName(frame, unitType))
-	end
-end
 
 function mod:Toggle(db)
 	local enabled
@@ -382,33 +426,13 @@ function mod:Toggle(db)
 		self.initialized.healerIcon = nil
 	end
 	if enabled then
-		self.OnShow = function(_, plate, ...)
-			local frame = plate.UnitFrame
-			local _, unitType = NP:GetUnitInfo(frame)
-			if unitType == "FRIENDLY_PLAYER" and db.shouldCheckFriendlies then
-				NP.db.units["FRIENDLY_PLAYER"].health.enable = db.shouldCheckFriendlies(NP:GetUnitByName(frame, unitType))
-			end
-			self.hooks[NP].OnShow(plate, ...)
-		end
 		core:RegisterAreaUpdate(modName, function()
-			updateVisibilityState(db, core:GetCurrentAreaType())
+			self:updateVisibilityState(db, core:GetCurrentAreaType())
 			for frame in pairs(NP.VisiblePlates) do
 				NP:UpdateAllFrame(frame, nil, true)
 			end
 		end)
-		updateVisibilityState(db, core:GetCurrentAreaType())
-		if not self:IsHooked(NP, "OnShow") then
-			self:RawHook(NP, "OnShow")
-		end
-		for _, func in ipairs({'Configure_CPoints', 'Update_HealthBar', 'Update_Highlight', 'Update_Name', 'UpdateElement_All',
-								'RegisterEvents', 'SetTargetFrame', 'StyleFilterClearChanges', 'StyleFilterPass'}) do
-			if not self:IsHooked(NP, func) then
-				self:RawHook(NP, func, function(s, frame, ...)
-					self:CommonHook(frame, db)
-					self.hooks[NP][func](s, frame, ...)
-				end)
-			end
-		end
+		self:updateVisibilityState(db, core:GetCurrentAreaType())
 		for frame in pairs(NP.VisiblePlates) do
 			NP:UpdateAllFrame(frame, nil, true)
 		end
@@ -417,12 +441,14 @@ function mod:Toggle(db)
 		core:RegisterAreaUpdate(modName)
 		if isAwesome or not core.reload then
 			if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
-		else
-			self.OnShow = function() end
+		elseif self:IsHooked(NP, "OnShow") then
+			self.OnShow = function(_, plate, ...)
+				self.hooks[NP].OnShow(plate, ...)
+			end
 		end
 		for _, func in ipairs({'Configure_CPoints', 'Update_HealthBar', 'Update_Highlight', 'Update_Name', 'UpdateElement_All',
 								'RegisterEvents', 'SetTargetFrame', 'StyleFilterClearChanges', 'StyleFilterPass'}) do
-			if not self:IsHooked(NP, func) then
+			if self:IsHooked(NP, func) then
 				self:Unhook(NP, func)
 			end
 		end
