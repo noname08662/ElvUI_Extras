@@ -25,6 +25,7 @@ local hlR, hlB, hlG = 1, 1, 1
 local prompts, queries = {}, {}
 local parseOr, parseAnd, parseTerm
 local rBad, gBad, bBad
+local copyChatLines
 
 local chatEnabled = E.private.chat.enable
 
@@ -67,7 +68,7 @@ local CloseDropDownMenus, ToggleDropDownMenu = CloseDropDownMenus, ToggleDropDow
 local InCombatLockdown, IsCombatLog = InCombatLockdown, IsCombatLog
 local UIParent, ShowUIPanel = UIParent, ShowUIPanel
 local UIFrameFlash, UIFrameFlashRemoveFrame = UIFrameFlash, UIFrameFlashRemoveFrame
-local PlaySoundFile, Chat_GetChatCategory = PlaySoundFile, Chat_GetChatCategory
+local PlaySoundFile, Chat_GetChatCategory, MouseIsOver = PlaySoundFile, Chat_GetChatCategory, MouseIsOver
 local IsShiftKeyDown, IsAltKeyDown, IsControlKeyDown, IsModifierKeyDown = IsShiftKeyDown, IsAltKeyDown, IsControlKeyDown, IsModifierKeyDown
 local NUM_CHAT_WINDOWS, CHAT_FRAMES, FONT_SIZE, FONT_SIZE_TEMPLATE = NUM_CHAT_WINDOWS, CHAT_FRAMES, FONT_SIZE, FONT_SIZE_TEMPLATE
 local NEW_CHAT_WINDOW, RESET_ALL_WINDOWS, RENAME_CHAT_WINDOW = NEW_CHAT_WINDOW, RESET_ALL_WINDOWS, RENAME_CHAT_WINDOW
@@ -133,8 +134,9 @@ end
 
 
 local function restoreChatState(frame, isUpdate)
-	frame.displayingSearchResults = true
+	CH.db.copyChatLines = false
 
+	frame.displayingSearchResults = true
     frame:Clear()
 
 	if not isUpdate then
@@ -153,6 +155,7 @@ local function restoreChatState(frame, isUpdate)
 
 	twipe(targetTable)
 
+	CH.db.copyChatLines = copyChatLines
 	frame.displayingSearchResults = nil
 end
 
@@ -452,7 +455,29 @@ local function setupHooks(db)
 				end
 			end)
 		end
+		if E.Options and E.Options.args.chat then
+			if not mod:IsHooked(E.Options.args.chat, "set") then
+				mod:SecureHook(E.Options.args.chat, "set", function(info, value)
+					if info[#info] == 'copyChatLines' then
+						copyChatLines = value
+					end
+				end)
+			end
+		elseif not mod:IsHooked(E, "ToggleOptionsUI") then
+			mod:SecureHook(E, "ToggleOptionsUI", function()
+				if E.Options.args.chat and not mod:IsHooked(E.Options.args.chat, "set") then
+					mod:SecureHook(E.Options.args.chat, "set", function(info, value)
+						if info[#info] == 'copyChatLines' then
+							copyChatLines = value
+						end
+					end)
+					mod:Unhook(E, "ToggleOptionsUI")
+				end
+			end)
+		end
 	else
+		if E.Options and E.Options.args.chat and mod:IsHooked(E.Options.args.chat, "set") then mod:Unhook(E.Options.args.chat, "set") end
+		if mod:IsHooked(E, "ToggleOptionsUI") then mod:Unhook(E, "ToggleOptionsUI") end
 		if mod:IsHooked("FCF_Tab_OnClick") then mod:Unhook("FCF_Tab_OnClick") end
 	end
 end
@@ -462,6 +487,7 @@ local function setupSearchFilter(db)
 		hlR, hlG, hlB = unpack(db.highlightColor)
 		prompts, queries = db.prompts, db.queries
 		historyIndex = #prompts
+		copyChatLines = CH.db.copyChatLines
 	end
 
 	for i = 1, NUM_CHAT_WINDOWS do
@@ -1215,40 +1241,76 @@ local function setupCompactChat(db)
 		end
 
 		if not mod:IsHooked(CH, "PositionChat") then
-			mod:SecureHook(CH, "PositionChat", function(self)
-				for id, frameName in ipairs(CHAT_FRAMES) do
-					local chat = _G[frameName]
-					local tab = _G[format("%sTab", frameName)]
+			mod:SecureHook(CH, "PositionChat", function(_, chat)
+				local tab = CH:GetTab(chat)
 
-					if (id <= NUM_CHAT_WINDOWS) then
-						local isRight = isRightChatTab(chat)
-						local parentFrame
+				local isRight = isRightChatTab(chat)
+				local parentFrame
 
-						if isRight then
-							parentFrame = RightChatPanel
-						else
-							parentFrame = LeftChatPanel
-						end
+				if isRight then
+					parentFrame = RightChatPanel
+				else
+					parentFrame = LeftChatPanel
+				end
 
-						local offset = ((isRight and E.db.datatexts.rightChatPanel)
-										or (not isRight and E.db.datatexts.leftChatPanel)) and E.Border*3 - E.Spacing + 22
-										or 0
+				local offset = ((isRight and E.db.datatexts.rightChatPanel)
+								or (not isRight and E.db.datatexts.leftChatPanel)) and E.Border*3 - E.Spacing + 22
+								or 0
 
-						chat:ClearAllPoints()
-						chat:Point("TOPLEFT", parentFrame, "TOPLEFT", db.leftOffset, -db.topOffset)
-						chat:Point("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -db.rightOffset, db.bottomOffset + offset)
+				chat:ClearAllPoints()
+				chat:Point("TOPLEFT", parentFrame, "TOPLEFT", db.leftOffset, -db.topOffset)
+				chat:Point("BOTTOMRIGHT", parentFrame, "BOTTOMRIGHT", -db.rightOffset, db.bottomOffset + offset)
 
-						tab:ClearAllPoints()
-						tab:Point("BOTTOMLEFT", parentFrame, "TOPLEFT", 0, 2)
+				tab:ClearAllPoints()
+				tab:Point("BOTTOMLEFT", parentFrame, "TOPLEFT", 0, 2)
 
-						if chat:GetLeft() then
-							FCF_SavePositionAndDimensions(chat, true)
-						end
-					end
+				if not chat.skipPositioning and chat:GetLeft() then
+					chat.skipPositioning = true
+					FCF_SavePositionAndDimensions(chat, true)
+					chat.skipPositioning = nil
 				end
 				updateChatVisibility(db.selectedRightTab)
 			end)
 		end
+
+		local channelButton = _G.ChatFrameChannelButton
+		if db.mouseoverChannelButton then
+			if not mod:IsHooked(channelButton, "OnEnter") then
+				mod:SecureHookScript(channelButton, "OnEnter", function(self)
+					E_UIFrameFadeIn(nil, self, 0.1, 0, 1)
+				end)
+			end
+			if not mod:IsHooked(channelButton, "OnLeave") then
+				mod:SecureHookScript(channelButton, "OnLeave", function(self)
+					E_UIFrameFadeOut(nil, self, 0.5, 1, 0)
+				end)
+			end
+			if not MouseIsOver(channelButton) then
+				channelButton:SetAlpha(0)
+			end
+		else
+			if mod:IsHooked(channelButton, "OnEnter") then
+				mod:Unhook(channelButton, "OnEnter")
+			end
+			if mod:IsHooked(channelButton, "OnLeave") then
+				mod:Unhook(channelButton, "OnLeave")
+			end
+			channelButton:SetAlpha(1)
+		end
+		if not mod:IsHooked(channelButton, "OnMouseUp") then
+			mod:SecureHookScript(channelButton, "OnMouseUp", function(self)
+				self:ClearAllPoints()
+				self:Point("TOPRIGHT", _G.GeneralDockManager, "BOTTOMRIGHT", -6, -10)
+			end)
+		end
+		if not mod:IsHooked(channelButton, "OnMouseDown") then
+			mod:SecureHookScript(channelButton, "OnMouseDown", function(self)
+				self:ClearAllPoints()
+				self:Point("TOPRIGHT", _G.GeneralDockManager, "BOTTOMRIGHT", -3, -9)
+			end)
+		end
+		channelButton:ClearAllPoints()
+		channelButton:Point("TOPRIGHT", _G.GeneralDockManager, "BOTTOMRIGHT", -6, -10)
 
 		if not mod:IsHooked(CH, "StyleChat") then
 			mod:SecureHook(CH, "StyleChat", function(_, chat)
@@ -1366,7 +1428,7 @@ local function setupCompactChat(db)
 			button:Point(db.point, offsetX * 5, offsetY * 5)
 		end
 
-		CH:PositionChat()
+		CH:PositionChats()
 
 		if #db.rightSideChats == 0 then
 			for i = 1, NUM_CHAT_WINDOWS do
@@ -1436,14 +1498,25 @@ local function setupCompactChat(db)
 				mod:Unhook(chatFrame, "OnUpdate")
 			end
 		end
+		local channelButton = _G.ChatFrameChannelButton
+		if mod:IsHooked(channelButton, "OnEnter") then
+			mod:Unhook(channelButton, "OnEnter")
+		end
+		if mod:IsHooked(channelButton, "OnLeave") then
+			mod:Unhook(channelButton, "OnLeave")
+		end
+		if mod:IsHooked(channelButton, "OnMouseUp") then
+			mod:Unhook(channelButton, "OnMouseUp")
+		end
+		if mod:IsHooked(channelButton, "OnMouseDown") then
+			mod:Unhook(channelButton, "OnMouseDown")
+		end
+		channelButton:SetAlpha(1)
+		channelButton:PointXY(-2, -1)
 
 		for _, buttonTex in ipairs(flashingButtons) do
 			UIFrameFlashRemoveFrame(buttonTex)
 			buttonTex:SetAlpha(0)
-		end
-
-		if not core.reload then
-			CH:UpdateAnchors()
 		end
 	end
 
@@ -1459,36 +1532,20 @@ local function setupCompactChat(db)
 end
 
 local function setupChatEditBox(db)
-	if not chatEnabled then return end
+	if chatEnabled and db.enabled then
+		for _, frameName in ipairs(CHAT_FRAMES) do
+			local chatFrame = _G[frameName.."EditBox"]
 
-	if db.enabled then
-		local function updateAnchors()
-			for _, frameName in ipairs(CHAT_FRAMES) do
-				local chatFrame = _G[frameName.."EditBox"]
-
-				chatFrame:ClearAllPoints()
-				if E.db.chat.editBoxPosition == 'BELOW_CHAT' then
-					chatFrame:Point("TOPLEFT", ChatFrame1, "BOTTOMLEFT", -db.widthOffset, db.heightOffset + db.yOffset)
-					chatFrame:Point("BOTTOMRIGHT", ChatFrame1, "BOTTOMRIGHT", db.widthOffset, -LeftChatTab:GetHeight() - db.heightOffset + db.yOffset)
-				else
-					chatFrame:Point("BOTTOMLEFT", ChatFrame1, "TOPLEFT", -db.widthOffset, db.heightOffset + db.yOffset)
-					chatFrame:Point("TOPRIGHT", ChatFrame1, "TOPRIGHT", db.widthOffset, LeftChatTab:GetHeight() + db.heightOffset + db.yOffset)
-				end
+			chatFrame:ClearAllPoints()
+			if E.db.chat.editBoxPosition == 'BELOW_CHAT' then
+				chatFrame:Point("TOPLEFT", ChatFrame1, "BOTTOMLEFT", -db.widthOffset, db.heightOffset + db.yOffset)
+				chatFrame:Point("BOTTOMRIGHT", ChatFrame1, "BOTTOMRIGHT", db.widthOffset, -LeftChatTab:GetHeight() - db.heightOffset + db.yOffset)
+			else
+				chatFrame:Point("BOTTOMLEFT", ChatFrame1, "TOPLEFT", -db.widthOffset, db.heightOffset + db.yOffset)
+				chatFrame:Point("TOPRIGHT", ChatFrame1, "TOPRIGHT", db.widthOffset, LeftChatTab:GetHeight() + db.heightOffset + db.yOffset)
 			end
 		end
-
-		if not mod:IsHooked(CH, "UpdateAnchors") then
-			mod:SecureHook(CH, "UpdateAnchors", updateAnchors)
-		end
-
-		mod.initialized.chatEditBox = true
-	elseif mod.initialized.chatEditBox then
-		if mod:IsHooked(CH, "UpdateAnchors") then
-			mod:Unhook(CH, "UpdateAnchors")
-		end
 	end
-
-	CH:UpdateAnchors()
 end
 
 
@@ -1520,8 +1577,9 @@ P["Extras"]["general"][modName] = {
 	["CompactChat"] = {
 		["enabled"] = false,
 		["mouseover"] = false,
+		["mouseoverChannelButton"] = true,
 		["mouseoverCopyButton"] = true,
-		["point"] = "TOPRIGHT",
+		["point"] = "TOPLEFT",
 		["topOffset"] = 5,
 		["bottomOffset"] = 5,
 		["leftOffset"] = 5,
@@ -1798,19 +1856,12 @@ function mod:LoadConfig(db)
 					enabled = {
 						order = 1,
 						type = "toggle",
-						width = "full",
 						disabled = false,
 						name = core.pluginColor..L["Enable"],
 						desc = L["Dock all chat frames before enabling.\nShift-click the manager button to access tab settings."],
 					},
-					mouseoverCopyButton = {
-						order = 2,
-						type = "toggle",
-						name = L["Mouseover: Copy Button"],
-						desc = L["Copy button visibility."],
-					},
 					point = {
-						order = 3,
+						order = 2,
 						type = "select",
 						name = L["Point"],
 						desc = L["Manager point."],
@@ -1821,41 +1872,53 @@ function mod:LoadConfig(db)
 							["BOTTOMRIGHT"] = "BOTTOMRIGHT",
 						},
 					},
-					mouseoverL = {
+					mouseoverChannelButton = {
+						order = 3,
+						type = "toggle",
+						name = L["Mouseover: Channel Button"],
+						desc = L["Channel button visibility."],
+					},
+					mouseoverCopyButton = {
 						order = 4,
+						type = "toggle",
+						name = L["Mouseover: Copy Button"],
+						desc = L["Copy button visibility."],
+					},
+					mouseoverL = {
+						order = 5,
 						type = "toggle",
 						name = L["Mouseover: Left"],
 						desc = L["Manager button visibility."],
 					},
 					mouseoverR = {
-						order = 5,
+						order = 6,
 						type = "toggle",
 						name = L["Mouseover: Right"],
 						desc = L["Manager button visibility."],
 					},
 					topOffset = {
-						order = 6,
+						order = 7,
 						type = "range",
 						name = L["Top Offset"],
 						desc = "",
 						min = 0, max = 25, step = 1
 					},
 					bottomOffset = {
-						order = 7,
+						order = 8,
 						type = "range",
 						name = L["Bottom Offset"],
 						desc = "",
 						min = 0, max = 25, step = 1
 					},
 					leftOffset = {
-						order = 8,
+						order = 9,
 						type = "range",
 						name = L["Left Offset"],
 						desc = "",
 						min = 0, max = 25, step = 1
 					},
 					rightOffset = {
-						order = 9,
+						order = 10,
 						type = "range",
 						name = L["Right Offset"],
 						desc = "",
@@ -2039,14 +2102,14 @@ function mod:StripMsg(msg)
     local tempMsg = lower(msg)
     local strLen = #tempMsg
 
-	-- timestamps
-	local stampStart, stampEnd = find(msg, "^[|%x]*%[[|:%d%s%xaApPmMr]*%][|rR]*[|%x%x%x%x%x%x%x%x%x]*%s*")
+    -- timestamps
+    local stampStart, stampEnd = find(msg, "^[|%x]*%[[|:%d%s%xaApPmMr]*%][|rR]*[|%x%x%x%x%x%x%x%x%x]*%s*")
 
-	if stampStart then
-		i = stampEnd + 1
-	end
+    if stampStart then
+        i = stampEnd + 1
+    end
 
-	-- strip junk text and store real positions
+    -- strip junk text and store real positions
     while i <= strLen do
         local b1, b2 = byte(tempMsg, i, i+1)
 
@@ -2123,12 +2186,12 @@ function mod:StripMsg(msg)
                             end
                             i = linkEnd + 1
                         else
-							strippedMsg = strippedMsg .. sub(msg, i, codeEnd - 1)
-							for k = i, codeEnd - 1 do
-								msgMap[j], j = k, j + 1
-							end
-							i = codeEnd + 1
-							break
+                            strippedMsg = strippedMsg .. sub(msg, i, codeEnd - 1)
+                            for k = i, codeEnd - 1 do
+                                msgMap[j], j = k, j + 1
+                            end
+                            i = codeEnd + 1
+                            break
                         end
                     end
                 end
@@ -2141,6 +2204,7 @@ function mod:StripMsg(msg)
             msgMap[j], i, j = i, i + 1, j + 1
         end
     end
+
     return strippedMsg, msgMap
 end
 
@@ -2311,8 +2375,9 @@ function mod:PerformSearch(frame, query)
 end
 
 function mod:DisplaySearchResults(frame, results, query)
-	frame.displayingSearchResults = true
+	CH.db.copyChatLines = false
 
+	frame.displayingSearchResults = true
     frame:Clear()
 
     for _, msg in ipairs(results) do
@@ -2352,6 +2417,7 @@ function mod:DisplaySearchResults(frame, results, query)
 			tinsert(recentQueries, query)
 		end
 	end
+	CH.db.copyChatLines = copyChatLines
 end
 
 

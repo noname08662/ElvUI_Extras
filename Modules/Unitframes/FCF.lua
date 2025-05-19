@@ -823,12 +823,7 @@ function mod:LoadConfig(db)
 						type = "select",
 						name = L["Font Flags"],
 						desc = "",
-						values = {
-							[""] = L["None"],
-							["OUTLINE"] = "OUTLINE",
-							["THINOUTLINE"] = "THINOUTLINE",
-							["MONOCHROME"] = "MONOCHROME",
-						},
+						values = E.db.Extras.fontFlags,
 					},
 					scrollTime = {
 						order = 21,

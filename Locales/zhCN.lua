@@ -1162,11 +1162,10 @@ L["Capture Bar Height"] = "占领条高度"
 L["Also might fix capture bar related issues like progress marker not showing."] =
 	"也可能修复占领条相关问题，例如进度标记未显示。"
 L["Max Length"] = "最大长度"
+L["Channel button visibility."] = "频道按钮的可见性。"
 L["Copy button visibility."] = "复制按钮的可见性。"
 L["Mouseover: Channel Button"] = "鼠标悬停: 频道按钮"
 L["Mouseover: Copy Button"] = "鼠标悬停: 复制按钮"
 L["Plugin version mismatch! Please, download appropriate plugin version at"] = "插件版本不匹配！请在以下地址下载对应版本："
-L["Questie Coherence"] = "Questie 兼容性"
 L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."] =
 	"使 ElvUI 添加的 itemID 信息重新显示在单位和物品提示的最后一行。"
-L["Attempts to extend font outline options across all of ElvUI."] = "尝试在整个 ElvUI 中扩展字体描边选项。"

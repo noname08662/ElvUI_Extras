@@ -1158,6 +1158,7 @@ L["Capture Bar Height"] = "점령 바 높이"
 L["Also might fix capture bar related issues like progress marker not showing."] =
 	"진행 표시기가 표시되지 않는 등 점령 바 관련 문제를 해결할 수 있습니다."
 L["Max Length"] = "최대 길이"
+L["Channel button visibility."] = "채널 버튼 표시 여부."
 L["Copy button visibility."] = "복사 버튼 표시 여부."
 L["Mouseover: Channel Button"] = "마우스오버: 채널 버튼"
 L["Mouseover: Copy Button"] = "마우스오버: 복사 버튼"
@@ -1165,5 +1166,3 @@ L["Plugin version mismatch! Please, download appropriate plugin version at"] = "
 L["Questie Coherence"] = "Questie 연동"
 L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."] =
 	"ElvUI가 추가한 itemID 줄이 다시 유닛 및 아이템 툴팁의 마지막에 표시되도록 합니다."
-L["Attempts to extend font outline options across all of ElvUI."] =
-	"ElvUI 전반에 걸쳐 글꼴 외곽선 옵션을 확장하려고 시도합니다."

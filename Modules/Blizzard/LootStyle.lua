@@ -3,10 +3,9 @@ local core = E:GetModule("Extras")
 local mod = core:NewModule("LootStyle", "AceHook-3.0", "AceEvent-3.0")
 local M = E:GetModule("Misc")
 local CH = E:GetModule("Chat")
-local B = E:GetModule("Blizzard")
 
 local modName = mod:GetName()
-local styleHistory, testlootbar
+local styleHistory
 local guildMap, friendMap, indicators, pendingMsgs, messageToSender = {}, {}, {}, {}, {}
 
 mod.initialized = {}
@@ -14,8 +13,8 @@ mod.initialized = {}
 local _G, unpack, tonumber, select, pairs, ipairs, print, type, next = _G, unpack, tonumber, select, pairs, ipairs, print, type, next
 local tinsert, tremove, twipe, tsort, tconcat = table.insert, table.remove, table.wipe, table.sort, table.concat
 local lower, find, match, format, gsub, sub, byte, split = string.lower, string.find, string.match, string.format, string.gsub, string.sub, string.byte, string.split
-local max, ceil, floor = math.max, math.ceil, math.floor
-local UnitClass, UnitName, GetTime, AlertFrame_FixAnchors = UnitClass, UnitName, GetTime, AlertFrame_FixAnchors
+local ceil, floor = math.ceil, math.floor
+local UnitClass, UnitName, GetTime = UnitClass, UnitName, GetTime
 local ChatFrame_AddMessageEventFilter, ChatFrame_RemoveMessageEventFilter = ChatFrame_AddMessageEventFilter, ChatFrame_RemoveMessageEventFilter
 local GetNumFriends, GetFriendInfo, IsInGuild = GetNumFriends, GetFriendInfo, IsInGuild
 local GetNumGuildMembers, GetGuildRosterInfo = GetNumGuildMembers, GetGuildRosterInfo
@@ -52,135 +51,6 @@ local function handleMessageFilter(events, filterFunc, shouldAdd)
             ChatFrame_RemoveMessageEventFilter(event, filterFunc)
         end
     end
-end
-
-local function simulateLootRoll(db)
-	local itemID = 49623
-	local name, itemLink, quality, name1, itemLink1, quality1, texture1, _, _, texture = GetItemInfo(itemID)
-
-	if not quality then
-		for bagID = 0, NUM_BAG_SLOTS do
-			for slotID = 1, GetContainerNumSlots(bagID) do
-				itemID = GetContainerItemID(bagID, slotID)
-				if itemID then
-					name, itemLink, quality, _, _, _, _, _, _, texture = GetItemInfo(itemID)
-					if quality then
-						if quality > 1 then
-							break
-						else
-							name1, itemLink1, quality1, texture1 = name, itemLink, quality, texture
-						end
-					end
-				end
-			end
-		end
-	end
-	if not quality then
-		if quality1 then
-			name, itemLink, quality, texture = name1, itemLink1, quality1, texture1
-		else
-			return
-		end
-	end
-
-	local FRAME_WIDTH, FRAME_HEIGHT = db.widthBar, db.heightBar
-
-	testlootbar = testlootbar or CreateFrame("Frame", "extrastestlootbar", E.UIParent)
-	testlootbar:SetSize(FRAME_WIDTH, FRAME_HEIGHT)
-	testlootbar:SetTemplate()
-	testlootbar:SetFrameStrata("DIALOG")
-	testlootbar:SetPoint("TOP", AlertFrameHolder, "BOTTOM", 0, -4)
-	testlootbar:Show()
-
-	local itemButton = testlootbar.itemButton or CreateFrame("Button", "$parentIconFrame", testlootbar)
-	itemButton:Size(db.sizeIcon)
-	itemButton:Point('BOTTOMRIGHT', testlootbar, 'BOTTOMLEFT', -4, 1)
-	itemButton:CreateBackdrop()
-
-	itemButton:SetScript("OnLeave", function()
-		GameTooltip:Hide()
-	end)
-	itemButton:SetScript("OnEnter", function(self)
-		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-		GameTooltip:SetHyperlink(itemLink)
-		GameTooltip:Show()
-	end)
-
-	itemButton.icon = itemButton:CreateTexture(nil, "OVERLAY")
-	itemButton.icon:SetAllPoints()
-	itemButton.icon:SetTexCoord(unpack(E.TexCoords))
-	itemButton.icon:SetTexture(texture)
-
-	testlootbar.itemButton = itemButton
-
-	if testlootbar.status then
-		testlootbar.status:Hide()
-		testlootbar.status = nil
-	end
-
-	local status = CreateFrame("StatusBar", "$parentStatusBar", testlootbar)
-	status:SetInside()
-	status:SetFrameLevel(status:GetFrameLevel() - 1)
-	status:SetStatusBarTexture(E.media.normTex)
-	status:SetStatusBarColor(0.8, 0.8, 0.8, 0.9)
-	testlootbar.status = status
-
-	status.bg = status:CreateTexture(nil, "BACKGROUND")
-	status.bg:SetAlpha(0.1)
-	status.bg:SetAllPoints()
-
-	local itemName = testlootbar.itemName or testlootbar:CreateFontString(nil, "ARTWORK")
-	itemName:FontTemplate(nil, nil, "OUTLINE")
-	itemName:Point("BOTTOMLEFT", testlootbar, "TOPLEFT", 4, 0)
-	itemName:Point("TOPRIGHT", testlootbar.bindText, "TOPLEFT", -6, 0)
-	itemName:SetJustifyH("LEFT")
-	itemName:SetText(name)
-	testlootbar.itemName = itemName
-
-	testlootbar.bindText = testlootbar.bindText or testlootbar:CreateFontString(nil, "ARTWORK")
-	testlootbar.bindText:Point("RIGHT", testlootbar.needButton, "LEFT", 0, 1)
-	testlootbar.bindText:FontTemplate(nil, nil, "OUTLINE")
-	testlootbar.bindText:SetText("BoP")
-	testlootbar.bindText:SetVertexColor(1, 0.3, 0.1)
-
-	testlootbar.passButton = testlootbar.passButton or M:CreateRollButton(testlootbar, 0)
-	testlootbar.needButton = testlootbar.needButton or M:CreateRollButton(testlootbar, 1)
-	testlootbar.greedButton = testlootbar.greedButton or M:CreateRollButton(testlootbar, 2)
-	testlootbar.disenchantButton = testlootbar.disenchantButton or M:CreateRollButton(testlootbar, 3)
-
-	for _, button in ipairs({testlootbar.needButton, testlootbar.greedButton, testlootbar.disenchantButton, testlootbar.passButton}) do
-		button:ClearAllPoints()
-		button:SetHitRectInsets(0, 0, -2, 0)
-		button:SetScript("OnClick", nil)
-		button:SetScript("OnEnter", nil)
-		button:SetScript("OnLeave", nil)
-	end
-
-	testlootbar.passButton:Point("BOTTOMRIGHT", testlootbar, "TOPRIGHT", -4, 0)
-	testlootbar.disenchantButton:Point("RIGHT", testlootbar.passButton, "LEFT", 0, -1)
-	testlootbar.greedButton:Point("RIGHT", testlootbar.disenchantButton, "LEFT", 1, -2)
-	testlootbar.needButton:Point("RIGHT", testlootbar.greedButton, "LEFT", 1, 1)
-	testlootbar.bindText:Point("RIGHT", testlootbar.needButton, "LEFT", 0, 1)
-
-	local color = ITEM_QUALITY_COLORS[quality]
-	status:SetStatusBarColor(color.r, color.g, color.b, 0.7)
-	status.bg:SetTexture(color.r, color.g, color.b)
-
-	local rollTime = 15
-	status:SetMinMaxValues(0, rollTime)
-	status:SetValue(rollTime)
-
-	local p, pa, re, x, y = testlootbar:GetPoint()
-	testlootbar:ClearAllPoints()
-	testlootbar:Point(p, pa, re, x, p == 'TOP' and (y - (db.sizeIcon - FRAME_HEIGHT / 2)) or (y + (db.sizeIcon + FRAME_HEIGHT / 2)))
-
-	testlootbar:SetScript("OnUpdate", function(self, elapsed)
-		rollTime = rollTime - elapsed
-		status:SetValue(rollTime)
-		if rollTime < 0 then
-			self:Hide()
-		end
-	end)
 end
 
 local chatMsgs = {
@@ -353,12 +223,6 @@ P["Extras"]["blizzard"][modName] = {
 		["enabled"] = false,
 		["iconSize"] = 16,
 	},
-	["LootBars"] = {
-		["enabled"] = false,
-		["sizeIcon"] = 26,
-		["heightBar"] = 12,
-		["widthBar"] = 312,
-	},
 }
 
 function mod:LoadConfig(db)
@@ -477,45 +341,6 @@ function mod:LoadConfig(db)
 						name = L["Icon Size"],
 						desc = L["Loot rolls icon size."],
 						hidden = function() return not db.StyledLootings.enabled end,
-					},
-				},
-			},
-			LootBars = {
-				type = "group",
-				name = L["Loot Bars"],
-				guiInline = true,
-				get = function(info) return db.LootBars[info[#info]] end,
-				set = function(info, value) db.LootBars[info[#info]] = value simulateLootRoll(db.LootBars) self:Toggle(db) end,
-				args = {
-					enabled = {
-						order = 1,
-						type = "toggle",
-						name = core.pluginColor..L["Enable"],
-						desc = L["Restyles the loot bars.\nRequires 'Loot Roll' (General -> BlizzUI Improvements -> Loot Roll) to be enabled (toggling this module enables it automatically)."],
-					},
-					sizeIcon = {
-						order = 2,
-						type = "range",
-						min = 8, max = 36, step = 1,
-						name = L["Icon Size"],
-						desc = "",
-						hidden = function() return not db.LootBars.enabled end,
-					},
-					heightBar = {
-						order = 3,
-						type = "range",
-						min = 4, max = 24, step = 1,
-						name = L["Bar Height"],
-						desc = "",
-						hidden = function() return not db.LootBars.enabled end,
-					},
-					widthBar = {
-						order = 4,
-						type = "range",
-						min = 40, max = 600, step = 1,
-						name = L["Bar Width"],
-						desc = "",
-						hidden = function() return not db.LootBars.enabled end,
 					},
 				},
 			},
@@ -1190,72 +1015,7 @@ function mod:LootInfo(db)
 	end
 end
 
-function mod:LootBars(db)
-	local function updateBars()
-		for _, frame in pairs(M.RollBars) do
-			local p, pa, re, x, y = frame:GetPoint()
-			frame:Height(db.heightBar)
-			frame:Width(db.widthBar)
-			frame.itemButton:ClearAllPoints()
-			frame.itemButton:Point('BOTTOMRIGHT', frame, 'BOTTOMLEFT', -4, 1)
-			frame.itemButton:Size(db.sizeIcon)
-			frame.needButton:ClearAllPoints()
-			frame.greedButton:ClearAllPoints()
-			frame.disenchantButton:ClearAllPoints()
-			frame.passButton:ClearAllPoints()
-			frame.bindText:ClearAllPoints()
-			frame.itemName:ClearAllPoints()
-			frame.passButton:Point("BOTTOMRIGHT", frame, "TOPRIGHT", -4, -0)
-			frame.disenchantButton:Point("RIGHT", frame.passButton, "LEFT", 0, -1)
-			frame.greedButton:Point("RIGHT", frame.disenchantButton, "LEFT", 1, -2)
-			frame.needButton:Point("RIGHT", frame.greedButton, "LEFT", 1, 1)
-			frame.bindText:Point("RIGHT", frame.needButton, "LEFT", 0, 1)
-			frame.itemName:Point("BOTTOMLEFT", frame, "TOPLEFT", 4, 0)
-			frame.itemName:Point("TOPRIGHT", frame.bindText, "TOPLEFT", -6, 0)
-			frame:ClearAllPoints()
-			frame:Point(p, pa, re, x, p == 'TOP' and (y - (max(26, db.sizeIcon) - db.heightBar/2)) or (y + (max(26, db.sizeIcon) + db.heightBar/2)))
-		end
-	end
-
-	if db.enabled then
-		if not E.private.general.lootRoll then E.private.general.lootRoll = true E:StaticPopup_Show("PRIVATE_RL") end
-		if not self:IsHooked(E, "PostAlertMove") then
-			self:SecureHook(E, "PostAlertMove", function()
-				updateBars()
-				AchievementAlertFrame_FixAnchors()
-				DungeonCompletionAlertFrame_FixAnchors()
-			end)
-		end
-		if B:IsHooked("AlertFrame_FixAnchors") then B:Unhook("AlertFrame_FixAnchors") end
-		B:SecureHook("AlertFrame_FixAnchors", E.PostAlertMove)
-
-		AlertFrame_FixAnchors()
-	elseif self:IsHooked(E, "PostAlertMove") then
-		self:Unhook(E, "PostAlertMove")
-
-		if M.numFrames > 1 then
-			for _, frame in pairs(M.RollBars) do
-				frame:Size(328, 28)
-				frame.itemButton:Size(28 - (E.Border * 2))
-				frame.itemButton:ClearAllPoints()
-				frame.needButton:ClearAllPoints()
-				frame.greedButton:ClearAllPoints()
-				frame.disenchantButton:ClearAllPoints()
-				frame.passButton:ClearAllPoints()
-				frame.bindText:ClearAllPoints()
-				frame.itemName:ClearAllPoints()
-				frame.itemButton:Point("RIGHT", frame, "LEFT", -(E.Spacing * 3), 0)
-				frame.needButton:Point("LEFT", frame.itemButton, "RIGHT", 4, -1)
-				frame.greedButton:Point("LEFT", frame.needButton, "RIGHT", 1, -1)
-				frame.disenchantButton:Point("LEFT", frame.greedButton, "RIGHT", 0, 1)
-				frame.passButton:Point("LEFT", frame.disenchantButton, "RIGHT", 0, 2)
-				frame.bindText:Point("LEFT", frame.passButton, "RIGHT", 2, 0)
-				frame.itemName:Point("LEFT", frame.bindText, "RIGHT", 1, 0)
-				frame.itemName:Point("RIGHT", frame, "RIGHT", -5, 0)
-			end
-			AlertFrame_FixAnchors()
-		end
-	end
+function mod:LootBars()
 end
 
 

@@ -668,12 +668,7 @@ function mod:LoadConfig(db)
 						type = "select",
 						name = L["Font Outline"],
 						desc = "",
-						values = {
-							["NONE"] = L["None"],
-							["OUTLINE"] = "OUTLINE",
-							["MONOCHROMEOUTLINE"] = "MONOCROMEOUTLINE",
-							["THICKOUTLINE"] = "THICKOUTLINE"
-						},
+						values = E.db.Extras.fontFlags,
 					},
 					separator = {
 						order = 4,
@@ -1077,7 +1072,6 @@ function mod:UpdateName(frame, unitType, isUpdate, unit)
 		funcs[unitType](frame, targetName, unit or frame.unit or NP[unitType][frame.UnitName] or NP.UnitByName[frame.UnitName])
 	end
 end
-
 
 function mod:SetupHighlight(f, holder, data)
     local highlightApplyFilter = next(data.highlightSelfApplyFilter) or next(data.highlightOthersApplyFilter)

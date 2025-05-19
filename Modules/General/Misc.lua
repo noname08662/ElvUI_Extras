@@ -354,13 +354,7 @@ function mod:LoadConfig(db)
 						type = "select",
 						name = L["Font Outline"],
 						desc = "",
-						values = {
-							[""] = L["None"],
-							["OUTLINE"] = "OUTLINE",
-							["THICKOUTLINE"] = "THICKOUTLINE",
-							["MONOCHROME"] = "MONOCHROME",
-							["OUTLINEMONOCHROME"] = "OUTLINEMONOCHROME",
-						},
+						values = E.db.Extras.fontFlags,
 					},
 					fontSize = {
 						order = 6,
@@ -436,13 +430,7 @@ function mod:LoadConfig(db)
 						type = "select",
 						name = L["Font Outline"],
 						desc = "",
-						values = {
-							[""] = L["None"],
-							["OUTLINE"] = "OUTLINE",
-							["THICKOUTLINE"] = "THICKOUTLINE",
-							["MONOCHROME"] = "MONOCHROME",
-							["OUTLINEMONOCHROME"] = "OUTLINEMONOCHROME",
-						},
+						values = E.db.Extras.fontFlags,
 						hidden = function(info) return not db[info[#info-1]].queueTime end,
 					},
 					timeXOffset = {
@@ -985,7 +973,10 @@ function mod:ItemIcons(db)
 				return false, msg, ...
 			end
 
+			local CH = E:GetModule("Chat")
 			local messages = {}
+			local copyChatLines = CH.db.copyChatLines
+			CH.db.copyChatLines = false
 
 			for i = 1, NUM_CHAT_WINDOWS do
 				local frame = _G["ChatFrame"..i]
@@ -1019,6 +1010,7 @@ function mod:ItemIcons(db)
 						info.r, info.g, info.b)
 				end
 			end
+			CH.db.copyChatLines = copyChatLines
 			self.initialized.ItemIcons = true
 		end
 

@@ -856,12 +856,7 @@ function mod:LoadConfig(db)
 						type = "select",
 						name = L["Font Outline"],
 						desc = "",
-						values = {
-							["NONE"] = L["NONE"],
-							["OUTLINE"] = "OUTLINE",
-							["MONOCHROMEOUTLINE"] = "MONOCROMEOUTLINE",
-							["THICKOUTLINE"] = "THICKOUTLINE"
-						},
+						values = E.db.Extras.fontFlags,
 					},
 					xOffset = {
 						order = 5,

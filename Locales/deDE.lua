@@ -1154,6 +1154,7 @@ L["Capture Bar Height"] = "Höhe der Eroberungsleiste"
 L["Also might fix capture bar related issues like progress marker not showing."] =
 	"Kann auch Probleme mit der Eroberungsleiste beheben, wie z. B. das Nichtanzeigen des Fortschrittsmarkers."
 L["Max Length"] = "Maximale Länge"
+L["Channel button visibility."] = "Sichtbarkeit der Kanalschaltfläche."
 L["Copy button visibility."] = "Sichtbarkeit der Kopierschaltfläche."
 L["Mouseover: Channel Button"] = "Mouseover: Kanal-Schaltfläche"
 L["Mouseover: Copy Button"] = "Mouseover: Kopieren-Schaltfläche"
@@ -1162,5 +1163,3 @@ L["Plugin version mismatch! Please, download appropriate plugin version at"] =
 L["Questie Coherence"] = "Questie-Kompatibilität"
 L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."] =
 	"Sorgt erneut dafür, dass die von ElvUI hinzugefügte itemID-Zeile im Tooltip zuletzt angezeigt wird (Einheiten & Gegenstände)."
-L["Attempts to extend font outline options across all of ElvUI."] =
-	"Versucht, die Schriftumriss-Optionen überall in ElvUI zu erweitern."

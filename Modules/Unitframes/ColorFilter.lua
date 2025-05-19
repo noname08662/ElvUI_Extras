@@ -961,7 +961,7 @@ function mod:ConstructHighlight(frame)
 		colorFilter.appliedBordersColors = { Power = {applied = false, override = false}, Castbar = {applied = false} }
 
 		colorFilter.Health = CreateFrame("Frame", nil, frame.Health)
-		colorFilter.Health:CreateShadow(nil, true)
+		colorFilter.Health:CreateShadow()
 		colorFilter.Health:SetAllPoints(frame)
 
 		colorFilter.Health.shadow:SetFrameLevel(colorFilter.Health:GetFrameLevel()+15)
@@ -980,7 +980,7 @@ function mod:ConstructHighlight(frame)
 		local colorFilter = frame.colorFilter
 		local power = frame.Power
 		colorFilter.Power = CreateFrame("Frame", nil, power)
-		colorFilter.Power:CreateShadow(nil, true)
+		colorFilter.Power:CreateShadow()
 		colorFilter.Power:SetAllPoints(frame.Power)
 
 		colorFilter.Power.shadow:SetFrameLevel(colorFilter.Power:GetFrameLevel()+15)
@@ -994,7 +994,7 @@ function mod:ConstructHighlight(frame)
 		local colorFilter = frame.colorFilter
 		local castbar = frame.Castbar
 		colorFilter.Castbar = CreateFrame("Frame", nil, castbar)
-		colorFilter.Castbar:CreateShadow(nil, true)
+		colorFilter.Castbar:CreateShadow()
 		colorFilter.Castbar:SetAllPoints(castbar)
 
 		colorFilter.Castbar.shadow:SetFrameLevel(colorFilter.Castbar:GetFrameLevel()+15)
@@ -1004,7 +1004,7 @@ function mod:ConstructHighlight(frame)
 		colorFilter.Castbar.shadow:Hide()
 		if castbar.Icon then
 			colorFilter.CastbarIcon = CreateFrame("Frame", nil, castbar.Icon.bg)
-			colorFilter.CastbarIcon:CreateShadow(nil, true)
+			colorFilter.CastbarIcon:CreateShadow()
 			colorFilter.CastbarIcon:SetAllPoints(castbar.Icon.bg)
 
 			colorFilter.CastbarIcon.shadow:SetFrameLevel(colorFilter.CastbarIcon:GetFrameLevel()+15)

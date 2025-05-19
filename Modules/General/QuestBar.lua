@@ -22,15 +22,18 @@ local NUM_BAG_SLOTS, ERR_NOT_IN_COMBAT = NUM_BAG_SLOTS, ERR_NOT_IN_COMBAT
 
 P["Extras"]["general"][modName] = {
 	["enabled"] = false,
+	["keepSizeRatio"] = true,
 	["mouseover"] = false,
+	["vertical"] = false,
 	["buttons"] = 12,
 	["buttonsPerRow"] = 12,
 	["point"] = "BOTTOMLEFT",
 	["backdrop"] = true,
 	["heightMult"] = 1,
 	["widthMult"] = 1,
-	["buttonsize"] = 32,
-	["buttonspacing"] = 2,
+	["buttonSize"] = 32,
+	["buttonHeight"] = 32,
+	["buttonSpacing"] = 2,
 	["backdropSpacing"] = 2,
 	["frameLevel"] = 1,
 	["frameStrata"] = "LOW",
@@ -90,61 +93,80 @@ function mod:LoadConfig(db)
 						name = L["Backdrop"],
 						desc = L["Toggles the display of the actionbar's backdrop."],
 					},
-					showGrid = {
+					keepSizeRatio = {
 						order = 2,
+						type = "toggle",
+						name = function() return L["Keep Size Ratio"] end,
+						desc = "",
+					},
+					vertical = {
+						order = 3,
+						type = "toggle",
+						name = L["Vertical"],
+						desc = function() return L["Bar Direction"] end,
+						set = function(info, value)
+							db[info[#info]] = value
+							db["buttonsPerRow"] = value and 1 or 12
+							actionbar_db["buttonsPerRow"] = value and 1 or 12
+							AB:PositionAndSizeBar("barQuestBar")
+						end,
+					},
+					showGrid = {
+						order = 4,
 						type = "toggle",
 						name = L["Show Empty Buttons"],
 						set = function(info, value)
 							db[info[#info]] = value
 							actionbar_db[info[#info]] = value
-							AB:UpdateButtonSettingsForBar("barQuestBar")
+							AB:UpdateButtonSettingsForBar("bar" .. modName)
 						end,
 							hidden = true,
 					},
 					mouseover = {
-						order = 3,
+						order = 5,
 						type = "toggle",
 						name = L["Mouse Over"],
 						desc = L["The frame will not be displayed unless hovered over."],
 					},
 					inheritGlobalFade = {
-						order = 4,
+						order = 6,
 						type = "toggle",
 						name = L["Inherit Global Fade"],
 						desc = L["Inherit the global fade; mousing over, targetting, setting focus, losing health, entering combat will set the remove transparency. Otherwise it will use the transparency level in the general actionbar settings for global fade alpha."],
 					},
 					point = {
-						order = 5,
+						order = 7,
 						type = "select",
 						name = L["Anchor Point"],
 						desc = L["The first button anchors itself to this point on the bar."],
-						values = E.db.Extras.pointOptions,
+						values = {
+							["TOPLEFT"] = L['Left'],
+							["BOTTOMRIGHT"] = L['Right'],
+						},
 					},
 					modifier = {
-						order = 6,
+						order = 8,
 						type = "select",
 						name = L["Modifier"],
 						desc = L["Right-click the item while holding the modifier to blacklist it. Blacklisted items will not show up on the bar.\nUse /questbarRestore to purge the blacklist."],
 						values = E.db.Extras.modifiers,
 					},
 					frameLevel = {
-						order = 7,
+						order = 9,
 						type = "range",
 						name = L["Level"],
 						desc = "",
-						set = function(info, value) db[info[#info]] = value actionbar_db[info[#info]] = value self:Toggle(db) end,
 						min = 1, max = 200, step = 1,
 					},
 					frameStrata = {
-						order = 8,
+						order = 10,
 						type = "select",
 						name = L["Strata"],
 						desc = "",
-						set = function(info, value) db[info[#info]] = value actionbar_db[info[#info]] = value self:Toggle(db) end,
 						values = E.db.Extras.frameStrata,
 					},
 					buttons = {
-						order = 9,
+						order = 11,
 						type = "range",
 						name = L["Buttons"],
 						desc = L["The number of buttons to display."],
@@ -152,36 +174,46 @@ function mod:LoadConfig(db)
 							hidden = true,
 					},
 					buttonsPerRow = {
-						order = 10,
+						order = 12,
 						type = "range",
 						name = L["Buttons Per Row"],
 						desc = L["The number of buttons to display per row."],
 						min = 1, max = NUM_ACTIONBAR_BUTTONS, step = 1,
 							hidden = true,
 					},
-					buttonsize = {
-						order = 11,
+					buttonSize = {
+						order = 13,
 						type = "range",
-						name = L["Button Size"],
-						desc = L["The size of the action buttons."],
-						min = 15, max = 60, step = 1,
+						name = function() return db["keepSizeRatio"] and L["Button Size"] or L["Button Width"] end,
+						desc = function() return
+							db["keepSizeRatio"] and L["The size of the action buttons."]
+							or L["The width of the action buttons."] end,
+						min = 14, max = 64, step = 1,
 					},
-					buttonspacing = {
-						order = 12,
+					buttonHeight = {
+						order = 14,
+						type = "range",
+						name = function() return L["Button Height"] end,
+						desc = function() return L["The height of the action buttons."] end,
+						min = 14, max = 64, step = 1,
+						hidden = function() return db["keepSizeRatio"] end,
+					},
+					buttonSpacing = {
+						order = 15,
 						type = "range",
 						name = L["Button Spacing"],
 						desc = L["Spacing between the buttons."],
 						min = -1, max = 10, step = 1,
 					},
 					backdropSpacing = {
-						order = 13,
+						order = 16,
 						type = "range",
 						name = L["Backdrop Spacing"],
 						desc = L["Spacing between the backdrop and the buttons."],
 						min = 0, max = 10, step = 1,
 					},
 					heightMult = {
-						order = 14,
+						order = 17,
 						type = "range",
 						name = L["Height Multiplier"],
 						desc = L["Multiply the backdrop's height or width by this value. This is useful if you wish to have more than one bar behind a backdrop."],
@@ -189,7 +221,7 @@ function mod:LoadConfig(db)
 							hidden = true,
 					},
 					widthMult = {
-						order = 15,
+						order = 18,
 						type = "range",
 						name = L["Width Multiplier"],
 						desc = L["Multiply the backdrop's height or width by this value. This is useful if you wish to have more than one bar behind a backdrop."],
@@ -197,7 +229,7 @@ function mod:LoadConfig(db)
 							hidden = true,
 					},
 					alpha = {
-						order = 16,
+						order = 19,
 						type = "range",
 						name = L["Alpha"],
 						desc = "",
@@ -205,7 +237,7 @@ function mod:LoadConfig(db)
 						min = 0, max = 1, step = 0.01,
 					},
 					visibility = {
-						order = 17,
+						order = 20,
 						type = "input",
 						name = L["Visibility State"],
 						desc = L["This works like a macro; you can run different conditions to show or hide the action bar.\n Example: '[combat] showhide'"],
@@ -225,15 +257,9 @@ end
 
 
 function mod:CreateQuestBar(db)
-    if AB.handledBars["barQuestBar"] then
-		AB.handledBars["barQuestBar"]:SetFrameLevel(db.frameLevel)
-		AB.handledBars["barQuestBar"]:SetFrameStrata(db.frameStrata)
-		return
-	end
+    if AB.handledBars["barQuestBar"] then return end
 
     local bar = AB:CreateBar("QuestBar")
-	bar:SetFrameLevel(db.frameLevel)
-	bar:SetFrameStrata(db.frameStrata)
 
 	AB.handledBars["barQuestBar"] = bar
 	E:CreateMover(bar, "ElvAB_QuestBar", L["barQuestBar"], nil, nil, nil,"ALL,ACTIONBARS",nil,"actionbar,barQuestBar")
@@ -292,8 +318,10 @@ function mod:CheckQuestItems(db)
 		ClearCursor()
 
 		for _, button in ipairs(bar.buttons) do
-			PickupAction(button._state_action)
-			ClearCursor()
+			if button._state_action then
+				PickupAction(button._state_action)
+				ClearCursor()
+			end
 			button:SetAttribute("itemID", nil)
 		end
 
@@ -301,13 +329,13 @@ function mod:CheckQuestItems(db)
 		for i = 1, #questItems do
 			local questItem = questItems[i]
 			local button = bar.buttons[i]
-			if button then
+			if button and button._state_action then
 				PickupContainerItem(questItem.bag, questItem.slot)
 				PlaceAction(button._state_action)
 				ClearCursor()
 				button:SetAttribute("itemID", questItem.itemID)
-				actives = actives + 1
 			end
+			actives = actives + 1
 		end
 
 		local bar_db = AB.db["barQuestBar"]
@@ -324,7 +352,7 @@ end
 function mod:Toggle(db)
     if not core.reload and db.enabled then
 		self:CreateQuestBar(db)
-		AB.handledBars["barQuestBar"].db.enabled = true
+		AB.db["barQuestBar"].enabled = true
 
 		if E.Options.args.actionbar and E.Options.args.actionbar.args.bar10 then
 			E.Options.args.actionbar.args.bar10.hidden = true

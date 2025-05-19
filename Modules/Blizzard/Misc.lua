@@ -7,8 +7,8 @@ local modName = mod:GetName()
 
 mod.initialized = {}
 
-local _G, pairs, ipairs = _G, pairs, ipairs
-local gsub, match, format = gsub, string.match, string.format
+local _G, pairs = _G, pairs
+local gsub, match, format = string.gsub, string.match, string.format
 local WorldFrame, UIErrorsFrame, GetTime, IsModifierKeyDown = WorldFrame, UIErrorsFrame, GetTime, IsModifierKeyDown
 local UnitClass, UnitName, GetActionInfo = UnitClass, UnitName, GetActionInfo
 local GetMerchantItemCostItem, GetMerchantItemInfo, GetItemCount = GetMerchantItemCostItem, GetMerchantItemInfo, GetItemCount
@@ -340,31 +340,73 @@ end
 function mod:LessTooltips(db)
 	if db.enabled then
 		if not self.initialized.LessTooltips then
-			function self:GameTooltip_OnTooltipSetStuff(tt)
-				if not (IsModifierKeyDown()) and tt:GetAnchorType() == 'ANCHOR_CURSOR' then
-					tt:Hide()
-					return
+			function self:GameTooltip_OnTooltipSetStuff()
+				if not IsModifierKeyDown() and self:GetAnchorType() == 'ANCHOR_CURSOR' then
+					self:Hide()
 				end
 			end
 			self.initialized.LessTooltips = true
 		end
-		for _, funcType in ipairs({'Unit', 'Item', 'Spell'}) do
-			if not self:IsHooked(TT, "GameTooltip_OnTooltipSet"..funcType) then
-				self:SecureHook(TT, "GameTooltip_OnTooltipSet"..funcType, self.GameTooltip_OnTooltipSetStuff)
+		if E.Options and E.Options.args.tooltip then
+			if not self:IsHooked(E.Options.args.tooltip, "set") then
+				self:SecureHook(E.Options.args.tooltip, "set", function(info, value)
+					if info[#info] == 'cursorAnchor' then
+						self:LessTooltips({enabled = value, cursorAnchorDisabled = true})
+					end
+				end)
 			end
-		end
-		if not self:IsHooked("GameTooltip_SetDefaultAnchor") then
-			self:SecureHook("GameTooltip_SetDefaultAnchor", function(tt, parent)
-				local action = parent._state_action
-				if action and GetActionInfo(action) == "macro" then
-					self:GameTooltip_OnTooltipSetStuff(tt)
+		elseif not self:IsHooked(E, "ToggleOptionsUI") then
+			self:SecureHook(E, "ToggleOptionsUI", function()
+				if E.Options.args.tooltip and not self:IsHooked(E.Options.args.tooltip, "set") then
+					self:SecureHook(E.Options.args.tooltip, "set", function(info, value)
+						if info[#info] == 'cursorAnchor' then
+							self:LessTooltips({enabled = value, cursorAnchorDisabled = true})
+						end
+					end)
+					self:Unhook(E, "ToggleOptionsUI")
 				end
 			end)
 		end
+		if TT.db.cursorAnchor then
+			for obj, funcs in pairs({	[GameTooltip] 			= {'Unit','Item','Spell'},
+										[ShoppingTooltip1] 		= {'Item'},
+										[ShoppingTooltip2] 		= {'Item'},
+										[ShoppingTooltip3] 		= {'Item'},
+										[E.SpellBookTooltip] 	= {'Spell'},	}) do
+				for _, funcType in next, funcs do
+					local _, hook = TT:IsHooked(obj, "OnTooltipSet"..funcType)
+					if hook and not self:IsHooked(obj, "OnTooltipSet"..funcType) then
+						self:SecureHookScript(obj, "OnTooltipSet"..funcType, self.GameTooltip_OnTooltipSetStuff)
+					end
+				end
+			end
+			if not self:IsHooked("GameTooltip_SetDefaultAnchor") then
+				self:SecureHook("GameTooltip_SetDefaultAnchor", function(tt, parent)
+					local action = parent._state_action
+					if action and GetActionInfo(action) == "macro" then
+						self.GameTooltip_OnTooltipSetStuff(tt)
+					end
+				end)
+			end
+		end
 	elseif self.initialized.LessTooltips then
-		if self:IsHooked(TT, "GameTooltip_OnTooltipSetUnit") then self:Unhook(TT, "GameTooltip_OnTooltipSetUnit") end
-		if self:IsHooked(TT, "GameTooltip_OnTooltipSetItem") then self:Unhook(TT, "GameTooltip_OnTooltipSetItem") end
-		if self:IsHooked(TT, "GameTooltip_OnTooltipSetSpell") then self:Unhook(TT, "GameTooltip_OnTooltipSetSpell") end
+		if not db.cursorAnchorDisabled then
+			if self:IsHooked(E, "ToggleOptionsUI") then self:Unhook(E, "ToggleOptionsUI") end
+			if E.Options and E.Options.args.tooltip and self:IsHooked(E.Options.args.tooltip, "set") then
+				self:Unhook(E.Options.args.tooltip, "set")
+			end
+		end
+		for obj, funcs in pairs({	[GameTooltip] 			= {'Unit','Item','Spell'},
+									[ShoppingTooltip1] 		= {'Item'},
+									[ShoppingTooltip2] 		= {'Item'},
+									[ShoppingTooltip3] 		= {'Item'},
+									[E.SpellBookTooltip] 	= {'Spell'},	}) do
+			for _, funcType in next, funcs do
+				if self:IsHooked(obj, "OnTooltipSet"..funcType) then
+					self:Unhook(obj, "OnTooltipSet"..funcType)
+				end
+			end
+		end
 		if self:IsHooked("GameTooltip_SetDefaultAnchor") then self:Unhook("GameTooltip_SetDefaultAnchor") end
 	end
 end

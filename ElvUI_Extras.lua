@@ -492,7 +492,7 @@ function core:fixes(db)
 		end)
 	end
 
-	if db.captureBarFix and (E.private.skins.blizzard.enable and E.private.skins.blizzard.WorldStateFrame) then
+	if db.captureBarFix and (E.private.skins.blizzard.enable and E.private.skins.blizzard.worldState) then
 		local captureBarHolder = CreateFrame("Frame", "CaptureBarHolder", E.UIParent)
 		captureBarHolder:SetFrameStrata("BACKGROUND")
 		captureBarHolder:SetFrameLevel(100)
@@ -1238,7 +1238,6 @@ P["Extras"] = {
 	["unitFaction"] = true,
 	["nameOnly"] = true,
 	["questieTips"] = false,
-	["extraFontFlags"] = false,
 	["captureBarFix"] = false,
 	["captureBarHeight"] = 8,
 	["pluginColor"] = '|cffaf73cd',
@@ -1636,6 +1635,17 @@ P["Extras"] = {
 			["label"] = "Hunter's Mark",
 		},
     },
+	["fontFlags"] = {
+		["NONE"] = L["None"],
+		["OUTLINE"] = 'Outline',
+		["THICKOUTLINE"] = 'Thick',
+		["SHADOW"] = '|cff888888Shadow|r',
+		["SHADOWOUTLINE"] = '|cff888888Shadow|r Outline',
+		["SHADOWTHICKOUTLINE"] = '|cff888888Shadow|r Thick',
+		["MONOCHROME"] = '|cFFAAAAAAMono|r',
+		["MONOCHROMEOUTLINE"] = '|cFFAAAAAAMono|r Outline',
+		["MONOCHROMETHICKOUTLINE"] = '|cFFAAAAAAMono|r Thick'
+	},
 
 	["general"] = {},
 	["blizzard"] = {},
@@ -1905,7 +1915,7 @@ function core:GetOptions()
 					colors = {
 						order = 1,
 						type = "group",
-						name = L["Version: "].."1.10 (ElvUI 6.09)",
+						name = L["Version: "].."1.10 (ElvUI 7)",
 						guiInline = true,
 						get = function(info) return colorConvert(E.db.Extras[info[#info]]) end,
 						set = function(info, r, g, b)
@@ -1993,7 +2003,7 @@ function core:GetOptions()
 								name = L["Capture Bar Mover"],
 								desc = L["Also might fix capture bar related issues like progress marker not showing."],
 								disabled = function()
-									return not (E.private.skins.blizzard.enable and E.private.skins.blizzard.WorldStateFrame)
+									return not (E.private.skins.blizzard.enable and E.private.skins.blizzard.worldState)
 								end,
 							},
 							captureBarHeight = {
@@ -2004,21 +2014,15 @@ function core:GetOptions()
 								desc = "",
 								disabled = function()
 									return not E.db.Extras.captureBarFix
-											or not (E.private.skins.blizzard.enable and E.private.skins.blizzard.WorldStateFrame)
+											or not (E.private.skins.blizzard.enable and E.private.skins.blizzard.worldState)
 								end,
 							},
-							extraFontFlags = {
-								type = "toggle",
-								name = L["Font Flags"],
-								desc = L["Attempts to extend font outline options across all of ElvUI."],
 
-							},
 							questieTips = {
 								type = "toggle",
 								name = L["Questie Coherence"],
 								desc = L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."],
 								disabled = function() return not _G.Questie end,
-							},
 							restoreRaidControls = {
 								type = "toggle",
 								name = L["Restore Raid Controls"],
@@ -2061,7 +2065,7 @@ function core:Initialize()
 	self.customColorAlpha = E.db.Extras.customColorAlpha
 	self.customColorBeta = E.db.Extras.customColorBeta
 
-	if E.version ~= '6.09' then
+	if E.version ~= 7 then
 		local CH = E:GetModule('Chat')
 		local msg = format(self.customColorAlpha.."ElvUI "..self.pluginColor.."Extras"..self.customColorAlpha..": |r"..self.customColorBad..
 					L["Plugin version mismatch! Please, download appropriate plugin version at"].." https://github.com/noname08662/ElvUI_Extras.")
@@ -2086,59 +2090,6 @@ function core:Initialize()
 						end
 					end)
 				end
-			end
-		end
-		if E.db.Extras.extraFontFlags then
-			local function getSubOption(group, key)
-				if group.plugins then
-					for _, t in pairs(group.plugins) do
-						if t[key] then
-							return t[key]
-						end
-					end
-				end
-				return group.args[key]
-			end
-			local function lookup(t)
-				if t and type(t) == 'table' then
-					for _, v in pairs(t) do
-						if type(v) == 'table' then
-							if v.type == 'select' then
-								if type(v.values) == 'table' and v.values['OUTLINE'] then
-									v.values["NONE"] = L["None"]
-									v.values["OUTLINE"] = 'Outline'
-									v.values["THICKOUTLINE"] = 'Thick'
-									v.values["SHADOW"] = '|cff888888Shadow|r'
-									v.values["SHADOWOUTLINE"] = '|cff888888Shadow|r Outline'
-									v.values["SHADOWTHICKOUTLINE"] = '|cff888888Shadow|r Thick'
-									v.values["MONOCHROME"] = '|cFFAAAAAAMono|r'
-									v.values["MONOCHROMEOUTLINE"] = '|cFFAAAAAAMono|r Outline'
-									v.values["MONOCHROMETHICKOUTLINE"] = '|cFFAAAAAAMono|r Thick'
-								end
-							elseif v.type == 'group' and v.args then
-								lookup(type(v.args) == 'function' and v.args() or v.args)
-							end
-						end
-					end
-				end
-			end
-			local lib = E.Libs.AceConfigDialog
-			if not self:IsHooked(lib, "FeedGroup") then
-				self:RawHook(lib, "FeedGroup", function(acd,appName,options,container,rootframe,path,isRoot)
-					local group = options
-					for i = 1, #path do
-						group = getSubOption(group, path[i])
-					end
-					if type(group) ~= 'table' then return end
-					if group.plugins then
-						for _, t in pairs(group.plugins) do
-							lookup(t.args)
-						end
-					else
-						lookup(group.args)
-					end
-					self.hooks[lib].FeedGroup(acd,appName,options,container,rootframe,path,isRoot)
-				end)
 			end
 		end
 	end)
