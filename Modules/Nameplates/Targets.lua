@@ -19,12 +19,13 @@ local myname = E.myname
 local funcs, values = {}, {}
 local frames = mod.frames
 
+local max = math.max
 local _G, pairs, ipairs, loadstring, setfenv, unpack, next = _G, pairs, ipairs, loadstring, setfenv, unpack, next
 local find, format, gsub, match, gmatch = string.find, string.format, string.gsub, string.match, string.gmatch
 local utf8lower, utf8sub, utf8len = string.utf8lower, string.utf8sub, string.utf8len
-local twipe = table.wipe
+local tinsert, twipe, tconcat = table.insert, table.wipe, table.concat
 local UnitName, UnitClass, UnitReaction, UnitExists, UnitGUID, UnitIsPlayer = UnitName, UnitClass, UnitReaction, UnitExists, UnitGUID, UnitIsPlayer
-local RAID_CLASS_COLORS, UNKNOWN, NONE = RAID_CLASS_COLORS, UNKNOWN, NONE
+local RAID_CLASS_COLORS, UNKNOWN = RAID_CLASS_COLORS, UNKNOWN
 local GetNamePlateForUnit = isAwesome and C_NamePlate.GetNamePlateForUnit
 
 local separatorMap = {
@@ -46,7 +47,7 @@ local function generateUpdateFunction(config)
 	local separator = separatorMap[config.separator]
 
     if config.highlightSelf or config.highlightOthers then
-        highlightCode = "targetName.isPlayerName = name == myname"
+		highlightCode = "targetName.isPlayerName = name == myname"
     end
 
     if config.reactionColor and config.classColor then
@@ -130,7 +131,7 @@ local function generateUpdateFunction(config)
         colorCode = "targetName:SetTextColor(targetName.r or 1, targetName.g or 1, targetName.b or 1)"
     end
 
-	if config.separator ~= NONE then
+	if config.separator ~= 'NONE' then
 		if config.abbreviateName then
 			if config.maxLength > 0 then
 				textDisplayCode = format([[
@@ -155,7 +156,7 @@ local function generateUpdateFunction(config)
 					else
 						targetName:SetFormattedText('%s', name)
 					end
-				]], config.maxLength, separator, config.maxLength - 3, separator, separator, config.maxLength - 3, separator)
+				]], config.maxLength, separator, max(3, config.maxLength) - 3, separator, separator, max(3, config.maxLength) - 3, separator)
 			else
 				textDisplayCode = format([[
 					local letters, lastWord = "", match(name, ".+%%s(.+)$")
@@ -181,7 +182,7 @@ local function generateUpdateFunction(config)
 				else
 					targetName:SetFormattedText('%s', name)
 				end
-			]], config.maxLength, separator, config.maxLength - 3, separator)
+			]], config.maxLength, separator, max(3, config.maxLength) - 3, separator)
 		else
 			textDisplayCode = format("targetName:SetFormattedText('%s', name)", separator)
 		end
@@ -209,7 +210,7 @@ local function generateUpdateFunction(config)
 				else
 					targetName:SetText(name)
 				end
-			]], config.maxLength, config.maxLength - 3, config.maxLength - 3)
+			]], config.maxLength, max(3, config.maxLength) - 3, max(3, config.maxLength) - 3)
 		else
 			textDisplayCode = [[
 				local letters, lastWord = "", match(name, ".+%%s(.+)$")
@@ -235,7 +236,7 @@ local function generateUpdateFunction(config)
 			else
 				targetName:SetText(name)
 			end
-		]], config.maxLength, config.maxLength - 3)
+		]], config.maxLength, max(3, config.maxLength) - 3)
 	else
 		textDisplayCode = "targetName:SetText(name)"
 	end
@@ -295,6 +296,101 @@ local function generateUpdateFunction(config)
     return luaFunction
 end
 
+local function generateHighlightFunction(data, f, holder, highlightApplyFilter)
+    local codeLines = {
+        "if f.isPlayerName then"
+    }
+
+    if data.highlightSelf then
+        if data.highlightSelfInheritColor then
+            tinsert(codeLines, "f.highlight:SetVertexColor(f:GetTextColor())")
+        else
+            tinsert(codeLines, format("f.highlight:SetVertexColor(%s, %s, %s)",
+                f.highlightSelfR or 1, f.highlightSelfG or 1, f.highlightSelfB or 1))
+        end
+
+        if find(f.highlightSelfTexture, "%S+") then
+            tinsert(codeLines, "f.highlight:SetTexture(f.highlightSelfTexture)")
+		elseif find(f.highlightOthersTexture, "%S+") then
+            tinsert(codeLines, "f.highlight:SetTexture(nil)")
+        end
+
+        tinsert(codeLines, "holder:SetScale(f.highlightSelfScale or 1)")
+
+        if not data.highlightOthers then
+            tinsert(codeLines, "f.highlight:Show()")
+        end
+
+        if next(data.highlightSelfApplyFilter) then
+            tinsert(codeLines, "f.frame.targetsFilter = highlightSelfApplyFilter")
+        elseif next(data.highlightOthersApplyFilter) then
+            tinsert(codeLines, "f.frame.targetsFilter = nil")
+        end
+    else
+        tinsert(codeLines, "f.highlight:Hide()")
+        tinsert(codeLines, "holder:SetScale(1)")
+		if next(data.highlightOthersApplyFilter) then
+			tinsert(codeLines, "f.frame.targetsFilter = nil")
+		end
+    end
+
+    tinsert(codeLines, "else")
+
+    if data.highlightOthers then
+        if data.highlightOthersInheritColor then
+            tinsert(codeLines, "f.highlight:SetVertexColor(f:GetTextColor())")
+        else
+            tinsert(codeLines, format("f.highlight:SetVertexColor(%s, %s, %s)",
+                f.highlightOthersR or 1, f.highlightOthersG or 1, f.highlightOthersB or 1))
+        end
+
+        if find(f.highlightOthersTexture, "%S+") then
+            tinsert(codeLines, "f.highlight:SetTexture(f.highlightOthersTexture)")
+		elseif find(f.highlightSelfTexture, "%S+") then
+            tinsert(codeLines, "f.highlight:SetTexture(nil)")
+        end
+
+        tinsert(codeLines, "holder:SetScale(f.highlightOthersScale or 1)")
+
+        if not data.highlightSelf then
+            tinsert(codeLines, "f.highlight:Show()")
+        end
+
+        if next(data.highlightOthersApplyFilter) then
+            tinsert(codeLines, "f.frame.targetsFilter = highlightOthersApplyFilter")
+        elseif next(data.highlightSelfApplyFilter) then
+            tinsert(codeLines, "f.frame.targetsFilter = nil")
+        end
+    else
+        tinsert(codeLines, "f.highlight:Hide()")
+        tinsert(codeLines, "holder:SetScale(1)")
+		if next(data.highlightSelfApplyFilter) then
+			tinsert(codeLines, "f.frame.targetsFilter = nil")
+		end
+    end
+
+	if data.highlightSelf and data.highlightOthers then
+		tinsert(codeLines, "end\nf.highlight:Show()")
+	else
+		tinsert(codeLines, "end")
+	end
+
+	if highlightApplyFilter then
+		tinsert(codeLines, "f.frame.StyleFilterWaitTime = nil\nStyleFilterUpdate(NP, f.frame, f)")
+	end
+
+    local func = loadstring(tconcat(codeLines, "\n"))
+	setfenv(func, {
+		f = f,
+		holder = holder,
+		highlightSelfApplyFilter = data.highlightSelfApplyFilter,
+		highlightOthersApplyFilter = data.highlightOthersApplyFilter,
+		NP = NP,
+		StyleFilterUpdate = NP.StyleFilterUpdate,
+	})
+    return func
+end
+
 
 local function updateVisibilityState(db, areaType)
 	local isShown = false
@@ -340,6 +436,8 @@ local function updateValues(db)
 									["highlightSelfInheritColor"] = data.highlightSelfInheritColor,
 									["highlightSelfTexture"] = data.highlightSelfTexture ~= "" and data.highlightSelfTexture
 																								or E.Media.Textures.Highlight,
+									["highlightSelfApplyFilter"] = (E.global.nameplates.filters[data.highlightSelfApplyFilter]
+																	or {actions={}}).actions,
 									["highlightOthers"] = data.highlightOthers,
 									["highlightOthersR"] = data.highlightOthersColor[1],
 									["highlightOthersG"] = data.highlightOthersColor[2],
@@ -348,6 +446,8 @@ local function updateValues(db)
 									["highlightOthersInheritColor"] = data.highlightOthersInheritColor,
 									["highlightOthersTexture"] = data.highlightOthersTexture ~= "" and data.highlightOthersTexture
 																								or E.Media.Textures.Highlight,
+									["highlightOthersApplyFilter"] = (E.global.nameplates.filters[data.highlightOthersApplyFilter]
+																		or {actions={}}).actions,
 									["separator"] = data.separator,
 									["separatorFormat"] = separatorMap[data.separator],
 									["isShown"] = data.isShown,
@@ -387,11 +487,13 @@ P["Extras"]["nameplates"][modName] = {
 		["showInstance"] = false,
 		["showWorld"] = false,
 		["highlightSelf"] = true,
+		["highlightSelfApplyFilter"] = false,
 		["highlightSelfInheritColor"] = true,
 		["highlightSelfTexture"] = E.Media.Textures.Highlight,
 		["highlightSelfColor"] = {0.9, 0.9, 0.3},
 		["highlightSelfScale"] = 1,
 		["highlightOthers"] = false,
+		["highlightOthersApplyFilter"] = false,
 		["highlightOthersTexture"] = E.Media.Textures.Highlight,
 		["highlightOthersInheritColor"] = true,
 		["highlightOthersColor"] = {0.3, 0.9, 0.9},
@@ -449,7 +551,7 @@ function mod:LoadConfig(db)
 							for _, unitType in ipairs({'FRIENDLY_NPC', 'FRIENDLY_PLAYER', 'ENEMY_NPC', 'ENEMY_PLAYER'}) do
 								local handler = self[unitType]
 								if handler then
-									self:SetScripts(handler, unitType)
+									self:SetScripts(handler,db[unitType], unitType)
 								end
 							end
 						end,
@@ -675,34 +777,50 @@ function mod:LoadConfig(db)
 						name = L["Class Color"],
 						desc = "",
 					},
+				},
+			},
+			highlightSelf = {
+				order = 4,
+				type = "group",
+				name = L["Highlight Self"],
+				guiInline = true,
+				get = function(info) return selectedTypeData()[info[#info]] end,
+				set = function(info, value)
+					selectedTypeData()[info[#info]] = value
+					updateValues(db)
+					self:UpdateAllFrames(db, true)
+				end,
+				hidden = function() return not selectedTypeData().enabled end,
+				disabled = function() return not selectedTypeData().enabled or not selectedTypeData().highlightSelf end,
+				args = {
 					highlightSelf = {
-						order = 15,
+						order = 1,
 						type = "toggle",
-						name = L["Highlight Self"],
+						name = core.pluginColor..L["Enable"],
 						desc = "",
+						disabled = function() return not selectedTypeData().enabled end,
 					},
-					highlightOthers = {
-						order = 16,
-						type = "toggle",
-						name = L["Highlight Others"],
+					highlightSelfApplyFilter = {
+                        order = 2,
+                        type = "select",
+                        name = L["Apply Filter"],
 						desc = "",
-					},
+						values = function()
+							local availableFilters = {[false] = core.customColorBad..L["None"]}
+							for filterName in pairs(core:GetUnitDropdownOptions(E.global.nameplates.filters)) do
+								availableFilters[filterName] = filterName
+							end
+							return availableFilters
+						end,
+                    },
 					highlightSelfInheritColor = {
-						order = 17,
+						order = 3,
 						type = "toggle",
 						name = L["Self Inherit Name Color"],
 						desc = "",
-						hidden = function() return not selectedTypeData().enabled or not selectedTypeData().highlightSelf end,
-					},
-					highlightSelfTexture = {
-						order = 18,
-						type = "input",
-						name = L["Self Texture"],
-						desc = L["Whitespace to disable, empty to default."],
-						hidden = function() return not selectedTypeData().enabled or not selectedTypeData().highlightSelf end,
 					},
 					highlightSelfColor = {
-						order = 19,
+						order = 4,
 						type = "color",
 						name = L["Self Color"],
 						desc = "",
@@ -712,33 +830,65 @@ function mod:LoadConfig(db)
 							updateValues(db)
 							self:UpdateAllFrames(db, true)
 						end,
-						hidden = function() return not selectedTypeData().enabled or not selectedTypeData().highlightSelf end,
 						disabled = function() return not selectedTypeData().enabled or selectedTypeData().highlightSelfInheritColor end,
 					},
 					highlightSelfScale = {
-						order = 20,
+						order = 5,
 						type = "range",
-						min = 0, max = 4, step = 0.05,
+						min = 0.01, max = 4, step = 0.05,
 						name = L["Self Scale"],
 						desc = "",
-						hidden = function() return not selectedTypeData().enabled or not selectedTypeData().highlightSelf end,
 					},
+					highlightSelfTexture = {
+						order = 6,
+						type = "input",
+						name = L["Self Texture"],
+						desc = L["Whitespace to disable, empty to default."],
+					},
+				},
+			},
+			highlightOthers = {
+				order = 5,
+				type = "group",
+				name = L["Highlight Others"],
+				guiInline = true,
+				get = function(info) return selectedTypeData()[info[#info]] end,
+				set = function(info, value)
+					selectedTypeData()[info[#info]] = value
+					updateValues(db)
+					self:UpdateAllFrames(db, true)
+				end,
+				hidden = function() return not selectedTypeData().enabled end,
+				disabled = function() return not selectedTypeData().enabled or not selectedTypeData().highlightOthers end,
+				args = {
+					highlightOthers = {
+						order = 1,
+						type = "toggle",
+						name = core.pluginColor..L["Enable"],
+						desc = "",
+						disabled = function() return not selectedTypeData().enabled end,
+					},
+					highlightOthersApplyFilter = {
+                        order = 2,
+                        type = "select",
+                        name = L["Apply Filter"],
+						desc = "",
+						values = function()
+							local availableFilters = {[false] = core.customColorBad..L["None"]}
+							for filterName in pairs(core:GetUnitDropdownOptions(E.global.nameplates.filters)) do
+								availableFilters[filterName] = filterName
+							end
+							return availableFilters
+						end,
+                    },
 					highlightOthersInheritColor = {
-						order = 21,
+						order = 3,
 						type = "toggle",
 						name = L["Others Inherit Name Color"],
 						desc = "",
-						hidden = function() return not selectedTypeData().enabled or not selectedTypeData().highlightOthers end,
-					},
-					highlightOthersTexture = {
-						order = 22,
-						type = "input",
-						name = L["Others Texture"],
-						desc = L["Whitespace to disable, empty to default."],
-						hidden = function() return not selectedTypeData().enabled or not selectedTypeData().highlightOthers end,
 					},
 					highlightOthersColor = {
-						order = 23,
+						order = 4,
 						type = "color",
 						name = L["Others Color"],
 						desc = "",
@@ -748,16 +898,20 @@ function mod:LoadConfig(db)
 							updateValues(db)
 							self:UpdateAllFrames(db, true)
 						end,
-						hidden = function() return not selectedTypeData().enabled or not selectedTypeData().highlightOthers end,
 						disabled = function() return not selectedTypeData().enabled or selectedTypeData().highlightOthersInheritColor end,
 					},
 					highlightOthersScale = {
-						order = 24,
+						order = 5,
 						type = "range",
-						min = 0, max = 4, step = 0.05,
+						min = 0.01, max = 4, step = 0.05,
 						name = L["Others Scale"],
 						desc = "",
-						hidden = function() return not selectedTypeData().enabled or not selectedTypeData().highlightOthers end,
+					},
+					highlightOthersTexture = {
+						order = 6,
+						type = "input",
+						name = L["Others Texture"],
+						desc = L["Whitespace to disable, empty to default."],
 					},
 				},
 			},
@@ -800,6 +954,7 @@ function mod:UpdateAllFrames(db, enable, visibilityUpdate)
 		if visibilityUpdate then
 			if isAwesome then
 				for frame in pairs(NP.VisiblePlates) do
+					frame.targetsFilter = nil
 					local unitType = frame.UnitType
 					if unitType and self[unitType] then
 						self:AwesomeUpdateName(frame, unitType, true)
@@ -814,6 +969,7 @@ function mod:UpdateAllFrames(db, enable, visibilityUpdate)
 				for plate in pairs(NP.CreatedPlates) do
 					local frame = plate.UnitFrame
 					if frame then
+						frame.targetsFilter = nil
 						for unitType, targetName in pairs(frame.targetNames) do
 							targetName:Hide()
 							targetName.lastName = nil
@@ -829,6 +985,7 @@ function mod:UpdateAllFrames(db, enable, visibilityUpdate)
 				if frame then
 					local unitType = frame.UnitType
 					if frame.targetNames then
+						frame.targetsFilter = nil
 						for unitType in pairs(frame.targetNames) do
 							if not values[unitType] then
 								frame.targetNames[unitType]:Hide()
@@ -847,6 +1004,7 @@ function mod:UpdateAllFrames(db, enable, visibilityUpdate)
 				local frame = plate.UnitFrame
 				if frame then
 					if frame.targetNames then
+						frame.targetsFilter = nil
 						for unitType, targetName in pairs(frame.targetNames) do
 							if not values[unitType] then
 								targetName:Hide()
@@ -865,6 +1023,7 @@ function mod:UpdateAllFrames(db, enable, visibilityUpdate)
 		for plate in pairs(NP.CreatedPlates) do
 			local frame = plate.UnitFrame
 			if frame and frame.targetNames then
+				frame.targetsFilter = nil
 				for unitType, targetName in pairs(frame.targetNames) do
 					targetName:Hide()
 					frame.targetNames[unitType] = nil
@@ -919,9 +1078,16 @@ function mod:UpdateName(frame, unitType, isUpdate, unit)
 	end
 end
 
+
 function mod:SetupHighlight(f, holder, data)
-	if data.highlightSelf or data.highlightOthers then
-		f.highlightSelfScale = data.highlightSelfScale
+    local highlightApplyFilter = next(data.highlightSelfApplyFilter) or next(data.highlightOthersApplyFilter)
+    local anyHighlightEnabled = data.highlightSelf or data.highlightOthers
+	local hook
+
+    if self:IsHooked(f, "Hide") then self:Unhook(f, "Hide") end
+
+    if anyHighlightEnabled then
+        f.highlightSelfScale = data.highlightSelfScale
 		f.highlightSelfR = data.highlightSelfR
 		f.highlightSelfG = data.highlightSelfG
 		f.highlightSelfB = data.highlightSelfB
@@ -930,349 +1096,54 @@ function mod:SetupHighlight(f, holder, data)
 		f.highlightOthersR = data.highlightOthersR
 		f.highlightOthersG = data.highlightOthersG
 		f.highlightOthersB = data.highlightOthersB
-		f.highlightOthersTexture = data.highlightOthersTexture
-		if not f.highlight then
-			f.highlight = holder:CreateTexture(nil, "BACKGROUND")
-			f.highlight:SetAllPoints(f)
-		end
-	end
-	for _, func in ipairs({"SetText", "SetFormattedText"}) do
-		if self:IsHooked(f, func) then self:Unhook(f, func) end
-		if data.highlightOthers and data.highlightSelf then
-			if data.highlightOthersInheritColor and data.highlightSelfInheritColor then
-				if find(f.highlightSelfTexture, "%S+") and find(f.highlightOthersTexture, "%S+") then
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(fs.highlightSelfTexture)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(fs.highlightOthersTexture)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				elseif find(f.highlightSelfTexture, "%S+") then
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(fs.highlightSelfTexture)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(nil)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				elseif find(f.highlightOthersTexture, "%S+") then
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(nil)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(fs.highlightOthersTexture)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				else
-					f.highlight:SetTexture(nil)
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				end
-			elseif data.highlightOthersInheritColor then
-				if find(f.highlightSelfTexture, "%S+") and find(f.highlightOthersTexture, "%S+") then
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs.highlightSelfR, fs.highlightSelfG, fs.highlightSelfB)
-							fs.highlight:SetTexture(fs.highlightSelfTexture)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(fs.highlightOthersTexture)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				elseif find(f.highlightSelfTexture, "%S+") then
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs.highlightSelfR, fs.highlightSelfG, fs.highlightSelfB)
-							fs.highlight:SetTexture(fs.highlightSelfTexture)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(nil)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				elseif find(f.highlightOthersTexture, "%S+") then
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs.highlightSelfR, fs.highlightSelfG, fs.highlightSelfB)
-							fs.highlight:SetTexture(nil)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(fs.highlightOthersTexture)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				else
-					f.highlight:SetTexture(nil)
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs.highlightSelfR, fs.highlightSelfG, fs.highlightSelfB)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				end
-			elseif data.highlightSelfInheritColor then
-				if find(f.highlightSelfTexture, "%S+") and find(f.highlightOthersTexture, "%S+") then
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(fs.highlightSelfTexture)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs.highlightOthersR, fs.highlightOthersG, fs.highlightOthersB)
-							fs.highlight:SetTexture(fs.highlightOthersTexture)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				elseif find(f.highlightSelfTexture, "%S+") then
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(fs.highlightSelfTexture)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs.highlightOthersR, fs.highlightOthersG, fs.highlightOthersB)
-							fs.highlight:SetTexture(nil)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				elseif find(f.highlightOthersTexture, "%S+") then
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(nil)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs.highlightOthersR, fs.highlightOthersG, fs.highlightOthersB)
-							fs.highlight:SetTexture(fs.highlightOthersTexture)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				else
-					f.highlight:SetTexture(nil)
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs.highlightOthersR, fs.highlightOthersG, fs.highlightOthersB)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				end
-			else
-				if find(f.highlightSelfTexture, "%S+") and find(f.highlightOthersTexture, "%S+") then
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs.highlightSelfR, fs.highlightSelfG, fs.highlightSelfB)
-							fs.highlight:SetTexture(fs.highlightSelfTexture)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs.highlightOthersR, fs.highlightOthersG, fs.highlightOthersB)
-							fs.highlight:SetTexture(fs.highlightOthersTexture)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				elseif find(f.highlightSelfTexture, "%S+") then
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs.highlightSelfR, fs.highlightSelfG, fs.highlightSelfB)
-							fs.highlight:SetTexture(fs.highlightSelfTexture)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs.highlightOthersR, fs.highlightOthersG, fs.highlightOthersB)
-							fs.highlight:SetTexture(nil)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				elseif find(f.highlightOthersTexture, "%S+") then
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs.highlightSelfR, fs.highlightSelfG, fs.highlightSelfB)
-							fs.highlight:SetTexture(nil)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs.highlightOthersR, fs.highlightOthersG, fs.highlightOthersB)
-							fs.highlight:SetTexture(fs.highlightOthersTexture)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				else
-					f.highlight:SetTexture(nil)
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs.highlightSelfR, fs.highlightSelfG, fs.highlightSelfB)
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:SetVertexColor(fs.highlightOthersR, fs.highlightOthersG, fs.highlightOthersB)
-							holder:SetScale(fs.highlightOthersScale)
-						end
-						fs.highlight:Show()
-					end)
-				end
-			end
-		elseif data.highlightSelf then
-			if data.highlightSelfInheritColor then
-				self:SecureHook(f, func, function(fs)
-					if find(f.highlightSelfTexture, "%S+") then
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(fs.highlightSelfTexture)
-							fs.highlight:Show()
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:Hide()
-							holder:SetScale(1)
-						end
-					else
-						fs.highlight:SetTexture(nil)
-						if fs.isPlayerName then
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:Show()
-							holder:SetScale(fs.highlightSelfScale)
-						else
-							fs.highlight:Hide()
-							holder:SetScale(1)
-						end
+        f.highlightOthersTexture = data.highlightOthersTexture
+        if not f.highlight then
+            f.highlight = holder:CreateTexture(nil, "BACKGROUND")
+            f.highlight:SetAllPoints(f)
+        end
+		f.highlight:SetTexture(nil)
+        if highlightApplyFilter then
+			self:SecureHook(f, "Hide", function(fs)
+				if fs.frame:IsShown() then
+					fs.highlight:Hide()
+					if fs.frame.targetsFilter then
+						fs.frame.targetsFilter = nil
+						fs.frame.StyleFilterWaitTime = nil
+						NP:StyleFilterUpdate(fs.frame, f)
 					end
-				end)
-			elseif find(f.highlightSelfTexture, "%S+") then
-				self:SecureHook(f, func, function(fs)
-					if fs.isPlayerName then
-						fs.highlight:SetVertexColor(fs.highlightSelfR, fs.highlightSelfG, fs.highlightSelfB)
-						fs.highlight:SetTexture(fs.highlightSelfTexture)
-						fs.highlight:Show()
-						holder:SetScale(fs.highlightSelfScale)
-					else
-						fs.highlight:Hide()
-						holder:SetScale(1)
-					end
-				end)
-			else
-				f.highlight:SetTexture(nil)
-				self:SecureHook(f, func, function(fs)
-					if fs.isPlayerName then
-						fs.highlight:SetVertexColor(fs.highlightSelfR, fs.highlightSelfG, fs.highlightSelfB)
-						fs.highlight:Show()
-						holder:SetScale(fs.highlightSelfScale)
-					else
-						fs.highlight:Hide()
-						holder:SetScale(1)
-					end
-				end)
-			end
-		elseif data.highlightOthers then
-			if data.highlightOthersInheritColor then
-				if find(f.highlightOthersTexture, "%S+") then
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:Hide()
-							holder:SetScale(1)
-						else
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:SetTexture(fs.highlightOthersTexture)
-							fs.highlight:Show()
-							holder:SetScale(fs.highlightOthersScale)
-						end
-					end)
-				else
-					f.highlight:SetTexture(nil)
-					self:SecureHook(f, func, function(fs)
-						if fs.isPlayerName then
-							fs.highlight:Hide()
-							holder:SetScale(1)
-						else
-							fs.highlight:SetVertexColor(fs:GetTextColor())
-							fs.highlight:Show()
-							holder:SetScale(fs.highlightOthersScale)
-						end
-					end)
 				end
-			elseif find(f.highlightOthersTexture, "%S+") then
-				self:SecureHook(f, func, function(fs)
-					if fs.isPlayerName then
-						fs.highlight:Hide()
-						holder:SetScale(1)
-					else
-						fs.highlight:SetVertexColor(fs.highlightOthersR, fs.highlightOthersG, fs.highlightOthersB)
-						fs.highlight:SetTexture(fs.highlightOthersTexture)
-						fs.highlight:Show()
-						holder:SetScale(fs.highlightOthersScale)
-					end
-				end)
-			else
-				f.highlight:SetTexture(nil)
-				self:SecureHook(f, func, function(fs)
-					if fs.isPlayerName then
-						fs.highlight:Hide()
-						holder:SetScale(1)
-					else
-						fs.highlight:SetVertexColor(fs.highlightOthersR, fs.highlightOthersG, fs.highlightOthersB)
-						fs.highlight:Show()
-						holder:SetScale(fs.highlightOthersScale)
-					end
-				end)
-			end
-		elseif f.highlight then
-			f.highlight:Hide()
-			f.highlightSelfScale = nil
-			f.highlightSelfR = nil
-			f.highlightSelfG = nil
-			f.highlightSelfB = nil
-			f.highlightOthersScale = nil
-			f.highlightOthersR = nil
-			f.highlightOthersG = nil
-			f.highlightOthersB = nil
-			break
-		end
-	end
-	if self:IsHooked(f, "Hide") then self:Unhook(f, "Hide") end
-	if data.highlightSelf or data.highlightOthers then
-		self:SecureHook(f, "Hide", function(fs)
-			fs.highlight:Hide()
-		end)
-	end
+			end)
+			NP.StyleFilterTriggerEvents[f] = true
+		else
+			self:SecureHook(f, "Hide", function(fs)
+				fs.highlight:Hide()
+			end)
+        end
+		hook = generateHighlightFunction(data, f, holder, highlightApplyFilter)
+    end
+
+    for _, func in ipairs({"SetText", "SetFormattedText"}) do
+        if self:IsHooked(f, func) then self:Unhook(f, func) end
+
+        if anyHighlightEnabled then
+            self:SecureHook(f, func, hook)
+        elseif f.highlight then
+            f.highlight:Hide()
+            f.highlightSelfScale = nil
+            f.highlightSelfR = nil
+            f.highlightSelfG = nil
+            f.highlightSelfB = nil
+            f.highlightOthersScale = nil
+            f.highlightOthersR = nil
+            f.highlightOthersG = nil
+            f.highlightOthersB = nil
+			f.frame.targetsFilter = nil
+            NP.StyleFilterTriggerEvents[f] = nil
+            break
+        end
+    end
+
+	return highlightApplyFilter
 end
 
 function mod:SetupFrame(frame)
@@ -1285,6 +1156,7 @@ function mod:SetupFrame(frame)
 		frame.targetNamesHolder:Size(1)
 	end
 
+	local applyFilter
 	for unitType in pairs(values) do
 		local data = values[unitType]
 		local f = frame.targetNames[unitType]
@@ -1306,12 +1178,26 @@ function mod:SetupFrame(frame)
 		f.b = data.b
 		f.reactions = NP.db.colors.reactions
 		f.lastName = nil
+		f.frame = frame
 
-		self:SetupHighlight(f, frame.targetNamesHolder, data)
+		applyFilter = self:SetupHighlight(f, frame.targetNamesHolder, data) or applyFilter
 
 		f:Hide()
 
 		frame.targetNames[unitType] = f
+	end
+
+    if applyFilter then
+		if not self:IsHooked(NP, "StyleFilterClear") then
+			self:SecureHook(NP, "StyleFilterClear", function(_, frame)
+				if frame.targetsFilter then
+					NP.StyleFilterPass(_, frame, frame.targetsFilter)
+				end
+			end)
+		end
+		NP.StyleFilterTriggerEvents["PLAYER_TARGET_CHANGED"] = true
+	elseif self:IsHooked(NP, "StyleFilterClear") then
+		self:Unhook(NP, "StyleFilterClear")
 	end
 end
 
@@ -1461,6 +1347,21 @@ function mod:Toggle(db, visibilityUpdate)
 					self:SetupFrame(frame)
 				end)
 			end
+			if not self:IsHooked(NP, "StyleFilterConfigure") then
+				self:SecureHook(NP, "StyleFilterConfigure", function()
+					local filters = E.global.nameplates.filters
+					for unitType in pairs(frames) do
+						if not filters[db[unitType].highlightSelfApplyFilter] then
+							db[unitType].highlightSelfApplyFilter = false
+						end
+						if not filters[db[unitType].highlightOthersApplyFilter] then
+							db[unitType].highlightOthersApplyFilter = false
+						end
+					end
+					updateValues(db)
+					self:UpdateAllFrames(db, true)
+				end)
+			end
 			core:RegisterNPElement('targetNamesHolder', function(unitType, frame, element)
 				local points = values[unitType]
 				if points and frame.targetNamesHolder then
@@ -1471,8 +1372,12 @@ function mod:Toggle(db, visibilityUpdate)
 		else
 			self:UnregisterEvent("UNIT_TARGET")
 			for _, func in ipairs({"UPDATE_MOUSEOVER_UNIT", "SetMouseoverFrame", "Construct_Name",
-									"CacheGroupUnits", "OnShow", "Update_CPoints", "UpdateElement_All"}) do
+									"CacheGroupUnits", "OnShow", "Update_CPoints", "UpdateElement_All", "StyleFilterConfigure"}) do
 				if self:IsHooked(NP, func) then self:Unhook(NP, func) end
+			end
+			if self:IsHooked(NP, "StyleFilterClear") then
+				self:Unhook(NP, "StyleFilterClear")
+				NP:StyleFilterConfigure()
 			end
 			if self:IsHooked(NP, "OnHide") then
 				if isAwesome then
@@ -1486,8 +1391,13 @@ function mod:Toggle(db, visibilityUpdate)
 		end
 		self.initialized = true
 	elseif self.initialized then
-		for _, func in ipairs({"Construct_Name", "CacheGroupUnits", "OnShow", "Update_CPoints", "UpdateElement_All"}) do
+		for _, func in ipairs({"Construct_Name", "CacheGroupUnits", "OnShow",
+								"Update_CPoints", "UpdateElement_All", "StyleFilterConfigure"}) do
 			if self:IsHooked(NP, func) then self:Unhook(NP, func) end
+		end
+		if self:IsHooked(NP, "StyleFilterClear") then
+			self:Unhook(NP, "StyleFilterClear")
+			if not core.reload then NP:StyleFilterConfigure() end
 		end
 		if self:IsHooked(NP, "OnHide") then
 			if isAwesome or not core.reload then

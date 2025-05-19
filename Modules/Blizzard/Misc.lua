@@ -365,7 +365,7 @@ function mod:LessTooltips(db)
 		if self:IsHooked(TT, "GameTooltip_OnTooltipSetUnit") then self:Unhook(TT, "GameTooltip_OnTooltipSetUnit") end
 		if self:IsHooked(TT, "GameTooltip_OnTooltipSetItem") then self:Unhook(TT, "GameTooltip_OnTooltipSetItem") end
 		if self:IsHooked(TT, "GameTooltip_OnTooltipSetSpell") then self:Unhook(TT, "GameTooltip_OnTooltipSetSpell") end
-		if self:IsHooked(TT, "GameTooltip_SetDefaultAnchor") then self:Unhook(TT, "GameTooltip_SetDefaultAnchor") end
+		if self:IsHooked("GameTooltip_SetDefaultAnchor") then self:Unhook("GameTooltip_SetDefaultAnchor") end
 	end
 end
 

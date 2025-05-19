@@ -79,22 +79,6 @@ local function SetInside(obj, anchor, xOffset, yOffset, anchor2)
 	obj:Point("BOTTOMRIGHT", anchor2 or anchor, "BOTTOMRIGHT", -xOffset, yOffset)
 end
 
-function E:CreateGlobalShadow(frame, size, r, g, b, a)
-	if frame.globalShadow then return end
-	local shadow = CreateFrame("Frame", nil, frame)
-	local strata = frame:GetFrameStrata()
-
-	if strata ~= 'UNKNOWN' then shadow:SetFrameStrata(strata) end
-
-	shadow:SetFrameLevel(1)
-	shadow:SetOutside(frame, size, size)
-	shadow:SetBackdrop({edgeFile = LSM:Fetch("border", "ElvUI GlowBorder"), edgeSize = E:Scale(size)})
-	shadow:SetBackdropColor(0, 0, 0, 0)
-	shadow:SetBackdropBorderColor(r, g, b, a)
-
-	frame.globalShadow = shadow
-end
-
 local function SetTemplate(frame, template, glossTex, ignoreUpdates, forcePixelMode, isUnitFrameElement)
 	GetTemplate(template, isUnitFrameElement)
 
@@ -159,7 +143,7 @@ local function SetTemplate(frame, template, glossTex, ignoreUpdates, forcePixelM
 	local db = E.globalShadow
 
 	if db then
-		E:CreateGlobalShadow(frame, db.size, unpack(db.color))
+		frame:CreateGlobalShadow(db.size, unpack(db.color))
 	elseif E.pendingShadowUpdate then
 		E.pendingShadowUpdate[frame] = true
 	end
@@ -203,6 +187,22 @@ local function CreateShadow(frame, size)
 	shadow:SetBackdropColor(backdropr, backdropg, backdropb, 0)
 	shadow:SetBackdropBorderColor(borderr, borderg, borderb, 0.9)
 	frame.shadow = shadow
+end
+
+local function CreateGlobalShadow(frame, size, r, g, b, a)
+	if frame.globalShadow then return end
+	local shadow = CreateFrame("Frame", nil, frame)
+	local strata = frame:GetFrameStrata()
+
+	if strata ~= 'UNKNOWN' then shadow:SetFrameStrata(strata) end
+
+	shadow:SetFrameLevel(1)
+	shadow:SetOutside(frame, size, size)
+	shadow:SetBackdrop({edgeFile = LSM:Fetch("border", "ElvUI GlowBorder"), edgeSize = E:Scale(size)})
+	shadow:SetBackdropColor(0, 0, 0, 0)
+	shadow:SetBackdropBorderColor(r, g, b, a)
+
+	frame.globalShadow = shadow
 end
 
 local function Kill(object)
@@ -343,6 +343,7 @@ local function addapi(object)
 	if not object.SetTemplate then mt.SetTemplate = SetTemplate end
 	if not object.CreateBackdrop then mt.CreateBackdrop = CreateBackdrop end
 	if not object.CreateShadow then mt.CreateShadow = CreateShadow end
+	if not object.CreateGlobalShadow then mt.CreateGlobalShadow = CreateGlobalShadow end
 	if not object.Kill then mt.Kill = Kill end
 	if not object.Width then mt.Width = Width end
 	if not object.Height then mt.Height = Height end

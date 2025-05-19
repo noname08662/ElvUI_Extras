@@ -1154,3 +1154,19 @@ L["Use Default Handling"] = "Utiliser la gestion par défaut"
 L["Show Group Members"] = "Afficher les membres du groupe"
 L["Hide Group Members"] = "Masquer les membres du groupe"
 L["Select 'Enemy Player' to configure."] = "Sélectionnez 'Joueur ennemi' pour configurer."
+L["Capture Bar"] = "Barre de Capture"
+L["Capture Bar Mover"] = "Déplaceur de Barre de Capture"
+L["Capture Bar Height"] = "Hauteur de la Barre de Capture"
+L["Also might fix capture bar related issues like progress marker not showing."] =
+	"Peut également résoudre des problèmes liés à la barre de capture, comme l'absence d'affichage du marqueur de progression."
+L["Max Length"] = "Longueur Maximale"
+L["Copy button visibility."] = "Visibilité du bouton copier."
+L["Mouseover: Channel Button"] = "Survol: Bouton de Canal"
+L["Mouseover: Copy Button"] = "Survol: Bouton de Copie"
+L["Plugin version mismatch! Please, download appropriate plugin version at"] =
+	"Incompatibilité de version du plugin ! Veuillez télécharger la bonne version à"
+L["Questie Coherence"] = "Cohérence avec Questie"
+L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."] =
+	"Permet à nouveau à la ligne itemID ajoutée par ElvUI d’apparaître en dernier dans les infobulles (unités et objets)."
+L["Attempts to extend font outline options across all of ElvUI."] =
+	"Tente d'étendre les options de contour de police dans tout ElvUI."

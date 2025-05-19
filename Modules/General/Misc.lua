@@ -151,7 +151,7 @@ P["Extras"]["general"][modName] = {
 		["point"] = "TOP",
 		["relativeTo"] = "BOTTOM",
 		["xOffset"] = 0,
-		["yOffset"] = -15,
+		["yOffset"] = -35,
 		["queueTime"] = true,
 		["queueTimeColor"] = {0.7,0.7,0.7},
 		["font"] = E.db.general.font,
@@ -1214,7 +1214,7 @@ function mod:RDFQueueTracker(db)
 
         queueTracker:Size(5 * (iconSize + iconSpacing) - iconSpacing, iconSize)
         queueTracker:ClearAllPoints()
-        queueTracker:Point(db.point, MMHolder, db.relativeTo, db.xOffset, db.yOffset)
+        queueTracker:Point(db.point, _G["Minimap"], db.relativeTo, db.xOffset, db.yOffset)
         queueTracker:Hide()
 
 		queueTracker:RegisterEvent("LFG_UPDATE")

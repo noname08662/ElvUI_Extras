@@ -451,7 +451,7 @@ function mod:LoadConfig(db)
 								end
 								db.catList[spellID] = cat
 								db.catList[cat] = spellID
-								self:SetupDRUnits(db)
+								self:Toggle(db)
 							end
 						end,
 					},
@@ -498,7 +498,7 @@ function mod:LoadConfig(db)
 										core.customColorBeta..cat..core.customColorAlpha,
 										iconString..link))
 								end
-								self:SetupDRUnits(db)
+								self:Toggle(db)
 							end
 						end,
 					},
@@ -522,6 +522,7 @@ function mod:LoadConfig(db)
 									break
 								end
 							end
+							self:Toggle(db)
 						end,
 						values = function()
 							local values = {}

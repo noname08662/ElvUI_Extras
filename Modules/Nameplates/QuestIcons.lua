@@ -701,7 +701,7 @@ function mod:Toggle(db)
 		core:RegisterNPElement('questIcon')
 		core:RegisterAreaUpdate(modName)
 		if self:IsHooked(E, "ToggleOptionsUI") then self:Unhook(E, "ToggleOptionsUI") self.ishooked = nil end
-		if self:IsHooked(E, "Construct_Highlight") then self:Unhook(E, "Construct_Highlight") end
+		if self:IsHooked(NP, "Construct_Highlight") then self:Unhook(NP, "Construct_Highlight") end
 		if isAwesome or not core.reload then
 			if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end
 		else

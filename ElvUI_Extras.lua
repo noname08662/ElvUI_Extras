@@ -1,4 +1,4 @@
-local E, L, _, P = unpack(ElvUI)
+﻿local E, L, _, P = unpack(ElvUI)
 local core = E:NewModule("Extras", "AceHook-3.0", "AceEvent-3.0")
 local UF = E:GetModule("UnitFrames")
 local NP = E:GetModule("NamePlates")
@@ -303,6 +303,11 @@ core.SpellLists = {
 	},
 }
 
+local wrongEvents = {
+	['DisableElement'] = true,
+	['ForceUpdate'] = true,
+	['AurabarsMovers_UpdateAllElements'] = true,
+}
 
 local AddOnName = ...
 local isAwesome = C_NamePlate and E.private.nameplates.enable
@@ -356,10 +361,22 @@ local function getEntry(tbl, path)
 end
 
 
-local function fixes(db)
+function core:fixes(db)
+	if db.questieTips and _G.QuestieLoader then
+		self:SecureHook(_G.QuestieLoader:CreateModule("QuestieTooltips"), "Initialize", function()
+			local TT = E:GetModule("Tooltip")
+			local _, itemFunc = TT:IsHooked(GameTooltip, "OnTooltipSetItem")
+			local _, unitFunc = TT:IsHooked(GameTooltip, "OnTooltipSetUnit")
+			TT:Unhook(GameTooltip, "OnTooltipSetItem")
+			TT:Unhook(GameTooltip, "OnTooltipSetUnit")
+			TT:SecureHookScript(GameTooltip, "OnTooltipSetItem", itemFunc)
+			TT:SecureHookScript(GameTooltip, "OnTooltipSetUnit", unitFunc)
+		end)
+	end
+
 	if db.mapToQuestLog then
 		-- make worlmap quests open quest log on ctrl-click
-		core:SecureHook("WorldMapQuestFrame_OnMouseUp", function(self)
+		self:SecureHook("WorldMapQuestFrame_OnMouseUp", function(self)
 			if InCombatLockdown() then
 				return
 			elseif IsControlKeyDown() then
@@ -372,7 +389,6 @@ local function fixes(db)
 			end
 		end)
 	end
-
 
 	if db.restoreRaidControls then
 		-- restored raid controls
@@ -431,7 +447,7 @@ local function fixes(db)
 		local secureTankButton = createSecurePromoteButton("ElvUI_SecureTankButton", "maintank")
 		local secureAssistButton = createSecurePromoteButton("ElvUI_SecureAssistButton", "mainassist")
 
-		core:SecureHook("UnitPopup_ShowMenu", function(_, _, unit)
+		self:SecureHook("UnitPopup_ShowMenu", function(_, _, unit)
 			if UIDROPDOWNMENU_MENU_LEVEL ~= 1 or InCombatLockdown() then return end
 
 			for i = 1, UIDROPDOWNMENU_MAXBUTTONS do
@@ -446,7 +462,7 @@ local function fixes(db)
 			end
 		end)
 
-		core:SecureHook("UnitPopup_HideButtons", function()
+		self:SecureHook("UnitPopup_HideButtons", function()
 			local dropdownMenu = UIDROPDOWNMENU_INIT_MENU
 			local isAuthority = IsPartyLeader() or IsRaidOfficer()
 
@@ -467,13 +483,49 @@ local function fixes(db)
 			end
 		end)
 
-		core:SecureHookScript(DropDownList1, "OnHide", function()
+		self:SecureHookScript(DropDownList1, "OnHide", function()
 			if InCombatLockdown() then return end
 			secureTankButton:ClearAllPoints()
 			secureAssistButton:ClearAllPoints()
 			secureTankButton:Hide()
 			secureAssistButton:Hide()
 		end)
+	end
+
+	if db.captureBarFix and (E.private.skins.blizzard.enable and E.private.skins.blizzard.WorldStateFrame) then
+		local captureBarHolder = CreateFrame("Frame", "CaptureBarHolder", E.UIParent)
+		captureBarHolder:SetFrameStrata("BACKGROUND")
+		captureBarHolder:SetFrameLevel(100)
+		captureBarHolder:Size(173, db.captureBarHeight or 8)
+		captureBarHolder:Point("TOP", 0, -40)
+
+		E:CreateMover(captureBarHolder, "CaptureBarMover", L["Capture Bar"], nil, nil, nil, nil, nil, "general,blizzUIImprovements")
+
+		local function captureBarCreate(id)
+			E:Delay(0.1, function()
+				local bar = _G["WorldStateCaptureBar"..id]
+				if bar then
+					local height = db.captureBarHeight or 8
+					bar:ClearAllPoints()
+					bar.SetPoint = UIParent.SetPoint
+					bar:Point("CENTER", _G["CaptureBarMover"])
+					bar.SetPoint = E.noop
+					bar:Height(height)
+
+					_G["WorldStateCaptureBar"..id.."LeftBar"]:Height(height)
+					_G["WorldStateCaptureBar"..id.."RightBar"]:Height(height)
+					_G["WorldStateCaptureBar"..id.."MiddleBar"]:Height(height)
+				end
+			end)
+		end
+
+		if NUM_EXTENDED_UI_FRAMES > 0 then
+			for id = 1, NUM_EXTENDED_UI_FRAMES do
+				captureBarCreate(id)
+			end
+		end
+
+		self:SecureHook(ExtendedUI["CAPTUREPOINT"], "create", captureBarCreate)
 	end
 end
 
@@ -821,7 +873,7 @@ if isAwesome then
 	end
 
 	core:SecureHook(NP, "StyleFilterConfigure", function()
-		if E.db.Extras.nameOnly and (NP.StyleFilterTriggerEvents.UNIT_AURA or NP.StyleFilterTriggerEvents.UNIT_AURA) then
+		if E.db.Extras.nameOnly then
 			for filterName, filter in pairs(E.global.nameplates.filters) do
 				local t = filter.triggers
 				if t and E.db.nameplates and E.db.nameplates.filters then
@@ -834,8 +886,11 @@ if isAwesome then
 								if frame then
 									if frame.NameOnlyChanged then
 										frame.Health:Show() -- UpdateElement_Auras' first line blocks any update
+										NP:UpdateElement_Auras(frame)
+										frame.Health:Hide()
+									else
+										NP:UpdateElement_Auras(frame)
 									end
-									NP:UpdateElement_Auras(frame)
 								end
 							end
 						end)
@@ -870,7 +925,8 @@ end
 function core:OnShowHide(frame, health)
 	local unitType = frame.UnitType or select(2,NP:GetUnitInfo(frame))
 
-	if unitType and not healthEnabled[unitType] then
+	--if unitType and not healthEnabled[unitType] then
+	if unitType then
 		local name = frame.Name
 		for _, func in pairs(plateAnchoring) do
 			func(unitType, frame, health or name)
@@ -1042,14 +1098,7 @@ end
 
 
 function core:Tag(name, tagfunc, updatefunc)
-	nameUpdates[name] = tagfunc
-
-	if updatefunc and not next(frameUpdates) then
-		local wrongEvents = {
-			['DisableElement'] = true,
-			['ForceUpdate'] = true,
-			['AurabarsMovers_UpdateAllElements'] = true,
-		}
+	if tagfunc and not next(nameUpdates) then
 		for _, frame in ipairs(self:AggregateUnitFrames()) do
 			local frameType = frame.unitframeType
 			local type_db = E.db.unitframe.units[frameType]
@@ -1072,6 +1121,8 @@ function core:Tag(name, tagfunc, updatefunc)
 				taggedFrames[frame] = true
 			end
 		end
+	end
+	if updatefunc and not next(frameUpdates) then
 		for frameType in pairs(self:getAllFrameTypes()) do
 			local type_db = E.db.unitframe.units[frameType]
 			if type_db and type_db.enable then
@@ -1081,7 +1132,9 @@ function core:Tag(name, tagfunc, updatefunc)
 				if (UF[func] or UF[groupFunc]) and not self:IsHooked(UF, UF[func] and func or groupFunc) then
 					self:SecureHook(UF, UF[func] and func or groupFunc, function(self, frame, ...)
 						local unitframeType = frame.unitframeType
-						if not taggedFrames[frame] and not (match(unitframeType, '%w+target') or match(unitframeType, 'boss%d?$')) then
+						if next(nameUpdates)
+								and not taggedFrames[frame]
+								and not (match(unitframeType, '%w+target') or match(unitframeType, 'boss%d?$')) then
 							core:SecureHook(frame, "UpdateAllElements", function(frame, event)
 								if not wrongEvents[event] and frame.unit then
 									local guid = UnitGUID(frame.unit)
@@ -1107,6 +1160,7 @@ function core:Tag(name, tagfunc, updatefunc)
 			end
 		end
 	end
+	nameUpdates[name] = tagfunc
 	frameUpdates[name] = updatefunc
 end
 
@@ -1183,6 +1237,10 @@ P["Extras"] = {
 	["mapToQuestLog"] = true,
 	["unitFaction"] = true,
 	["nameOnly"] = true,
+	["questieTips"] = false,
+	["extraFontFlags"] = false,
+	["captureBarFix"] = false,
+	["captureBarHeight"] = 8,
 	["pluginColor"] = '|cffaf73cd',
 	["customColorBad"] = '|cffce1a1a',
 	["customColorAlpha"] = '|cff9999ff',
@@ -1847,7 +1905,7 @@ function core:GetOptions()
 					colors = {
 						order = 1,
 						type = "group",
-						name = L["Version: "].."1.09",
+						name = L["Version: "].."1.10 (ElvUI 6.09)",
 						guiInline = true,
 						get = function(info) return colorConvert(E.db.Extras[info[#info]]) end,
 						set = function(info, r, g, b)
@@ -1929,6 +1987,38 @@ function core:GetOptions()
 						get = function(info) return E.db.Extras[info[#info]] end,
 						set = function(info, value) E.db.Extras[info[#info]] = value end,
 						args = {
+							captureBarFix = {
+								order = 1,
+								type = "toggle",
+								name = L["Capture Bar Mover"],
+								desc = L["Also might fix capture bar related issues like progress marker not showing."],
+								disabled = function()
+									return not (E.private.skins.blizzard.enable and E.private.skins.blizzard.WorldStateFrame)
+								end,
+							},
+							captureBarHeight = {
+								order = 2,
+								type = "range",
+								min = 4, max = 16, step = 1,
+								name = L["Capture Bar Height"],
+								desc = "",
+								disabled = function()
+									return not E.db.Extras.captureBarFix
+											or not (E.private.skins.blizzard.enable and E.private.skins.blizzard.WorldStateFrame)
+								end,
+							},
+							extraFontFlags = {
+								type = "toggle",
+								name = L["Font Flags"],
+								desc = L["Attempts to extend font outline options across all of ElvUI."],
+
+							},
+							questieTips = {
+								type = "toggle",
+								name = L["Questie Coherence"],
+								desc = L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."],
+								disabled = function() return not _G.Questie end,
+							},
 							restoreRaidControls = {
 								type = "toggle",
 								name = L["Restore Raid Controls"],
@@ -1971,6 +2061,14 @@ function core:Initialize()
 	self.customColorAlpha = E.db.Extras.customColorAlpha
 	self.customColorBeta = E.db.Extras.customColorBeta
 
+	if E.version ~= '6.09' then
+		local CH = E:GetModule('Chat')
+		local msg = format(self.customColorAlpha.."ElvUI "..self.pluginColor.."Extras"..self.customColorAlpha..": |r"..self.customColorBad..
+					L["Plugin version mismatch! Please, download appropriate plugin version at"].." https://github.com/noname08662/ElvUI_Extras.")
+		if CH.Initialized then msg = select(2, CH:FindURL('CHAT_MSG_DUMMY', msg)) end
+		print(msg)
+	end
+
 	-- update new elements
 	core:SecureHook(E, "ToggleOptionsUI", function()
 		if E.Options.args.nameplate then
@@ -1988,6 +2086,59 @@ function core:Initialize()
 						end
 					end)
 				end
+			end
+		end
+		if E.db.Extras.extraFontFlags then
+			local function getSubOption(group, key)
+				if group.plugins then
+					for _, t in pairs(group.plugins) do
+						if t[key] then
+							return t[key]
+						end
+					end
+				end
+				return group.args[key]
+			end
+			local function lookup(t)
+				if t and type(t) == 'table' then
+					for _, v in pairs(t) do
+						if type(v) == 'table' then
+							if v.type == 'select' then
+								if type(v.values) == 'table' and v.values['OUTLINE'] then
+									v.values["NONE"] = L["None"]
+									v.values["OUTLINE"] = 'Outline'
+									v.values["THICKOUTLINE"] = 'Thick'
+									v.values["SHADOW"] = '|cff888888Shadow|r'
+									v.values["SHADOWOUTLINE"] = '|cff888888Shadow|r Outline'
+									v.values["SHADOWTHICKOUTLINE"] = '|cff888888Shadow|r Thick'
+									v.values["MONOCHROME"] = '|cFFAAAAAAMono|r'
+									v.values["MONOCHROMEOUTLINE"] = '|cFFAAAAAAMono|r Outline'
+									v.values["MONOCHROMETHICKOUTLINE"] = '|cFFAAAAAAMono|r Thick'
+								end
+							elseif v.type == 'group' and v.args then
+								lookup(type(v.args) == 'function' and v.args() or v.args)
+							end
+						end
+					end
+				end
+			end
+			local lib = E.Libs.AceConfigDialog
+			if not self:IsHooked(lib, "FeedGroup") then
+				self:RawHook(lib, "FeedGroup", function(acd,appName,options,container,rootframe,path,isRoot)
+					local group = options
+					for i = 1, #path do
+						group = getSubOption(group, path[i])
+					end
+					if type(group) ~= 'table' then return end
+					if group.plugins then
+						for _, t in pairs(group.plugins) do
+							lookup(t.args)
+						end
+					else
+						lookup(group.args)
+					end
+					self.hooks[lib].FeedGroup(acd,appName,options,container,rootframe,path,isRoot)
+				end)
 			end
 		end
 	end)
@@ -2028,7 +2179,7 @@ function core:Initialize()
 			self:UnregisterAllEvents()
 		end
 	end
-	fixes(E.db.Extras)
+	self:fixes(E.db.Extras)
 
 	EP:RegisterPlugin(AddOnName, self.GetOptions)
 
@@ -2045,18 +2196,17 @@ function core:Initialize()
 	end)
 
 	local shadow_db = E.globalShadow
-	if shadow_db then
+	if shadow_db and E.pendingShadowUpdate and _G["UIParent"].CreateGlobalShadow then
 		local M = E:GetModule("Misc")
 		local chatBubbles = E.private.general.chatBubbles
-		local createShadow = E.CreateGlobalShadow
 		local size = shadow_db.size
 		local r, g, b, a = unpack(shadow_db.color)
 
-		createShadow(nil, _G["Minimap"], size, r, g, b, a)
+		_G["Minimap"]:CreateGlobalShadow(size, r, g, b, a)
 
 		for _, frame in ipairs({WorldFrame:GetChildren()}) do
 			if frame.isSkinnedElvUI then
-				createShadow(nil, frame, size, r, g, b, a)
+				frame:CreateGlobalShadow(size, r, g, b, a)
 				if chatBubbles == "backdrop_noborder" then
 					frame.globalShadow:SetOutside(frame.backdrop, size, size)
 				elseif frame.globalShadow and chatBubbles == "nobackdrop" then
@@ -2067,13 +2217,13 @@ function core:Initialize()
 
 		if E.pendingShadowUpdate then
 			for frame in pairs(E.pendingShadowUpdate) do
-				createShadow(nil, frame, size, r, g, b, a)
+				frame:CreateGlobalShadow(size, r, g, b, a)
 			end
 		end
 
 		if not self:IsHooked(M, "SkinBubble") then
 			self:SecureHook(M, "SkinBubble", function(_, frame)
-				createShadow(nil, frame, size, r, g, b, a)
+				frame:CreateGlobalShadow(size, r, g, b, a)
 				if chatBubbles == "backdrop_noborder" then
 					frame.globalShadow:SetOutside(frame.backdrop, size, size)
 				elseif frame.globalShadow and chatBubbles == "nobackdrop" then
@@ -2084,17 +2234,17 @@ function core:Initialize()
 
 		if not self:IsHooked(NP, "StyleFrame") then
 			self:SecureHook(NP, "StyleFrame", function(_, frame)
-				createShadow(nil, frame, size, r, g, b, a)
+				frame:CreateGlobalShadow(size, r, g, b, a)
 			end)
 		end
 
 		if not self:IsHooked(M, "SkinBubble") then
 			self:SecureHook(M, "SkinBubble", function(_, frame)
-				createShadow(nil, frame, size, r, g, b, a)
+				frame:CreateGlobalShadow(size, r, g, b, a)
 			end)
 		end
 
-		tinsert(self.frameUpdates, function()
+		self:Tag('globalShadow', nil, function()
 			for _, frame in ipairs(self:AggregateUnitFrames()) do
 				local healthBackdrop = frame.Health.backdrop
 				local powerBackdrop = (frame.USE_POWERBAR and frame.Power) and frame.Power.backdrop
@@ -2148,7 +2298,8 @@ local function InitializeCallback()
 	core:Initialize()
 end
 
-LSM:Register("font", "Extras_Favourite (Montserrat)", "Interface\\AddOns\\ElvUI_Extras\\Media\\Favourite.ttf")
-LSM:Register("font", "Invisible", "Interface\\AddOns\\ElvUI_Extras\\Media\\Invisible.ttf")
+LSM:Register("font", "Extras_Favourite (Montserrat)", "Interface\\AddOns\\ElvUI_Extras\\Media\\Favourite.ttf", LSM.LOCALE_BIT_ruRU)
+LSM:Register("font", "Invisible", "Interface\\AddOns\\ElvUI_Extras\\Media\\Invisible.ttf",
+				LSM.LOCALE_BIT_ruRU + LSM.LOCALE_BIT_koKR + LSM.LOCALE_BIT_zhCN + LSM.LOCALE_BIT_zhTW + LSM.LOCALE_BIT_western)
 
 E:RegisterModule(core:GetName(), InitializeCallback)

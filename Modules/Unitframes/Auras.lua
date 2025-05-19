@@ -841,7 +841,7 @@ function mod:UpdateSortMethods(db)
 							local canDispell = (aurasFrame.type == "buffs" and button.isStealable)
 								or (aurasFrame.type == "debuffs" and button.dtype and E:IsDispellableByMe(button.dtype))
 
-							for filterName, index in pairs(filterOrder) do
+							for index, filterName in pairs(filterOrder) do
 								local filter = aurafilters[filterName]
 								if filter then
 									local filterType = filter.type
@@ -944,8 +944,8 @@ function mod:UpdateSortMethods(db)
 					if element.db and element.db.enable then
 						if element.db.priority and element.db.priority ~= "" then
 							element.filterPriority = {}
-							for i, filter in ipairs({split(",", element.db.priority)}) do
-								element.filterPriority[filter] = i
+							for _, filter in ipairs({split(",", element.db.priority)}) do
+								tinsert(element.filterPriority, filter)
 							end
 						else
 							element.filterPriority = nil

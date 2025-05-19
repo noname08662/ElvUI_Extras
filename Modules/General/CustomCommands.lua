@@ -389,7 +389,7 @@ if data and data.enabled then
 					return
 				end
 
-				local success, result = pcall(fn, ...)
+				local success, result = pcall(fn)
 				if not success then
 					print(L["CustomCommands"], result)
 				end
@@ -402,7 +402,7 @@ end
 
 
 function mod:Toggle(db)
-	if not core.reload and db and db.enabled then
+	if not core.reload and db.enabled then
 		self:SetupHandler(db)
 		self.initialized = true
 	elseif self.initialized then

@@ -60,7 +60,6 @@ function mod:LoadConfig(db)
 						set = function(info, value)
 							selectedTypeData()[info[#info-1]][info[#info]] = value
 							self:Toggle(db)
-							NP:ForEachVisiblePlate("Update_Name")
 						end,
 					},
 					reactionColor = {
@@ -109,7 +108,6 @@ function mod:LoadConfig(db)
 						set = function(info, value)
 							selectedTypeData()[info[#info-1]][info[#info]] = value
 							self:Toggle(db)
-							NP:ForEachVisiblePlate("Update_Name")
 						end,
 					},
 					xOffsetShorten = {
@@ -137,7 +135,6 @@ function mod:LoadConfig(db)
 						set = function(info, value)
 							selectedTypeData()[info[#info-1]][info[#info]] = value
 							self:Toggle(db)
-							NP:ForEachVisiblePlate("Update_Level")
 						end,
 						disabled = false,
 					},
@@ -329,6 +326,8 @@ function mod:Toggle(db)
 			self:Unhook(NP, "Update_"..element)
 		end
 	end
+	NP:ForEachVisiblePlate("Update_Name")
+	NP:ForEachVisiblePlate("Update_Level")
 end
 
 function mod:InitializeCallback()

@@ -195,19 +195,6 @@ local directionProperties = {
     ["BOTTOMRIGHT"] = {isCentered = false, isVertical = true, isReverseY = false, isReverseX = true}
 }
 
-local fallbackSpells = {
-    [47875] = 8,    -- Death Coil
-    [47540] = 12,   -- Penance
-    [48181] = 8,    -- Haunt
-    [47860] = 10,   -- Shadowflame
-    [49222] = 20,   -- Bone Shield
-    [49005] = 15,   -- Mark of Blood
-    [57934] = 30,   -- Tricks of the Trade
-    [57933] = 30,   -- Tricks of the Trade (talent proc)
-    [55342] = 180,  -- Mirror Image
-    [53271] = 60    -- Master's Call
-}
-
 local resetCooldowns = {
     [11958] = {	[12472] = true, [42931] = true, [45438] = true,
 				[42917] = true, [31687] = true, [44572] = true,
@@ -243,13 +230,7 @@ local function testMode(db)
 			end
 		end
 	end
-
-    if not next(spellList) then
-        for id, duration in pairs(fallbackSpells) do
-            spellList[id] = duration
-        end
-    end
-	spellList[42292] = nil
+    if not next(spellList) then return end
 
 	local hasTrinket = false
     for spellID, duration in pairs(spellList) do
@@ -258,7 +239,7 @@ local function testMode(db)
 						spellID = spellID,
 						startTime = startTime,
 						endTime = startTime + duration,
-						icon = select(3, GetSpellInfo(spellID)),
+						icon = select(3, GetSpellInfo(spellID)) or "Interface\\Icons\\INV_Misc_QuestionMark",
 						isTrinket = trinkets[spellID]
 					})
 		hasTrinket = hasTrinket or trinkets[spellID]

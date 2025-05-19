@@ -32,6 +32,8 @@ P["Extras"]["general"][modName] = {
 	["buttonsize"] = 32,
 	["buttonspacing"] = 2,
 	["backdropSpacing"] = 2,
+	["frameLevel"] = 1,
+	["frameStrata"] = "LOW",
 	["alpha"] = 1,
 	["inheritGlobalFade"] = false,
 	["showGrid"] = false,
@@ -42,9 +44,9 @@ P["Extras"]["general"][modName] = {
 	["modifier"] = 'Alt'
 }
 
-P["actionbar"]["bar"..modName] = CopyTable(P.Extras.general[modName])
+P["actionbar"]["barQuestBar"] = CopyTable(P.Extras.general[modName])
 
-AB["barDefaults"]["bar"..modName] = {
+AB["barDefaults"]["barQuestBar"] = {
 	["page"] = 10,
 	["bindButtons"] = "ELVUIQUESTBARBUTTON",
 	["conditions"] = "",
@@ -52,12 +54,12 @@ AB["barDefaults"]["bar"..modName] = {
 }
 
 function mod:LoadConfig(db)
-	local actionbar_db = E.db.actionbar["bar"..modName]
+	local actionbar_db = E.db.actionbar["barQuestBar"]
 	core.general.args[modName] = {
 		type = "group",
 		name = L[modName],
 		get = function(info) return db[info[#info]] end,
-		set = function(info, value) db[info[#info]] = value actionbar_db[info[#info]] = value AB:PositionAndSizeBar("bar"..modName) end,
+		set = function(info, value) db[info[#info]] = value actionbar_db[info[#info]] = value AB:PositionAndSizeBar("barQuestBar") end,
 		disabled = function() return not E.private.actionbar.enable end,
 		args = {
 			QuestBar = {
@@ -92,14 +94,12 @@ function mod:LoadConfig(db)
 						order = 2,
 						type = "toggle",
 						name = L["Show Empty Buttons"],
-
-							hidden = function() return true end,
-
 						set = function(info, value)
 							db[info[#info]] = value
 							actionbar_db[info[#info]] = value
-							AB:UpdateButtonSettingsForBar("bar" .. modName)
+							AB:UpdateButtonSettingsForBar("barQuestBar")
 						end,
+							hidden = true,
 					},
 					mouseover = {
 						order = 3,
@@ -127,63 +127,77 @@ function mod:LoadConfig(db)
 						desc = L["Right-click the item while holding the modifier to blacklist it. Blacklisted items will not show up on the bar.\nUse /questbarRestore to purge the blacklist."],
 						values = E.db.Extras.modifiers,
 					},
-					buttons = {
+					frameLevel = {
 						order = 7,
+						type = "range",
+						name = L["Level"],
+						desc = "",
+						set = function(info, value) db[info[#info]] = value actionbar_db[info[#info]] = value self:Toggle(db) end,
+						min = 1, max = 200, step = 1,
+					},
+					frameStrata = {
+						order = 8,
+						type = "select",
+						name = L["Strata"],
+						desc = "",
+						set = function(info, value) db[info[#info]] = value actionbar_db[info[#info]] = value self:Toggle(db) end,
+						values = E.db.Extras.frameStrata,
+					},
+					buttons = {
+						order = 9,
 						type = "range",
 						name = L["Buttons"],
 						desc = L["The number of buttons to display."],
-
-							hidden = function() return true end,
-
 						min = 1, max = NUM_ACTIONBAR_BUTTONS, step = 1,
+							hidden = true,
 					},
 					buttonsPerRow = {
-						order = 8,
+						order = 10,
 						type = "range",
 						name = L["Buttons Per Row"],
 						desc = L["The number of buttons to display per row."],
-
-							hidden = function() return true end,
-
 						min = 1, max = NUM_ACTIONBAR_BUTTONS, step = 1,
+							hidden = true,
 					},
 					buttonsize = {
-						order = 9,
+						order = 11,
 						type = "range",
 						name = L["Button Size"],
 						desc = L["The size of the action buttons."],
 						min = 15, max = 60, step = 1,
 					},
 					buttonspacing = {
-						order = 10,
+						order = 12,
 						type = "range",
 						name = L["Button Spacing"],
 						desc = L["Spacing between the buttons."],
 						min = -1, max = 10, step = 1,
 					},
 					backdropSpacing = {
-						order = 11,
+						order = 13,
 						type = "range",
 						name = L["Backdrop Spacing"],
 						desc = L["Spacing between the backdrop and the buttons."],
 						min = 0, max = 10, step = 1,
 					},
 					heightMult = {
-						order = 12,
+						order = 14,
 						type = "range",
 						name = L["Height Multiplier"],
 						desc = L["Multiply the backdrop's height or width by this value. This is useful if you wish to have more than one bar behind a backdrop."],
 						min = 1, max = 5, step = 1,
+							hidden = true,
 					},
 					widthMult = {
-						order = 13,
+						order = 15,
 						type = "range",
 						name = L["Width Multiplier"],
 						desc = L["Multiply the backdrop's height or width by this value. This is useful if you wish to have more than one bar behind a backdrop."],
 						min = 1, max = 5, step = 1,
+							hidden = true,
 					},
 					alpha = {
-						order = 14,
+						order = 16,
 						type = "range",
 						name = L["Alpha"],
 						desc = "",
@@ -191,7 +205,7 @@ function mod:LoadConfig(db)
 						min = 0, max = 1, step = 0.01,
 					},
 					visibility = {
-						order = 15,
+						order = 17,
 						type = "input",
 						name = L["Visibility State"],
 						desc = L["This works like a macro; you can run different conditions to show or hide the action bar.\n Example: '[combat] showhide'"],
@@ -211,16 +225,18 @@ end
 
 
 function mod:CreateQuestBar(db)
-    if AB.handledBars["bar"..modName] then return end
+    if AB.handledBars["barQuestBar"] then
+		AB.handledBars["barQuestBar"]:SetFrameLevel(db.frameLevel)
+		AB.handledBars["barQuestBar"]:SetFrameStrata(db.frameStrata)
+		return
+	end
 
-    local bar = AB:CreateBar(modName)
-	bar.db.enabled = true
+    local bar = AB:CreateBar("QuestBar")
+	bar:SetFrameLevel(db.frameLevel)
+	bar:SetFrameStrata(db.frameStrata)
 
-	AB.handledBars["bar"..modName] = bar
-	E:CreateMover(bar, "ElvAB_QuestBar", L["bar"..modName], nil, nil, nil,"ALL,ACTIONBARS",nil,"actionbar,barQuestBar")
-
-	AB.db["bar"..modName].widthMult = 1
-	AB.db["bar"..modName].heightMult = 1
+	AB.handledBars["barQuestBar"] = bar
+	E:CreateMover(bar, "ElvAB_QuestBar", L["barQuestBar"], nil, nil, nil,"ALL,ACTIONBARS",nil,"actionbar,barQuestBar")
 
 	local localizedQuestItemType = select(12,GetAuctionItemClasses())
 	local function BlockAction(self, button)
@@ -243,14 +259,14 @@ function mod:CreateQuestBar(db)
 				self:SetAttribute("type", "action")
 			end
 		end)
-		button:RegisterForDrag(nil)
+		button:DisableDragNDrop(true)
 	end
 end
 
 function mod:CheckQuestItems(db)
 	if incombat then return end
 
-    local bar = AB.handledBars["bar"..modName]
+    local bar = AB.handledBars["barQuestBar"]
     if not bar then return end
 
     local questItems = {}
@@ -294,13 +310,11 @@ function mod:CheckQuestItems(db)
 			end
 		end
 
-		bar.db.buttons = actives
-		if actives == 0 then
-			bar.db.visibility = "hide"
-		else
-			bar.db.visibility = db.visibility
-		end
-		AB:PositionAndSizeBar("bar" .. modName)
+		local bar_db = AB.db["barQuestBar"]
+		bar_db.buttons = actives
+		bar_db.visibility = actives == 0 and "hide" or db.visibility
+
+		AB:PositionAndSizeBar("barQuestBar")
 
 		self.itemCount = itemCount
 	end
@@ -309,12 +323,9 @@ end
 
 function mod:Toggle(db)
     if not core.reload and db.enabled then
-        local bar = AB.handledBars["bar"..modName]
-        if bar then
-			bar.db.enabled = true
-		else
-			self:CreateQuestBar(db)
-		end
+		self:CreateQuestBar(db)
+		AB.handledBars["barQuestBar"].db.enabled = true
+
 		if E.Options.args.actionbar and E.Options.args.actionbar.args.bar10 then
 			E.Options.args.actionbar.args.bar10.hidden = true
 			if E.RefreshGUI then E:RefreshGUI() end
@@ -353,6 +364,7 @@ function mod:Toggle(db)
 				print(core.customColorBad..ERR_NOT_IN_COMBAT)
 			else
 				twipe(db.blacklist)
+				self.itemCount = nil
 				mod:CheckQuestItems(db)
 			end
 		end
@@ -360,7 +372,7 @@ function mod:Toggle(db)
 		self.initialized = true
 	elseif self.initialized then
         self:UnregisterAllEvents()
-        local bar = AB.handledBars["bar"..modName]
+        local bar = AB.handledBars["barQuestBar"]
 		if E.Options.args.actionbar and E.Options.args.actionbar.args.bar10 then
 			E.Options.args.actionbar.args.bar10.hidden = false
 			if self:IsHooked(E, 'ToggleOptionsUI') then self:Unhook(E, 'ToggleOptionsUI') end

@@ -201,17 +201,19 @@ if E.db.chat.chatHistory then
 				lastHisoryMsgIndex[frame] = frame:GetNumMessages()
 			end
 
-			mod:RawHook(CH, "ChatFrame_MessageEventHandler", function(self, frame, event, ...)
-				for _, func in pairs(MessageEventHandlerPreHooks) do
-					func(self, frame, event, ...)
-				end
+			if not mod:IsHooked(CH, "ChatFrame_MessageEventHandler") then
+				mod:RawHook(CH, "ChatFrame_MessageEventHandler", function(self, frame, event, ...)
+					for _, func in pairs(MessageEventHandlerPreHooks) do
+						func(self, frame, event, ...)
+					end
 
-				mod.hooks[CH].ChatFrame_MessageEventHandler(self, frame, event, ...)
+					mod.hooks[CH].ChatFrame_MessageEventHandler(self, frame, event, ...)
 
-				for _, func in pairs(MessageEventHandlerPostHooks) do
-					func(self, frame, event, ...)
-				end
-			end)
+					for _, func in pairs(MessageEventHandlerPostHooks) do
+						func(self, frame, event, ...)
+					end
+				end)
+			end
 
 			tinsert(MessageEventHandlerPreHooks, function()
 				CH.SoundTimer = true
@@ -1249,9 +1251,33 @@ local function setupCompactChat(db)
 		end
 
 		if not mod:IsHooked(CH, "StyleChat") then
-			mod:SecureHook(CH, "StyleChat", function(self, chat)
-				chat.copyButton:ClearAllPoints()
-				chat.copyButton:Point("TOPRIGHT", 0, db.enabled and (IsCombatLog(chat) and -9 or -25) or -2)
+			mod:SecureHook(CH, "StyleChat", function(_, chat)
+				local copyButton = chat.copyButton
+				if db.mouseoverCopyButton then
+					if not mod:IsHooked(copyButton, "OnEnter") then
+						mod:SecureHookScript(copyButton, "OnEnter", function(self)
+							E_UIFrameFadeIn(nil, self, 0.1, 0, 1)
+						end)
+					end
+					if not mod:IsHooked(copyButton, "OnLeave") then
+						mod:SecureHookScript(copyButton, "OnLeave", function(self)
+							E_UIFrameFadeOut(nil, self, 0.5, 1, 0)
+						end)
+					end
+					if not MouseIsOver(copyButton) then
+						copyButton:SetAlpha(0)
+					end
+				else
+					if mod:IsHooked(copyButton, "OnEnter") then
+						mod:Unhook(copyButton, "OnEnter")
+					end
+					if mod:IsHooked(copyButton, "OnLeave") then
+						mod:Unhook(copyButton, "OnLeave")
+					end
+					copyButton:SetAlpha(0.35)
+				end
+				copyButton:ClearAllPoints()
+				copyButton:Point("TOPRIGHT", 0, db.enabled and (IsCombatLog(chat) and -9 or -25) or -2)
 			end)
 		end
 
@@ -1368,6 +1394,7 @@ local function setupCompactChat(db)
 					end)
 				end
 			end
+			select(2,mod:IsHooked(CH, "StyleChat"))(nil, chatFrame)
 		end
 
 		db.selectedRightTab = oldSelectedRight
@@ -1493,6 +1520,7 @@ P["Extras"]["general"][modName] = {
 	["CompactChat"] = {
 		["enabled"] = false,
 		["mouseover"] = false,
+		["mouseoverCopyButton"] = true,
 		["point"] = "TOPRIGHT",
 		["topOffset"] = 5,
 		["bottomOffset"] = 5,
@@ -1770,12 +1798,19 @@ function mod:LoadConfig(db)
 					enabled = {
 						order = 1,
 						type = "toggle",
+						width = "full",
 						disabled = false,
 						name = core.pluginColor..L["Enable"],
 						desc = L["Dock all chat frames before enabling.\nShift-click the manager button to access tab settings."],
 					},
-					point = {
+					mouseoverCopyButton = {
 						order = 2,
+						type = "toggle",
+						name = L["Mouseover: Copy Button"],
+						desc = L["Copy button visibility."],
+					},
+					point = {
+						order = 3,
 						type = "select",
 						name = L["Point"],
 						desc = L["Manager point."],
@@ -1787,40 +1822,40 @@ function mod:LoadConfig(db)
 						},
 					},
 					mouseoverL = {
-						order = 3,
+						order = 4,
 						type = "toggle",
 						name = L["Mouseover: Left"],
 						desc = L["Manager button visibility."],
 					},
 					mouseoverR = {
-						order = 4,
+						order = 5,
 						type = "toggle",
 						name = L["Mouseover: Right"],
 						desc = L["Manager button visibility."],
 					},
 					topOffset = {
-						order = 5,
+						order = 6,
 						type = "range",
 						name = L["Top Offset"],
 						desc = "",
 						min = 0, max = 25, step = 1
 					},
 					bottomOffset = {
-						order = 6,
+						order = 7,
 						type = "range",
 						name = L["Bottom Offset"],
 						desc = "",
 						min = 0, max = 25, step = 1
 					},
 					leftOffset = {
-						order = 7,
+						order = 8,
 						type = "range",
 						name = L["Left Offset"],
 						desc = "",
 						min = 0, max = 25, step = 1
 					},
 					rightOffset = {
-						order = 8,
+						order = 9,
 						type = "range",
 						name = L["Right Offset"],
 						desc = "",
@@ -2038,6 +2073,8 @@ function mod:StripMsg(msg)
                                 i = i + 10
                             elseif nextB == 114 then -- 'r, color breaker'
                                 i = i + 2
+							elseif nextB == 116 then -- 't, texture code'
+								i = (find(tempMsg, "|t", i+2) or i) + 2
                             else
                                 strippedMsg = strippedMsg .. sub(msg, i, i)
                                 msgMap[j], i, j = i, i + 1, j + 1
@@ -2073,6 +2110,8 @@ function mod:StripMsg(msg)
                                         i = i + 10
                                     elseif nextB == 114 then -- 'r, color breaker'
                                         i = i + 2
+									elseif nextB == 116 then -- 't, texture code'
+										i = (find(tempMsg, "|t", i+2) or i) + 2
                                     else
                                         strippedMsg = strippedMsg .. sub(msg, i, i)
                                         msgMap[j], i, j = i, i + 1, j + 1

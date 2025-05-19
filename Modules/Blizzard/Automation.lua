@@ -585,7 +585,7 @@ function mod:LoadConfig(db)
 						type = "select",
 						name = L["Action Type"],
 						desc = "",
-						get = function() return selectedSetData().actionType end,
+						get = function() return selectedSet() == 0 and PURCHASE or selectedSetData().actionType end,
 						set = function(_, value) selectedSetData().actionType = value self:Toggle(db) end,
 						values = {
 							["BUY"] = PURCHASE,
@@ -601,8 +601,8 @@ function mod:LoadConfig(db)
 						width = "double",
 						name = L["Collection Method"],
 						desc = function()
-							local actionType = selectedSetData().actionType
-							return (selectedSet() == 0 or not actionType or actionType == "BUY") and
+							local actionType = selectedSet() == 0 and "BUY" or selectedSetData().actionType
+							return (not actionType or actionType == "BUY") and
 							L["Syntax: filter@value@amount\n\n"..
 								"Available filters:\n"..
 								" id@number@amount(+)/+ - matches itemID,\n"..

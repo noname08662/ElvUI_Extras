@@ -14,20 +14,6 @@ local EditBox_ClearFocus = EditBox_ClearFocus
 local UIDropDownMenu_CreateInfo, UIDropDownMenu_AddButton, UIDropDownMenu_SetSelectedValue, UIDropDownMenu_Initialize = UIDropDownMenu_CreateInfo, UIDropDownMenu_AddButton, UIDropDownMenu_SetSelectedValue, UIDropDownMenu_Initialize
 
 
-local function getPoint(obj)
-	local point, anchor, relativeTo, x, y = obj:GetPoint()
-	if not anchor then anchor = E.UIParent end
-
-	return format("%s,%s,%s,%d,%d", point, anchor:GetName(), relativeTo, x and E:Round(x) or 0, y and E:Round(y) or 0)
-end
-
-local function saveMoverPosition(name)
-	local holder = E.CreatedMovers[name]
-	if not holder then return end
-	if not E.db.Extras.movers then E.db.Extras.movers = {} end
-	E.db.Extras.movers[name] = getPoint(holder.mover)
-end
-
 local function setMovers(enable)
 	for mover in pairs(E.CreatedMovers) do
 		if E.db.movers and E.db.Extras.movers and E.db.movers[mover] and E.db.Extras.movers[mover] then
@@ -47,6 +33,7 @@ local function setMovers(enable)
 end
 
 
+P["Extras"].movers = {}
 P["Extras"]["general"][modName] = {
 	["enabled"] = false,
 
@@ -103,22 +90,25 @@ end
 
 function mod:NudgeMover(self, nudgeX, nudgeY, pointCustom, anchorFrame, relativeToCustom)
 	local mover = ElvUIMoverNudgeWindow.child
-	local point, anchor, relativeTo, xDB, yDB
+	local point, anchor, relativeTo, x, y
 
-	if E.db.Extras.movers and E.db.Extras.movers[mover.name] then
-		point, anchor, relativeTo, xDB, yDB = split(",", E.db.Extras.movers[mover.name])
+	if E.db.Extras.movers[mover.name] then
+		point, anchor, relativeTo, x, y = split(",", E.db.Extras.movers[mover.name])
 	end
 
 	if anchorFrame ~= nil then
 		mover:ClearAllPoints()
-		mover:Point('CENTER', anchorFrame, 'CENTER', 0, 0)
+		mover:Point('CENTER', anchorFrame)
 		if mover:GetScript('OnDragStart') then mover:RegisterForDrag(nil) end
-		saveMoverPosition(mover.name)
+		E.db.Extras.movers[mover.name] = format("%s,%s,%s,%d,%d", "CENTER", anchorFrame:GetName() or "UIParent", "CENTER", 0, 0)
 		E:UpdateNudgeFrame(mover)
 	elseif anchor and anchor ~= E.UIParent then
+		point, anchor, relativeTo, x, y =
+			pointCustom or point or "CENTER", _G[anchor] or E.UIParent, relativeToCustom or relativeTo or "CENTER",
+			(x or 0) + (nudgeX or 0), (y or 0) + (nudgeY or 0)
 		mover:ClearAllPoints()
-		mover:Point(pointCustom or point, _G[anchor], relativeToCustom or relativeTo, xDB + (nudgeX or 0), yDB + (nudgeY or 0))
-		saveMoverPosition(mover.name)
+		mover:Point(point, anchor, relativeTo, x, y)
+		E.db.Extras.movers[mover.name] = format("%s,%s,%s,%d,%d", point, anchor:GetName(), relativeTo, x, y)
 		E:UpdateNudgeFrame(mover)
 	end
 end

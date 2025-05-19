@@ -714,8 +714,8 @@ function mod:LoadConfig(db)
 				type = "group",
 				name = L["Automatic Onset"],
 				guiInline = true,
-				get = function(info) return db.OccupationIcon.types[info[#info]] end,
-				set = function(info, value) db.OccupationIcon.types[info[#info]] = value self:UpdateAllSettings(db) end,
+				get = function(info) return db.OccupationIcon.types[info.option.name or ""] end,
+				set = function(info, value) db.OccupationIcon.types[info.option.name or ""] = value self:UpdateAllSettings(db) end,
 				disabled = function() return not db[selectedSubSection()].enabled end,
 				hidden = function() return selectedSubSection() ~= 'OccupationIcon' end,
 				args = {
@@ -724,6 +724,8 @@ function mod:LoadConfig(db)
 						type = "toggle",
 						name = ALL,
 						desc = "",
+						get = function() return db.OccupationIcon.types["All"] end,
+						set = function(_, value) db.OccupationIcon.types["All"] = value self:UpdateAllSettings(db) end,
 					},
 					Auctioneer = {
 						order = 1,
@@ -1419,8 +1421,10 @@ function mod:Toggle(db)
 			core:RegisterNPElement('Title', function(unitType, frame, element)
 				if frame.Title then
 					local points = db.Titles[unitType] or db.Guilds[unitType]
-					frame.Title:ClearAllPoints()
-					frame.Title:Point(points.point, element, points.relativeTo, points.xOffset, points.yOffset)
+					if points then
+						frame.Title:ClearAllPoints()
+						frame.Title:Point(points.point, element, points.relativeTo, points.xOffset, points.yOffset)
+					end
 				end
 			end)
 			core:RegisterAreaUpdate(modName, function()

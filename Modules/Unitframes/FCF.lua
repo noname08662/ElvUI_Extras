@@ -256,22 +256,134 @@ P["Extras"]["unitframes"][modName] = {
 			["fadeTime"] = 3,
 			["blacklist"] = {},
 			["events"] = {
-				["ABSORB"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["BLOCK"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["DEFLECT"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["DODGE"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["ENERGIZE"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {105, 204, 240}, ["tryToColorBySchool"] = false },
-				["EVADE"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["HEAL"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {26, 204, 26}, ["tryToColorBySchool"] = false },
-				["IMMUNE"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["INTERRUPT"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["MISS"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["PARRY"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["REFLECT"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["RESIST"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["WOUND"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {179, 26, 26}, ["tryToColorBySchool"] = false },
-				["DEBUFF"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
-				["BUFF"] = { ["disabled"] = false, ["iconPosition"] = "before", ["customAnimation"] = '', ["animation"] = 'fountain', ["color"] = {255, 255, 255}, ["tryToColorBySchool"] = false },
+				["ABSORB"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {217/255, 196/255, 92/255},
+					["tryToColorBySchool"] = false
+				},
+				["BLOCK"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {1, 1, 1},
+					["tryToColorBySchool"] = false
+				},
+				["DEFLECT"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {1, 1, 1},
+					["tryToColorBySchool"] = false
+				},
+				["DODGE"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {1, 1, 1},
+					["tryToColorBySchool"] = false
+				},
+				["ENERGIZE"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {105/255, 204/255, 240/255},
+					["tryToColorBySchool"] = false
+				},
+				["EVADE"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {1, 1, 1},
+					["tryToColorBySchool"] = false
+				},
+				["HEAL"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {26/255, 204/255, 26/255},
+					["tryToColorBySchool"] = false
+				},
+				["IMMUNE"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {1, 1, 1},
+					["tryToColorBySchool"] = false
+				},
+				["INTERRUPT"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {1, 1, 1},
+					["tryToColorBySchool"] = false
+				},
+				["MISS"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {1, 1, 1},
+					["tryToColorBySchool"] = false
+				},
+				["PARRY"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {1, 1, 1},
+					["tryToColorBySchool"] = false
+				},
+				["REFLECT"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {1, 1, 1},
+					["tryToColorBySchool"] = false
+				},
+				["RESIST"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {1, 1, 1},
+					["tryToColorBySchool"] = false
+				},
+				["WOUND"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {199/255, 64/255, 64/255},
+					["tryToColorBySchool"] = false
+				},
+				["DEBUFF"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {1, 1, 1},
+					["tryToColorBySchool"] = false
+				},
+				["BUFF"] = {
+					["disabled"] = false,
+					["iconPosition"] = "before",
+					["customAnimation"] = '',
+					["animation"] = 'fountain',
+					["color"] = {1, 1, 1},
+					["tryToColorBySchool"] = false
+				},
 			},
 			["school"] = {
 				[SCHOOL_MASK_ARCANE] = {1, 128/255, 1},

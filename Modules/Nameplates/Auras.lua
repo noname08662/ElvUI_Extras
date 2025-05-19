@@ -223,8 +223,8 @@ local function cachePositions(db)
 			end
 			if db.SortMethods.enabled and data.filters then
 				cache.filterPriority = {}
-				for i, filter in ipairs({split(",", data.filters.priority)}) do
-					cache.filterPriority[filter] = i
+				for _, filter in ipairs({split(",", data.filters.priority)}) do
+					tinsert(cache.filterPriority, filter)
 				end
 				cache.sortDirection = db.SortMethods.types[unitType][auraType].sortDirection
 				cache.sortMethod = db.SortMethods.types[unitType][auraType].sortMethod
@@ -936,7 +936,7 @@ function mod:Update_AurasPosition(frame)
 						local spellID = button.spellID
 						local isPlayer = button.isPlayer
 
-						for filterName, index in pairs(filterOrder) do
+						for index, filterName in ipairs(filterOrder) do
 							local filter = filters[filterName]
 							if filter then
 								local filterType = filter.type

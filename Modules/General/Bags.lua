@@ -711,9 +711,15 @@ local function wipeLayout(f, isBank)
 	f.emptyButton = nil
 	f.currentLayout = nil
 	f.editBox:ClearAllPoints()
+	f.sortButton:ClearAllPoints()
 	if isBank then
 		f.editBox:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", (E.Border * 2) + 18, E.Border * 2 + 2)
 		f.editBox:Point("RIGHT", f.purchaseBagButton, "LEFT", -5, 0)
+
+		f.bagText:ClearAllPoints()
+		f.bagText:Point("BOTTOMRIGHT", f.holderFrame, "TOPRIGHT", -2, 4)
+
+		f.sortButton:Point("RIGHT", f.bagText, "LEFT", -5, E.Border * 2)
 	else
 		f.currencyButton:ClearAllPoints()
 		f.currencyButton:Point("BOTTOM", 0, 4)
@@ -722,6 +728,11 @@ local function wipeLayout(f, isBank)
 
 		f.editBox:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", (E.Border * 2) + 18, E.Border * 2 + 2)
 		f.editBox:Point("RIGHT", f.vendorGraysButton, "LEFT", -5, 0)
+
+		f.goldText:ClearAllPoints()
+		f.goldText:Point("BOTTOMRIGHT", f.holderFrame, "TOPRIGHT", -2, 4)
+
+		f.sortButton:Point("RIGHT", f.goldText, "LEFT", -5, E.Border * 2)
 	end
 end
 
@@ -748,6 +759,7 @@ P["Extras"]["general"][modName] = {
 		["selectedContainer"] = 'bags',
 		["containers"] = {
 			["bags"] = {
+				["topOffset"] = 12,
 				["selectedSection"] = 1,
 				["iconSpacing"] = 4,
 				["specialBags"] = {},
@@ -764,7 +776,7 @@ P["Extras"]["general"][modName] = {
 							["point"] = "BOTTOMRIGHT",
 							["relativeTo"] = "BOTTOMLEFT",
 							["xOffset"] = 0,
-							["yOffset"] = 0,
+							["yOffset"] = 2,
 							["toText"] = true,
 							["size"] = 16,
 						},
@@ -777,7 +789,7 @@ P["Extras"]["general"][modName] = {
 							["point"] = "BOTTOMLEFT",
 							["relativeTo"] = "BOTTOMRIGHT",
 							["xOffset"] = 0,
-							["yOffset"] = 0,
+							["yOffset"] = 2,
 						},
 					},
 				},
@@ -838,7 +850,7 @@ function mod:LoadConfig(db)
 					["point"] = "BOTTOMLEFT",
 					["relativeTo"] = "BOTTOMRIGHT",
 					["xOffset"] = 0,
-					["yOffset"] = 0,
+					["yOffset"] = 2,
 				},
 				["icon"] = {
 					["enabled"] = true,
@@ -873,7 +885,7 @@ function mod:LoadConfig(db)
 						["point"] = "BOTTOMLEFT",
 						["relativeTo"] = "BOTTOMRIGHT",
 						["xOffset"] = 0,
-						["yOffset"] = 0,
+						["yOffset"] = 2,
 					},
 					["icon"] = {
 						["enabled"] = true,
@@ -889,7 +901,7 @@ function mod:LoadConfig(db)
 			end
 		end
 		data.selectedSection = 1
-		data.topOffset = 8
+		data.topOffset = 12
 	end
     core.general.args[modName] = {
         type = "group",
@@ -1057,7 +1069,7 @@ function mod:LoadConfig(db)
 									["point"] = "BOTTOMLEFT",
 									["relativeTo"] = "BOTTOMRIGHT",
 									["xOffset"] = 0,
-									["yOffset"] = 0,
+									["yOffset"] = 2,
 								},
 								["icon"] = {
 									["enabled"] = false,
@@ -1065,7 +1077,7 @@ function mod:LoadConfig(db)
 									["point"] = "TOPLEFT",
 									["relativeTo"] = "TOPLEFT",
 									["xOffset"] = 0,
-									["yOffset"] = 0,
+									["yOffset"] = 2,
 									["toText"] = false,
 									["size"] = 16,
 								},
@@ -1504,7 +1516,7 @@ function mod:UpdateAll(disable, containerType, highlight)
 			else
 				mod.localhooks[f] = {
 					["OnClick"] = function(self)
-						if GetCursorInfo() then
+						if self:GetParent() == f and GetCursorInfo() then
 							f.draggedButton = self
 							f.emptyButton:SetScript("OnUpdate", function(emptyButton)
 								if not GetCursorInfo() and not self.atHeader then
@@ -1714,7 +1726,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 				["point"] = "BOTTOMLEFT",
 				["relativeTo"] = "BOTTOMRIGHT",
 				["xOffset"] = 0,
-				["yOffset"] = 0,
+				["yOffset"] = 2,
 			},
 			["icon"] = {
 				["enabled"] = true,
@@ -1729,7 +1741,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 			["isSpecialBag"] = true,
 			["bagID"] = bagID,
 		}
-		db.specialBags[bagID] = GetBagName(bagID)
+		db.specialBags[bagID] = GetBagName(bagID) or "Special Bag"
 		tinsert(sections, 1, specialSection)
 		if f.emptyButton and not f.forceShow then
 			f.emptyButton.highlight.tex:SetTexture("Interface\\Buttons\\UI-Common-MouseHilight")
@@ -1765,7 +1777,8 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 			sectionFrame.header.highlight = CreateFrame("Frame", nil, sectionFrame)
 			sectionFrame.header.highlight:SetFrameLevel(999)
 			sectionFrame.header.highlight:SetAllPoints()
-			sectionFrame.header.highlight:Hide()
+			sectionFrame.header.highlight:SetAlpha(0)
+			--sectionFrame.header.highlight:Hide()
 
 			sectionFrame.header.highlight.tex = sectionFrame.header.highlight:CreateTexture(nil, "BACKGROUND")
 			sectionFrame.header.highlight.tex:Point("TOPLEFT", sectionFrame.header, "TOPLEFT")
@@ -1892,21 +1905,23 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 		if section.isSpecialBag then
             local bagID = section.bagID
             local buttonsSpecial = specialButtons[bagID]
-            tsort(buttonsSpecial, function(a, b)
-                return (storedPositions[a.bagID..'-'..a.slotID] or 999) < (storedPositions[b.bagID..'-'..b.slotID] or 999)
-            end)
-            for _, button in ipairs(buttonsSpecial) do
-				if button.hasItem then
-					local itemID = B_GetItemID(nil, bagID, button.slotID)
-					button.itemID = itemID
-					tinsert(processedSection.buttons, button)
-					section.storedPositions[bagID..'-'..button.slotID] = #processedSection.buttons
-				else
-					button.itemID = false
-					button:Hide()
+			if buttonsSpecial then
+				tsort(buttonsSpecial, function(a, b)
+					return (storedPositions[a.bagID..'-'..a.slotID] or 999) < (storedPositions[b.bagID..'-'..b.slotID] or 999)
+				end)
+				for _, button in ipairs(buttonsSpecial) do
+					if button.hasItem then
+						local itemID = B_GetItemID(nil, bagID, button.slotID)
+						button.itemID = itemID
+						tinsert(processedSection.buttons, button)
+						section.storedPositions[bagID..'-'..button.slotID] = #processedSection.buttons
+					else
+						button.itemID = false
+						button:Hide()
+					end
+					buttonMap[bagID][button.slotID] = processedSection
 				end
-				buttonMap[bagID][button.slotID] = processedSection
-            end
+			end
         elseif section.shouldPopulate then
 			local reserved = {}
 			for j, button in ipairs(buttons) do
@@ -2102,6 +2117,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 										B_PickupItem(nil, empty.bagID, empty.slotID)
 										if #heldButtons == 0 or #emptyButtons == 0 then
 											self:SetScript("OnUpdate", nil)
+											E:Delay(0.2, function() mod:SetSlotAlphaForBag(nil, f) end)
 										end
 									end
 								end)
@@ -2205,7 +2221,8 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 		f.emptyButton.highlight:SetFrameLevel(999)
 		f.emptyButton.highlight:Point("CENTER", f.emptyButton, "CENTER")
 		f.emptyButton.highlight:Size(30)
-		f.emptyButton.highlight:Hide()
+		f.emptyButton.highlight:SetAlpha(0)
+		--f.emptyButton.highlight:Hide()
 
 		f.emptyButton.highlight.tex = f.emptyButton.highlight:CreateTexture(nil, "OVERLAY")
 		f.emptyButton.highlight.tex:Point("TOPLEFT", f.emptyButton.highlight, "TOPLEFT")
@@ -2233,7 +2250,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 		f.emptyButton:SetHighlightTexture(f.emptyButton.highlightTex)
 
 		f.emptyButton.emptySlotsText = f.emptyButton:CreateFontString(nil, "OVERLAY")
-		f.emptyButton.emptySlotsText:Point("BOTTOMLEFT", f.emptyButton.totalEmptySlotsText, "BOTTOMLEFT")
+		f.emptyButton.emptySlotsText:Point("BOTTOMLEFT", f.emptyButton.totalEmptySlotsText, "BOTTOMLEFT", 0, 2)
 		f.emptyButton.emptySlotsText:FontTemplate()
 		local empty = 0
 		for _ in pairs(buttonMap[f]) do
@@ -2534,26 +2551,30 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 
 	f.editBox:ClearAllPoints()
 	if (isBank and B.db.bankWidth or B.db.bagWidth) < 250 then
-		if not isBank then
-			f.editBox:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", E.Border * 2 + 18, E.Border * 2 - 32)
-			f.editBox:Point("TOPRIGHT", f.sortButton, "BOTTOMRIGHT", 0, -E.Border * 2 - 2)
-			f.sortButton:ClearAllPoints()
-			f.sortButton:Point("TOPRIGHT", f.goldText, "BOTTOMRIGHT", 0, -E.Border * 2)
+		f.editBox:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", 20, -10)
+		f.editBox:Point("TOPRIGHT", f.qualityFilterButton, "TOPLEFT", -5, -3)
+		f.sortButton:ClearAllPoints()
+		f.sortButton:Point("BOTTOMRIGHT", f.holderFrame, "TOPRIGHT", 0, -12)
+		if isBank then
+			f.bagText:ClearAllPoints()
+			f.bagText:Point("BOTTOM", f.holderFrame, "TOP", 0, 12)
 		else
-			f.editBox:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", E.Border * 2 + 18, E.Border * 2 - 32)
-			f.editBox:Point("TOPRIGHT", f.sortButton, "BOTTOMRIGHT", 0, -E.Border * 2 - 2)
-			f.sortButton:ClearAllPoints()
-			f.sortButton:Point("TOPRIGHT", f.bagText, "BOTTOMRIGHT", 0, -E.Border * 2)
+			f.goldText:ClearAllPoints()
+			f.goldText:Point("BOTTOM", f.holderFrame, "TOP", 0, 12)
 		end
 	else
-		f.editBox:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", E.Border * 2 + 48, E.Border * 2 + 2 + E.Border)
-		f.editBox:Point("TOPRIGHT", f.qualityFilterButton, "TOPLEFT", -5, -2)
+		f.editBox:Point("BOTTOMLEFT", f.holderFrame, "TOPLEFT", 48, 4)
+		f.editBox:Point("TOPRIGHT", f.qualityFilterButton, "TOPLEFT", -5, -3)
 		if not isBank then
 			f.sortButton:ClearAllPoints()
 			f.sortButton:Point("RIGHT", f.goldText, "LEFT", -5, E.Border * 2)
+			f.goldText:ClearAllPoints()
+			f.goldText:Point("BOTTOMRIGHT", f.holderFrame, "TOPRIGHT", -2, 4)
 		else
 			f.sortButton:ClearAllPoints()
 			f.sortButton:Point("RIGHT", f.bagText, "LEFT", -5, E.Border * 2)
+			f.bagText:ClearAllPoints()
+			f.bagText:Point("BOTTOMRIGHT", f.holderFrame, "TOPRIGHT", -2, 4)
 		end
 	end
 
@@ -2637,7 +2658,7 @@ function mod:Layout(self, isBank)
 		f.newbottomOffset = db.bottomOffset or 0
 	end
 	if (isBank and B.db.bankWidth or B.db.bagWidth) < 250 then
-		f.newtopOffset = (db.topOffset or 0) + 42
+		f.newtopOffset = (db.topOffset or 0) + 20
 	else
 		f.newtopOffset = db.topOffset or 0
 	end
@@ -2857,7 +2878,7 @@ function mod:SetSlotAlphaForBag(self, f)
 		if show then
 			section.frame:SetAlpha(1)
 		else
-			section.frame:SetAlpha(0.4)
+			section.frame:SetAlpha(0.1)
 		end
 	end
 end
@@ -2924,6 +2945,7 @@ function mod:BagsExtendedV2(db)
 				end
 			end)
 		end
+		self.BankOpened = (B_GetContainerFrame(nil, true) or E.HiddenFrame):IsShown()
 		self:UpdateAll()
 		self:RegisterEvent("EQUIPMENT_SETS_CHANGED", updateSetsInfo)
 		self:RegisterEvent("EQUIPMENT_SWAP_FINISHED", updateSetsInfo)
@@ -3166,7 +3188,15 @@ function mod:SplitHandler(self, button)
 						local complete = true
 						for _, stack in pairs(stacks) do
 							if #stack > 1 then
-								tsort(stack, function(a, b) return a.count > b.count end)
+								tsort(stack, function(a, b)
+									if a.button == self then
+										return true
+									elseif b.button == self then
+										return false
+									else
+										return a.count > b.count
+									end
+								end)
 								local targetIndex = 1
 								for sourceIndex = 2, #stack do
 									local target = stack[targetIndex]

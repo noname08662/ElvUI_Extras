@@ -51,7 +51,7 @@ local function updateAllIcons(db, enabled)
 						icon.tex = icon:CreateTexture(nil, "OVERLAY")
 						icon.tex:SetAllPoints()
 						icon.tex:SetTexCoord(unpack(E.TexCoords))
-						mod:SecureHook(icon, "SetAlpha", function(f, alpha) if alpha == 0 then f:Hide() end end)
+						icon.FadeObject = {finishedFuncKeep = true, finishedFunc = function() if icon:GetAlpha() == 0 then icon:Hide() end end}
 					end
 					local level = frame.Health:GetFrameLevel() + iconData.level
 					icon:ClearAllPoints()
@@ -789,7 +789,8 @@ function mod:Toggle(db)
 		if self:IsHooked(NP, 'StyleFilterClear') then self:Unhook(NP, 'StyleFilterClear') end
 		if self:IsHooked(NP, 'StyleFilterConditionCheck') then self:Unhook(NP, 'StyleFilterConditionCheck') end
 		if self:IsHooked(NP, 'OnShow') then self:Unhook(NP, 'OnShow') end
-		if not self:IsHooked(NP, 'StyleFilterConfigure') then self:RawHook(NP, 'StyleFilterConfigure', function()
+		if not self:IsHooked(NP, 'StyleFilterConfigure') then
+			self:RawHook(NP, 'StyleFilterConfigure', function(...)
 				twipe(links)
 				twipe(activeFilters)
 
@@ -858,7 +859,7 @@ function mod:Toggle(db)
 						end
 					end
 				end
-				return mod.hooks[NP].StyleFilterConfigure()
+				return mod.hooks[NP].StyleFilterConfigure(...)
 			end)
 		end
 		if triggersEnabled then
@@ -910,7 +911,7 @@ function mod:Toggle(db)
 						icon.relativeTo = iconData.relativeTo
 						icon.xOffset = iconData.xOffset
 						icon.yOffset = iconData.yOffset
-						mod:SecureHook(icon, "SetAlpha", function(f, alpha) if alpha == 0 then f:Hide() end end)
+						icon.FadeObject = {finishedFuncKeep = true, finishedFunc = function() if icon:GetAlpha() == 0 then icon:Hide() end end}
 					end
 				end)
 			end
