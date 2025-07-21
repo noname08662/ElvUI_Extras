@@ -1106,10 +1106,10 @@ function mod:HandleCurableStealable(mod_db, db, button, unstableAffliction, vamp
 	if (db.shadow or db.border)
 		and (attackable
 			or (E.myclass == "WARLOCK"
-				or (name and (name ~= unstableAffliction and name ~= vampiricTouch)))) and dtype and find(dtype, '%S+') then
+				or (name and (name ~= unstableAffliction and name ~= vampiricTouch)))) and dtype then
 		if (attackable and isDebuff) or (not attackable and not isDebuff)
 									or (isDebuff and not (dispellList and dispellList[dtype]))
-									or (not isDebuff and not purgeList) then
+									or (not isDebuff and purgeList ~= dtype) then
 			if button.highlightApplied then
 				self:ClearHighlights(mod_db, button, isDebuff, dtype, unstableAffliction, vampiricTouch)
 			end

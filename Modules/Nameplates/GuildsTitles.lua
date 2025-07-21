@@ -9,6 +9,21 @@ local modName = mod:GetName()
 local NPCOccupations_data = {}
 local NPCOccupations_cache = {}
 local dataTexMap = {}
+local occupationBitmask = {
+	{0x200000, 	MINIMAP_TRACKING_AUCTIONEER},
+	{0x20000, 	MINIMAP_TRACKING_BANKER},
+	{0x800000, 	MINIMAP_TRACKING_BANKER},
+	{0x100000, 	MINIMAP_TRACKING_BATTLEMASTER},
+	{0x20, 		MINIMAP_TRACKING_TRAINER_CLASS},
+	{0x40, 		MINIMAP_TRACKING_TRAINER_PROFESSION},
+	{0x2000, 	MINIMAP_TRACKING_FLIGHTMASTER},
+	{0x10000, 	MINIMAP_TRACKING_INNKEEPER},
+	{0x800, 	MINIMAP_TRACKING_VENDOR_REAGENT},
+	{0x400000, 	MINIMAP_TRACKING_STABLEMASTER},
+	{0x80000, 	GUILD},
+	{0x1000, 	MINIMAP_TRACKING_REPAIR},
+	{0x80, 		MERCHANT},
+}
 local dataTexMapDefaults = {
 	[MINIMAP_TRACKING_AUCTIONEER		] = "Interface\\Minimap\\Tracking\\Auctioneer",
 	[MINIMAP_TRACKING_BANKER			] = "Interface\\Minimap\\Tracking\\Banker",
@@ -33,6 +48,7 @@ mod.initialized = false
 local scanner = CreateFrame("GameTooltip", "ExtrasGT_ScanningTooltip", nil, "GameTooltipTemplate")
 scanner:SetOwner(WorldFrame, "ANCHOR_NONE")
 
+local band = bit.band
 local _G, pairs, ipairs, tonumber = _G, pairs, ipairs, tonumber
 local twipe, tinsert, tsort = table.wipe, table.insert, table.sort
 local format, find, gsub, sub = string.format, string.find, string.gsub, string.sub
@@ -954,16 +970,16 @@ end
 local function updateAllVisiblePlates(db)
 	if isAwesome then
 		for frame in pairs(NP.VisiblePlates) do
-			if frame.unit and frame.Title then
-				frame.Title:Hide()
+			if frame.unit and frame.TitleHolder then
+				frame.TitleHolder:Hide()
 				frame.OccupationIcon:Hide()
 				mod:AwesomeUpdateUnitInfo(frame, db, frame.unit)
 			end
 		end
 	else
 		for frame in pairs(NP.VisiblePlates) do
-			if frame.Title then
-				frame.Title:Hide()
+			if frame.TitleHolder then
+				frame.TitleHolder:Hide()
 				frame.OccupationIcon:Hide()
 				mod:UpdateTitle(frame, db, nil, nil, frame.UnitName)
 			end
@@ -972,11 +988,11 @@ local function updateAllVisiblePlates(db)
 end
 
 local function constructTitle(frame)
-	if frame.Title then return end
-	frame.Title = CreateFrame('Frame', '$parentTitle', frame)
-	frame.Title.str = frame.Title:CreateFontString(nil, "OVERLAY")
-	frame.Title.str:SetWordWrap(false)
-	frame.Title.str:SetAllPoints(frame.Title)
+	if frame.TitleHolder then return end
+	frame.TitleHolder = CreateFrame('Frame', '$parentTitle', frame)
+	frame.TitleHolder.str = frame.TitleHolder:CreateFontString(nil, "OVERLAY")
+	frame.TitleHolder.str:SetWordWrap(false)
+	frame.TitleHolder.str:SetAllPoints(frame.TitleHolder)
 	frame.OccupationIcon = CreateFrame('Frame', '$parentOccupationIcon', frame)
 	frame.OccupationIcon.icon = frame.OccupationIcon:CreateTexture('$parentOccupationIcon', "OVERLAY")
 	frame.OccupationIcon.icon:SetAllPoints(frame.OccupationIcon)
@@ -989,11 +1005,11 @@ local function manageTitleFrame(frame, title, db, db_icon)
 		title:Height(db.fontSize)
 		title:ClearAllPoints()
 		title:Point(db.point, health:IsShown() and health or frame.Name, db.relativeTo, db.xOffset, db.yOffset)
-		title:SetFrameLevel(frame.Health:GetFrameLevel() + db.level)
+		title:SetFrameLevel(health:GetFrameLevel() + db.level)
 	end
 	if db_icon then
 		local occupationIcon = frame.OccupationIcon
-		local level = frame.Health:GetFrameLevel() + db_icon.level
+		local level = health:GetFrameLevel() + db_icon.level
 
 		occupationIcon:ClearAllPoints()
 		occupationIcon:Size(db_icon.size)
@@ -1014,6 +1030,27 @@ local function manageTitleFrame(frame, title, db, db_icon)
 	end
 end
 
+local getUnitOccupationIcon = UnitOccupations and function(unit)
+	for _, data in ipairs(occupationBitmask) do
+		if band(UnitOccupations(unit), data[1]) ~= 0 then
+			return dataTexMap[data[2]]
+		end
+	end
+	local npcId = tonumber(sub(UnitGUID(unit), -10, -7), 16)
+	for occupation, entries in pairs(NPCOccupations_data) do
+		if entries[npcId] then
+			return dataTexMap[occupation]
+		end
+	end
+end or function(unit)
+	local npcId = tonumber(sub(UnitGUID(unit), -10, -7), 16)
+	for occupation, entries in pairs(NPCOccupations_data) do
+		if entries[npcId] then
+			return dataTexMap[occupation]
+		end
+	end
+end
+
 
 function mod:UpdateTitle(frame, db, unit, unitTitle, name)
 	name = name or frame.UnitName
@@ -1022,7 +1059,7 @@ function mod:UpdateTitle(frame, db, unit, unitTitle, name)
 
 	if not unit or not name or not unitTitle then return end
 
-	local title, unitType = frame.Title, frame.UnitType
+	local title, unitType = frame.TitleHolder, frame.UnitType
 
 	if unitType == 'FRIENDLY_NPC' or unitType == 'ENEMY_NPC' then
 		if db.Titles.enabled then
@@ -1116,14 +1153,14 @@ function mod:AwesomeUpdateUnitInfo(frame, db, unit)
 			local cleanDesc = gsub(description, "[%s%d%p]+", "")
 			if find(cleanDesc, TOOLTIP_UNIT_LEVEL, 1, true) or find(cleanDesc, TOOLTIP_UNIT_LEVEL_CLASS, 1, true) then
 				if db.OccupationIcon.enabled and frame.UnitType == 'FRIENDLY_NPC' then
-					manageTitleFrame(frame, frame.Title, nil, db.OccupationIcon)
+					manageTitleFrame(frame, frame.TitleHolder, nil, db.OccupationIcon)
 					self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
 				end
 				return
 			end
 		else
 			if db.OccupationIcon.enabled and frame.UnitType == 'FRIENDLY_NPC' then
-				manageTitleFrame(frame, frame.Title, nil, db.OccupationIcon)
+				manageTitleFrame(frame, frame.TitleHolder, nil, db.OccupationIcon)
 				self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
 			end
 			return
@@ -1160,17 +1197,12 @@ function mod:UpdateOccupation(occupationIcon, db, unit, name)
 				end
 			end
 		end
-	else
-		local guid = unit and UnitGUID(unit)
-		if guid then
-			local npcId = tonumber(sub(guid, -10, -7), 16)
-			for occupation, entries in pairs(NPCOccupations_data) do
-				if entries[npcId] then
-					occupationIcon.icon:SetTexture(dataTexMap[occupation])
-					occupationIcon:Show()
-					return
-				end
-			end
+	elseif unit then
+		local tex = getUnitOccupationIcon(unit)
+		if tex then
+			occupationIcon.icon:SetTexture(tex)
+			occupationIcon:Show()
+			return
 		end
 	end
 	occupationIcon:Hide()
@@ -1207,14 +1239,14 @@ function mod:UpdateUnitInfo(frame, db, unit)
 			local cleanDesc = gsub(description, "[%s%d%p]+", "")
 			if find(cleanDesc, TOOLTIP_UNIT_LEVEL, 1, true) or find(cleanDesc, TOOLTIP_UNIT_LEVEL_CLASS, 1, true) then
 				if db.OccupationIcon.enabled and frame.UnitType == 'FRIENDLY_NPC' then
-					manageTitleFrame(frame, frame.Title, nil, db.OccupationIcon)
+					manageTitleFrame(frame, frame.TitleHolder, nil, db.OccupationIcon)
 					self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
 				end
 				return
 			end
 		else
 			if db.OccupationIcon.enabled and frame.UnitType == 'FRIENDLY_NPC' then
-				manageTitleFrame(frame, frame.Title, nil, db.OccupationIcon)
+				manageTitleFrame(frame, frame.TitleHolder, nil, db.OccupationIcon)
 				self:UpdateOccupation(frame.OccupationIcon, db, unit, name)
 			end
 			return
@@ -1235,12 +1267,22 @@ function mod:UpdateAllSettings(db)
 		twipe(NPCOccupations_cache)
 		dataTexMap = db.OccupationIcon.dataTexMap
 		local all = db.OccupationIcon.types["All"]
-		for occupation, data in pairs(core.NPCOccupations_data or {}) do
-			if all or db.OccupationIcon.types[occupation] then
-				NPCOccupations_data[occupation] = {}
-				local occupation_data = NPCOccupations_data[occupation]
-				for id in pairs(data) do
+		if UnitOccupations then
+			if all or db.OccupationIcon.types[BARBERSHOP] then
+				NPCOccupations_data[BARBERSHOP] = {}
+				local occupation_data = NPCOccupations_data[BARBERSHOP]
+				for id in pairs((core.NPCOccupations_data or {})[BARBERSHOP]) do
 					occupation_data[id] = true
+				end
+			end
+		else
+			for occupation, data in pairs(core.NPCOccupations_data or {}) do
+				if all or db.OccupationIcon.types[occupation] then
+					NPCOccupations_data[occupation] = {}
+					local occupation_data = NPCOccupations_data[occupation]
+					for id in pairs(data) do
+						occupation_data[id] = true
+					end
 				end
 			end
 		end
@@ -1275,7 +1317,7 @@ function mod:UpdateAllSettings(db)
 	for plate in pairs(NP.CreatedPlates) do
 		local frame = plate and plate.UnitFrame
 		if frame then
-			if frame.Title then frame.Title:Hide() end
+			if frame.TitleHolder then frame.TitleHolder:Hide() end
 			if frame.OccupationIcon then frame.OccupationIcon:Hide() end
 		end
 	end
@@ -1353,7 +1395,7 @@ function mod:AwesomeOnEvent(db, unit)
 		local plate = GetNamePlateForUnit(unit)
 		local frame = plate and plate.UnitFrame
 		if frame then
-			local title = frame.Title
+			local title = frame.TitleHolder
 			if not title:IsShown() then
 				local guildName = GetGuildInfo(unit)
 				if guildName then
@@ -1419,11 +1461,11 @@ function mod:Toggle(db)
 	else
 		if db.Guilds.enabled or db.Titles.enabled then
 			core:RegisterNPElement('Title', function(unitType, frame, element)
-				if frame.Title then
+				if frame.TitleHolder then
 					local points = db.Titles[unitType] or db.Guilds[unitType]
 					if points then
-						frame.Title:ClearAllPoints()
-						frame.Title:Point(points.point, element, points.relativeTo, points.xOffset, points.yOffset)
+						frame.TitleHolder:ClearAllPoints()
+						frame.TitleHolder:Point(points.point, element, points.relativeTo, points.xOffset, points.yOffset)
 					end
 				end
 			end)
@@ -1465,8 +1507,8 @@ function mod:Toggle(db)
 				self:SecureHook(NP, "OnShow", function(self)
 					if not self.unit then return end
 					local frame = self.UnitFrame
-					if frame.Title then
-						frame.Title:Hide()
+					if frame.TitleHolder then
+						frame.TitleHolder:Hide()
 						frame.OccupationIcon:Hide()
 						mod:AwesomeUpdateUnitInfo(frame, db, self.unit)
 					end
@@ -1480,7 +1522,7 @@ function mod:Toggle(db)
 				self:SecureHook(NP, "OnCreated", function(self, plate)
 					local frame = plate.UnitFrame
 					constructTitle(frame)
-					frame.Title:Hide()
+					frame.TitleHolder:Hide()
 					frame.OccupationIcon:Hide()
 					mod:UpdateTitle(frame, db, nil, nil, frame.UnitName)
 				end)
@@ -1488,8 +1530,8 @@ function mod:Toggle(db)
 			if not self:IsHooked(NP, "OnShow") then
 				self:SecureHook(NP, "OnShow", function(self)
 					local frame = self.UnitFrame
-					if frame and frame.Title then
-						frame.Title:Hide()
+					if frame and frame.TitleHolder then
+						frame.TitleHolder:Hide()
 						frame.OccupationIcon:Hide()
 						mod:UpdateTitle(frame, db, nil, nil, frame.UnitName)
 					end

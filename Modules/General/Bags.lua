@@ -316,7 +316,7 @@ local function parseCollectionString(conditions)
 end
 
 local function updateCollectionMethods(section)
-	if not find(section.db.collectionMethod, '%S+') then section.collectionMethodFunc = nil return end
+	if not find(section.db.collectionMethod, '%S+') then section.collectionMethodFunc = function() end return end
 	local parsedString = parseCollectionString(section.db.collectionMethod)
 
 	if not parsedString then return end
@@ -1543,8 +1543,7 @@ end
 
 function mod:EvaluateItem(sections, bagID, slotID, itemID)
     for _, section in ipairs(sections) do
-        if (section.collectionMethodFunc and section.collectionMethodFunc(bagID, slotID, itemID))
-				or (section.db.isSpecialBag and section.db.bagID == bagID) then
+        if section.collectionMethodFunc(bagID, slotID, itemID) or (section.db.isSpecialBag and section.db.bagID == bagID) then
 			return section, true
         end
     end
@@ -2696,7 +2695,6 @@ function mod:UpdateSlot(self, f, bagID, slotID)
 	else
 		local oldID = button.itemID
 		local itemID = B_GetItemID(nil, bagID, slotID)
-
 		if button.shouldEvaluate then
 			local currentSection = bagMap[slotID]
 			local targetSection = mod:EvaluateItem(layout.sections, bagID, slotID, itemID)
