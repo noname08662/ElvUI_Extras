@@ -45,6 +45,12 @@ ignore = {
 globals = {
 	"C_NamePlate",
 
+	"UnitOccupations",
+	"UnitOwner",
+	"UnitTokenFromGUID",
+	"GetSpellBaseCooldown",
+	"GetItemInfoInstant",
+
 	-- ElvUI
 	"AlertFrameHolder",
 	"AlertFrameMover",
