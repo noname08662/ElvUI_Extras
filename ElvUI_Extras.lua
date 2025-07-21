@@ -25,10 +25,13 @@ core.plateAnchoring = {
 }
 
 core.PurgeList = {
-	MAGE = true,
-	PRIEST = true,
-	SHAMAN = true,
-	WARLOCK = true,
+	MAGE = "Magic",
+	PRIEST = "Magic",
+	SHAMAN = "Magic",
+	WARLOCK = "Magic",
+	WARRIOR = "Magic",
+	HUNTER = "", -- Enrage
+	ROGUE = "", -- Enrage
 }
 
 core.DispellList = {
@@ -56,13 +59,12 @@ core.SpellLists = {
 		[61685] = 25,	-- Charge
 		[50519] = 60,	-- Sonic Blast
 		[50245] = 40,	-- Pin
-		[50433] = 10,	-- Ankle Crack
 		[26090] = 30,	-- Pummel
 		[50541] = 60, 	-- Clench
 		[54706] = 40,	-- Vemom Web Spray
 		[4167] 	= 40,	-- Web
-		[50274] = 12,	-- Spore Cloud
-		[50271] = 10, 	-- Tendon Rip
+		[50274] = 10,	-- Spore Cloud
+		[50271] = 20, 	-- Tendon Rip
 		[50318] = 60,	-- Serenity Dust
 		[50285] = 40, 	-- Dust Cloud
 		[55709] = 480,	-- Heart of the Phoenix
@@ -81,7 +83,7 @@ core.SpellLists = {
 
 		-- Death Knight
 		[49039] = 120,	-- Lichborne
-		[47476] = 60,	-- Strangulate
+		[47476] = 120,	-- Strangulate
 		[48707] = 45,	-- Anti-Magic Shell
 		[49576] = 25,	-- Death Grip
 		[47528] = 10,	-- Mind Freeze
@@ -89,7 +91,7 @@ core.SpellLists = {
 		[49203] = 60,	-- Hungering Cold
 		[49028] = 90, 	-- Dancing Rune Weapon
 		[49206] = 180,	-- Summon Gargoyle
-		[48792] = 180,	-- Icebound Fortitude
+		[48792] = 120,	-- Icebound Fortitude
 		[48743] = 120,	-- Death Pact
 		[42650] = 600,	-- Army of the Dead
 
@@ -102,7 +104,7 @@ core.SpellLists = {
 		[50334] = 180,	-- Berserk
 		[50516] = 17,	-- Typhoon
 		[33831] = 180,	-- Force of Nature
-		[8983] 	= 50,	-- Bash
+		[8983] 	= 30,	-- Bash
 		[29166] = 180,	-- Innervate
 		-- [53201] = 60,	-- Starfall
 		-- [22570] = 10,	-- Maim
@@ -114,13 +116,13 @@ core.SpellLists = {
 		-- Hunter
 		[49012] = 54,	-- Wyvern Sting
 		[3045] 	= 180,	-- Rapid Fire
-		[53351] = 10,	-- Kill Shot
-		[53271] = 35, 	-- Master's Call
-		[19263] = 120,	-- Deterrence
+		[53351] = 9,	-- Kill Shot
+		[53271] = 60, 	-- Master's Call
+		[19263] = 90,	-- Deterrence
 		[19503] = 30,	-- Scatter Shot
 		[23989] = 180,	-- Readiness
 		[34490] = 20,	-- Silencing Shot
-		[19574] = 90,	-- Bestial Wrath
+		[19574] = 120,	-- Bestial Wrath
 		[14311]	= 30,	-- Freezing Trap
 		[60202] = 30,   -- Freezing Arrow
 		[50518] = 40,	-- Ravage
@@ -136,7 +138,7 @@ core.SpellLists = {
 		[12472] = 144,	-- Icy Veins
 		[66]	= 132,	-- Invisibility
 		[42945] = 30, 	-- Blast Wave
-		[12043] = 90,	-- Presence of Mind
+		[12043] = 120,	-- Presence of Mind
 		[11129] = 120,	-- Combustion
 		[42950] = 20,	-- Dragon's Breath
 		-- [122] = 25,		-- Frost Nova
@@ -196,7 +198,7 @@ core.SpellLists = {
 		[32182] = 300,	-- Heroism
 		[2825] 	= 300,	-- Bloodlust
 		[51533] = 180,	-- Feral Spirit
-		[16190] = 240,	-- Mana Tide Totem
+		[16190] = 300,	-- Mana Tide Totem
 		[30823] = 60,	-- Shamanistic Rage
 		[59159] = 35,	-- Thunderstorm
 		[5730] 	= 20,	-- Stoneclaw Totem
@@ -223,7 +225,7 @@ core.SpellLists = {
 		[5246] 	= 120,	-- Intimidation Shout
 		[871] 	= 120,	-- Shield Wall
 		[20252] = 20,	-- Intercept
-		[64382] = 240,	-- Shattering Throw
+		[64382] = 300,	-- Shattering Throw
 		[12809] = 30,	-- Concussion Blow
 		[12975] = 180,	-- Last Stand
 		[60970] = 30,	-- Heroic Fury
@@ -250,16 +252,16 @@ core.SpellLists = {
 		[26090] = 30,   -- Pummel (Gorilla Pet)
 		[50479] = 40,	-- Nether Shock (Nether Ray Pet)
 		[15487] = 45,   -- Silence
-		[8983] 	= 60,   -- Bash
+		[8983] 	= 30,   -- Bash
 		[48827] = 30,   -- Avenger's Shield
 	},
 	["CONTROL"] = {
 		[47476] = 120,	-- Strangulate
 		[51209] = 60,   -- Hungering Cold
-		[8983] 	= 50,   -- Bash
+		[8983] 	= 30,   -- Bash
 		[22570] = 10,   -- Maim
 		[16979] = 15,   -- Feral Charge
-		[1513] 	= 15,	-- Scare Beast
+		[1513] 	= 30,	-- Scare Beast
 		[14311]	= 30,	-- Freezing Trap
 		[49012] = 54,   -- Wyvern Sting
 		[19503] = 30,   -- Scatter Shot
@@ -270,7 +272,6 @@ core.SpellLists = {
 		[50541] = 60,   -- Snatch
 		[54706] = 40,   -- Venom Web Spray
 		[50518] = 40,	-- Ravage
-		[56626] = 10,   -- Sting
 		[50479] = 40,	-- Nether Shock
 		[60202] = 30,   -- Freezing Arrow
 		[122] 	= 25,	-- Frost Nova
@@ -2023,6 +2024,7 @@ function core:GetOptions()
 								name = L["Questie Coherence"],
 								desc = L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."],
 								disabled = function() return not _G.Questie end,
+							},
 							restoreRaidControls = {
 								type = "toggle",
 								name = L["Restore Raid Controls"],
@@ -2065,13 +2067,24 @@ function core:Initialize()
 	self.customColorAlpha = E.db.Extras.customColorAlpha
 	self.customColorBeta = E.db.Extras.customColorBeta
 
-	if E.version ~= 7 then
+	if tonumber(match(E.version or 0, "^%d")) < 7 then
 		local CH = E:GetModule('Chat')
 		local msg = format(self.customColorAlpha.."ElvUI "..self.pluginColor.."Extras"..self.customColorAlpha..": |r"..self.customColorBad..
 					L["Plugin version mismatch! Please, download appropriate plugin version at"].." https://github.com/noname08662/ElvUI_Extras.")
 		if CH.Initialized then msg = select(2, CH:FindURL('CHAT_MSG_DUMMY', msg)) end
 		print(msg)
 	end
+
+	--[[
+	if GetSpellBaseCooldown then
+		for name, list in pairs(self.SpellLists) do
+			for id, cdTime in pairs(list) do
+				local cd = GetSpellBaseCooldown(id)
+				self.SpellLists[name][id] = cd and cd / 1000 or cdTime
+			end
+		end
+	end
+	]]--
 
 	-- update new elements
 	core:SecureHook(E, "ToggleOptionsUI", function()

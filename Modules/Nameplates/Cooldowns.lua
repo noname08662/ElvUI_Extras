@@ -50,7 +50,7 @@ local function updateVisibilityState(db, areaType)
 	return isShown
 end
 
-local function getPetOwner(unit)
+local function findOwner(unit)
 	scanTool:ClearLines()
 	scanTool:SetUnit(unit)
 	local scanText = _G["ScanTooltipNPTextLeft2"]
@@ -64,6 +64,9 @@ local function getPetOwner(unit)
 	end
 end
 
+local UnitOwner = UnitOwner and function(unit)
+	return UnitOwner(unit) or findOwner(unit)
+end or findOwner
 
 local trinkets = {
 	[42292] = true,
@@ -1135,9 +1138,25 @@ function mod:LoadConfig(db)
 end
 
 
-local function combatLogEvent(_, ...)
-    local _, eventType, _, sourceName, sourceFlags, _, _, _, spellID = ...
-
+local combatLogEvent = UnitOwner and function(_, _, eventType, sourceGuid, sourceName, sourceFlags, _, _, _, spellID)
+    if eventType == "SPELL_CAST_SUCCESS" and sourceName then
+		local cdTime = allSpells[spellID] or allSpells[GetSpellInfo(spellID)]
+		local isPlayer = band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
+		if cdTime and (isPlayer or band(sourceFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER) then
+			local startTime = GetTime()
+			if not isPlayer then
+				local ownerName = UnitOwner(sourceGuid)
+				if ownerName then
+					mod:UpdateCooldowns(ownerName, spellID, startTime, startTime + cdTime, true)
+				else
+					mod:UpdateCooldowns(match(sourceName, '%P+'), spellID, startTime, startTime + cdTime)
+				end
+			else
+				mod:UpdateCooldowns(match(sourceName, '%P+'), spellID, startTime, startTime + cdTime, true)
+			end
+		end
+    end
+end or function(_, _, eventType, _, sourceName, sourceFlags, _, _, _, spellID)
     if eventType == "SPELL_CAST_SUCCESS" and sourceName then
 		local cdTime = allSpells[spellID] or allSpells[GetSpellInfo(spellID)]
 		local isPlayer = band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
@@ -1181,7 +1200,7 @@ function mod:UpdateCooldowns(playerName, spellID, startTime, endTime, isPlayer)
 end
 
 function mod:HandlePets(plate, petName, unit)
-	local ownerName = getPetOwner(plate.unit or plate:GetParent().unit or unit or petName)
+	local ownerName = UnitOwner(plate.unit or plate:GetParent().unit or unit or petName)
 	if ownerName then
 		local hash = ownerName..'true'
 		local cooldowns = activeCooldowns[hash]

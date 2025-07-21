@@ -71,6 +71,24 @@ local UNITNAME_SUMMON_TITLES = {gsub(format(UNITNAME_SUMMON_TITLE1, 1), '[%d%p%s
 
 local iconPositions = mod.iconPositions
 
+local function findOwner(unit)
+	scanTool:ClearLines()
+	scanTool:SetUnit(unit)
+	local scanText = _G["ScanTooltipUFTextLeft2"]
+	local ownerText = scanText:GetText()
+	if ownerText then
+		for _, string in ipairs(UNITNAME_SUMMON_TITLES) do
+			if find(ownerText, string) then
+				return gsub(ownerText, string..'[%s]+', '')
+			end
+		end
+	end
+end
+
+local UnitOwner = UnitOwner and function(unit)
+	return UnitOwner(unit) or findOwner(unit)
+end or findOwner
+
 for frameType, number in pairs({['arena'] = 5, ['party'] = 5, ['raid'] = 40}) do
 	for i = 1, number do
 		petList[frameType..i] = format("%s%s%s", frameType, i, 'pet')
@@ -87,12 +105,12 @@ function mod:tagFunc(frame, unit)
 		end
 		local name = UnitName(unit)
 		if name then
-			local isPlayer = UnitIsPlayer(unit)
-			if isPlayer then
+			if UnitIsPlayer(unit) then
+
 				local cooldowns = activeCooldowns[name..'true']
 				if frame.unitframeType ~= 'target' and frame.unitframeType ~= 'focus' then
 					local petCooldowns = activeCooldowns[(UnitName(unit..'pet') or "")..'false']
-					if petCooldowns then
+					if petCooldowns and next(petCooldowns) then
 						if not cooldowns then
 							local hash = name..'true'
 							activeCooldowns[hash] = {}
@@ -114,31 +132,31 @@ function mod:tagFunc(frame, unit)
 				end
 			else
 				local petCooldowns = activeCooldowns[name..'false']
-				if petCooldowns then
-					scanTool:ClearLines()
-					scanTool:SetUnit(unit)
-					local scanText = _G["ScanTooltipUFTextLeft2"]
-					local ownerText = scanText:GetText()
-					if ownerText then
-						for _, string in ipairs(UNITNAME_SUMMON_TITLES) do
-							if find(ownerText, string) then
-								local ownerName = gsub(ownerText, string..'[%s]+', '')
-								local hash = ownerName..'true'
-								local cooldowns = activeCooldowns[hash]
-								if not cooldowns then
-									activeCooldowns[hash] = {}
-									cooldowns = activeCooldowns[hash]
-								end
-								for _, spellInfo in ipairs(petCooldowns) do
-									tinsert(cooldowns, spellInfo)
-								end
-								twipe(petCooldowns)
-								for _, frame in ipairs(framelist) do
-									if frame.unit and UnitName(frame.unit) == ownerName then
-										mod:AttachCooldowns(frame, cooldowns)
-									end
-								end
-								break
+				if petCooldowns and next(petCooldowns) then
+					local ownerName = UnitOwner(unit)
+
+
+
+					if ownerName then
+
+
+
+						local hash = ownerName..'true'
+						local cooldowns = activeCooldowns[hash]
+						if not cooldowns then
+							activeCooldowns[hash] = {}
+							cooldowns = activeCooldowns[hash]
+						end
+						for _, spellInfo in ipairs(petCooldowns) do
+							tinsert(cooldowns, spellInfo)
+						end
+						twipe(petCooldowns)
+						for _, frame in ipairs(framelist) do
+							if frame.unit and UnitName(frame.unit) == ownerName then
+								mod:AttachCooldowns(frame, cooldowns)
+
+
+
 							end
 						end
 					end
@@ -1250,9 +1268,25 @@ function mod:LoadConfig(db)
 end
 
 
-local function combatLogEvent(_, ...)
-    local _, eventType, _, sourceName, sourceFlags, _, _, _, spellID = ...
-
+local combatLogEvent = UnitOwner and function(_, _, eventType, sourceGuid, sourceName, sourceFlags, _, _, _, spellID)
+    if eventType == "SPELL_CAST_SUCCESS" and sourceName then
+		local cdTime = allSpells[spellID] or allSpells[GetSpellInfo(spellID)]
+		local isPlayer = band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
+		if cdTime and (isPlayer or band(sourceFlags, COMBATLOG_OBJECT_CONTROL_PLAYER) == COMBATLOG_OBJECT_CONTROL_PLAYER) then
+			local startTime = GetTime()
+			if not isPlayer then
+				local ownerName = UnitOwner(sourceGuid)
+				if ownerName then
+					mod:UpdateCooldowns(ownerName, spellID, startTime, startTime + cdTime, true)
+				else
+					mod:UpdateCooldowns(match(sourceName, '%P+'), spellID, startTime, startTime + cdTime)
+				end
+			else
+				mod:UpdateCooldowns(match(sourceName, '%P+'), spellID, startTime, startTime + cdTime, true)
+			end
+		end
+    end
+end or function(_, _, eventType, _, sourceName, sourceFlags, _, _, _, spellID)
     if eventType == "SPELL_CAST_SUCCESS" and sourceName then
 		local cdTime = allSpells[spellID] or allSpells[GetSpellInfo(spellID)]
 		local isPlayer = band(sourceFlags, COMBATLOG_OBJECT_TYPE_PLAYER) == COMBATLOG_OBJECT_TYPE_PLAYER
@@ -1262,6 +1296,7 @@ local function combatLogEvent(_, ...)
 		end
     end
 end
+
 
 function mod:UpdateCooldowns(playerName, spellID, startTime, endTime, isPlayer)
     local remaining = endTime - GetTime()
@@ -1302,18 +1337,18 @@ function mod:HandlePets(petName)
 			if not isTargetOrFocus then
 				ownerName = UnitName(ownerID)
 			else
-				scanTool:ClearLines()
-				scanTool:SetUnit(ownerID)
-				local scanText = _G["ScanTooltipUFTextLeft2"]
-				local ownerText = scanText:GetText()
-				if ownerText then
-					for _, string in ipairs(UNITNAME_SUMMON_TITLES) do
-						if find(ownerText, string) then
-							ownerName = gsub(ownerText, string..'[%s]+', '')
-							break
-						end
-					end
-				end
+				ownerName = UnitOwner(ownerID)
+
+
+
+
+
+
+
+
+
+
+
 			end
 			if ownerName then
 				local hash = ownerName..'true'
