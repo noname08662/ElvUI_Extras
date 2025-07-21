@@ -1,6 +1,6 @@
 ElvUI Plugin: ElvUI_Extras
 
-If you're using [Awesome WotLK](https://github.com/FrostAtom/awesome_wotlk), make sure to replace your existing AwesomeWotlkLib.dll file with the one provided in the Optionals folder (a small fix for nameplates changing owners silently).
+If you're using [Awesome WotLK](https://github.com/FrostAtom/awesome_wotlk), make sure to replace your existing AwesomeWotlkLib.dll file with either the one provided in the Optionals folder or the one from [this fork](https://github.com/someweirdhuman/awesome_wotlk), which has all the changes included (a small fix for nameplates changing owners silently).
 
 [ElvUI 6.09](https://github.com/ElvUI-WotLK/ElvUI) version: [download plugin](https://github.com/noname08662/ElvUI_Extras/releases/download/1.10/ElvUI_Extras.ElvUI.6.09.zip)<br>
 [ElvUI 7.XX](https://github.com/Crumdidlyumshis/ElvUI) version: [download plugin](https://github.com/noname08662/ElvUI_Extras/releases/download/1.10/ElvUI_Extras.ElvUI.7.zip)
