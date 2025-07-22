@@ -27,6 +27,7 @@ local tinsert, twipe, tconcat = table.insert, table.wipe, table.concat
 local UnitName, UnitClass, UnitReaction, UnitExists, UnitGUID, UnitIsPlayer = UnitName, UnitClass, UnitReaction, UnitExists, UnitGUID, UnitIsPlayer
 local RAID_CLASS_COLORS, UNKNOWN = RAID_CLASS_COLORS, UNKNOWN
 local GetNamePlateForUnit = isAwesome and C_NamePlate.GetNamePlateForUnit
+local E_Delay = E.Delay
 
 local separatorMap = {
 	NONE = "%s",
@@ -1185,7 +1186,9 @@ function mod:SetupFrame(frame)
 		if not self:IsHooked(NP, "StyleFilterClear") then
 			self:SecureHook(NP, "StyleFilterClear", function(_, frame)
 				if frame.targetsFilter then
-					NP.StyleFilterPass(_, frame, frame.targetsFilter)
+					E_Delay(nil, 0.01, function()
+						NP.StyleFilterPass(_, frame, frame.targetsFilter)
+					end)
 				end
 			end)
 		end
