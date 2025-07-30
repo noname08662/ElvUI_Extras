@@ -21,11 +21,11 @@ local MessageEventHandlerPreHooks, MessageEventHandlerPostHooks = {}, {}
 local alertingTabs = {right = {}, left = {}}
 
 local historyIndex = 1
-local hlR, hlB, hlG = 1, 1, 1
 local prompts, queries = {}, {}
 local parseOr, parseAnd, parseTerm
 local rBad, gBad, bBad
 local copyChatLines
+local highlightColor ="|cffFFFFFF"
 
 local chatEnabled = E.private.chat.enable
 
@@ -58,7 +58,7 @@ local chatTypes = {
 
 local date = date
 local min, max = math.min, math.max
-local _G, pairs, ipairs, next, unpack, tonumber = _G, pairs, ipairs, next, unpack, tonumber
+local _G, pairs, ipairs, next, unpack, tonumber, select = _G, pairs, ipairs, next, unpack, tonumber, select
 local gsub, find, match, byte, sub = string.gsub, string.find, string.match, string.byte, string.sub
 local upper, lower, reverse, format, len = string.upper, string.lower, string.reverse, string.format, string.len
 local tinsert, tremove, twipe, tsort, tconcat, tcontains = table.insert, table.remove, table.wipe, table.sort, table.concat, tContains
@@ -484,7 +484,8 @@ end
 
 local function setupSearchFilter(db)
 	if not core.reload then
-		hlR, hlG, hlB = unpack(db.highlightColor)
+		local hlR, hlG, hlB = unpack(db.highlightColor)
+		highlightColor = format("|cff%02x%02x%02x", hlR * 255, hlG * 255, hlB * 255)
 		prompts, queries = db.prompts, db.queries
 		historyIndex = #prompts
 		copyChatLines = CH.db.copyChatLines
@@ -1994,19 +1995,17 @@ local function parsePattern(term)
         pattern = term
     }
 
-    if sub(term, 1, 1) == "!" and sub(term, -1) == "!" then
-        pattern.type = "not"
-        pattern.pattern = sub(term, 2, -2)
-    end
-
-    if sub(term, 1, 1) == "[" and sub(term, -1) == "]" then
-        pattern.type = "case"
-        pattern.pattern = sub(term, 2, -2)
-    end
-
-    if sub(term, 1, 1) == "@" and sub(term, -1) == "@" then
-        pattern.type = "lua"
-        pattern.pattern = sub(term, 2, -2)
+	if #term > 2 then
+		if sub(term, 1, 1) == "!" and sub(term, -1) == "!" then
+			pattern.type = "not"
+			pattern.pattern = sub(term, 2, -2)
+		elseif sub(term, 1, 1) == "[" and sub(term, -1) == "]" then
+			pattern.type = "case"
+			pattern.pattern = sub(term, 2, -2)
+		elseif sub(term, 1, 1) == "@" and sub(term, -1) == "@" then
+			pattern.type = "lua"
+			pattern.pattern = sub(term, 2, -2)
+		end
     end
 
     return pattern
@@ -2209,7 +2208,6 @@ function mod:StripMsg(msg)
 end
 
 function mod:HighlightText(msg, cleanMsg, cleanMsgLower, msgMap, terms)
-    local highlightColor = format("|cff%02x%02x%02x", hlR * 255, hlG * 255, hlB * 255)
     local matches = {}
     local ranges = {}
 
@@ -2222,15 +2220,11 @@ function mod:HighlightText(msg, cleanMsg, cleanMsgLower, msgMap, terms)
         local lastIndex = 1
         while true do
             local startClean, endClean = find(sub(targetMsg, lastIndex), pattern)
-            if not startClean then break end
+            if not startClean or endClean == 0 then break end
 
-            startClean = startClean + lastIndex - 1
             endClean = endClean + lastIndex - 1
 
-            local realStart = msgMap[startClean]
-            local realEnd = msgMap[endClean]
-
-            tinsert(matches, {realStart, realEnd})
+            tinsert(matches, {msgMap[startClean + lastIndex - 1], msgMap[endClean]})
 
             lastIndex = endClean + 1
         end
