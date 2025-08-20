@@ -100,13 +100,14 @@ L["Handles the automated repositioning of the newly received items."..
 	"Available filters:\n"..
 	" id@number - matches itemID,\n"..
 	" name@string - matches name,\n"..
+	" type@string - matches type,\n"..
 	" subtype@string - matches subtype,\n"..
 	" ilvl@number - matches ilvl,\n"..
 	" uselevel@number - matches equip level,\n"..
 	" quality@number - matches quality,\n"..
 	" equipslot@number - matches inventorySlotID,\n"..
 	" maxstack@number - matches stack limit,\n"..
-	" price@number - matches sell price,\n\n"..
+	" price@number - matches sell price,\n"..
 	" tooltip@string - matches tooltip text,\n\n"..
 	"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
 	"Look up GetItemInfo API for more info on filters. "..
@@ -125,13 +126,14 @@ L["Handles the automated repositioning of the newly received items."..
 		"可用過濾器:\n"..
 		" id@數字 - 匹配物品ID,\n"..
 		" name@字串 - 匹配名稱,\n"..
+		" type@字串 - 匹配類型，\n"..
 		" subtype@字串 - 匹配子類型,\n"..
 		" ilvl@數字 - 匹配物品等級,\n"..
 		" uselevel@數字 - 匹配裝備等級,\n"..
 		" quality@數字 - 匹配品質,\n"..
 		" equipslot@數字 - 匹配庫存欄位ID,\n"..
 		" maxstack@數字 - 匹配堆疊上限,\n"..
-		" price@數字 - 匹配售價,\n\n"..
+		" price@數字 - 匹配售價,\n"..
 		" tooltip@字串 - 匹配提示文字,\n\n"..
 		"所有字串匹配不區分大小寫，僅匹配字母數字符號。適用標準lua邏輯。"..
 		"查看GetItemInfo API以獲取更多關於過濾器的資訊。"..

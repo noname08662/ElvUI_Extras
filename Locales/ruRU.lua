@@ -100,13 +100,14 @@ L["Handles the automated repositioning of the newly received items."..
 	"Available filters:\n"..
 	" id@number - matches itemID,\n"..
 	" name@string - matches name,\n"..
+	" type@string - matches type,\n"..
 	" subtype@string - matches subtype,\n"..
 	" ilvl@number - matches ilvl,\n"..
 	" uselevel@number - matches equip level,\n"..
 	" quality@number - matches quality,\n"..
 	" equipslot@number - matches inventorySlotID,\n"..
 	" maxstack@number - matches stack limit,\n"..
-	" price@number - matches sell price,\n\n"..
+	" price@number - matches sell price,\n"..
 	" tooltip@string - matches tooltip text,\n\n"..
 	"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
 	"Look up GetItemInfo API for more info on filters. "..
@@ -125,13 +126,14 @@ L["Handles the automated repositioning of the newly received items."..
 		"Доступные фильтры:\n"..
 		" id@число - соответствует ID предмета,\n"..
 		" name@строка - соответствует названию,\n"..
+		" type@строка - соответствует типу,\n"..
 		" subtype@строка - соответствует подтипу,\n"..
 		" ilvl@число - соответствует уровню предмета,\n"..
 		" uselevel@число - соответствует уровню экипировки,\n"..
 		" quality@число - соответствует качеству,\n"..
 		" equipslot@число - соответствует ID слота инвентаря,\n"..
 		" maxstack@число - соответствует лимиту стака,\n"..
-		" price@число - соответствует цене продажи,\n\n"..
+		" price@число - соответствует цене продажи,\n"..
 		" tooltip@строка - соответствует тексту всплывающей подсказки,\n\n"..
 		"Все строковые совпадения не чувствительны к регистру и соответствуют только буквенно-цифровым символам. Применяется стандартная логика lua. "..
 		"Посмотрите API GetItemInfo для получения дополнительной информации о фильтрах. "..

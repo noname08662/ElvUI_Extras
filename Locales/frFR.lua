@@ -100,13 +100,14 @@ L["Handles the automated repositioning of the newly received items."..
 	"Available filters:\n"..
 	" id@number - matches itemID,\n"..
 	" name@string - matches name,\n"..
+	" type@string - matches type,\n"..
 	" subtype@string - matches subtype,\n"..
 	" ilvl@number - matches ilvl,\n"..
 	" uselevel@number - matches equip level,\n"..
 	" quality@number - matches quality,\n"..
 	" equipslot@number - matches inventorySlotID,\n"..
 	" maxstack@number - matches stack limit,\n"..
-	" price@number - matches sell price,\n\n"..
+	" price@number - matches sell price,\n"..
 	" tooltip@string - matches tooltip text,\n\n"..
 	"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
 	"Look up GetItemInfo API for more info on filters. "..
@@ -125,13 +126,14 @@ L["Handles the automated repositioning of the newly received items."..
 		"Filtres disponibles:\n"..
 		" id@nombre - correspond à l'ID de l'objet,\n"..
 		" name@chaîne - correspond au nom,\n"..
+		" type@chaîne - correspond au type,\n"..
 		" subtype@chaîne - correspond au sous-type,\n"..
 		" ilvl@nombre - correspond au niveau d'objet,\n"..
 		" uselevel@nombre - correspond au niveau d'équipement,\n"..
 		" quality@nombre - correspond à la qualité,\n"..
 		" equipslot@nombre - correspond à l'ID d'emplacement d'inventaire,\n"..
 		" maxstack@nombre - correspond à la limite de pile,\n"..
-		" price@nombre - correspond au prix de vente,\n\n"..
+		" price@nombre - correspond au prix de vente,\n"..
 		" tooltip@chaîne - correspond au texte de l'infobulle,\n\n"..
 		"Toutes les correspondances de chaînes ne sont pas sensibles à la casse et ne correspondent qu'aux symboles alphanumériques. La logique Lua standard s'applique. "..
 		"Consultez l'API GetItemInfo pour plus d'informations sur les filtres. "..
