@@ -1168,7 +1168,6 @@ L["Capture Bar Height"] = "Высота панели захвата"
 L["Also might fix capture bar related issues like progress marker not showing."] =
 	"Также может исправить проблемы с панелью захвата, такие как отсутствие индикатора прогресса."
 L["Max Length"] = "Максимальная длина"
-L["Channel button visibility."] = "Видимость кнопки канала."
 L["Copy button visibility."] = "Видимость кнопки копирования."
 L["Mouseover: Channel Button"] = "Наведение: Кнопка канала"
 L["Mouseover: Copy Button"] = "Наведение: Кнопка копирования"
@@ -1177,3 +1176,5 @@ L["Plugin version mismatch! Please, download appropriate plugin version at"] =
 L["Questie Coherence"] = "Совместимость с Questie"
 L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."] =
 	"Возвращает строку itemID от ElvUI в конец подсказки (юниты и предметы)."
+L["Attempts to extend font outline options across all of ElvUI."] =
+	"Попытка расширить параметры обводки шрифта во всём ElvUI."
