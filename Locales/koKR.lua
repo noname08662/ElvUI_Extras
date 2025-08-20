@@ -100,13 +100,14 @@ L["Handles the automated repositioning of the newly received items."..
 	"Available filters:\n"..
 	" id@number - matches itemID,\n"..
 	" name@string - matches name,\n"..
+	" type@string - matches type,\n"..
 	" subtype@string - matches subtype,\n"..
 	" ilvl@number - matches ilvl,\n"..
 	" uselevel@number - matches equip level,\n"..
 	" quality@number - matches quality,\n"..
 	" equipslot@number - matches inventorySlotID,\n"..
 	" maxstack@number - matches stack limit,\n"..
-	" price@number - matches sell price,\n\n"..
+	" price@number - matches sell price,\n"..
 	" tooltip@string - matches tooltip text,\n\n"..
 	"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
 	"Look up GetItemInfo API for more info on filters. "..
@@ -125,13 +126,14 @@ L["Handles the automated repositioning of the newly received items."..
 		"사용 가능한 필터:\n"..
 		" id@숫자 - 아이템 ID와 일치,\n"..
 		" name@문자열 - 이름과 일치,\n"..
+		" type@문자열 - 유형과 일치,\n"..
 		" subtype@문자열 - 하위 유형과 일치,\n"..
 		" ilvl@숫자 - 아이템 레벨과 일치,\n"..
 		" uselevel@숫자 - 장비 레벨과 일치,\n"..
 		" quality@숫자 - 품질과 일치,\n"..
 		" equipslot@숫자 - 인벤토리 슬롯 ID와 일치,\n"..
 		" maxstack@숫자 - 최대 중첩 수와 일치,\n"..
-		" price@숫자 - 판매 가격과 일치,\n\n"..
+		" price@숫자 - 판매 가격과 일치,\n"..
 		" tooltip@문자열 - 툴팁 텍스트와 일치,\n\n"..
 		"모든 문자열 일치는 대소문자를 구분하지 않으며 알파벳과 숫자 기호만 일치합니다. 표준 Lua 논리가 적용됩니다. "..
 		"필터에 대한 자세한 정보는 GetItemInfo API를 참조하세요. "..
@@ -1158,6 +1160,7 @@ L["Capture Bar Height"] = "점령 바 높이"
 L["Also might fix capture bar related issues like progress marker not showing."] =
 	"진행 표시기가 표시되지 않는 등 점령 바 관련 문제를 해결할 수 있습니다."
 L["Max Length"] = "최대 길이"
+L["Channel button visibility."] = "채널 버튼 표시 여부."
 L["Copy button visibility."] = "복사 버튼 표시 여부."
 L["Mouseover: Channel Button"] = "마우스오버: 채널 버튼"
 L["Mouseover: Copy Button"] = "마우스오버: 복사 버튼"
@@ -1165,5 +1168,3 @@ L["Plugin version mismatch! Please, download appropriate plugin version at"] = "
 L["Questie Coherence"] = "Questie 연동"
 L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."] =
 	"ElvUI가 추가한 itemID 줄이 다시 유닛 및 아이템 툴팁의 마지막에 표시되도록 합니다."
-L["Attempts to extend font outline options across all of ElvUI."] =
-	"ElvUI 전반에 걸쳐 글꼴 외곽선 옵션을 확장하려고 시도합니다."

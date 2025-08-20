@@ -99,13 +99,14 @@ L["Handles the automated repositioning of the newly received items."..
 	"Available filters:\n"..
 	" id@number - matches itemID,\n"..
 	" name@string - matches name,\n"..
+	" type@string - matches type,\n"..
 	" subtype@string - matches subtype,\n"..
 	" ilvl@number - matches ilvl,\n"..
 	" uselevel@number - matches equip level,\n"..
 	" quality@number - matches quality,\n"..
 	" equipslot@number - matches inventorySlotID,\n"..
 	" maxstack@number - matches stack limit,\n"..
-	" price@number - matches sell price,\n\n"..
+	" price@number - matches sell price,\n"..
 	" tooltip@string - matches tooltip text,\n\n"..
 	"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
 	"Look up GetItemInfo API for more info on filters. "..
@@ -124,13 +125,14 @@ L["Handles the automated repositioning of the newly received items."..
 		"Verfügbare Filter:\n"..
 		" id@zahl - entspricht der GegenstandsID,\n"..
 		" name@string - entspricht dem Namen,\n"..
+		" type@string - stimmt mit Typ überein,\n"..
 		" subtype@string - entspricht dem Untertyp,\n"..
 		" ilvl@zahl - entspricht dem Gegenstandslevel,\n"..
 		" uselevel@zahl - entspricht dem Ausrüstungslevel,\n"..
 		" quality@zahl - entspricht der Qualität,\n"..
 		" equipslot@zahl - entspricht der InventarPlatzID,\n"..
 		" maxstack@zahl - entspricht dem Stapellimit,\n"..
-		" price@zahl - entspricht dem Verkaufspreis,\n\n"..
+		" price@zahl - entspricht dem Verkaufspreis,\n"..
 		" tooltip@string - entspricht dem Tooltip-Text,\n\n"..
 		"Alle String-Übereinstimmungen sind nicht case-sensitive und entsprechen nur den alphanumerischen Symbolen. Standard-Lua-Logik wird angewendet. "..
 		"Siehe GetItemInfo API für weitere Informationen zu Filtern. "..
@@ -1154,6 +1156,7 @@ L["Capture Bar Height"] = "Höhe der Eroberungsleiste"
 L["Also might fix capture bar related issues like progress marker not showing."] =
 	"Kann auch Probleme mit der Eroberungsleiste beheben, wie z. B. das Nichtanzeigen des Fortschrittsmarkers."
 L["Max Length"] = "Maximale Länge"
+L["Channel button visibility."] = "Sichtbarkeit der Kanalschaltfläche."
 L["Copy button visibility."] = "Sichtbarkeit der Kopierschaltfläche."
 L["Mouseover: Channel Button"] = "Mouseover: Kanal-Schaltfläche"
 L["Mouseover: Copy Button"] = "Mouseover: Kopieren-Schaltfläche"
@@ -1162,5 +1165,3 @@ L["Plugin version mismatch! Please, download appropriate plugin version at"] =
 L["Questie Coherence"] = "Questie-Kompatibilität"
 L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."] =
 	"Sorgt erneut dafür, dass die von ElvUI hinzugefügte itemID-Zeile im Tooltip zuletzt angezeigt wird (Einheiten & Gegenstände)."
-L["Attempts to extend font outline options across all of ElvUI."] =
-	"Versucht, die Schriftumriss-Optionen überall in ElvUI zu erweitern."

@@ -100,13 +100,14 @@ L["Handles the automated repositioning of the newly received items."..
 	"Available filters:\n"..
 	" id@number - matches itemID,\n"..
 	" name@string - matches name,\n"..
+	" type@string - matches type,\n"..
 	" subtype@string - matches subtype,\n"..
 	" ilvl@number - matches ilvl,\n"..
 	" uselevel@number - matches equip level,\n"..
 	" quality@number - matches quality,\n"..
 	" equipslot@number - matches inventorySlotID,\n"..
 	" maxstack@number - matches stack limit,\n"..
-	" price@number - matches sell price,\n\n"..
+	" price@number - matches sell price,\n"..
 	" tooltip@string - matches tooltip text,\n\n"..
 	"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
 	"Look up GetItemInfo API for more info on filters. "..
@@ -125,13 +126,14 @@ L["Handles the automated repositioning of the newly received items."..
 		"可用过滤器:\n"..
 		" id@数字 - 匹配物品ID,\n"..
 		" name@字符串 - 匹配名称,\n"..
+		" type@字符串 - 匹配类型，\n"..
 		" subtype@字符串 - 匹配子类型,\n"..
 		" ilvl@数字 - 匹配物品等级,\n"..
 		" uselevel@数字 - 匹配装备等级,\n"..
 		" quality@数字 - 匹配品质,\n"..
 		" equipslot@数字 - 匹配库存栏位ID,\n"..
 		" maxstack@数字 - 匹配堆叠上限,\n"..
-		" price@数字 - 匹配售价,\n\n"..
+		" price@数字 - 匹配售价,\n"..
 		" tooltip@字符串 - 匹配提示文本,\n\n"..
 		"所有字符串匹配不区分大小写，仅匹配字母数字符号。适用标准lua逻辑。"..
 		"查看GetItemInfo API以获取更多关于过滤器的信息。"..
@@ -1162,11 +1164,10 @@ L["Capture Bar Height"] = "占领条高度"
 L["Also might fix capture bar related issues like progress marker not showing."] =
 	"也可能修复占领条相关问题，例如进度标记未显示。"
 L["Max Length"] = "最大长度"
+L["Channel button visibility."] = "频道按钮的可见性。"
 L["Copy button visibility."] = "复制按钮的可见性。"
 L["Mouseover: Channel Button"] = "鼠标悬停: 频道按钮"
 L["Mouseover: Copy Button"] = "鼠标悬停: 复制按钮"
 L["Plugin version mismatch! Please, download appropriate plugin version at"] = "插件版本不匹配！请在以下地址下载对应版本："
-L["Questie Coherence"] = "Questie 兼容性"
 L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."] =
 	"使 ElvUI 添加的 itemID 信息重新显示在单位和物品提示的最后一行。"
-L["Attempts to extend font outline options across all of ElvUI."] = "尝试在整个 ElvUI 中扩展字体描边选项。"

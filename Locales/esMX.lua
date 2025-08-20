@@ -100,13 +100,14 @@ L["Handles the automated repositioning of the newly received items."..
 	"Available filters:\n"..
 	" id@number - matches itemID,\n"..
 	" name@string - matches name,\n"..
+	" type@string - matches type,\n"..
 	" subtype@string - matches subtype,\n"..
 	" ilvl@number - matches ilvl,\n"..
 	" uselevel@number - matches equip level,\n"..
 	" quality@number - matches quality,\n"..
 	" equipslot@number - matches inventorySlotID,\n"..
 	" maxstack@number - matches stack limit,\n"..
-	" price@number - matches sell price,\n\n"..
+	" price@number - matches sell price,\n"..
 	" tooltip@string - matches tooltip text,\n\n"..
 	"All string matches are case-insensitive and match only alphanumeric symbols. Standard Lua logic applies. "..
 	"Look up GetItemInfo API for more info on filters. "..
@@ -125,13 +126,14 @@ L["Handles the automated repositioning of the newly received items."..
 		"Filtros disponibles:\n"..
 		" id@número - coincide con el ID del objeto,\n"..
 		" name@cadena - coincide con el nombre,\n"..
+		" type@cadena - coincide con el tipo,\n"..
 		" subtype@cadena - coincide con el subtipo,\n"..
 		" ilvl@número - coincide con el nivel de objeto,\n"..
 		" uselevel@número - coincide con el nivel de equipo,\n"..
 		" quality@número - coincide con la calidad,\n"..
 		" equipslot@número - coincide con el ID de ranura de inventario,\n"..
 		" maxstack@número - coincide con el límite de apilamiento,\n"..
-		" price@número - coincide con el precio de venta,\n\n"..
+		" price@número - coincide con el precio de venta,\n"..
 		" tooltip@cadena - coincide con el texto del tooltip,\n\n"..
 		"Todas las coincidencias de cadena no distinguen entre mayúsculas y minúsculas y solo coinciden con los símbolos alfanuméricos. Se aplica la lógica estándar de Lua. "..
 		"Consulte la API GetItemInfo para obtener más información sobre los filtros. "..
@@ -1159,6 +1161,7 @@ L["Capture Bar Height"] = "Altura de la Barra de Captura"
 L["Also might fix capture bar related issues like progress marker not showing."] =
 	"También puede solucionar problemas relacionados con la barra de captura, como que el marcador de progreso no se muestre."
 L["Max Length"] = "Longitud Máxima"
+L["Channel button visibility."] = "Visibilidad del botón de canal."
 L["Copy button visibility."] = "Visibilidad del botón de copiar."
 L["Mouseover: Channel Button"] = "Mouseover: Botón de Canal"
 L["Mouseover: Copy Button"] = "Mouseover: Botón de Copiar"
@@ -1167,5 +1170,3 @@ L["Plugin version mismatch! Please, download appropriate plugin version at"] =
 L["Questie Coherence"] = "Coherencia con Questie"
 L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."] =
 	"Hace que la línea de itemID añadida por ElvUI vuelva a aparecer al final del tooltip (unidades y objetos)."
-L["Attempts to extend font outline options across all of ElvUI."] =
-	"Intenta ampliar las opciones de contorno de fuente en todo ElvUI."
