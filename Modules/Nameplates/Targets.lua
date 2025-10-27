@@ -24,7 +24,7 @@ local _G, pairs, ipairs, loadstring, setfenv, unpack, next = _G, pairs, ipairs, 
 local find, format, gsub, match, gmatch = string.find, string.format, string.gsub, string.match, string.gmatch
 local utf8lower, utf8sub, utf8len = string.utf8lower, string.utf8sub, string.utf8len
 local tinsert, twipe, tconcat = table.insert, table.wipe, table.concat
-local UnitName, UnitClass, UnitReaction, UnitExists, UnitGUID, UnitIsPlayer = UnitName, UnitClass, UnitReaction, UnitExists, UnitGUID, UnitIsPlayer
+local UnitName, UnitClass, UnitReaction, UnitGUID, UnitIsPlayer = UnitName, UnitClass, UnitReaction, UnitGUID, UnitIsPlayer
 local RAID_CLASS_COLORS, UNKNOWN = RAID_CLASS_COLORS, UNKNOWN
 local GetNamePlateForUnit = isAwesome and C_NamePlate.GetNamePlateForUnit
 local E_Delay = E.Delay
@@ -1299,35 +1299,20 @@ function mod:Toggle(db, visibilityUpdate)
 						end
 					end)
 				end
-				if not self:IsHooked(NP, "UPDATE_MOUSEOVER_UNIT") then
-					local function setMouseoverHook()
-						if not self:IsHooked(NP, "SetMouseoverFrame") then
-							self:SecureHook(NP, "SetMouseoverFrame", function(_, frame)
-								if frame.isMouseover then
-									self:Unhook(NP, "SetMouseoverFrame")
-									local unitType = frame.UnitType
-									local targetName = frame.targetNames[unitType]
-									if targetName then
-										self:UpdateName(frame, unitType, nil, "mouseover")
-										self:SecureHook(NP, "SetMouseoverFrame", function(_, f)
-											if f == frame then
-												if not frame.isMouseover then
-													self:Unhook(NP, "SetMouseoverFrame")
-													self:UpdateName(frame, unitType)
-													if UnitExists("mouseover") then
-														setMouseoverHook()
-													end
-												elseif targetName.lastName ~= UnitName("mouseovertarget") then
-													self:UpdateName(frame, unitType, nil, "mouseover")
-												end
-											end
-										end)
-									end
-								end
-							end)
+				if not self:IsHooked(NP, "StyleFilterConfigure") then
+					self:SecureHook(NP, "StyleFilterConfigure", function()
+						local filters = E.global.nameplates.filters
+						for unitType in pairs(frames) do
+							if not filters[db[unitType].highlightSelfApplyFilter] then
+								db[unitType].highlightSelfApplyFilter = false
+							end
+							if not filters[db[unitType].highlightOthersApplyFilter] then
+								db[unitType].highlightOthersApplyFilter = false
+							end
 						end
-					end
-					self:SecureHook(NP, "UPDATE_MOUSEOVER_UNIT", setMouseoverHook)
+						updateValues(db)
+						self:UpdateAllFrames(db, true)
+					end)
 				end
 				self:RegisterEvent("UNIT_TARGET", function(_, unit)
 					if unit ~= "player" then
@@ -1374,7 +1359,7 @@ function mod:Toggle(db, visibilityUpdate)
 			end)
 		else
 			self:UnregisterEvent("UNIT_TARGET")
-			for _, func in ipairs({"UPDATE_MOUSEOVER_UNIT", "SetMouseoverFrame", "Construct_Name",
+			for _, func in ipairs({"SetMouseoverFrame", "Construct_Name",
 									"CacheGroupUnits", "OnShow", "Update_CPoints", "UpdateElement_All", "StyleFilterConfigure"}) do
 				if self:IsHooked(NP, func) then self:Unhook(NP, func) end
 			end
