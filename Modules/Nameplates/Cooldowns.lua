@@ -1149,7 +1149,7 @@ local combatLogEvent = UnitOwner and function(_, _, eventType, sourceGuid, sourc
 				if ownerName then
 					mod:UpdateCooldowns(ownerName, spellID, startTime, startTime + cdTime, true)
 				else
-					mod:UpdateCooldowns(match(sourceName, '%P+'), spellID, startTime, startTime + cdTime)
+					mod:UpdateCooldowns(match(sourceName, '%P+'), spellID, startTime, startTime + cdTime, false)
 				end
 			else
 				mod:UpdateCooldowns(match(sourceName, '%P+'), spellID, startTime, startTime + cdTime, true)
@@ -1172,7 +1172,7 @@ function mod:UpdateCooldowns(playerName, spellID, startTime, endTime, isPlayer)
     local remaining = endTime - GetTime()
     if remaining <= 0 then return end
 
-	local hash = playerName..tostring(isPlayer)
+	local hash = playerName .. (isPlayer and 'true' or 'false')
 	local activeCds = activeCooldowns[hash]
     local resetSpell = resetCooldowns[spellID]
 
@@ -1204,7 +1204,7 @@ function mod:HandlePets(plate, petName, unit)
 	if ownerName then
 		local hash = ownerName..'true'
 		local cooldowns = activeCooldowns[hash]
-		local petCooldowns = activeCooldowns[petName..'false']
+		local petCooldowns = activeCooldowns[petName..'false'] or {}
 		if not cooldowns then
 			activeCooldowns[hash] = {}
 			cooldowns = activeCooldowns[hash]
