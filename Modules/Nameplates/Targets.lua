@@ -1299,19 +1299,17 @@ function mod:Toggle(db, visibilityUpdate)
 						end
 					end)
 				end
-				if not self:IsHooked(NP, "StyleFilterConfigure") then
-					self:SecureHook(NP, "StyleFilterConfigure", function()
-						local filters = E.global.nameplates.filters
-						for unitType in pairs(frames) do
-							if not filters[db[unitType].highlightSelfApplyFilter] then
-								db[unitType].highlightSelfApplyFilter = false
-							end
-							if not filters[db[unitType].highlightOthersApplyFilter] then
-								db[unitType].highlightOthersApplyFilter = false
+				if not self:IsHooked(NP, "SetMouseoverFrame") then
+					self:SecureHook(NP, "SetMouseoverFrame", function(_, frame)
+						local unitType = frame.UnitType
+						local targetName = frame.targetNames[unitType]
+						if targetName then
+							if frame.isMouseover then
+								self:UpdateName(frame, unitType, nil, "mouseover")
+							elseif targetName.lastName ~= UnitName("mouseovertarget") then
+								self:UpdateName(frame, unitType)
 							end
 						end
-						updateValues(db)
-						self:UpdateAllFrames(db, true)
 					end)
 				end
 				self:RegisterEvent("UNIT_TARGET", function(_, unit)
@@ -1410,3 +1408,4 @@ function mod:InitializeCallback()
 end
 
 core.modules[modName] = mod.InitializeCallback
+
