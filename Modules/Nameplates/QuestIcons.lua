@@ -264,7 +264,12 @@ function mod:LoadConfig(db)
 						type = "select",
 						name = L["Font Outline"],
 						desc = "",
-						values = E.db.Extras.fontFlags,
+						values = {
+							["NONE"] = L["NONE"],
+							["OUTLINE"] = "OUTLINE",
+							["MONOCHROMEOUTLINE"] = "MONOCROMEOUTLINE",
+							["THICKOUTLINE"] = "THICKOUTLINE"
+						},
 						hidden = function() return not db.showText end,
 					},
 					textPoint = {
@@ -727,3 +732,4 @@ end
 
 
 core.modules[modName] = mod.InitializeCallback
+
