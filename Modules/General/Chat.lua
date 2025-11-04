@@ -463,21 +463,21 @@ local function setupHooks(db)
 					end
 				end)
 			end
-		elseif not mod:IsHooked(E, "ToggleOptionsUI") then
-			mod:SecureHook(E, "ToggleOptionsUI", function()
+		elseif not mod:IsHooked(E, "ToggleOptions") then
+			mod:SecureHook(E, "ToggleOptions", function()
 				if E.Options.args.chat and not mod:IsHooked(E.Options.args.chat, "set") then
 					mod:SecureHook(E.Options.args.chat, "set", function(info, value)
 						if info[#info] == 'copyChatLines' then
 							copyChatLines = value
 						end
 					end)
-					mod:Unhook(E, "ToggleOptionsUI")
+					mod:Unhook(E, "ToggleOptions")
 				end
 			end)
 		end
 	else
 		if E.Options and E.Options.args.chat and mod:IsHooked(E.Options.args.chat, "set") then mod:Unhook(E.Options.args.chat, "set") end
-		if mod:IsHooked(E, "ToggleOptionsUI") then mod:Unhook(E, "ToggleOptionsUI") end
+		if mod:IsHooked(E, "ToggleOptions") then mod:Unhook(E, "ToggleOptions") end
 		if mod:IsHooked("FCF_Tab_OnClick") then mod:Unhook("FCF_Tab_OnClick") end
 	end
 end

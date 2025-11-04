@@ -859,7 +859,12 @@ function mod:LoadConfig(db)
 						type = "select",
 						name = L["Font Outline"],
 						desc = "",
-						values = E.db.Extras.fontFlags,
+						values = {
+							["NONE"] = L["NONE"],
+							["OUTLINE"] = "OUTLINE",
+							["MONOCHROMEOUTLINE"] = "MONOCROMEOUTLINE",
+							["THICKOUTLINE"] = "THICKOUTLINE"
+						},
 					},
 					xOffset = {
 						order = 5,
@@ -1413,8 +1418,8 @@ end
 
 function mod:Toggle(db, visibilityUpdate)
 	if not core.reload and (db['FRIENDLY_PLAYER'].enabled or db['ENEMY_PLAYER'].enabled) then
-		if (not ElvUIGUIFrame or not self:IsHooked(ElvUIGUIFrame, "OnHide")) and not self:IsHooked(E, "ToggleOptionsUI") then
-			self:SecureHook(E, "ToggleOptionsUI", function()
+		if (not ElvUIGUIFrame or not self:IsHooked(ElvUIGUIFrame, "OnHide")) and not self:IsHooked(E, "ToggleOptions") then
+			self:SecureHook(E, "ToggleOptions", function()
 				if ElvUIGUIFrame and not self:IsHooked(ElvUIGUIFrame, "OnHide") then
 					self:SecureHookScript(ElvUIGUIFrame, "OnHide", function()
 						if testing then
@@ -1422,7 +1427,7 @@ function mod:Toggle(db, visibilityUpdate)
 							testMode(db)
 						end
 					end)
-					self:Unhook(E, "ToggleOptionsUI")
+					self:Unhook(E, "ToggleOptions")
 				end
 			end)
 		end
@@ -1540,7 +1545,7 @@ function mod:Toggle(db, visibilityUpdate)
 		core:RegisterNPElement('CDTracker')
 		self:UnregisterAllEvents()
 		if ElvUIGUIFrame and self:IsHooked(ElvUIGUIFrame, "OnHide") then self:Unhook(ElvUIGUIFrame, "OnHide") end
-		if self:IsHooked(E, "ToggleOptionsUI") then self:Unhook(E, "ToggleOptionsUI") end
+		if self:IsHooked(E, "ToggleOptions") then self:Unhook(E, "ToggleOptions") end
 		if self:IsHooked(NP, "Construct_Highlight") then self:Unhook(NP, "Construct_Highlight") end
 		if self:IsHooked(NP, "OnShow") then
 			if isAwesome or not core.reload then

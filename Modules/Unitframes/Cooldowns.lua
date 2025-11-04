@@ -961,7 +961,12 @@ function mod:LoadConfig(db)
 						type = "select",
 						name = L["Font Outline"],
 						desc = "",
-						values = E.db.Extras.fontFlags,
+						values = {
+							["NONE"] = L["NONE"],
+							["OUTLINE"] = "OUTLINE",
+							["MONOCHROMEOUTLINE"] = "MONOCROMEOUTLINE",
+							["THICKOUTLINE"] = "THICKOUTLINE"
+						},
 					},
 					xOffset = {
 						order = 5,
@@ -1643,8 +1648,8 @@ function mod:Toggle(db)
 	end
 
 	if enabled then
-		if (not ElvUIGUIFrame or not self:IsHooked(ElvUIGUIFrame, "OnHide")) and not self:IsHooked(E, "ToggleOptionsUI") then
-			self:SecureHook(E, "ToggleOptionsUI", function()
+		if (not ElvUIGUIFrame or not self:IsHooked(ElvUIGUIFrame, "OnHide")) and not self:IsHooked(E, "ToggleOptions") then
+			self:SecureHook(E, "ToggleOptions", function()
 				if ElvUIGUIFrame and not self:IsHooked(ElvUIGUIFrame, "OnHide") then
 					self:SecureHookScript(ElvUIGUIFrame, "OnHide", function()
 						if testing then
@@ -1652,7 +1657,7 @@ function mod:Toggle(db)
 							testMode(db)
 						end
 					end)
-					self:Unhook(E, "ToggleOptionsUI")
+					self:Unhook(E, "ToggleOptions")
 				end
 			end)
 		end
@@ -1687,7 +1692,7 @@ function mod:Toggle(db)
 	elseif self.initialized then
 		testing = false
 		if ElvUIGUIFrame and self:IsHooked(ElvUIGUIFrame, "OnHide") then self:Unhook(ElvUIGUIFrame, "OnHide") end
-		if self:IsHooked(E, "ToggleOptionsUI") then self:Unhook(E, "ToggleOptionsUI") end
+		if self:IsHooked(E, "ToggleOptions") then self:Unhook(E, "ToggleOptions") end
 		self:UnregisterAllEvents()
 		core:RegisterAreaUpdate(modName)
 		for _, frame in ipairs(framelist) do

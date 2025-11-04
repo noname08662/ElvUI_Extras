@@ -264,7 +264,12 @@ function mod:LoadConfig(db)
 						type = "select",
 						name = L["Font Outline"],
 						desc = "",
-						values = E.db.Extras.fontFlags,
+						values = {
+							["NONE"] = L["None"],
+							["OUTLINE"] = "OUTLINE",
+							["MONOCHROMEOUTLINE"] = "MONOCROMEOUTLINE",
+							["THICKOUTLINE"] = "THICKOUTLINE"
+						},
 						hidden = function() return not db.showText end,
 					},
 					textPoint = {
@@ -580,15 +585,15 @@ function mod:Toggle(db)
 						self:QueueUpdate(db)
 					end)
 				end
-			elseif not self:IsHooked(E, "ToggleOptionsUI") then
-				self:SecureHook(E, "ToggleOptionsUI", function()
+			elseif not self:IsHooked(E, "ToggleOptions") then
+				self:SecureHook(E, "ToggleOptions", function()
 					if E.Options.args.nameplate then
 						self:SecureHook(E.Options.args.nameplate.args.generalGroup.args.colorsGroup.args.reactions, "set", function()
 							r1, g1, b1 = bad.r, bad.g, bad.b
 							r2, g2, b2 = good.r, good.g, good.b
 							self:QueueUpdate(db)
 						end)
-						self:Unhook(E, "ToggleOptionsUI")
+						self:Unhook(E, "ToggleOptions")
 					end
 				end)
 			end
@@ -695,7 +700,7 @@ function mod:Toggle(db)
 	elseif self.initialized then
 		core:RegisterNPElement('questIcon')
 		core:RegisterAreaUpdate(modName)
-		if self:IsHooked(E, "ToggleOptionsUI") then self:Unhook(E, "ToggleOptionsUI") self.ishooked = nil end
+		if self:IsHooked(E, "ToggleOptions") then self:Unhook(E, "ToggleOptions") self.ishooked = nil end
 		if self:IsHooked(NP, "Construct_Highlight") then self:Unhook(NP, "Construct_Highlight") end
 		if isAwesome or not core.reload then
 			if self:IsHooked(NP, "OnShow") then self:Unhook(NP, "OnShow") end

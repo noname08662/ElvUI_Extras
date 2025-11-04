@@ -128,8 +128,8 @@ local function cachePositions(db)
 						end
 					end
 				end
-			elseif mod:IsHooked(E, "ToggleOptionsUI") then
-				mod:Unhook(E, "ToggleOptionsUI")
+			elseif mod:IsHooked(E, "ToggleOptions") then
+				mod:Unhook(E, "ToggleOptions")
 			end
 			mod.ishooked = false
 		end
@@ -261,8 +261,8 @@ local function cachePositions(db)
 					end
 				end
 			end
-		elseif not mod:IsHooked(E, "ToggleOptionsUI") then
-			mod:SecureHook(E, "ToggleOptionsUI", function()
+		elseif not mod:IsHooked(E, "ToggleOptions") then
+			mod:SecureHook(E, "ToggleOptions", function()
 				if E.Options.args.nameplate then
 					for unitType, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
 													["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
@@ -292,7 +292,7 @@ local function cachePositions(db)
 							end
 						end
 					end
-					mod:Unhook(E, "ToggleOptionsUI")
+					mod:Unhook(E, "ToggleOptions")
 				end
 			end)
 		end

@@ -1004,7 +1004,7 @@ function core:OpenEditor(title, text, acceptFunc)
 		self.EditFrame:SetScript("OnKeyDown", function(_, key)
 			if key == "ESCAPE" then
 				self.EditFrame:Hide()
-				E:ToggleOptionsUI()
+				E:ToggleOptions()
 			end
 		end)
 
@@ -1064,7 +1064,7 @@ function core:OpenEditor(title, text, acceptFunc)
 		self.EditFrame.acceptButton:SetText(L["Accept"])
 		self.EditFrame.acceptButton:SetScript("OnClick", function()
 			acceptFunc()
-			E:ToggleOptionsUI()
+			E:ToggleOptions()
 			self.EditFrame:Hide()
 		end)
 
@@ -1074,7 +1074,7 @@ function core:OpenEditor(title, text, acceptFunc)
 		self.EditFrame.cancelButton:SetText(L["Cancel"])
 		self.EditFrame.cancelButton:SetScript("OnClick", function()
 			self.EditFrame:Hide()
-			E:ToggleOptionsUI()
+			E:ToggleOptions()
 		end)
 
 		S:HandleScrollBar(scrollBar)
@@ -1089,12 +1089,12 @@ function core:OpenEditor(title, text, acceptFunc)
 		self.EditFrame.editBox:SetText(text)
 		self.EditFrame.acceptButton:SetScript("OnClick", function()
 			acceptFunc()
-			E:ToggleOptionsUI()
+			E:ToggleOptions()
 			self.EditFrame:Hide()
 		end)
 	end
 
-	E:ToggleOptionsUI()
+	E:ToggleOptions()
 end
 
 
@@ -2087,7 +2087,7 @@ function core:Initialize()
 	]]--
 
 	-- update new elements
-	core:SecureHook(E, "ToggleOptionsUI", function()
+	core:SecureHook(E, "ToggleOptions", function()
 		if E.Options.args.nameplate then
 			for unitType, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
 											["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do

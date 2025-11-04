@@ -139,8 +139,8 @@ local function cachePositions(db)
 						end
 					end
 				end
-			elseif mod:IsHooked(E, "ToggleOptionsUI") then
-				mod:Unhook(E, "ToggleOptionsUI")
+			elseif mod:IsHooked(E, "ToggleOptions") then
+				mod:Unhook(E, "ToggleOptions")
 			end
 			mod.ishooked = false
 		end
@@ -271,8 +271,8 @@ local function cachePositions(db)
 					end
 				end
 			end
-		elseif not mod:IsHooked(E, "ToggleOptionsUI") then
-			mod:SecureHook(E, "ToggleOptionsUI", function()
+		elseif not mod:IsHooked(E, "ToggleOptions") then
+			mod:SecureHook(E, "ToggleOptions", function()
 				if E.Options.args.unitframe then
 					if E.Options.args.CustomTweaks and E.private.CustomTweaks.AuraIconSpacing and db.CenteredAuras.enabled then
 						for _, setting in ipairs({"spacing", "units"}) do
@@ -329,7 +329,7 @@ local function cachePositions(db)
 							end
 						end
 					end
-					mod:Unhook(E, "ToggleOptionsUI")
+					mod:Unhook(E, "ToggleOptions")
 				end
 			end)
 		end

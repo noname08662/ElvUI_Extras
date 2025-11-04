@@ -358,10 +358,10 @@ function mod:Toggle(db)
 			E.Options.args.actionbar.args.bar10.hidden = true
 			if E.RefreshGUI then E:RefreshGUI() end
 		else
-			if not self:IsHooked(E, 'ToggleOptionsUI') then
-				self:SecureHook(E, 'ToggleOptionsUI', function()
+			if not self:IsHooked(E, 'ToggleOptions') then
+				self:SecureHook(E, 'ToggleOptions', function()
 					if not E.Options.args.actionbar or not E.Options.args.actionbar.args.bar10 then
-						self:Unhook(E, 'ToggleOptionsUI')
+						self:Unhook(E, 'ToggleOptions')
 						return
 					end
 
@@ -403,7 +403,7 @@ function mod:Toggle(db)
         local bar = AB.handledBars["barQuestBar"]
 		if E.Options.args.actionbar and E.Options.args.actionbar.args.bar10 then
 			E.Options.args.actionbar.args.bar10.hidden = false
-			if self:IsHooked(E, 'ToggleOptionsUI') then self:Unhook(E, 'ToggleOptionsUI') end
+			if self:IsHooked(E, 'ToggleOptions') then self:Unhook(E, 'ToggleOptions') end
 			if E.RefreshGUI then E:RefreshGUI() end
 		end
         if bar then

@@ -355,15 +355,15 @@ function mod:LessTooltips(db)
 					end
 				end)
 			end
-		elseif not self:IsHooked(E, "ToggleOptionsUI") then
-			self:SecureHook(E, "ToggleOptionsUI", function()
+		elseif not self:IsHooked(E, "ToggleOptions") then
+			self:SecureHook(E, "ToggleOptions", function()
 				if E.Options.args.tooltip and not self:IsHooked(E.Options.args.tooltip, "set") then
 					self:SecureHook(E.Options.args.tooltip, "set", function(info, value)
 						if info[#info] == 'cursorAnchor' then
 							self:LessTooltips({enabled = value, cursorAnchorDisabled = true})
 						end
 					end)
-					self:Unhook(E, "ToggleOptionsUI")
+					self:Unhook(E, "ToggleOptions")
 				end
 			end)
 		end
@@ -391,7 +391,7 @@ function mod:LessTooltips(db)
 		end
 	elseif self.initialized.LessTooltips then
 		if not db.cursorAnchorDisabled then
-			if self:IsHooked(E, "ToggleOptionsUI") then self:Unhook(E, "ToggleOptionsUI") end
+			if self:IsHooked(E, "ToggleOptions") then self:Unhook(E, "ToggleOptions") end
 			if E.Options and E.Options.args.tooltip and self:IsHooked(E.Options.args.tooltip, "set") then
 				self:Unhook(E.Options.args.tooltip, "set")
 			end
