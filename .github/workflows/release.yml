@@ -39,7 +39,8 @@ jobs:
         run: |
           mkdir -p "${{ env.REPO_NAME }}"
           rsync -av --exclude '.*' --exclude "${{ env.REPO_NAME }}" ./ "${{ env.REPO_NAME }}/"
-          zip -r "${{ env.ZIP_NAME }}.zip" "${{ env.REPO_NAME }}"
+          cd "${{ env.REPO_NAME }}"
+          zip -r "../${{ env.ZIP_NAME }}.zip" .
 
       - name: Upload Test Artifact
         uses: actions/upload-artifact@v4
