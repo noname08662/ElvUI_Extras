@@ -115,7 +115,20 @@ local function updateFilters(db)
 end
 
 local function cachePositions(db)
-	if core.reload or (not db.CenteredAuras.enabled and not db.SortMethods.enabled) then
+	local continue = false
+    local dims = {}
+    for frameType in pairs(core:getAllFrameTypes()) do
+		dims[frameType] = {}
+		if db.Dimensions.units[frameType] then
+			for auraType, vals in pairs(db.Dimensions.units[frameType]) do
+				if vals.height < 1 or vals.width < 1 then
+					dims[frameType][auraType] = true
+					continue = true
+				end
+			end
+		end
+    end
+	if core.reload or (not continue and not db.CenteredAuras.enabled and not db.SortMethods.enabled) then
 		if mod.ishooked then
 			if E.Options and E.Options.args.unitframe then
 				if E.Options.args.CustomTweaks then
@@ -146,74 +159,133 @@ local function cachePositions(db)
 		end
 		return
 	end
-	if db.CenteredAuras.enabled then
-		local customTweaksUnits = E.db.CustomTweaks and E.db.CustomTweaks.AuraIconSpacing.units
-		local customTweaksSpacing = E.db.CustomTweaks and E.db.CustomTweaks.AuraIconSpacing.spacing
-		for frameType in pairs(core:getAllFrameTypes()) do
-			if UF.db.units[frameType] then
-				iconPositions[frameType] = {}
-				for _, auraType in ipairs({"buffs", "debuffs"}) do
-					local data = UF.db.units[frameType][auraType]
+    local customTweaksUnits = E.db.CustomTweaks and E.db.CustomTweaks.AuraIconSpacing.units
+    local customTweaksSpacing = E.db.CustomTweaks and E.db.CustomTweaks.AuraIconSpacing.spacing
 
-					if data then
-						iconPositions[frameType][auraType] = { positions = {}, sizes = {} }
+    for frameType in pairs(core:getAllFrameTypes()) do
+        if UF.db.units[frameType] then
+            iconPositions[frameType] = {}
+            for _, auraType in ipairs({"buffs", "debuffs"}) do
+                local data = UF.db.units[frameType][auraType]
+                local dim = db.Dimensions.units[frameType] and db.Dimensions.units[frameType][auraType]
 
-						local cache = iconPositions[frameType][auraType]
-						local points = directionProperties[data.anchorPoint]
-						local isVertical = points.isVertical
-						local isReverse = points.isReverse
-						local firstInRowPoint = points.firstInRowPoint
-						local subsequentPoint = points.subsequentPoint
-						local framePoint = points.framePoint
-						local spacing = (customTweaksUnits and customTweaksUnits[frameType]) and customTweaksSpacing or E.Spacing
-						local offset, perRow = (data.sizeOverride or 0) + spacing, data.perrow
+                if data and dim then
+                    local baseSize = data.sizeOverride or 0
+                    iconPositions[frameType][auraType] = {
+                        positions = {},
+                        sizes = {},
+                        height = baseSize * dim.height,
+                        width = baseSize * dim.width
+                    }
 
-						for numElements = 1, perRow * data.numrows do
-							cache.positions[numElements] = {}
-							local lastAnchor = nil
+					local cache = iconPositions[frameType][auraType]
+                    local spacing, perRow = (customTweaksUnits and customTweaksUnits[frameType]) and customTweaksSpacing or E.Spacing, data.perrow
+                    local offsetX = cache.width + spacing
+                    local offsetY = cache.height + spacing
 
-							for i = 1, numElements do
-								if i == (perRow * floor((i-1) / perRow) + 1) then
-									local numOtherRow = min(perRow, (numElements - (perRow * floor((i-1) / perRow))))
-									local OtherRowSize = (numOtherRow * offset)
-									local xOffset = isVertical and -(OtherRowSize - offset) / 2 or ((isReverse and 1 or -1) * offset * floor((i-1) / perRow))
-									local yOffset = isVertical and ((isReverse and -1 or 1) * offset * floor((i-1) / perRow)) or -(OtherRowSize - offset) / 2
+                    if dims[frameType] and dims[frameType][auraType] then
+                        local ratio = cache.width / cache.height
+                        local L, R, T, B = unpack(E.TexCoords)
+                        local widthSpan = R - L
+                        local heightSpan = B - T
+                        if ratio > 1 then
+                            local offset = (heightSpan - (heightSpan / ratio)) / 2
+                            T, B = T + offset, B - offset
+                        elseif ratio < 1 then
+                            local offset = (widthSpan - (widthSpan * ratio)) / 2
+                            L, R = L + offset, R - offset
+                        end
+                        cache.texCoords = {L, R, T, B}
+                    else
+                        cache.texCoords = E.TexCoords
+                    end
 
-									cache.positions[numElements][i] = {
-										point = firstInRowPoint,
-										firstInRow = true,
-										relativeTo = framePoint,
-										xOffset = xOffset,
-										yOffset = yOffset
-									}
-								else
-									local xOffset = isVertical and offset or 0
-									local yOffset = isVertical and 0 or offset
+                    if db.CenteredAuras.enabled then
+                        local points = directionProperties[data.anchorPoint]
+                        local isVertical = points.isVertical
+                        local isReverse = points.isReverse
+                        local firstInRowPoint = points.firstInRowPoint
+                        local subsequentPoint = points.subsequentPoint
+                        local framePoint = points.framePoint
 
-									cache.positions[numElements][i] = {
-										point = subsequentPoint,
-										anchor = lastAnchor,
-										relativeTo = subsequentPoint,
-										xOffset = xOffset,
-										yOffset = yOffset
-									}
-								end
-								lastAnchor = i
-							end
+                        for numElements = 1, perRow * data.numrows do
+                            cache.positions[numElements] = {}
+                            local lastAnchor = nil
 
-							local numRows = ceil(numElements/perRow)
-							local width = max(offset, offset * min(perRow, numElements) - spacing)
-							local height = max(offset, offset * numRows - spacing)
+                            for i = 1, numElements do
+                                if i == (perRow * floor((i-1) / perRow) + 1) then
+                                    local numOtherRow = min(perRow, (numElements - (perRow * floor((i-1) / perRow))))
+                                    local totalRowWidth = (numOtherRow * offsetX) - spacing
+                                    local totalRowHeight = (numOtherRow * offsetY) - spacing
+
+                                    local xOffset = isVertical and -(totalRowWidth - offsetX) / 2 or ((isReverse and 1 or -1) * offsetX * floor((i-1) / perRow))
+                                    local yOffset = isVertical and ((isReverse and -1 or 1) * offsetY * floor((i-1) / perRow)) or -(totalRowHeight - offsetY) / 2
+
+                                    cache.positions[numElements][i] = {
+                                        point = firstInRowPoint,
+                                        firstInRow = true,
+                                        relativeTo = framePoint,
+                                        xOffset = xOffset,
+                                        yOffset = yOffset
+                                    }
+                                else
+                                    local xOffset = isVertical and offsetX or 0
+                                    local yOffset = isVertical and 0 or offsetY
+
+                                    cache.positions[numElements][i] = {
+                                        point = subsequentPoint,
+                                        anchor = lastAnchor,
+                                        relativeTo = subsequentPoint,
+                                        xOffset = xOffset,
+                                        yOffset = yOffset
+                                    }
+                                end
+                                lastAnchor = i
+                            end
+							local totalW = (min(perRow, numElements) * (isVertical and offsetX or offsetY)) - spacing
+							local totalH = (ceil(numElements / perRow) * (isVertical and offsetY or offsetX)) - spacing
 							cache.sizes[numElements] = {
-								isVertical and width or height,
-								isVertical and height or width
+								isVertical and totalW or totalH,
+								isVertical and totalH or totalW
 							}
-						end
-					end
-				end
-			end
-		end
-	end
+                        end
+                    else
+                        local anchor = E.InversePoints[data.anchorPoint] or "BOTTOMLEFT"
+                        local growthx = (data.growthX == "LEFT" and -1) or 1
+                        local growthy = (data.growthY == "DOWN" and -1) or 1
+                        
+                        for numElements = 1, perRow * data.numrows do
+                            cache.positions[numElements] = {}
+                            for i = 1, numElements do
+                                cache.positions[numElements][i] = {
+                                    point = anchor,
+                                    relativeTo = anchor,
+                                    xOffset = ((i - 1) % perRow) * offsetX * growthx,
+                                    yOffset = (floor((i - 1) / perRow)) * offsetY * growthy
+                                }
+                            end
+                            local numRows = ceil(numElements / perRow)
+                            cache.sizes[numElements] = {
+                                (min(perRow, numElements) * offsetX) - spacing,
+                                (numRows * offsetY) - spacing
+                            }
+                        end
+                    end
+                    if db.SortMethods.enabled and data.filters then
+                        cache.filterPriority = {}
+                        for _, filter in ipairs({split(",", data.filters.priority)}) do
+                            tinsert(cache.filterPriority, filter)
+                        end
+                        if db.SortMethods.types and db.SortMethods.types[frameType] and db.SortMethods.types[frameType][auraType] then
+                            cache.sortDirection = db.SortMethods.types[frameType][auraType].sortDirection
+                            cache.sortMethod = db.SortMethods.types[frameType][auraType].sortMethod
+                        end
+                    end
+
+                end
+            end
+        end
+    end
 	if not mod.ishooked then
 		if E.Options and E.Options.args.unitframe then
 			if E.Options.args.CustomTweaks and E.private.CustomTweaks.AuraIconSpacing and db.CenteredAuras.enabled then
@@ -354,6 +426,22 @@ P["Extras"]["unitframes"][modName] = {
 	["TypeBorders"] = {
 		["enabled"] = false,
 	},
+	["Dimensions"] = {
+		["selectedUnit"] = "player",
+		["selectedAuraType"] = "buffs",
+		["units"] = {
+			["player"] = {
+				["buffs"] = {
+					["height"] = 1,
+					["width"] = 1,
+				},
+				["debuffs"] = {
+					["height"] = 1,
+					["width"] = 1,
+				},
+			},
+		},
+	},
 	["Highlights"] = {
 		["selectedType"] = 'FRIENDLY',
 		["types"] = {
@@ -382,6 +470,8 @@ P["Extras"]["unitframes"][modName] = {
 }
 
 function mod:LoadConfig(db)
+	local function selectedDimsUnit() return db.Dimensions.selectedUnit end
+	local function selectedDimsAuraType() return db.Dimensions.selectedAuraType end
 	local function selectedType() return db.Highlights.selectedType or "FRIENDLY" end
 	local function selectedSpellorFilter() return db.Highlights.types[selectedType()].selected or "GLOBAL" end
 	local function getHighlightSettings(selected, spellOrFilter)
@@ -705,6 +795,59 @@ function mod:LoadConfig(db)
 					},
 				},
 			},
+			Dimensions = {
+				type = "group",
+				name = L["Icon Size"],
+				guiInline = true,
+				args = {
+					selectedDimensionsUnit = {
+						order = 1,
+						type = "select",
+						name = L["Select Unit"],
+						desc = "",
+						disabled = false,
+						get = function() return selectedDimsUnit() end,
+						set = function(_, value) db.Dimensions.selectedUnit = value end,
+						values = function() return core:GetUnitDropdownOptions(db.Dimensions.units) end,
+					},
+					selectedDimensionsAuraType = {
+						order = 2,
+						type = "select",
+						name = L["Select Type"],
+						desc = "",
+						get = function() return selectedDimsAuraType() end,
+						set = function(_, value) db.Dimensions.selectedAuraType = value end,
+						values = {
+							["buffs"] = L["Buffs"],
+							["debuffs"] = L["Debuffs"],
+						},
+					},
+					height = {
+						type = "range",
+						name = L["Height"],
+						desc = "",
+						get = function() return db.Dimensions.units[selectedDimsUnit()][selectedDimsAuraType()].height end,
+						set = function(_, value)
+							db.Dimensions.units[selectedDimsUnit()][selectedDimsAuraType()].height = value
+							self:Toggle(db)
+							UF:Update_AllFrames()
+						end,
+						min = 0.25, max = 1, step = 0.01,
+					},
+					width = {
+						type = "range",
+						name = L["Width"],
+						desc = "",
+						get = function() return db.Dimensions.units[selectedDimsUnit()][selectedDimsAuraType()].width end,
+						set = function(_, value)
+							db.Dimensions.units[selectedDimsUnit()][selectedDimsAuraType()].width = value
+							self:Toggle(db)
+							UF:Update_AllFrames()
+						end,
+						min = 0.25, max = 1, step = 0.01,
+					},
+				},
+			},
 			CenteredAuras = {
 				type = "group",
 				name = L["Centered Auras"],
@@ -769,6 +912,12 @@ function mod:LoadConfig(db)
 	}
 	if not db.Highlights.types['ENEMY'] then
 		db.Highlights.types['ENEMY'] = CopyTable(db.Highlights.types['FRIENDLY'])
+	end
+	if not db.Dimensions.units.target then
+		local units = core:getAllFrameTypes()
+		for unitframeType in pairs(units) do
+			db.Dimensions.units[unitframeType] = CopyTable(db.Dimensions.units.player)
+		end
 	end
 end
 
@@ -975,8 +1124,8 @@ function mod:UpdateSortMethods(db)
     end
 end
 
-function mod:UpdateCenteredAuras(db)
-	if not core.reload and db.CenteredAuras.enabled then
+function mod:UpdateAuras(db)
+	if not core.reload then
 		cachePositions(db)
 
 		function mod:CenterAlignAuras(self, numElements, auraType, auraTypeRef)
@@ -988,6 +1137,7 @@ function mod:UpdateCenteredAuras(db)
 			if overRide and overRide > 0 then
 				local frame = parent[auraTypeRef]
 				local data = iconPositions[parent.unitframeType][frame.type]
+				if not data then return end
 				local points = data.positions[numElements]
 
 				for i = 1, numElements do
@@ -996,11 +1146,14 @@ function mod:UpdateCenteredAuras(db)
 						local vals = points[i]
 						child:ClearAllPoints()
 						child:Point(vals.point, vals.firstInRow and frame or frame[vals.anchor], vals.relativeTo, vals.xOffset, vals.yOffset)
+						child:Size(data.width, data.height)
+						if next(data.texCoords) then
+							child.icon:SetTexCoord(unpack(data.texCoords))
+						end
 					end
 				end
 				local height, width = unpack(data.sizes[numElements])
 				frame:Size(height, width)
-
 				if frame.auraBarsHolder then
 					frame.auraBarsHolder:Height(width)
 				end
@@ -1069,7 +1222,7 @@ function mod:UpdateCenteredAuras(db)
 				frame.Debuffs.PostUpdate = mod.UpdateDebuffsHeaderPosition
 			end
 		end
-
+		
 		function mod:Configure_AuraBars(frame)
 			if not frame.VARIABLES_SET or (E.db.abm and E.db.abm[frame.unitframeType]) then
 				return
@@ -1332,12 +1485,12 @@ end
 
 function mod:Toggle(db)
 	if core.reload then
-		self:UpdateCenteredAuras(db)
+		self:UpdateAuras(db)
 		self:UpdateClickCancel(db)
 		self:UpdatePostUpdateAura(db, false)
 	else
 		self:UpdateSortMethods(db)
-		self:UpdateCenteredAuras(db)
+		self:UpdateAuras(db)
 		self:UpdateClickCancel(db)
 		local enabled = false
 		if not core.reload then
