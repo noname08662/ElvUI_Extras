@@ -12,6 +12,9 @@ on:
           - main
           - dev-testing
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  
 jobs:
   pack-zip:
     runs-on: ubuntu-latest
@@ -23,12 +26,11 @@ jobs:
         id: vars
         run: |
           REPO_NAME=$(echo "${{ github.event.repository.name }}")
-          
-          if [ "${{ github.event.release.target_commitish }}" = "main" ]; then
+          if [ "${{ inputs.test_branch }}" = "main" ]; then
             SUFFIX="ElvUI_6.09"
           else
             SUFFIX="ElvUI_7"
-          hidden_fi
+          fi
           
           echo "ZIP_NAME=${REPO_NAME}_${SUFFIX}" >> $GITHUB_ENV
           echo "REPO_NAME=${REPO_NAME}" >> $GITHUB_ENV
