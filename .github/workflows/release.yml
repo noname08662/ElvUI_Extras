@@ -37,10 +37,17 @@ jobs:
 
       - name: Prepare and Package Files
         run: |
-          mkdir -p "${{ env.REPO_NAME }}"
-          rsync -av --exclude '.*' --exclude "${{ env.REPO_NAME }}" ./ "${{ env.REPO_NAME }}/"
-          cd "${{ env.REPO_NAME }}"
-          zip -r "../${{ env.ZIP_NAME }}.zip" .
+          STAGE="$(mktemp -d)"
+          mkdir -p "$STAGE/${{ env.REPO_NAME }}"
+
+          rsync -av \
+            --exclude '.*' \
+            --exclude '*.zip' \
+            --exclude "${{ env.REPO_NAME }}" \
+            ./ "$STAGE/${{ env.REPO_NAME }}/"
+
+          cd "$STAGE"
+          zip -r "$GITHUB_WORKSPACE/${{ env.ZIP_NAME }}.zip" "${{ env.REPO_NAME }}"
 
       - name: Upload Test Artifact
         uses: actions/upload-artifact@v4
