@@ -1,6 +1,7 @@
-name: Pack and Release
+name: Test Pack and Artifact
 
 on:
+  workflow_dispatch: 
   release:
     types: [published]
 
@@ -19,8 +20,11 @@ jobs:
 
       - name: Set up Environment Variables
         run: |
-          REPO_NAME="${{ github.event.repository.name }}"
-          if [ "${{ github.event.release.prerelease }}" = "false" ]; then
+          REPO_NAME="${{ github.event.repository.name || github.event.repository.name }}"
+          if [ -z "$REPO_NAME" ]; then REPO_NAME="test-repo"; fi
+
+          IS_PRERELEASE="${{ github.event.release.prerelease }}"
+          if [ "$IS_PRERELEASE" = "false" ] || [ -z "$IS_PRERELEASE" ]; then
             SUFFIX="ElvUI_6.09"
           else
             SUFFIX="ElvUI_7"
@@ -32,20 +36,20 @@ jobs:
       - name: Prepare and Package Files
         run: |
           STAGE="$(mktemp -d)"
-          mkdir -p "$STAGE/${{ env.REPO_NAME }}"
+          mkdir -p "$STAGE/$REPO_NAME"
 
           rsync -av \
             --exclude '.*' \
             --exclude '*.zip' \
-            --exclude "${{ env.REPO_NAME }}" \
-            ./ "$STAGE/${{ env.REPO_NAME }}/"
+            --exclude "$REPO_NAME" \
+            ./ "$STAGE/$REPO_NAME/"
 
           cd "$STAGE"
-          zip -r "$GITHUB_WORKSPACE/${{ env.ZIP_NAME }}.zip" "${{ env.REPO_NAME }}"
+          zip -r "$GITHUB_WORKSPACE/$ZIP_NAME.zip" "$REPO_NAME"
 
-      - name: Upload Zip to Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload Zip as Artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: "${{ env.ZIP_NAME }}.zip"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: ${{ env.ZIP_NAME }}-test
+          path: "${{ env.ZIP_NAME }}.zip"
+          retention-days: 1
