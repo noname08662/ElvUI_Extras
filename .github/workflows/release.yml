@@ -1,55 +1,53 @@
 name: Test Pack and Artifact
-
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
   release:
     types: [published]
-
 permissions:
   contents: write
-
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-  
+
 jobs:
   pack-zip:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - suffix: "ElvUI_6.09"
+            branch: "main"
+          - suffix: "ElvUI_7"
+            branch: "ElvUI-7-version"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
 
       - name: Set up Environment Variables
         run: |
-          REPO_NAME="${{ github.event.repository.name || github.event.repository.name }}"
+          REPO_NAME="${{ github.event.repository.name }}"
           if [ -z "$REPO_NAME" ]; then REPO_NAME="test-repo"; fi
-
-          IS_PRERELEASE="${{ github.event.release.prerelease }}"
-          if [ "$IS_PRERELEASE" = "false" ] || [ -z "$IS_PRERELEASE" ]; then
-            SUFFIX="ElvUI_6.09"
-          else
-            SUFFIX="ElvUI_7"
-          fi
-
-          echo "ZIP_NAME=${REPO_NAME}_${SUFFIX}" >> "$GITHUB_ENV"
+          echo "ZIP_NAME=${REPO_NAME}_${{ matrix.suffix }}" >> "$GITHUB_ENV"
           echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
 
       - name: Prepare and Package Files
         run: |
           STAGE="$(mktemp -d)"
           mkdir -p "$STAGE/$REPO_NAME"
-
           rsync -av \
             --exclude '.*' \
             --exclude '*.zip' \
             --exclude "$REPO_NAME" \
             ./ "$STAGE/$REPO_NAME/"
-
           cd "$STAGE"
           zip -r "$GITHUB_WORKSPACE/$ZIP_NAME.zip" "$REPO_NAME"
 
-      - name: Upload Zip as Artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
         with:
-          name: ${{ env.ZIP_NAME }}-test
-          path: "${{ env.ZIP_NAME }}.zip"
-          retention-days: 1
+          files: ${{ env.ZIP_NAME }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
