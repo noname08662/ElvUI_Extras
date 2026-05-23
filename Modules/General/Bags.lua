@@ -1803,7 +1803,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 					sectionFrame.minimizedLine:Hide()
 					sectionFrame.title:SetText(currentSection.db.title.text)
 					for _, button in ipairs(currentSection.buttons) do
-						if layout.filter[min(6,button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.BagID, button.SlotID) or -99)))] then
+						if layout.filter[min(6,button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.BagID, button.SlotID) or -1)) or -99)] then
 							button.isHidden = false
 							button:Show()
 						end
@@ -2441,7 +2441,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 					end
 					for j, section in ipairs(f.currentLayout.sections) do
 						for _, button in ipairs(section.buttons) do
-							button.isHidden = (min(6,button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.BagID, button.SlotID) or -99))) ~= i)
+							button.isHidden = (min(6,button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.BagID, button.SlotID) or -1)) or -99) ~= i)
 							if button.isHidden then
 								button:Hide()
 							else
@@ -2456,7 +2456,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 					db.activeFilters[i] = false
 					for j, section in ipairs(f.currentLayout.sections) do
 						for _, button in ipairs(section.buttons) do
-							if min(6,button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.BagID, button.SlotID) or -99))) == i then
+							if min(6,button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.BagID, button.SlotID) or -1)) or -99) == i then
 								button.isHidden = true
 								button:Hide()
 							end
@@ -2469,7 +2469,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 					db.activeFilters[i] = true
 					for j, section in ipairs(f.currentLayout.sections) do
 						for _, button in ipairs(section.buttons) do
-							if min(6,button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.BagID, button.SlotID) or -99))) == i then
+							if min(6,button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.BagID, button.SlotID) or -1)) or -99) == i then
 								button.isHidden = false
 								button:Show()
 							end
@@ -2582,7 +2582,7 @@ function mod:ConfigureContainer(f, isBank, db, numColumns, buttonSize, buttonSpa
 
 	for _, section in ipairs(f.currentLayout.sections) do
 		for _, button in ipairs(section.buttons) do
-			if not f.currentLayout.filter[min(6,button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.BagID, button.SlotID) or -99)))] or not B.db.shownBags['bag'..button.BagID] then
+			if not f.currentLayout.filter[min(6,button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.BagID, button.SlotID) or -1)) or -99)] or not B.db.shownBags['bag'..button.BagID] then
 				button.isHidden = true
 				button:Hide()
 			else
@@ -2782,7 +2782,7 @@ function mod:UpdateSection(f, section, numColumns, buttonSize, buttonSpacing, re
 		local minimizedCount = 0
 		local layoutFilter = f.currentLayout.filter
 		for _, button in ipairs(buttons) do
-			if layoutFilter[min(6,button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.BagID, button.SlotID) or -99)))] and IsNewItem(button.BagID, button.SlotID) then
+			if layoutFilter[min(6,button.rarity or select(3,GetItemInfo(button.itemID or B_GetItemID(nil, button.BagID, button.SlotID) or -1)) or -99)] and IsNewItem(button.BagID, button.SlotID) then
 				minimizedCount = minimizedCount + 1
 			end
 			button:Hide()

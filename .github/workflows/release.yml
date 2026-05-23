@@ -1,17 +1,15 @@
 name: Pack and Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      test_branch:
-        description: 'Simulate branch name (main or other)'
-        required: true
-        default: 'main'
-        type: choice
-        options:
-          - main
-          - dev-testing
+  release:
+    types: [published]
 
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  
 jobs:
   pack-zip:
     runs-on: ubuntu-latest
@@ -20,27 +18,34 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Environment Variables
-        id: vars
         run: |
-          REPO_NAME=$(echo "${{ github.event.repository.name }}")
-          
-          if [ "${{ github.event.release.target_commitish }}" = "main" ]; then
+          REPO_NAME="${{ github.event.repository.name }}"
+          if [ "${{ github.event.release.prerelease }}" = "false" ]; then
             SUFFIX="ElvUI_6.09"
           else
             SUFFIX="ElvUI_7"
-          hidden_fi
-          
-          echo "ZIP_NAME=${REPO_NAME}_${SUFFIX}" >> $GITHUB_ENV
-          echo "REPO_NAME=${REPO_NAME}" >> $GITHUB_ENV
+          fi
+
+          echo "ZIP_NAME=${REPO_NAME}_${SUFFIX}" >> "$GITHUB_ENV"
+          echo "REPO_NAME=${REPO_NAME}" >> "$GITHUB_ENV"
 
       - name: Prepare and Package Files
         run: |
-          mkdir -p "${{ env.REPO_NAME }}"
-          rsync -av --exclude '.*' --exclude "${{ env.REPO_NAME }}" ./ "${{ env.REPO_NAME }}/"
-          zip -r "${{ env.ZIP_NAME }}.zip" "${{ env.REPO_NAME }}"
+          STAGE="$(mktemp -d)"
+          mkdir -p "$STAGE/${{ env.REPO_NAME }}"
 
-      - name: Upload Test Artifact
-        uses: actions/upload-artifact@v4
+          rsync -av \
+            --exclude '.*' \
+            --exclude '*.zip' \
+            --exclude "${{ env.REPO_NAME }}" \
+            ./ "$STAGE/${{ env.REPO_NAME }}/"
+
+          cd "$STAGE"
+          zip -r "$GITHUB_WORKSPACE/${{ env.ZIP_NAME }}.zip" "${{ env.REPO_NAME }}"
+
+      - name: Upload Zip to Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: ${{ env.ZIP_NAME }}
-          path: "${{ env.ZIP_NAME }}.zip"
+          files: "${{ env.ZIP_NAME }}.zip"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

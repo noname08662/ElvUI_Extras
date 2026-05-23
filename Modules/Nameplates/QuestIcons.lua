@@ -572,9 +572,9 @@ function mod:Toggle(db)
 		r2, g2, b2 = good.r, good.g, good.b
 
 		if not self.ishooked then
-			if E.Options and E.Options.args.nameplate then
-				if not self:IsHooked(E.Options.args.nameplate.args.generalGroup.args.colorsGroup.args.reactions, "set") then
-					self:SecureHook(E.Options.args.nameplate.args.generalGroup.args.colorsGroup.args.reactions, "set", function()
+			if E.Options and E.Options.args.nameplates then
+				if not self:IsHooked(E.Options.args.nameplates.args.generalGroup.args.colorsGroup.args.reactions, "set") then
+					self:SecureHook(E.Options.args.nameplates.args.generalGroup.args.colorsGroup.args.reactions, "set", function()
 						r1, g1, b1 = bad.r, bad.g, bad.b
 						r2, g2, b2 = good.r, good.g, good.b
 						self:QueueUpdate(db)
@@ -582,8 +582,8 @@ function mod:Toggle(db)
 				end
 			elseif not self:IsHooked(E, "ToggleOptions") then
 				self:SecureHook(E, "ToggleOptions", function()
-					if E.Options.args.nameplate then
-						self:SecureHook(E.Options.args.nameplate.args.generalGroup.args.colorsGroup.args.reactions, "set", function()
+					if E.Options.args.nameplates then
+						self:SecureHook(E.Options.args.nameplates.args.generalGroup.args.colorsGroup.args.reactions, "set", function()
 							r1, g1, b1 = bad.r, bad.g, bad.b
 							r2, g2, b2 = good.r, good.g, good.b
 							self:QueueUpdate(db)
