@@ -15,72 +15,48 @@ local GetTime, DebuffTypeColor, UnitCanAttack, GetSpellInfo, GetSpellLink, Creat
 
 local dispellList, purgeList = core.DispellList[E.myclass], core.PurgeList[E.myclass]
 local filterList, checkFilters = {["FRIENDLY"] = {}, ["ENEMY"] = {}}, {}
+local rowCenterOffsets = {}
 
 
 local directionProperties = {
 	["CENTER"] = {
 		isVertical = true,
-		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
-		framePoint = 'BOTTOM',
 	},
 	["TOP"] = {
 		isVertical = true,
-		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
-		framePoint = 'BOTTOM',
 	},
 	["BOTTOM"] = {
 		isVertical = true,
-		isReverse = true,
-		firstInRowPoint = 'TOP',
 		subsequentPoint = 'TOPLEFT',
-		framePoint = 'TOP',
 	},
 	["LEFT"] = {
-		isVertical = false,
-		firstInRowPoint = 'RIGHT',
 		subsequentPoint = 'TOPRIGHT',
-		framePoint = 'RIGHT',
 	},
 	["RIGHT"] = {
-		isVertical = false,
-		isReverse = true,
-		firstInRowPoint = 'LEFT',
 		subsequentPoint = 'TOPLEFT',
-		framePoint = 'LEFT',
 	},
 	["TOPLEFT"] = {
 		isVertical = true,
-		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
-		framePoint = 'BOTTOM',
 	},
 	["TOPRIGHT"] = {
 		isVertical = true,
-		firstInRowPoint = 'BOTTOM',
 		subsequentPoint = 'BOTTOMLEFT',
-		framePoint = 'BOTTOM',
 	},
 	["BOTTOMLEFT"] = {
 		isVertical = true,
-		isReverse = true,
-		firstInRowPoint = 'TOP',
 		subsequentPoint = 'TOPLEFT',
-		framePoint = 'TOP',
 	},
 	["BOTTOMRIGHT"] = {
 		isVertical = true,
-		isReverse = true,
-		firstInRowPoint = 'TOP',
 		subsequentPoint = 'TOPLEFT',
-		framePoint = 'TOP',
 	}
 }
 
 local funcMap = {
 	["UpdateTime"] = 'AnimateFadeOut',
-	["UpdateElement_Auras"] = 'CenteredAuras, SortMethods',
 	["SetAura"] = 'AnimateFadeOut, TypeBorders, Highlights, CooldownDisable',
 }
 
@@ -109,116 +85,114 @@ local function updateFilters(db)
 end
 
 local function cachePositions(db)
-	if core.reload or (not db.CenteredAuras.enabled and not db.SortMethods.enabled) then
-		if mod.ishooked then
-			if E.Options and E.Options.args.nameplate then
-				for _, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
-												["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
-					for _, auraGroup in ipairs({"buffsGroup", "debuffsGroup"}) do
-						if mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set") then
-							mod:Unhook(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set")
-						end
-						if mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set") then
-							mod:Unhook(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set")
-						end
-						for _, t in pairs(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup.args) do
-							if type(t) == 'table' and t.set and mod:IsHooked(t, "set") then
-								mod:Unhook(t, "set")
-							end
-						end
-					end
-				end
-			elseif mod:IsHooked(E, "ToggleOptionsUI") then
-				mod:Unhook(E, "ToggleOptionsUI")
-			end
-			mod.ishooked = false
-		end
-		return
-	end
     for _, unitType in ipairs({"FRIENDLY_PLAYER", "ENEMY_PLAYER", "FRIENDLY_NPC", "ENEMY_NPC"}) do
-        iconPositions[unitType] = {}
-        for _, auraType in ipairs({"buffs", "debuffs"}) do
-            iconPositions[unitType][auraType] = { positions = {}, sizes = {} }
+		iconPositions[unitType] = {}
+		for _, auraType in ipairs({"buffs", "debuffs"}) do
 			local data = NP.db.units[unitType][auraType]
+			local dims = db.Dimensions.types[unitType][auraType]
+
+			iconPositions[unitType][auraType] = {
+				positions = {},
+				sizes = {},
+				height = data.size * dims.height,
+				width = data.size * dims.width
+			}
+
 			local cache = iconPositions[unitType][auraType]
+			local spacing, perRow = data.spacing, data.perrow
+			local offsetX = cache.width + spacing
+			local offsetY = cache.height + spacing
+
+			if dims.height < 1 or dims.width < 1 then
+				local ratio = cache.width / cache.height
+				local l, r, t, b = unpack(E.TexCoords)
+				local widthSpan = r - l
+				local heightSpan = b - t
+				if ratio > 1 then
+					local offset = (heightSpan - (heightSpan / ratio)) / 2
+					t, b = t + offset, b - offset
+				elseif ratio < 1 then
+					local offset = (widthSpan - (widthSpan * ratio)) / 2
+					l, r = l + offset, r - offset
+				end
+				cache.texCoords = {l, r, t, b}
+			else
+				cache.texCoords = E.TexCoords
+			end
 
 			if db.CenteredAuras.enabled then
-				local anchorPoint = data.anchorPoint
-				local points = directionProperties[anchorPoint]
+				local points = directionProperties[data.anchorPoint]
 				local isVertical = points.isVertical
-				local isReverse = points.isReverse
-				local firstInRowPoint = points.firstInRowPoint
-				local subsequentPoint = points.subsequentPoint
-				local framePoint = points.framePoint
+				local anchor = isVertical and ((data.growthY == "DOWN" and "TOP") or "BOTTOM") or E.InversePoints[data.growthX]
+				local stepDir = (anchor == "RIGHT") and -1 or 1
 				local growthX = (data.growthX == "LEFT" and -1) or 1
 				local growthY = (data.growthY == "DOWN" and -1) or 1
-				local offset, spacing, perRow = data.size + data.spacing, data.spacing, data.perrow
 
 				for numElements = 1, perRow * data.numrows do
 					cache.positions[numElements] = {}
-					local lastAnchor = nil
+					twipe(rowCenterOffsets)
 
 					for i = 1, numElements do
-						if i == (perRow * floor((i-1) / perRow) + 1) then
-							local numOtherRow = min(perRow, (numElements - (perRow * floor((i-1) / perRow))))
-							local OtherRowSize = (numOtherRow * offset)
-							local xOffset = (isVertical and -(OtherRowSize - offset) / 2
-														or ((isReverse and 1 or -1) * offset * floor((i-1) / perRow))) * growthX
-							local yOffset = (isVertical and ((isReverse and -1 or 1) * offset * floor((i-1) / perRow))
-														or -(OtherRowSize - offset) / 2) * growthY
+						local currentRow = floor((i - 1) / perRow)
+						local colInRow = (i - 1) % perRow
 
-							cache.positions[numElements][i] = {
-								point = firstInRowPoint,
-								firstInRow = true,
-								relativeTo = framePoint,
-								xOffset = xOffset,
-								yOffset = yOffset
-							}
-						else
-							local xOffset = (isVertical and offset or 0) * growthX
-							local yOffset = (isVertical and 0 or offset) * growthY
+						if colInRow == 0 then
+							local numInRow = min(perRow, numElements - (perRow * currentRow))
+							local totalRowWidth  = (numInRow * cache.width) + (max(0, numInRow - 1) * spacing)
+							local totalRowHeight = (numInRow * cache.height) + (max(0, numInRow - 1) * spacing)
 
-							cache.positions[numElements][i] = {
-								point = subsequentPoint,
-								anchor = lastAnchor,
-								relativeTo = subsequentPoint,
-								xOffset = xOffset,
-								yOffset = yOffset
-							}
+							if isVertical then
+								rowCenterOffsets[currentRow] = {
+									x = -(totalRowWidth - cache.width) * 0.5 * growthX,
+									y = (offsetY * currentRow) * growthY,
+								}
+							else
+								rowCenterOffsets[currentRow] = {
+									x = (offsetX * currentRow) * stepDir,
+									y = -(totalRowHeight - cache.height) * 0.5 * growthY,
+								}
+							end
 						end
-						lastAnchor = i
-					end
 
-					local numRows = ceil(numElements/perRow)
-					local width = max(offset, offset * min(perRow, numElements) - spacing)
-					local height = max(offset, offset * numRows - spacing)
-
-					cache.sizes[numElements] = {
-						isVertical and width or height,
-						isVertical and height or width
-					}
-				end
-			else
-				local size = data.size + data.spacing
-				local anchor = E.InversePoints[data.anchorPoint]
-				local growthx = (data.growthX == "LEFT" and -1) or 1
-				local growthy = (data.growthY == "DOWN" and -1) or 1
-				local cols = data.perrow
-				local maxWidth = cols * size - data.spacing
-				local maxHeight = data.numrows * size - data.spacing
-
-				for numElements = 1, cols * data.numrows do
-					cache.positions[numElements] = {}
-
-					for i = 1, numElements do
+						local ro = rowCenterOffsets[currentRow]
 						cache.positions[numElements][i] = {
 							point = anchor,
 							relativeTo = anchor,
-							xOffset = ((i - 1) % cols) * size * growthx,
-							yOffset = (floor((i - 1) / cols)) * size * growthy
+							xOffset = isVertical and (ro.x + colInRow * offsetX * growthX) or ro.x,
+							yOffset = isVertical and ro.y or (ro.y + colInRow * offsetY * growthY),
 						}
 					end
-					cache.sizes[numElements] = {maxWidth, maxHeight}
+
+					local totalW = (perRow * (isVertical and offsetX or offsetY)) - spacing
+					local totalH = (ceil(numElements / perRow) * (isVertical and offsetY or offsetX)) - spacing
+					cache.sizes[numElements] = {
+						isVertical and totalW or totalH,
+						isVertical and totalH or totalW,
+					}
+				end
+			else
+				local growthx = (data.growthX == "LEFT" and -1) or 1
+				local growthy = (data.growthY == "DOWN" and -1) or 1
+				local anchorV = ((data.growthY == "DOWN" and "TOP") or "BOTTOM") or ""
+				local anchor = anchorV .. E.InversePoints[data.growthX]
+
+				for numElements = 1, perRow * data.numrows do
+					cache.positions[numElements] = {}
+					for i = 1, numElements do
+						local col = (i - 1) % perRow
+						local row = floor((i - 1) / perRow)
+						cache.positions[numElements][i] = {
+							point = anchor,
+							relativeTo = anchor,
+							xOffset = col * offsetX * growthx,
+							yOffset = row * offsetY * growthy
+						}
+					end
+					local numRows = ceil(numElements / perRow)
+					local cols = min(numElements, perRow)
+					local width = (cols * cache.width) + (max(0, cols - 1) * spacing)
+					local height = (numRows * cache.height) + (max(0, numRows - 1) * spacing)
+					cache.sizes[numElements] = { width, height }
 				end
 			end
 			if db.SortMethods.enabled and data.filters then
@@ -231,73 +205,6 @@ local function cachePositions(db)
 			end
         end
     end
-	if not mod.ishooked then
-		if E.Options and E.Options.args.nameplate then
-			for unitType, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
-											["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
-				for auraType, auraGroup in pairs({["buffs"] = 'buffsGroup', ["debuffs"] = 'debuffsGroup'}) do
-					if not mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set") then
-						mod:RawHook(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set", function(info, value)
-							E.db.nameplates.units[unitType][auraType][info[#info]] = value
-							cachePositions(db)
-							mod.hooks[E.Options.args.nameplate.args[unitGroup].args[auraGroup]].set(info, value)
-						end)
-					end
-					if db.SortMethods.enabled then
-						if not mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set") then
-							mod:SecureHook(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set", function()
-								cachePositions(db)
-								NP:ConfigureAll()
-							end)
-						end
-						for _, t in pairs(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup.args) do
-							if type(t) == 'table' and t.set and not mod:IsHooked(t, "set") then
-								mod:SecureHook(t, "set", function()
-									cachePositions(db)
-									NP:ConfigureAll()
-								end)
-							end
-						end
-					end
-				end
-			end
-		elseif not mod:IsHooked(E, "ToggleOptionsUI") then
-			mod:SecureHook(E, "ToggleOptionsUI", function()
-				if E.Options.args.nameplate then
-					for unitType, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
-													["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
-						for auraType, auraGroup in pairs({["buffs"] = 'buffsGroup', ["debuffs"] = 'debuffsGroup'}) do
-							if not mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set") then
-								mod:RawHook(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set", function(info, value)
-									E.db.nameplates.units[unitType][auraType][info[#info]] = value
-									cachePositions(db)
-									mod.hooks[E.Options.args.nameplate.args[unitGroup].args[auraGroup]].set(info, value)
-								end)
-							end
-							if db.SortMethods.enabled then
-								if not mod:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set") then
-									mod:SecureHook(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set", function()
-										cachePositions(db)
-										NP:ConfigureAll()
-									end)
-								end
-								for _, t in pairs(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup.args) do
-									if type(t) == 'table' and t.set and not mod:IsHooked(t, "set") then
-										mod:SecureHook(t, "set", function()
-											cachePositions(db)
-											NP:ConfigureAll()
-										end)
-									end
-								end
-							end
-						end
-					end
-					mod:Unhook(E, "ToggleOptionsUI")
-				end
-			end)
-		end
-		mod.ishooked = true
-	end
 end
 
 local function updateVisiblePlates(mod_db)
@@ -324,6 +231,8 @@ local function updateVisiblePlates(mod_db)
 				end
 			end
 		end
+		NP:Configure_Auras(plate, "Buffs")
+		NP:Configure_Auras(plate, "Debuffs")
 		NP:UpdateAllFrame(plate, nil, true)
 	end
 end
@@ -415,6 +324,52 @@ P["Extras"]["nameplates"][modName] = {
 			},
 		},
 	},
+	["Dimensions"] = {
+		["selectedType"] = "ENEMY_NPC",
+		["selectedAuraType"] = "buffs",
+		["types"] = {
+			["ENEMY_NPC"] = {
+				["buffs"] = {
+					["height"] = 1,
+					["width"] = 1,
+				},
+				["debuffs"] = {
+					["height"] = 1,
+					["width"] = 1,
+				},
+			},
+			["ENEMY_PLAYER"] = {
+				["buffs"] = {
+					["height"] = 1,
+					["width"] = 1,
+				},
+				["debuffs"] = {
+					["height"] = 1,
+					["width"] = 1,
+				},
+			},
+			["FRIENDLY_NPC"] = {
+				["buffs"] = {
+					["height"] = 1,
+					["width"] = 1,
+				},
+				["debuffs"] = {
+					["height"] = 1,
+					["width"] = 1,
+				},
+			},
+			["FRIENDLY_PLAYER"] = {
+				["buffs"] = {
+					["height"] = 1,
+					["width"] = 1,
+				},
+				["debuffs"] = {
+					["height"] = 1,
+					["width"] = 1,
+				},
+			},
+		},
+	},
 	["CenteredAuras"] = {
 		["enabled"] = false,
 	},
@@ -457,6 +412,8 @@ P["Extras"]["nameplates"][modName] = {
 function mod:LoadConfig(db)
 	local function selectedSortType() return db.SortMethods.selectedType end
 	local function selectedSortAuraType() return db.SortMethods.selectedAuraType end
+	local function selectedDimsType() return db.Dimensions.selectedType end
+	local function selectedDimsAuraType() return db.Dimensions.selectedAuraType end
 	local function selectedType() return db.Highlights.selectedType or "FRIENDLY" end
 	local function selectedSpellorFilter() return db.Highlights.types[selectedType()].selected or "GLOBAL" end
 	local function getHighlightSettings(selected, spellOrFilter)
@@ -786,6 +743,63 @@ function mod:LoadConfig(db)
 					},
 				},
 			},
+			Dimensions = {
+				type = "group",
+				name = L["Icon Size"],
+				guiInline = true,
+				args = {
+					selectedDimensionsType = {
+						order = 1,
+						type = "select",
+						name = L["Select Type"],
+						desc = "",
+						get = function() return db.Dimensions.selectedType end,
+						set = function(_, value) db.Dimensions.selectedType = value end,
+						values = function()
+							return {
+								["ENEMY_NPC"] = L["ENEMY_NPC"],
+								["ENEMY_PLAYER"] = L["ENEMY_PLAYER"],
+								["FRIENDLY_NPC"] = L["FRIENDLY_NPC"],
+								["FRIENDLY_PLAYER"] = L["FRIENDLY_PLAYER"],
+							}
+						end,
+					},
+					selectedDimensionsAuraType = {
+						order = 2,
+						type = "select",
+						name = L["Select Type"],
+						desc = "",
+						get = function() return db.Dimensions.selectedAuraType end,
+						set = function(_, value) db.Dimensions.selectedAuraType = value end,
+						values = {
+							["buffs"] = L["Buffs"],
+							["debuffs"] = L["Debuffs"],
+						},
+					},
+					height = {
+						type = "range",
+						name = L["Height"],
+						desc = "",
+						get = function() return db.Dimensions.types[selectedDimsType()][selectedDimsAuraType()].height end,
+						set = function(_, value)
+							db.Dimensions.types[selectedDimsType()][selectedDimsAuraType()].height = value
+							self:Toggle(db)
+						end,
+						min = 0.25, max = 1, step = 0.01,
+					},
+					width = {
+						type = "range",
+						name = L["Width"],
+						desc = "",
+						get = function() return db.Dimensions.types[selectedDimsType()][selectedDimsAuraType()].width end,
+						set = function(_, value)
+							db.Dimensions.types[selectedDimsType()][selectedDimsAuraType()].width = value
+							self:Toggle(db)
+						end,
+						min = 0.25, max = 1, step = 0.01,
+					},
+				},
+			},
 			SortMethods = {
 				type = "group",
 				name = L["Sort by Filter"],
@@ -913,6 +927,25 @@ function mod:LoadConfig(db)
 end
 
 
+function mod:Configure_Auras(frame, auraType)
+	local auras = frame[auraType]
+	local db = NP.db.units[frame.UnitType][auras.type]
+	local isVertical = db.anchorPoint == "TOP" or db.anchorPoint == "BOTTOM" or db.anchorPoint == "CENTER"
+	local point
+	if isVertical then
+		point = (db.growthY == "DOWN" and "TOP" or "BOTTOM")
+	elseif db.anchorPoint == "LEFT" or db.anchorPoint == "RIGHT" then
+		point = E.InversePoints[db.growthX]
+	else
+		point = (db.growthY == "DOWN" and "TOP" or "BOTTOM")..E.InversePoints[db.growthX]
+	end
+
+	auras:Width(db.perrow * db.size + ((db.perrow - 1) * db.spacing))
+	auras:Height(db.numrows * db.size + ((db.numrows - 1) * db.spacing))
+	auras:ClearAllPoints()
+	auras:Point(point, db.attachTo == "BUFFS" and frame.Buffs or frame.Health, db.anchorPoint, db.xOffset, db.yOffset)
+end
+
 function mod:Update_AurasPosition(frame)
     local numElements = frame.type == 'debuffs' and frame.visibleDebuffs or frame.visibleBuffs
 
@@ -1018,30 +1051,32 @@ function mod:Update_AurasPosition(frame)
 				end)
 			end
 		end
-		local el = 0
-		for i = 1, numElements do
-			local child = frame[i]
-			if child then
-				if child:IsShown() then
-					el = el + 1
+		local points = data.positions[numElements]
+		if points then
+			for i = 1, numElements do
+				local button = frame[i]
+				if button then
+					local vals = points[i]
+					button:ClearAllPoints()
+					button:Point(vals.point, frame, vals.relativeTo, vals.xOffset, vals.yOffset)
+					if data.texCoords then
+						button:Size(data.width, data.height)
+						button.icon:SetTexCoord(unpack(data.texCoords))
+					end
+					if not button.timeLeft then
+						button:SetValue(1)
+					end
 				end
 			end
 		end
-		local points = data.positions[numElements]
-		for i = 1, numElements do
-			local child = frame[i]
-			if child then
-				local vals = points[i]
-				child:ClearAllPoints()
-				child:Point(vals.point, vals.firstInRow and frame or frame[vals.anchor], vals.relativeTo, vals.xOffset, vals.yOffset)
-			end
+		local sizes = data.sizes[numElements]
+		if sizes then
+			frame:Size(unpack(sizes))
 		end
-
-		frame:Size(unpack(data.sizes[numElements]))
 	end
 end
 
-function mod:UpdateElement_Auras(_, _, frame)
+function mod:UpdateElement_Auras(frame)
 	if not frame.Health:IsShown() then return end
 
 	local db = NP.db.units[frame.UnitType]
@@ -1121,8 +1156,8 @@ function mod:HandleCurableStealable(mod_db, db, button, unstableAffliction, vamp
 	end
 end
 
-function mod:SetAura(mod_db, _, frame, _, index, _, isDebuff)
-	local button = frame[index]
+function mod:SetAura(mod_db, _, frame, _, _, _, isDebuff, visible)
+	local button = frame[visible + 1]
 
 	if button and button:IsShown() then
 		button:SetAlpha(1)
@@ -1197,20 +1232,79 @@ function mod:Toggle(db)
 				toggles[func] = not core.reload
 			elseif config.enabled then
 				toggles[func] = not core.reload
+			elseif setting == 'Dimensions' then
+				for _, data in pairs(config.types) do
+					for _, vals in pairs(data) do
+						if vals.height ~= 1 or vals.width ~= 1 then
+							toggles[func] = not core.reload
+						end
+					end
+				end
 			end
 		end
 	end
-	if next(toggles) then
-		cachePositions(db)
+	if not self:IsHooked(NP, "Configure_Auras") then
+		self:RawHook(NP, "Configure_Auras", self.Configure_Auras)
 	end
+	if not self:IsHooked(NP, "UpdateElement_Auras") then
+		self:SecureHook(NP, "UpdateElement_Auras", self.UpdateElement_Auras)
+	end
+	cachePositions(db)
 	for func, enable in pairs(toggles) do
 		if enable then
-			if not self:IsHooked(NP, func) then self:SecureHook(NP, func, function(...)
-				self[func](nil, db, ...)
-			end) end
+			if not self:IsHooked(NP, func) then
+				self:SecureHook(NP, func, function(...)
+					self[func](nil, db, ...)
+				end)
+			end
 		elseif self:IsHooked(NP, func) then
 			self:Unhook(NP, func)
 		end
+	end
+
+	if not self.ishooked then
+		local hk = function()
+			for unitType, unitGroup in pairs({["FRIENDLY_PLAYER"] = 'friendlyPlayerGroup', ["FRIENDLY_NPC"] = 'friendlyNPCGroup',
+											["ENEMY_PLAYER"] = 'enemyPlayerGroup', ["ENEMY_NPC"] = 'enemyNPCGroup'}) do
+				for auraType, auraGroup in pairs({["buffs"] = 'buffsGroup', ["debuffs"] = 'debuffsGroup'}) do
+					E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.anchorPoint.values = E.db.Extras.pointOptions
+					if not self:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set") then
+						self:RawHook(E.Options.args.nameplate.args[unitGroup].args[auraGroup], "set", function(info, value)
+							E.db.nameplates.units[unitType][auraType][info[#info]] = value
+							cachePositions(db)
+							self.hooks[E.Options.args.nameplate.args[unitGroup].args[auraGroup]].set(info, value)
+						end)
+					end
+					if db.SortMethods.enabled then
+						if not self:IsHooked(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set") then
+							self:SecureHook(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup, "set", function()
+								cachePositions(db)
+								NP:ConfigureAll()
+							end)
+						end
+						for _, t in pairs(E.Options.args.nameplate.args[unitGroup].args[auraGroup].args.filtersGroup.args) do
+							if type(t) == 'table' and t.set and not self:IsHooked(t, "set") then
+								self:SecureHook(t, "set", function()
+									cachePositions(db)
+									NP:ConfigureAll()
+								end)
+							end
+						end
+					end
+				end
+			end
+		end
+		if E.Options and E.Options.args.nameplate then
+			hk()
+		elseif not self:IsHooked(E, "ToggleOptionsUI") then
+			self:SecureHook(E, "ToggleOptionsUI", function()
+				if E.Options.args.nameplate then
+					hk()
+					self:Unhook(E, "ToggleOptionsUI")
+				end
+			end)
+		end
+		self.ishooked = true
 	end
 	if not core.reload then
 		updateVisiblePlates(db)

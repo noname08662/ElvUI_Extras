@@ -1906,7 +1906,7 @@ function core:GetOptions()
 					colors = {
 						order = 1,
 						type = "group",
-						name = L["Version: "].."1.10 (ElvUI 6.09)",
+						name = L["Version: "]..GetAddOnMetadata("ElvUI_Extras", "Version").. " (ElvUI 6.09)",
 						guiInline = true,
 						get = function(info) return colorConvert(E.db.Extras[info[#info]]) end,
 						set = function(info, r, g, b)

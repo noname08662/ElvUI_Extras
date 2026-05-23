@@ -7,6 +7,7 @@ local modName = mod:GetName()
 local barsCreated = {}
 
 local _G, pairs, ipairs, unpack = _G, pairs, ipairs, unpack
+local find = string.find
 local twipe = table.wipe
 
 mod.initialized = false
@@ -248,20 +249,22 @@ function mod:Construct_AuraBars()
 	local bar = self.statusBar
 	positionBars(db, bar, bar.iconHolder, barsCreated[unitframeType])
 
+	bar.spelltime:ClearAllPoints()
+	bar.spelltime:Point(db.spelltimePoint, bar, db.spelltimeRelativeTo, db.spelltimeXOffset, db.spelltimeYOffset)
+	bar.spelltime:Show()
 	if db.spelltimeHide then
 		bar.spelltime:Hide()
-	else
-		bar.spelltime:ClearAllPoints()
-		bar.spelltime:Point(db.spelltimePoint, bar, db.spelltimeRelativeTo, db.spelltimeXOffset, db.spelltimeYOffset)
-		bar.spelltime:Show()
 	end
+
 	if db.spellnameHide then
 		bar.spellname:Hide()
 	else
 		bar.spellname:ClearAllPoints()
 		bar.spellname:Point(db.spellnamePoint, bar, db.spellnameRelativeTo, db.spellnameXOffset, db.spellnameYOffset)
 		if not db.spelltimeHide then
-			bar.spellname:Point("RIGHT", bar.spelltime, "LEFT", 0, 0)
+			bar.spellname:Point("RIGHT", bar.spelltime, "LEFT")
+		elseif not find(db.spellnameRelativeTo, "RIGHT") then
+			bar.spellname:Point("RIGHT", bar, "RIGHT")
 		end
 		bar.spellname:Show()
 	end
@@ -303,6 +306,16 @@ function mod:UpdatePostUpdateAuraBars(db)
 
 				auraBars.gap = units[unitframeType].enabled and -frame.db.aurabar.height or (-frame.BORDER + frame.SPACING*3)
 				auraBars.PostCreateBar = UF.Construct_AuraBars
+				if not self:IsHooked(auraBars, "SetAnchors") then
+					self:SecureHook(auraBars, "SetAnchors", function(f)
+						for _, bar in ipairs(f.bars) do
+							local udb = units[unitframeType]
+							if udb and udb.enabled then
+								bar.statusBar.iconHolder:Size(udb.iconSize, udb.iconSize)
+							end
+						end
+					end)
+				end
 				auraBars:SetAnchors()
 
 				UF:Configure_AuraBars(frame)
