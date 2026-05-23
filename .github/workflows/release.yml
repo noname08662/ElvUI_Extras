@@ -44,9 +44,10 @@ jobs:
           cd "$STAGE"
           zip -r "$GITHUB_WORKSPACE/$ZIP_NAME.zip" "$REPO_NAME"
 
-      - name: Upload Zip as Artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
         with:
-          name: ${{ env.ZIP_NAME }}-test
-          path: "${{ env.ZIP_NAME }}.zip"
-          retention-days: 1
+          files: ${{ env.ZIP_NAME }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
