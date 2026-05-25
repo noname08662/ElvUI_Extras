@@ -1242,7 +1242,7 @@ function mod:Toggle(db)
 										for _, frame in ipairs(core:AggregateUnitFrames()) do
 											for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
 												local element = frame[auraType]
-												if element and element.db.enable and element.ForceUpdate then
+												if element and element.db and element.db.enable and element.ForceUpdate then
 													element:ForceUpdate()
 												end
 											end
