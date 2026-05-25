@@ -1169,3 +1169,4 @@ L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last 
 	"ElvUI가 추가한 itemID 줄이 다시 유닛 및 아이템 툴팁의 마지막에 표시되도록 합니다."
 L["Attempts to extend font outline options across all of ElvUI."] =
 	"ElvUI 전반에 걸쳐 글꼴 외곽선 옵션을 확장하려고 시도합니다."
+L["Requires \"%s\" to be above 0."] = "\"%s\"이(가) 0보다 커야 합니다."

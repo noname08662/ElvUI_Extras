@@ -1172,3 +1172,4 @@ L["Questie Coherence"] = "Questie 相容性"
 L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."] =
 	"讓 ElvUI 所加的 itemID 再次顯示於單位和物品提示的最後一行。"
 L["Attempts to extend font outline options across all of ElvUI."] = "嘗試在整個 ElvUI 中擴展字體外框選項。"
+L["Requires \"%s\" to be above 0."] = "需要 \"%s\" 大於 0。"

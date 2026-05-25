@@ -1166,3 +1166,4 @@ L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last 
 	"Sorgt erneut dafür, dass die von ElvUI hinzugefügte itemID-Zeile im Tooltip zuletzt angezeigt wird (Einheiten & Gegenstände)."
 L["Attempts to extend font outline options across all of ElvUI."] =
 	"Versucht, die Schriftumriss-Optionen überall in ElvUI zu erweitern."
+L["Requires \"%s\" to be above 0."] = "Erfordert, dass \"%s\" über 0 liegt."

@@ -1178,3 +1178,4 @@ L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last 
 	"Возвращает строку itemID от ElvUI в конец подсказки (юниты и предметы)."
 L["Attempts to extend font outline options across all of ElvUI."] =
 	"Попытка расширить параметры обводки шрифта во всём ElvUI."
+L["Requires \"%s\" to be above 0."] = "Требуется, чтобы \"%s\" было больше 0."

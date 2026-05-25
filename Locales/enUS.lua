@@ -946,3 +946,4 @@ L["Plugin version mismatch! Please, download appropriate plugin version at"] = t
 L["Questie Coherence"] = true
 L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last on unit and item tooltips."] = true
 L["Attempts to extend font outline options across all of ElvUI."] = true
+L["Requires \"%s\" to be above 0."] = "Requires \"%s\" to be above 0."

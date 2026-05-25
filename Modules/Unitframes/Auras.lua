@@ -8,7 +8,7 @@ local modName = mod:GetName()
 
 local _G, unpack, pairs, ipairs, select = _G, unpack, pairs, ipairs, select
 local tonumber, tostring, type = tonumber, tostring, type
-local match, upper, format, gsub, find, split = string.match, string.upper, string.format, string.gsub, string.find, string.split
+local match, lower, upper, format, gsub, find, split = string.match, string.lower, string.upper, string.format, string.gsub, string.find, string.split
 local floor, ceil, min, max = math.floor, math.ceil, math.min, math.max
 local tinsert, tsort, twipe = table.insert, table.sort, table.wipe
 local UnitIsUnit, CancelUnitBuff, UnitCanAttack = UnitIsUnit, CancelUnitBuff, UnitCanAttack
@@ -96,8 +96,8 @@ local function cachePositions(db)
 				local dim = db.Dimensions.units[frameType] and db.Dimensions.units[frameType][auraType]
 					or { width = 1, height = 1, growthX = "RIGHT", growthY = "UP" }
 
-				if data then
-					local baseSize = data.sizeOverride or 0
+				local baseSize = data and data.sizeOverride
+				if baseSize and data.sizeOverride > 0 then
 					iconPositions[frameType][auraType] = {
 						positions = {},
 						sizes = {},
@@ -202,16 +202,6 @@ local function cachePositions(db)
 							cache.sizes[numElements] = { width, height }
 						end
 					end
-                    if db.SortMethods.enabled and data.filters then
-                        cache.filterPriority = {}
-                        for _, filter in ipairs({split(",", data.filters.priority)}) do
-                            tinsert(cache.filterPriority, filter)
-                        end
-                        if db.SortMethods.types and db.SortMethods.types[frameType] and db.SortMethods.types[frameType][auraType] then
-                            cache.sortDirection = db.SortMethods.types[frameType][auraType].sortDirection
-                            cache.sortMethod = db.SortMethods.types[frameType][auraType].sortMethod
-                        end
-                    end
 				end
 			end
 		end
@@ -285,6 +275,13 @@ P["Extras"]["unitframes"][modName] = {
 function mod:LoadConfig(db)
 	local function selectedDimsUnit() return db.Dimensions.selectedUnit end
 	local function selectedDimsAuraType() return db.Dimensions.selectedAuraType end
+	local function selectedDimsData()
+		return core:getSelected("unitframes", modName, format("Dimensions.units.%s.[%s]", selectedDimsUnit(), selectedDimsAuraType() or ""), "buffs")
+	end
+	local function selectedDimsUFData()
+		local unitdb = UF.db.units[selectedDimsUnit()]
+		return unitdb and unitdb[selectedDimsAuraType()]
+	end
 	local function selectedType() return db.Highlights.selectedType or "FRIENDLY" end
 	local function selectedSpellorFilter() return db.Highlights.types[selectedType()].selected or "GLOBAL" end
 	local function getHighlightSettings(selected, spellOrFilter)
@@ -612,15 +609,36 @@ function mod:LoadConfig(db)
 				type = "group",
 				name = L["Icon Size"],
 				guiInline = true,
-				get = function(info) return db.Dimensions.units[selectedDimsUnit()][selectedDimsAuraType()][info[#info]] end,
+				get = function(info) return selectedDimsData()[info[#info]] end,
 				set = function(info, value)
-					db.Dimensions.units[selectedDimsUnit()][selectedDimsAuraType()][info[#info]] = value
+					selectedDimsData()[info[#info]] = value
 					self:UpdateAuras(db)
 					UF:Update_AllFrames()
 				end,
+				disabled = function() return ((selectedDimsUFData() or {sizeOverride=0}).sizeOverride or 0) <= 0 end,
 				args = {
-					selectedDimensionsUnit = {
+					sizeOverrideWarning = {
 						order = 1,
+						type = "description",
+						name = core.customColorBad..format(L["Requires \"%s\" to be above 0."], L["Size Override"]),
+						desc = "",
+						disabled = false,
+						hidden = function() return ((selectedDimsUFData() or {sizeOverride=0}).sizeOverride or 0) > 0 end,
+					},
+					configureSizeOverride = {
+						order = 2,
+						type = "execute",
+						width = "double",
+						name = ">> "..L["Size Override"],
+						desc = "",
+						disabled = false,
+						hidden = function() return ((selectedDimsUFData() or {sizeOverride=0}).sizeOverride or 0) > 0 end,
+						func = function()
+							E.Libs.AceConfigDialog:SelectGroup("ElvUI", "unitframe", selectedDimsUnit(), selectedDimsAuraType())
+						end,
+					},
+					selectedDimensionsUnit = {
+						order = 3,
 						type = "select",
 						name = L["Select Unit"],
 						desc = "",
@@ -630,10 +648,11 @@ function mod:LoadConfig(db)
 						values = function() return core:GetUnitDropdownOptions(db.Dimensions.units) end,
 					},
 					selectedDimensionsAuraType = {
-						order = 2,
+						order = 4,
 						type = "select",
 						name = L["Select Type"],
 						desc = "",
+						disabled = false,
 						get = function() return selectedDimsAuraType() end,
 						set = function(_, value) db.Dimensions.selectedAuraType = value end,
 						values = {
@@ -975,36 +994,46 @@ function mod:UpdateAuras(db)
 					end
 				end
 			end
+		end
 
-			local sizes = data.sizes[numElements]
-			if sizes then
-				self:Size(unpack(sizes))
+		function mod:UpdateHeight()
+			local ipos = iconPositions[self:GetParent().unitframeType]
+			if ipos then
+				local data = ipos[self.type]
+				if data then
+					local sizes = data.sizes[1]
+					if sizes then
+						self:Size(unpack(sizes))
+					end
+				end
 			end
 		end
 
-		function mod:Configure_Auras(frame)
-			frame.Buffs.SetPosition = mod.SetPosition
-			frame.Debuffs.SetPosition = mod.SetPosition
-
+		function mod:Configure_Auras(frame, auraType)
 			local ipos = iconPositions[frame.unitframeType]
 			if ipos then
-				local dataB = ipos['buffs']
-				if dataB then
-					local sizes = dataB.sizes[1]
+				local data = ipos[lower(auraType)]
+				if data then
+					local sizes = data.sizes[1]
 					if sizes then
-						frame.Buffs:Size(unpack(sizes))
+						frame[auraType]:Size(unpack(sizes))
 					end
-				end
-				local dataD = ipos['debuffs']
-				if dataD then
-					local sizes = dataD.sizes[1]
-					if sizes then
-						frame.Debuffs:Size(unpack(sizes))
+					frame[auraType].SetPosition = mod.SetPosition
+					if not frame[auraType].PostUpdate then
+						frame[auraType].PostUpdate = mod.UpdateHeight
 					end
+					return
 				end
 			end
+			frame[auraType].SetPosition = nil
 		end
 		if not self:IsHooked(UF, "Configure_Auras") then self:SecureHook(UF, "Configure_Auras", self.Configure_Auras) end
+		if not self:IsHooked(UF, "UpdateBuffsHeight") then self:SecureHook(UF, "UpdateBuffsHeight", self.UpdateHeight) end
+		if not self:IsHooked(UF, "UpdateDebuffsHeight") then self:SecureHook(UF, "UpdateDebuffsHeight", self.UpdateHeight) end
+		if not self:IsHooked(UF, "UpdateBuffsHeaderPosition") then self:SecureHook(UF, "UpdateBuffsHeaderPosition", self.UpdateHeight) end
+		if not self:IsHooked(UF, "UpdateDebuffsHeaderPosition") then self:SecureHook(UF, "UpdateDebuffsHeaderPosition", self.UpdateHeight) end
+		if not self:IsHooked(UF, "UpdateBuffsPositionAndDebuffHeight") then self:SecureHook(UF, "UpdateBuffsPositionAndDebuffHeight", self.UpdateHeight) end
+		if not self:IsHooked(UF, "UpdateDebuffsPositionAndBuffHeight") then self:SecureHook(UF, "UpdateDebuffsPositionAndBuffHeight", self.UpdateHeight) end
 	end
 end
 
@@ -1212,7 +1241,7 @@ function mod:Toggle(db)
 									for _, frame in ipairs(core:AggregateUnitFrames()) do
 										for _, auraType in ipairs({'Buffs', 'Debuffs'}) do
 											local element = frame[auraType]
-											if element and element.db.enable and element.ForceUpdate then
+											if element and element.db and element.db.enable and element.ForceUpdate then
 												element:ForceUpdate()
 											end
 										end

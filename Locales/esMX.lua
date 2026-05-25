@@ -1171,3 +1171,4 @@ L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last 
 	"Hace que la línea de itemID añadida por ElvUI vuelva a aparecer al final del tooltip (unidades y objetos)."
 L["Attempts to extend font outline options across all of ElvUI."] =
 	"Intenta ampliar las opciones de contorno de fuente en todo ElvUI."
+L["Requires \"%s\" to be above 0."] = "Requiere que \"%s\" sea superior a 0."
