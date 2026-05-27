@@ -49,6 +49,8 @@ What's inside:
 		  no coloring the aura borders;
 		  centered auras (that is, growing side-wise);
 		  aura sorting options;
+		  growth direction;
+		  separated width/height;
 	(Classification) - configurable class and classification textures;
 	(Cooldowns) - icicle and alike;
 	(GuildsTitles) - self-explanatory;
@@ -68,6 +70,8 @@ What's inside:
 		  no borders;
 		  centered auras;
 		  filters order based aura sorting;
+		  growth direction;
+		  separated width/height;
 	(Classification) - same as above;
 	(ColorFilter) - flexible coloring style filter;
 	(Cooldowns) - same as above;
