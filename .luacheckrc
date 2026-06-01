@@ -44,12 +44,15 @@ ignore = {
 
 globals = {
 	"C_NamePlate",
+	"C_VoiceChat",
 
 	"UnitOccupations",
 	"UnitOwner",
 	"UnitTokenFromGUID",
 	"GetSpellBaseCooldown",
 	"GetItemInfoInstant",
+	"IsWindowFocused",
+	"FlashWindow",
 
 	-- ElvUI
 	"AlertFrameHolder",
