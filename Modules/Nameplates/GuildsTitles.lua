@@ -982,7 +982,7 @@ local function constructTitle(frame)
 	frame.TitleHolder = CreateFrame('Frame', '$parentTitle', frame)
 	frame.TitleHolder.str = frame.TitleHolder:CreateFontString(nil, "OVERLAY")
 	frame.TitleHolder.str:SetWordWrap(false)
-	frame.TitleHolder.str:SetAllPoints(frame.TitleHolder)
+	frame.TitleHolder.str:SetPoint("CENTER", frame.TitleHolder)
 	frame.OccupationIcon = CreateFrame('Frame', '$parentOccupationIcon', frame)
 	frame.OccupationIcon.icon = frame.OccupationIcon:CreateTexture('$parentOccupationIcon', "OVERLAY")
 	frame.OccupationIcon.icon:SetAllPoints(frame.OccupationIcon)
@@ -1068,9 +1068,7 @@ function mod:UpdateTitle(frame, db, unit, unitTitle, name)
 				local colors = NP.db.colors
 				local r, g, b
 				if frame.UnitReaction then
-					if frame.UnitReaction == 1 then
-						r, g, b = colors.reactions.tapped.r, colors.reactions.tapped.g, colors.reactions.tapped.b
-					elseif frame.UnitReaction == 4 then
+					if frame.UnitReaction == 4 then
 						r, g, b = colors.reactions.neutral.r, colors.reactions.neutral.g, colors.reactions.neutral.b
 					elseif frame.UnitReaction > 4 then
 						r, g, b = colors.reactions.good.r, colors.reactions.good.g, colors.reactions.good.b

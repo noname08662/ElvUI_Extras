@@ -618,23 +618,26 @@ if isAwesome then
 	local mouseover = CreateFrame("Frame")
 	local GetNamePlates = C_NamePlate.GetNamePlates
 	local GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
+	local awNew = _G.AwesomeWotlk and _G.AwesomeWotlk > 34
 
 	core.plateList = {}
 
 	core:RegisterEvent("PLAYER_TARGET_CHANGED", function()
-		local exists = UnitExists("target")
-		if target.exists then
-			if not exists then
-				target.exists = false
-				target:SetScript("OnUpdate", nil)
-			end
-		elseif exists then
-			target.exists = true
-			target:SetScript("OnUpdate", function()
-				for _, np in ipairs(GetNamePlates()) do
-					np:SetAlpha(1)
+		if not awNew then
+			local exists = UnitExists("target")
+			if target.exists then
+				if not exists then
+					target.exists = false
+					target:SetScript("OnUpdate", nil)
 				end
-			end)
+			elseif exists then
+				target.exists = true
+				target:SetScript("OnUpdate", function()
+					for _, np in ipairs(GetNamePlates()) do
+						np:SetAlpha(1)
+					end
+				end)
+			end
 		end
 		for _, np in ipairs(GetNamePlates()) do
 			NP:SetTargetFrame(np.UnitFrame)
