@@ -1173,3 +1173,5 @@ L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last 
 	"使 ElvUI 添加的 itemID 信息重新显示在单位和物品提示的最后一行。"
 L["Attempts to extend font outline options across all of ElvUI."] = "尝试在整个 ElvUI 中扩展字体描边选项。"
 L["Requires \"%s\" to be above 0."] = "需要 \"%s\" 大于 0。"
+L["Disable Nameplate Clickthrough/"] = "停用姓名板點擊穿透/"
+L["Superseded by AwesomeWotLK v34 and above. Use AwesomeCVar to configure these features instead."] = "已被 AwesomeWotLK v34 及以上版本取代。请改用 AwesomeCVar 来配置这些功能。"
