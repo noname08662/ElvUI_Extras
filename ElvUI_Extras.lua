@@ -618,26 +618,26 @@ if isAwesome then
 	local mouseover = CreateFrame("Frame")
 	local GetNamePlates = C_NamePlate.GetNamePlates
 	local GetNamePlateForUnit = C_NamePlate.GetNamePlateForUnit
-	local awNew = _G.AwesomeWotlk and _G.AwesomeWotlk > 34
 
 	core.plateList = {}
 
 	core:RegisterEvent("PLAYER_TARGET_CHANGED", function()
-		if not awNew then
-			local exists = UnitExists("target")
-			if target.exists then
-				if not exists then
-					target.exists = false
-					target:SetScript("OnUpdate", nil)
-				end
-			elseif exists then
-				target.exists = true
-				target:SetScript("OnUpdate", function()
-					for _, np in ipairs(GetNamePlates()) do
-						np:SetAlpha(1)
-					end
-				end)
+		local exists = UnitExists("target")
+		if target.exists then
+			if not exists then
+				target.exists = false
+				target:SetScript("OnUpdate", nil)
 			end
+		elseif exists then
+			target.exists = true
+			for _, np in ipairs(GetNamePlates()) do
+				np.UnitFrame:SetAlpha(np:GetAlpha())
+			end
+			target:SetScript("OnUpdate", function()
+				for _, np in ipairs(GetNamePlates()) do
+					np:SetAlpha(1)
+				end
+			end)
 		end
 		for _, np in ipairs(GetNamePlates()) do
 			NP:SetTargetFrame(np.UnitFrame)
@@ -684,6 +684,12 @@ if isAwesome then
 	core:RegisterEvent("NAME_PLATE_CREATED", function(_, plate)
 		local onShow, onHide = plate:GetScript("OnShow"), plate:GetScript("OnHide")
 		NP:OnCreated(plate)
+		if not plate.UnitFrame.FadeObject then
+			plate.UnitFrame.FadeObject = {}
+		end
+		plate.UnitFrame.FadeObject.finishedArg1 = plate
+		plate.UnitFrame.FadeObject.finishedFunc = core.FadeFunc
+		plate.UnitFrame.FadeObject.finishedFuncKeep = true
 		plate:SetScript("OnShow", onShow)
 		plate:SetScript("OnHide", onHide)
 	end)
@@ -712,7 +718,19 @@ if isAwesome then
 		core.plateList[UnitGUID(unit)] = plate
 		frame.ThreatStatus = UnitThreatSituation("player", unit)
 		NP.OnShow(plate, nil, true)
+		if plate.SetOcclusionEnabled and frame.AlphaChanged then
+			plate:SetOcclusionEnabled(false)
+		end
 	end)
+
+	core.FadeFunc =
+		(_G.AwesomeWotlk or 0) > 34 and
+			function(plate)
+				if not NP.db.fadeIn and not target.exists and not plate.UnitFrame.AlphaChanged and plate:GetAlpha() < 1 then
+					plate:SetAlpha(NP.db.nonTargetTransparency)
+				end
+			end
+		or function() end
 
 	function core:SetTargetFrame(_, frame)
 		local parent = frame:GetParent()
@@ -1241,6 +1259,7 @@ P["Extras"] = {
 	["mapToQuestLog"] = true,
 	["unitFaction"] = true,
 	["nameOnly"] = true,
+	["disableNPSizing"] = false,
 	["questieTips"] = false,
 	["captureBarFix"] = false,
 	["captureBarHeight"] = 8,
@@ -2050,6 +2069,12 @@ function core:GetOptions()
 								desc = L["Fixes an issue where the style filter fails to update the nameplate on aura events after hiding its health."],
 								hidden = not isAwesome,
 							},
+							disableNPSizing = {
+								type = "toggle",
+								name = L["Disable Nameplate Clickthrough/"]..L["Clickable Size"],
+								desc = L["Superseeded by AwesomeWotLK v34 and above. Use AwesomeCVar to configure these features instead."],
+								hidden = not isAwesome or (_G.AwesomeWotlk or 0) < 34,
+							},
 						},
 					},
 				},
@@ -2141,6 +2166,9 @@ function core:Initialize()
 						end
 					end
 				end)
+			end
+			if E.db.Extras.disableNPSizing and (_G.AwesomeWotlk or 0) > 34 then
+				NP.SetSize = function() end
 			end
 		else
 			self:UnregisterAllEvents()

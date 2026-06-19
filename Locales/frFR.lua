@@ -1173,3 +1173,5 @@ L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last 
 L["Attempts to extend font outline options across all of ElvUI."] =
 	"Tente d'étendre les options de contour de police dans tout ElvUI."
 L["Requires \"%s\" to be above 0."] = "Nécessite que \"%s\" soit supérieur à 0."
+L["Disable Nameplate Clickthrough/"] = "Désactiver le clic à travers les barres d'info/"
+L["Superseded by AwesomeWotLK v34 and above. Use AwesomeCVar to configure these features instead."] = "Remplacé par AwesomeWotLK v34 et supérieur. Utilisez plutôt AwesomeCVar pour configurer ces fonctionnalités."

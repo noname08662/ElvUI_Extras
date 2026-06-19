@@ -1170,3 +1170,5 @@ L["Makes, once again, itemID tooltip line added by ElvUI to get positioned last 
 L["Attempts to extend font outline options across all of ElvUI."] =
 	"ElvUI 전반에 걸쳐 글꼴 외곽선 옵션을 확장하려고 시도합니다."
 L["Requires \"%s\" to be above 0."] = "\"%s\"이(가) 0보다 커야 합니다."
+L["Disable Nameplate Clickthrough/"] = "이름표 클릭 방지 비활성화/"
+L["Superseded by AwesomeWotLK v34 and above. Use AwesomeCVar to configure these features instead."] = "AwesomeWotLK v34 이상 버전으로 대체되었습니다. 대신 AwesomeCVar를 사용하여 해당 기능을 설정하세요."
