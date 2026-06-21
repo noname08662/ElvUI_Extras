@@ -2170,7 +2170,6 @@ function core:Initialize()
 				end
 				if not self:IsHooked(NP, "StyleFilterSetChanges") then
 					self:SecureHook(NP, "StyleFilterSetChanges", function(_, frame)
-					print(frame.AlphaChanged, 'set')
 						if frame.AlphaChanged then
 							local parent = frame:GetParent()
 							if parent.SetOcclusionEnabled then
@@ -2181,7 +2180,6 @@ function core:Initialize()
 				end
 				if not self:IsHooked(NP, "StyleFilterClearChanges") then
 					self:SecureHook(NP, "StyleFilterClearChanges", function(_, frame)
-					print(frame.AlphaChanged, 'clear')
 						if not frame.AlphaChanged then
 							local parent = frame:GetParent()
 							if parent.SetOcclusionEnabled then
