@@ -718,9 +718,6 @@ if isAwesome then
 		core.plateList[UnitGUID(unit)] = plate
 		frame.ThreatStatus = UnitThreatSituation("player", unit)
 		NP.OnShow(plate, nil, true)
-		if plate.SetOcclusionEnabled and frame.AlphaChanged then
-			plate:SetOcclusionEnabled(false)
-		end
 	end)
 
 	core.FadeFunc =
@@ -2215,8 +2212,32 @@ function core:Initialize()
 					end
 				end)
 			end
-			if E.db.Extras.disableNPSizing and (_G.AwesomeWotlk or 0) > 34 then
-				NP.SetSize = function() end
+			if (_G.AwesomeWotlk or 0) > 34 then
+				if E.db.Extras.disableNPSizing then
+					NP.SetSize = function() end
+				end
+				if not self:IsHooked(NP, "StyleFilterSetChanges") then
+					self:SecureHook(NP, "StyleFilterSetChanges", function(_, frame)
+					print(frame.AlphaChanged, 'set')
+						if frame.AlphaChanged then
+							local parent = frame:GetParent()
+							if parent.SetOcclusionEnabled then
+								parent:SetOcclusionEnabled(false)
+							end
+						end
+					end)
+				end
+				if not self:IsHooked(NP, "StyleFilterClearChanges") then
+					self:SecureHook(NP, "StyleFilterClearChanges", function(_, frame)
+					print(frame.AlphaChanged, 'clear')
+						if not frame.AlphaChanged then
+							local parent = frame:GetParent()
+							if parent.SetOcclusionEnabled then
+								parent:SetOcclusionEnabled(true)
+							end
+						end
+					end)
+				end
 			end
 		else
 			self:UnregisterAllEvents()
